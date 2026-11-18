@@ -39,7 +39,7 @@ jobs:
             supabase stop --no-backup || true
             sleep 10
           done
-          psql"postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -q -f supabase/schema.sql
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -q -f supabase/schema.sql
           supabase test db
       - uses: denoland/setup-deno@v2
         with:
