@@ -12,9 +12,12 @@ async function testConfig(): Promise<{ config: AppleConfig; publicKey: CryptoKey
   };
 }
 
-function decodeBase64Url(part: string): Uint8Array {
+function decodeBase64Url(part: string): Uint8Array<ArrayBuffer> {
   const base64 = part.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(part.length / 4) * 4, '=');
-  return Uint8Array.from(atob(base64), (char) => char.charCodeAt(0));
+  const binary = atob(base64);
+  const bytes = new Uint8Array(new ArrayBuffer(binary.length));
+  for (let index = 0; index < binary.length; index++) bytes[index] = binary.charCodeAt(index);
+  return bytes;
 }
 
 function decodeJson(part: string): unknown {

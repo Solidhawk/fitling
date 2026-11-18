@@ -20,3 +20,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: swift test
+
+  backend:
+    name: Supabase (Linux)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.8
+      - name: Edge Function delete-account
+        working-directory: supabase/functions/delete-account
+        run: |
+          deno fmt --check
+          deno check index.ts
+          deno test
