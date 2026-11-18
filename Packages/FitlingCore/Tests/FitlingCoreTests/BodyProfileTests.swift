@@ -22,7 +22,7 @@ import Testing
         #expect(Limits.heightCm == 100...250)
         #expect(Limits.weightKg == 30...350)
         #expect(Limits.minimumAge == 18)
-        #expect(Limits.earliestBirthDate == DateComponents(year: 1900, month: 1, day: 1))
+        #expect(Limits.earliestBirthDay == Day(year: 1900, month: 1, day: 1))
         #expect(Limits.kcal == 1...20000)
         #expect(Limits.proteinG == 0...1000)
         #expect(Limits.carbsG == 0...5000)

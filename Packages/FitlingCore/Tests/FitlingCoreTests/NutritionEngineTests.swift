@@ -3,24 +3,14 @@ import Testing
 @testable import FitlingCore
 
 @Suite struct NutritionEngineTests {
-    let calendar: Calendar = {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = TimeZone(identifier: "UTC")!
-        return calendar
-    }()
+    let today = day(2026, 11, 18)
 
-    var today: Date { date(2026, 11, 18) }
-
-    func date(_ year: Int, _ month: Int, _ day: Int) -> Date {
-        calendar.date(from: DateComponents(year: year, month: month, day: day))!
-    }
-
-    func profile(_ sex: Sex, kg: Double, cm: Double, born: Date, _ activity: ActivityLevel, _ goal: Goal) -> BodyProfile {
-        BodyProfile(birthDate: born, sex: sex, heightCm: cm, weightKg: kg, activityLevel: activity, goal: goal)
+    func profile(_ sex: Sex, kg: Double, cm: Double, born: Day, _ activity: ActivityLevel, _ goal: Goal) -> BodyProfile {
+        BodyProfile(birthDay: born, sex: sex, heightCm: cm, weightKg: kg, activityLevel: activity, goal: goal)
     }
 
     func plan(_ profile: BodyProfile) -> EnergyPlan {
-        NutritionEngine.plan(for: profile, on: today, calendar: calendar)
+        NutritionEngine.plan(for: profile, on: today)
     }
 
     func isClose(_ value: Double, _ expected: Double) -> Bool {
@@ -34,7 +24,7 @@ import Testing
     }
 
     @Test func maintenanceTargetEqualsTotalExpenditure() {
-        let result = plan(profile(.male, kg: 80, cm: 180, born: date(1996, 1, 10), .moderate, .maintain))
+        let result = plan(profile(.male, kg: 80, cm: 180, born: day(1996, 1, 10), .moderate, .maintain))
         #expect(isClose(result.bmr, 1780))
         #expect(isClose(result.tdee, 2759))
         #expect(result.targets == NutritionTargets(kcal: 2760, proteinG: 128, carbsG: 389, fatG: 77))
@@ -43,19 +33,19 @@ import Testing
     }
 
     @Test func muscleGainAddsTenPercent() {
-        let result = plan(profile(.male, kg: 80, cm: 180, born: date(1996, 1, 10), .veryActive, .buildMuscle))
+        let result = plan(profile(.male, kg: 80, cm: 180, born: day(1996, 1, 10), .veryActive, .buildMuscle))
         #expect(result.targets == NutritionTargets(kcal: 3720, proteinG: 144, carbsG: 554, fatG: 103))
     }
 
     @Test func recompStaysJustUnderTotalExpenditure() {
-        let result = plan(profile(.other, kg: 70, cm: 175, born: date(2001, 2, 2), .sedentary, .recomp))
+        let result = plan(profile(.other, kg: 70, cm: 175, born: day(2001, 2, 2), .sedentary, .recomp))
         #expect(result.targets == NutritionTargets(kcal: 1810, proteinG: 154, carbsG: 186, fatG: 50))
         #expect(result.floorApplied == false)
     }
 
     @Test func neverProposesLessThanBmrTimesOnePointOne() {
         // TDEE 2136 × 0.8 = 1709, but the floor is 1780 × 1.1 = 1958.
-        let result = plan(profile(.male, kg: 80, cm: 180, born: date(1996, 1, 10), .sedentary, .lose))
+        let result = plan(profile(.male, kg: 80, cm: 180, born: day(1996, 1, 10), .sedentary, .lose))
         #expect(result.targets == NutritionTargets(kcal: 1960, proteinG: 160, carbsG: 209, fatG: 54))
         #expect(result.floorApplied)
         #expect(Double(result.targets.kcal) >= result.bmr * NutritionEngine.floorFactor)
@@ -63,19 +53,19 @@ import Testing
 
     @Test func roundsTheFloorUpSoTheTargetStaysAboveIt() {
         // Floor 1320.25 × 1.1 = 1452.3; rounding to the nearest ten would give 1450.
-        let result = plan(profile(.female, kg: 65, cm: 165, born: date(1986, 5, 1), .light, .lose))
+        let result = plan(profile(.female, kg: 65, cm: 165, born: day(1986, 5, 1), .light, .lose))
         #expect(result.targets == NutritionTargets(kcal: 1460, proteinG: 130, carbsG: 143, fatG: 41))
         #expect(result.floorApplied)
     }
 
     @Test func warnsWhenTheTargetIsUnderTheCommonMinimum() {
-        let result = plan(profile(.female, kg: 40, cm: 150, born: date(1951, 1, 1), .sedentary, .lose))
+        let result = plan(profile(.female, kg: 40, cm: 150, born: day(1951, 1, 1), .sedentary, .lose))
         #expect(result.targets.kcal == 890)
         #expect(result.warnings == [.belowCommonMinimum])
     }
 
     @Test func carbsNeverGoNegative() {
-        let result = plan(profile(.female, kg: 30, cm: 100, born: date(1926, 1, 1), .sedentary, .recomp))
+        let result = plan(profile(.female, kg: 30, cm: 100, born: day(1926, 1, 1), .sedentary, .recomp))
         #expect(result.targets == NutritionTargets(kcal: 300, proteinG: 66, carbsG: 0, fatG: 8))
     }
 
@@ -121,7 +111,7 @@ import Testing
     @Test func extremeProfilesStayWithinTheDatabaseLimitsAndAboveTheFloor() {
         for kg in [30.0, 350.0] {
             for cm in [100.0, 250.0] {
-                for born in [date(2008, 11, 18), date(1906, 11, 18)] {
+                for born in [day(2008, 11, 18), day(1906, 11, 18)] {
                     for sex in Sex.allCases {
                         for activity in ActivityLevel.allCases {
                             for goal in Goal.allCases {
@@ -140,22 +130,23 @@ import Testing
     }
 
     @Test func ageChangesOnTheBirthday() {
-        #expect(age(birthDate: date(2000, 3, 15), on: date(2026, 3, 14), calendar: calendar) == 25)
-        #expect(age(birthDate: date(2000, 3, 15), on: date(2026, 3, 15), calendar: calendar) == 26)
+        #expect(age(bornOn: day(2000, 3, 15), on: day(2026, 3, 14)) == 25)
+        #expect(age(bornOn: day(2000, 3, 15), on: day(2026, 3, 15)) == 26)
     }
 
     @Test func leapDayBirthdayCountsFromTheFirstOfMarch() {
-        let born = date(2008, 2, 29)
-        #expect(age(birthDate: born, on: date(2026, 2, 28), calendar: calendar) == 17)
-        #expect(age(birthDate: born, on: date(2026, 3, 1), calendar: calendar) == 18)
-        #expect(isAdult(birthDate: born, on: date(2026, 2, 28), calendar: calendar) == false)
-        #expect(isAdult(birthDate: born, on: date(2026, 3, 1), calendar: calendar))
+        let born = day(2008, 2, 29)
+        #expect(age(bornOn: born, on: day(2026, 2, 28)) == 17)
+        #expect(age(bornOn: born, on: day(2026, 3, 1)) == 18)
+        #expect(age(bornOn: born, on: day(2028, 2, 29)) == 20)
+        #expect(isAdult(bornOn: born, on: day(2026, 2, 28)) == false)
+        #expect(isAdult(bornOn: born, on: day(2026, 3, 1)))
     }
 
-    @Test func birthDateMustBeAdultAndNotBefore1900() {
-        #expect(isValidBirthDate(date(1899, 12, 31), on: today, calendar: calendar) == false)
-        #expect(isValidBirthDate(date(1900, 1, 1), on: today, calendar: calendar))
-        #expect(isValidBirthDate(date(2008, 11, 18), on: today, calendar: calendar))
-        #expect(isValidBirthDate(date(2008, 11, 19), on: today, calendar: calendar) == false)
+    @Test func birthDayMustBeAdultAndNotBefore1900() {
+        #expect(isValidBirthDay(day(1899, 12, 31), on: today) == false)
+        #expect(isValidBirthDay(day(1900, 1, 1), on: today))
+        #expect(isValidBirthDay(day(2008, 11, 18), on: today))
+        #expect(isValidBirthDay(day(2008, 11, 19), on: today) == false)
     }
 }

@@ -32,8 +32,14 @@ jobs:
       # Het schema is één bestand (docs/ARCHITECTURE.md, D-07): op een lege database zetten, dan testen.
       - name: Database (schema.sql + pgTAP)
         run: |
-          supabase db start
-          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -q -f supabase/schema.sql
+          # Poort 54322 ligt in het bereik dat de runner ook voor uitgaande verbindingen gebruikt;
+          # heel soms is hij net bezet. Dan stoppen en opnieuw proberen.
+          for attempt in 1 2 3; do
+            supabase db start && break
+            supabase stop --no-backup || true
+            sleep 10
+          done
+          psql"postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -q -f supabase/schema.sql
           supabase test db
       - uses: denoland/setup-deno@v2
         with:

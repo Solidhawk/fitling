@@ -45,15 +45,15 @@ public enum Goal: String, Sendable, CaseIterable, Codable {
 }
 
 public struct BodyProfile: Sendable, Equatable {
-    public var birthDate: Date
+    public var birthDay: Day
     public var sex: Sex
     public var heightCm: Double
     public var weightKg: Double
     public var activityLevel: ActivityLevel
     public var goal: Goal
 
-    public init(birthDate: Date, sex: Sex, heightCm: Double, weightKg: Double, activityLevel: ActivityLevel, goal: Goal) {
-        self.birthDate = birthDate
+    public init(birthDay: Day, sex: Sex, heightCm: Double, weightKg: Double, activityLevel: ActivityLevel, goal: Goal) {
+        self.birthDay = birthDay
         self.sex = sex
         self.heightCm = heightCm
         self.weightKg = weightKg

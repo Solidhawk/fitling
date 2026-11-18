@@ -30,11 +30,11 @@ public enum NutritionEngine {
     }
 
     /// BMR, TDEE and the proposed targets for a profile.
-    public static func plan(for profile: BodyProfile, on date: Date, calendar: Calendar) -> EnergyPlan {
+    public static func plan(for profile: BodyProfile, on day: Day) -> EnergyPlan {
         let basal = bmr(
             weightKg: profile.weightKg,
             heightCm: profile.heightCm,
-            age: age(birthDate: profile.birthDate, on: date, calendar: calendar),
+            age: age(bornOn: profile.birthDay, on: day),
             sex: profile.sex
         )
         let tdee = basal * profile.activityLevel.multiplier

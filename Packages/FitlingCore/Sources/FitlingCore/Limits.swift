@@ -6,7 +6,8 @@ public enum Limits {
     public static let heightCm: ClosedRange<Double> = 100...250
     public static let weightKg: ClosedRange<Double> = 30...350
     public static let minimumAge = 18
-    public static let earliestBirthDate = DateComponents(year: 1900, month: 1, day: 1)
+    /// 1900-01-01.
+    public static let earliestBirthDay = Day(ordinal: -25567)
     public static let kcal: ClosedRange<Int> = 1...20000
     public static let proteinG: ClosedRange<Int> = 0...1000
     public static let carbsG: ClosedRange<Int> = 0...5000
