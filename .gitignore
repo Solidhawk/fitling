@@ -1,0 +1,10 @@
+# unforget (lokale lijst met uitgesteld werk; docs/README.md blijft in git)
+docs/UNFORGET.md
+docs/UNFORGET-archive-*.md
+docs/UNFORGET.md.bak-*
+docs/archive/
+.unforget.json
+.unforget-session.json
+
+# Plan-uitvoering (superpowers)
+.superpowers/
