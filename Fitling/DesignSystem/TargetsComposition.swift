@@ -53,6 +53,8 @@ struct TargetsComposition: View {
             Text(Measurement(value: Double(grams), unit: UnitMass.grams), format: .measurement(width: .abbreviated, usage: .asProvided))
                 .font(.title3.weight(.bold))
                 .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
         }
         .foregroundStyle(text)
         .padding(Spacing.s)

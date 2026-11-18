@@ -130,6 +130,8 @@ struct OnboardingFlowView: View {
                     // fields keep their square corners.
                     TargetsComposition(targets: calculation.targets)
                         .textCase(nil)
+                        // Section headers sit one margin further in than rows; line the fields up with the list.
+                        .padding(.horizontal, -Spacing.l)
                         .padding(.bottom, Spacing.s)
                 }
             }

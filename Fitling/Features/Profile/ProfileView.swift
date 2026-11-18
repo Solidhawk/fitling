@@ -32,6 +32,8 @@ struct ProfileView: View {
                     // fields keep their square corners.
                     VStack(alignment: .leading, spacing: Spacing.m) {
                         TargetsComposition(targets: viewModel.profile.targets)
+                            // Section headers sit one margin further in than rows; line the fields up with the list.
+                            .padding(.horizontal, -Spacing.l)
                         if viewModel.profile.targetsAreManual {
                             Text("profile.targets.manual")
                                 .font(.footnote)
