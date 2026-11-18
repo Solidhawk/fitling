@@ -94,6 +94,31 @@ import FitlingCore
         #expect(try context.fetch(FetchDescriptor<UserProfile>()).count == 1)
     }
 
+    @Test func birthDateBefore1900Blocks() {
+        let viewModel = makeViewModel()
+        advance(viewModel, to: .birthDate)
+        viewModel.birthDate = BirthDateCalendar.date(from: "1899-12-31")!
+        #expect(viewModel.canContinue == false)
+        #expect(viewModel.bodyProfile == nil)
+    }
+
+    @Test func returnToOnlyGoesBack() {
+        let viewModel = makeViewModel()
+        advance(viewModel, to: .sex)
+        viewModel.returnTo(.goal)
+        #expect(viewModel.step == .sex)
+        viewModel.returnTo(.consent)
+        #expect(viewModel.step == .consent)
+    }
+
+    @Test func canContinueIsPerStep() {
+        let viewModel = makeViewModel()
+        advance(viewModel, to: .sex)
+        viewModel.sex = nil
+        #expect(viewModel.canContinue(at: .consent))
+        #expect(viewModel.canContinue(at: .sex) == false)
+    }
+
     @Test func backReturnsToPreviousStep() {
         let viewModel = makeViewModel()
         advance(viewModel, to: .sex)

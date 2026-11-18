@@ -78,6 +78,13 @@ import Testing
         #expect(isAdult(birthDate: born, on: date(2026, 3, 1), calendar: calendar))
     }
 
+    @Test func validBirthDateNeedsAdultAndNotBefore1900() {
+        #expect(isValidBirthDate(date(1899, 12, 31), on: today, calendar: calendar) == false)
+        #expect(isValidBirthDate(date(1900, 1, 1), on: today, calendar: calendar))
+        #expect(isValidBirthDate(date(2008, 11, 18), on: today, calendar: calendar))
+        #expect(isValidBirthDate(date(2008, 11, 19), on: today, calendar: calendar) == false)
+    }
+
     @Test func extremesStayWithinLimits() {
         for kg in [30.0, 350.0] {
             for cm in [100.0, 250.0] {

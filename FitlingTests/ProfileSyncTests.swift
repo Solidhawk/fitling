@@ -4,6 +4,11 @@ import Testing
 import FitlingCore
 @testable import Fitling
 
+private actor OnlineFlag {
+    private(set) var isOn = true
+    func set(_ value: Bool) { isOn = value }
+}
+
 private actor CallCounter {
     private(set) var count = 0
     func increment() { count += 1 }
@@ -126,6 +131,20 @@ private actor CallCounter {
         #expect(local.needsPush)
         #expect(sync.lastRejection != nil)
         #expect(await counter.count == 1)
+    }
+
+    @Test func rejectionIsSurfacedAndClearedAfterSuccess() async throws {
+        let local = makeLocal(updatedAt: .init(timeIntervalSince1970: 1_800_000_100))
+        let rejecting = OnlineFlag()
+        let sync = makeSync(upsert: { _ in
+            if await rejecting.isOn { throw NSError(domain: "postgrest", code: 23514) }
+        })
+        await #expect(throws: SyncError.self) { try await sync.push(userID: userID) }
+        #expect(sync.problemKey == "profile.sync.rejected")
+        await rejecting.set(false)
+        local.updatedAt = Date(timeIntervalSince1970: 1_800_000_200)
+        try await sync.push(userID: userID)
+        #expect(sync.problemKey == nil)
     }
 
     @Test func pushSkipsWhenNothingPending() async throws {

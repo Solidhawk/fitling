@@ -4,6 +4,11 @@ import Testing
 import FitlingCore
 @testable import Fitling
 
+private actor OnlineSwitch {
+    private(set) var isOnline = true
+    func set(_ value: Bool) { isOnline = value }
+}
+
 private actor CallCounter {
     private(set) var count = 0
     func increment() { count += 1 }
@@ -51,7 +56,40 @@ struct FlowFixture {
     let fixture: FlowFixture
     init() throws { fixture = try FlowFixture() }
 
-    @Test(.timeLimit(.minutes(1))) func signedOutShowsWelcome() async {
+    @Test func signedOutWipesLocalData() async {
+        fixture.insertProfile()
+        let sync = fixture.sync()
+        let root = RootViewModel(auth: FakeAuthProvider(state: .signedOut), sync: sync)
+        await root.refresh()
+        #expect(sync.localProfile(userID: fixture.userID) == nil)
+    }
+
+    @Test func onboardingSurvivesFailedPull() async {
+        let online = OnlineSwitch()
+        let auth = FakeAuthProvider(state: .signedIn(userID: fixture.userID, usesApple: false))
+        let sync = fixture.sync(fetch: { _ in
+            if await online.isOnline { return nil }
+            throw URLError(.notConnectedToInternet)
+        })
+        let root = RootViewModel(auth: auth, sync: sync)
+        await root.refresh()
+        #expect(root.screen == .onboarding(fixture.userID))
+        await online.set(false)
+        await root.refresh()
+        #expect(root.screen == .onboarding(fixture.userID))
+    }
+
+    @Test func underageDeletionClosesWhenSignedOut() async {
+        let auth = FakeAuthProvider(state: .signedIn(userID: fixture.userID, usesApple: false))
+        let root = RootViewModel(auth: auth, sync: fixture.sync())
+        root.requestUnderageDeletion(userID: fixture.userID)
+        #expect(root.underageDeletion?.id == fixture.userID)
+        auth.state = .signedOut
+        await root.refresh()
+        #expect(root.underageDeletion == nil)
+    }
+
+    @Test func signedOutShowsWelcome() async {
         let root = RootViewModel(auth: FakeAuthProvider(state: .signedOut), sync: fixture.sync())
         await root.refresh()
         #expect(root.screen == .welcome)
@@ -240,7 +278,7 @@ struct FlowFixture {
         #expect(auth.lastAppleAuthorizationCode == .some(nil))
     }
 
-    @Test func deleteAccountDoubleTapCallsOnce() async {
+    @Test(.timeLimit(.minutes(1))) func deleteAccountDoubleTapCallsOnce() async {
         let auth = FakeAuthProvider(state: .signedIn(userID: fixture.userID, usesApple: false))
         let viewModel = AccountViewModel(auth: auth, sync: fixture.sync(), userID: fixture.userID, usesApple: false)
         await expectSingleCall("deleteAccount", on: auth) { await viewModel.deleteAccount(appleAuthorizationCode: nil) }
@@ -252,6 +290,16 @@ struct FlowFixture {
         let sync = fixture.sync()
         let viewModel = AccountViewModel(auth: auth, sync: sync, userID: fixture.userID, usesApple: false)
         await viewModel.deleteAccount(appleAuthorizationCode: nil)
+        #expect(sync.localProfile(userID: fixture.userID) == nil)
+    }
+
+    @Test func offlineSignOutAfterClearingSessionStillWipes() async {
+        fixture.insertProfile(needsPush: true)
+        let auth = FakeAuthProvider(state: .signedIn(userID: fixture.userID, usesApple: false))
+        auth.signOutFailsAfterClearingSession = true
+        let sync = fixture.sync(upsert: { _ in throw URLError(.notConnectedToInternet) })
+        let viewModel = AccountViewModel(auth: auth, sync: sync, userID: fixture.userID, usesApple: false)
+        #expect(await viewModel.signOut(force: true) == .signedOut)
         #expect(sync.localProfile(userID: fixture.userID) == nil)
     }
 

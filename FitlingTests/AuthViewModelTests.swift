@@ -19,7 +19,7 @@ import Testing
         #expect(auth.state == .awaitingEmailVerification(email: "a@example.test"))
     }
 
-    @Test(.timeLimit(.minutes(1))) func invalidCredentialsShowsMessage() async {
+    @Test func invalidCredentialsShowsMessage() async {
         let auth = FakeAuthProvider()
         auth.nextError["signIn"] = .invalidCredentials
         let viewModel = makeViewModel(.signIn, auth: auth)
@@ -52,13 +52,13 @@ import Testing
 
 @MainActor
 @Suite struct WelcomeViewModelTests {
-    @Test func googleCallsAuthOnce() async {
+    @Test(.timeLimit(.minutes(1))) func googleCallsAuthOnce() async {
         let auth = FakeAuthProvider()
         let viewModel = WelcomeViewModel(auth: auth)
         await expectSingleCall("signInWithGoogle", on: auth) { await viewModel.signInWithGoogle() }
     }
 
-    @Test(.timeLimit(.minutes(1))) func cancelledGoogleShowsNothing() async {
+    @Test func cancelledGoogleShowsNothing() async {
         let auth = FakeAuthProvider()
         auth.nextError["signInWithGoogle"] = .cancelled
         let viewModel = WelcomeViewModel(auth: auth)
@@ -115,7 +115,7 @@ import Testing
         #expect(viewModel.messageKey == "error.network")
     }
 
-    @Test func doubleTapSendsOnce() async {
+    @Test(.timeLimit(.minutes(1))) func doubleTapSendsOnce() async {
         let auth = FakeAuthProvider()
         let viewModel = makeViewModel(auth)
         await expectSingleCall("requestPasswordReset", on: auth) { await viewModel.submit() }
@@ -124,7 +124,7 @@ import Testing
 
 @MainActor
 @Suite struct ResetPasswordViewModelTests {
-    @Test(.timeLimit(.minutes(1))) func linkFromAnotherDeviceIsExplained() async {
+    @Test func linkFromAnotherDeviceIsExplained() async {
         let auth = FakeAuthProvider()
         auth.nextError["updatePassword"] = .invalidOrForeignLink
         let viewModel = ResetPasswordViewModel(auth: auth)
@@ -144,7 +144,7 @@ import Testing
 
 @MainActor
 @Suite struct VerifyEmailViewModelTests {
-    @Test func resendOnce() async {
+    @Test(.timeLimit(.minutes(1))) func resendOnce() async {
         let auth = FakeAuthProvider(state: .awaitingEmailVerification(email: "a@example.test"))
         let viewModel = VerifyEmailViewModel(auth: auth, email: "a@example.test")
         await expectSingleCall("resendVerification", on: auth) { await viewModel.resend() }
