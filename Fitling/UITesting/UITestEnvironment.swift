@@ -3,6 +3,7 @@ import Foundation
 
 /// Launch arguments for the UI test: the simulator in CI cannot sign in for real, so the app runs
 /// on `FakeAuthProvider` and an in-memory store. Never compiled into a release build.
+@MainActor
 enum UITestEnvironment {
     static func makeIfRequested(arguments: [String] = ProcessInfo.processInfo.arguments) throws -> AppEnvironment? {
         let state: AuthState
