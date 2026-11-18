@@ -22,19 +22,24 @@ create extension if not exists pg_trgm with schema extensions;
 
 -- Laatste wijziging wint op updated_at; een oudere update wordt genegeerd.
 -- synced_at wordt altijd door de server gezet, wat de client ook meestuurt.
+-- Een updated_at uit de toekomst wordt teruggezet naar nu: een toestel waarvan de klok
+-- voorloopt, zou anders elke latere wijziging van een ander toestel blijven overschrijven.
 create function private.apply_sync_rules()
 returns trigger
 language plpgsql
 set search_path = ''
-as $$
+as $
 begin
+  if new.updated_at > now() + interval '5 minutes' then
+    new.updated_at := now();
+  end if;
   if tg_op = 'UPDATE' and new.updated_at < old.updated_at then
     return null;
   end if;
   new.synced_at := now();
   return new;
 end;
-$$;
+$;
 
 -- ---------------------------------------------------------------------------------------------
 -- Fase 1: profiel en doelen

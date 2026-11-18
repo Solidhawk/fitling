@@ -57,14 +57,29 @@ select is_empty($$
   where id = '30000000-0000-0000-0000-000000000001' returning id
 $$, 'een update met een oudere updated_at wordt genegeerd');
 
-select is_empty($$
+select is_empty($
   delete from public.food_entries returning id
-$$, 'een rij echt verwijderen kan niet; verwijderen is deleted_at zetten');
+$, 'een rij echt verwijderen kan niet; verwijderen is deleted_at zetten');
 
-select lives_ok($$
-  update public.food_entries set deleted_at = now(), updated_at = '2026-11-18 13:00:00+00'
+select lives_ok($
+  insert into public.water_entries (id, user_id, consumed_on, amount_ml, updated_at)
+  values ('50000000-0000-0000-0000-000000000001', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '2026-11-18', 250, now() + interval '1 year')
+$, 'een rij met een klok die een jaar voorloopt, wordt aangenomen');
+select is(
+  (select updated_at from public.water_entries where id = '50000000-0000-0000-0000-000000000001'),
+  now(),
+  'maar updated_at wordt teruggezet naar de tijd van de server'
+);
+
+select lives_ok($
+  update public.food_entries set deleted_at = now(), updated_at = '2026-11-18 13:00:00+00', synced_at = '2000-01-01 00:00:00+00'
   where id = '30000000-0000-0000-0000-000000000001'
-$$, 'A kan een eigen rij als verwijderd markeren');
+$, 'A kan een eigen rij als verwijderd markeren');
+select is(
+  (select synced_at from public.food_entries where id = '30000000-0000-0000-0000-000000000001'),
+  now(),
+  'ook bij een update zet de server synced_at'
+);
 
 select is((select count(*) from public.products), 1::bigint, 'A ziet het gedeelde product');
 
