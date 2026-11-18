@@ -31,6 +31,13 @@ public func isAdult(birthDate: Date, on date: Date, calendar: Calendar) -> Bool 
     age(birthDate: birthDate, on: date, calendar: calendar) >= Limits.minimumAge
 }
 
+/// Adult and not before `Limits.earliestBirthDate`: the same rule as the `birth_date` check in Postgres,
+/// so a profile the app accepts can always be pushed.
+public func isValidBirthDate(_ birthDate: Date, on date: Date, calendar: Calendar) -> Bool {
+    guard let earliest = calendar.date(from: Limits.earliestBirthDate) else { return false }
+    return birthDate >= earliest && isAdult(birthDate: birthDate, on: date, calendar: calendar)
+}
+
 public func safeMinimumKcal(for sex: Sex) -> Int {
     sex == .male ? 1500 : 1200
 }

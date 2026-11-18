@@ -52,10 +52,19 @@ final class OnboardingViewModel {
         !isAdult(birthDate: birthDate, on: now(), calendar: BirthDateCalendar.calendar)
     }
 
+    /// The earliest date the birth-date picker offers; the database rejects anything before it.
+    var earliestBirthDate: Date {
+        BirthDateCalendar.calendar.date(from: Limits.earliestBirthDate) ?? .distantPast
+    }
+
     var canContinue: Bool {
+        canContinue(at: step)
+    }
+
+    func canContinue(at step: Step) -> Bool {
         switch step {
         case .consent: consentGiven
-        case .birthDate: !isUnderage
+        case .birthDate: isValidBirthDate(birthDate, on: now(), calendar: BirthDateCalendar.calendar)
         case .sex: sex != nil
         case .height: heightCm.map { Limits.heightCm.contains($0) } ?? false
         case .weight: weightKg.map { Limits.weightKg.contains($0) } ?? false
@@ -67,7 +76,8 @@ final class OnboardingViewModel {
 
     var bodyProfile: BodyProfile? {
         guard let sex, let heightCm, let weightKg, let activityLevel, let goal,
-              Limits.heightCm.contains(heightCm), Limits.weightKg.contains(weightKg), !isUnderage else { return nil }
+              Limits.heightCm.contains(heightCm), Limits.weightKg.contains(weightKg),
+              isValidBirthDate(birthDate, on: now(), calendar: BirthDateCalendar.calendar) else { return nil }
         return BodyProfile(
             birthDate: BirthDateCalendar.calendar.startOfDay(for: birthDate),
             sex: sex,
@@ -87,9 +97,9 @@ final class OnboardingViewModel {
         step = following
     }
 
-    func back() {
-        guard let previous = Step(rawValue: step.rawValue - 1) else { return }
-        step = previous
+    /// Follows the navigation stack back (system back button or edge swipe); never jumps forward.
+    func returnTo(_ earlier: Step) {
+        if earlier.rawValue < step.rawValue { step = earlier }
     }
 
     enum FinishError: Error {

@@ -16,15 +16,15 @@ struct ProfileView: View {
         NavigationStack {
             List {
                 Section {
-                    LabeledContent("profile.bmr") { Text(energy(viewModel.calculation.bmr)) }
-                    LabeledContent("profile.tdee") { Text(energy(viewModel.calculation.tdee)) }
-                    LabeledContent("profile.activityFactor") {
+                    value("profile.bmr") { Text(energy(viewModel.calculation.bmr)) }
+                    value("profile.tdee") { Text(energy(viewModel.calculation.tdee)) }
+                    value("profile.activityFactor") {
                         Text(viewModel.profile.bodyProfile.activityLevel.multiplier, format: .number.precision(.fractionLength(0...3)))
                     }
-                    LabeledContent("profile.goalFactor") {
+                    value("profile.goalFactor") {
                         Text(viewModel.profile.bodyProfile.goal.kcalFactor, format: .percent)
                     }
-                    LabeledContent("profile.proteinPerKg") {
+                    value("profile.proteinPerKg") {
                         Text("profile.proteinPerKg.value \(viewModel.profile.bodyProfile.goal.proteinPerKg, format: .number.precision(.fractionLength(1)))")
                     }
                 } header: {
@@ -34,6 +34,11 @@ struct ProfileView: View {
                         TargetsComposition(targets: viewModel.profile.targets)
                             // Section headers sit one margin further in than rows; line the fields up with the list.
                             .padding(.horizontal, -Spacing.l)
+                        if let problem = viewModel.syncProblemKey {
+                            Label(LocalizedStringKey(problem), systemImage: "exclamationmark.arrow.triangle.2.circlepath")
+                                .font(.footnote)
+                                .foregroundStyle(Color.ink)
+                        }
                         if viewModel.profile.targetsAreManual {
                             Text("profile.targets.manual")
                                 .font(.footnote)
@@ -48,23 +53,45 @@ struct ProfileView: View {
                             .padding(.top, Spacing.s)
                     }
                     .textCase(nil)
+                } footer: {
+                    Text("profile.rounding")
                 }
+                .listRowBackground(Color.paper)
 
                 Section {
-                    Button("profile.edit") { editingProfile = true }
-                    Button("profile.editTargets") { editingTargets = true }
                     NavigationLink("account.title") {
                         AccountView(viewModel: account)
                     }
                 }
+                .listRowBackground(Color.paper)
             }
+            .paperGround()
             .navigationTitle("profile.title")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu("profile.adjust") {
+                        Button("profile.edit") { editingProfile = true }
+                        Button("profile.editTargets") { editingTargets = true }
+                    }
+                    .accessibilityIdentifier("profile.adjust")
+                }
+            }
             .sheet(isPresented: $editingProfile) {
                 EditProfileView(viewModel: viewModel)
             }
             .sheet(isPresented: $editingTargets) {
                 EditTargetsView(viewModel: viewModel)
             }
+        }
+    }
+
+    /// Numbers are part of the composition's language: heavy, tabular, in ink.
+    private func value(_ label: LocalizedStringKey, _ content: () -> Text) -> some View {
+        LabeledContent(label) {
+            content()
+                .fontWeight(.semibold)
+                .monospacedDigit()
+                .foregroundStyle(Color.ink)
         }
     }
 

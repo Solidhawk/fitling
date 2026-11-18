@@ -23,11 +23,23 @@ final class OnboardingFlowTests: XCTestCase {
         add(attachment)
     }
 
+    /// Earlier steps stay in the navigation stack, so pick the Verder button that is on screen.
+    @MainActor
+    private func visibleContinue(_ app: XCUIApplication) -> XCUIElement? {
+        let deadline = Date().addingTimeInterval(5)
+        repeat {
+            if let button = app.buttons.matching(identifier: "onboarding.continue").allElementsBoundByIndex.last(where: { $0.isHittable }) {
+                return button
+            }
+        } while Date() < deadline
+        return nil
+    }
+
     @MainActor
     private func tapContinue(_ app: XCUIApplication) {
-        let button = app.buttons["onboarding.continue"]
-        XCTAssertTrue(button.waitForExistence(timeout: 5))
-        XCTAssertTrue(button.isHittable, "Verder is not reachable")
+        guard let button = visibleContinue(app) else {
+            return XCTFail("Verder is not reachable")
+        }
         button.tap()
     }
 
@@ -132,6 +144,6 @@ final class OnboardingFlowTests: XCTestCase {
         tapContinue(app)
         keepScreenshot(app, named: "15-grootste-tekst-geboortedatum")
         tapContinue(app)
-        XCTAssertTrue(app.buttons["onboarding.continue"].isHittable)
+        XCTAssertNotNil(visibleContinue(app), "Verder is not reachable")
     }
 }

@@ -18,6 +18,8 @@ final class RootViewModel {
     private(set) var screen: Screen = .loading
     var showsPasswordReset = false
     private(set) var linkMessageKey: String?
+    /// The account an under-18 user is deleting from onboarding; nil closes the sheet.
+    private(set) var underageDeletion: AccountDeletion?
     let auth: any AuthProviding
     let sync: ProfileSync
     private var pendingURL: URL?
@@ -33,10 +35,15 @@ final class RootViewModel {
             await open(url)
             return
         }
+        if case .signedIn = auth.state {} else {
+            underageDeletion = nil
+        }
         switch auth.state {
         case .loading:
             screen = .loading
         case .signedOut:
+            // Health data belongs to the signed-in user only, whatever ended the session.
+            try? sync.deleteLocalData()
             screen = .welcome
         case let .awaitingEmailVerification(email):
             screen = .verifyEmail(email)
@@ -58,7 +65,8 @@ final class RootViewModel {
             let outcome = try await sync.pull(userID: userID)
             screen = outcome == .remoteMissing ? .onboarding(userID) : .home(userID)
         } catch {
-            screen = .needsConnection
+            // Mid-onboarding the server already confirmed there is no profile; keep the user's answers.
+            if screen != .onboarding(userID) { screen = .needsConnection }
         }
     }
 
@@ -76,6 +84,14 @@ final class RootViewModel {
             linkMessageKey = error.messageKey
         }
         await refresh()
+    }
+
+    func requestUnderageDeletion(userID: UUID) {
+        underageDeletion = AccountDeletion(id: userID)
+    }
+
+    func dismissUnderageDeletion() {
+        underageDeletion = nil
     }
 
     func clearLinkMessage() {

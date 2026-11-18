@@ -25,6 +25,7 @@ struct AccountView: View {
                 }
             }
         }
+        .paperGround()
         .navigationTitle("account.title")
         .alert("account.unsynced.title", isPresented: $showsUnsyncedWarning) {
             Button("account.unsynced.force", role: .destructive) {
@@ -71,6 +72,7 @@ struct DeleteAccountView: View {
                 if let key = viewModel.messageKey { Text(LocalizedStringKey(key)) }
             }
         }
+        .paperGround()
         .navigationTitle("account.delete")
         .confirmationDialog("account.delete", isPresented: $confirming, titleVisibility: .visible) {
             Button("account.delete.confirm", role: .destructive) {

@@ -15,6 +15,8 @@ final class FakeAuthProvider: AuthProviding {
     /// When true, every call waits until `releaseHeldCalls()`, like a slow network request. Tests use
     /// it to tap a second time while the first request is certainly still in flight.
     var holdsCalls = false
+    /// Mimics supabase-swift offline: the session is gone first, then the request throws.
+    var signOutFailsAfterClearingSession = false
     private var heldCalls: [CheckedContinuation<Void, Never>] = []
 
     init(state: AuthState = .signedOut) {
@@ -84,6 +86,11 @@ final class FakeAuthProvider: AuthProviding {
     }
 
     func signOut() async throws(AuthFailure) {
+        if signOutFailsAfterClearingSession {
+            calls["signOut", default: 0] += 1
+            state = .signedOut
+            throw .network
+        }
         try await record("signOut")
         state = .signedOut
     }

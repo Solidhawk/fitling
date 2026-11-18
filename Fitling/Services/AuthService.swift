@@ -143,7 +143,11 @@ final class AuthService: AuthProviding {
     }
 
     func signOut() async throws(AuthFailure) {
-        try await perform { try await client.auth.signOut(scope: .local) }
+        do throws(AuthFailure) {
+            try await perform { try await client.auth.signOut(scope: .local) }
+        } catch .network {
+            // The library removed the local session before the request failed; the user is signed out.
+        }
         state = .signedOut
     }
 

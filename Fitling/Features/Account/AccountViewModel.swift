@@ -39,8 +39,11 @@ final class AccountViewModel {
         do throws(AuthFailure) {
             try await auth.signOut()
         } catch {
-            messageKey = error.messageKey
-            return .failed
+            // Only a sign-out that left the session in place is a failure.
+            if auth.state != .signedOut {
+                messageKey = error.messageKey
+                return .failed
+            }
         }
         try? sync.deleteLocalData()
         return .signedOut

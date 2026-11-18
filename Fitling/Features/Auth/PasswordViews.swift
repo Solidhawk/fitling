@@ -44,6 +44,7 @@ struct ForgotPasswordView: View {
                 }
             }
         }
+        .paperGround()
         .navigationTitle("auth.forgot.title")
     }
 }
@@ -85,6 +86,7 @@ struct ResetPasswordView: View {
                     }
                 }
             }
+            .paperGround()
             .navigationTitle("auth.reset.title")
             .onChange(of: viewModel.isDone) { _, isDone in
                 if isDone { dismiss() }
@@ -117,10 +119,9 @@ struct VerifyEmailView: View {
                 Button {
                     Task { await viewModel.resend() }
                 } label: {
-                    Text("auth.verify.resend").frame(maxWidth: .infinity)
+                    Text("auth.verify.resend")
                 }
-                .buttonStyle(.bordered)
-                .controlSize(.large)
+                .buttonStyle(SecondaryButtonStyle())
                 .disabled(viewModel.isWorking)
 
                 Button("auth.verify.otherAddress") {

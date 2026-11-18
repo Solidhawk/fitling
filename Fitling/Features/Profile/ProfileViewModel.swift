@@ -30,6 +30,10 @@ final class ProfileViewModel {
         calculateEnergy(for: profile.bodyProfile, on: now(), calendar: BirthDateCalendar.calendar)
     }
 
+    var syncProblemKey: String? {
+        sync.problemKey
+    }
+
     var isBelowSafeMinimum: Bool {
         profile.kcalTarget < safeMinimumKcal(for: profile.bodyProfile.sex)
     }

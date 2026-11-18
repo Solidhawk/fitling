@@ -138,19 +138,19 @@
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Je bent offline en sommige wijzigingen staan nog alleen op deze iPhone. Als je nu uitlogt, gaan ze verloren."
+            "value": "Sommige wijzigingen staan nog alleen op deze iPhone. Als je nu uitlogt, gaan ze verloren."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "You’re offline and some changes are only on this iPhone. If you sign out now, they’ll be lost."
+            "value": "Some changes are only on this iPhone. If you sign out now, they’ll be lost."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Du bist offline und einige Änderungen sind nur auf diesem iPhone. Wenn du dich jetzt abmeldest, gehen sie verloren."
+            "value": "Einige Änderungen sind nur auf diesem iPhone. Wenn du dich jetzt abmeldest, gehen sie verloren."
           }
         }
       }
@@ -1387,28 +1387,6 @@
         }
       }
     },
-    "onboarding.back": {
-      "localizations": {
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Terug"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Back"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zurück"
-          }
-        }
-      }
-    },
     "onboarding.birthDate.footer": {
       "localizations": {
         "nl": {
@@ -1805,6 +1783,28 @@
         }
       }
     },
+    "onboarding.progress %lld %lld": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stap %lld van %lld"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Step %lld of %lld"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schritt %lld von %lld"
+          }
+        }
+      }
+    },
     "onboarding.result.footer": {
       "localizations": {
         "nl": {
@@ -2069,6 +2069,28 @@
         }
       }
     },
+    "profile.adjust": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aanpassen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adjust"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anpassen"
+          }
+        }
+      }
+    },
     "profile.bmr": {
       "localizations": {
         "nl": {
@@ -2311,6 +2333,28 @@
         }
       }
     },
+    "profile.rounding": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je dagdoel is je totale verbruik × de doelfactor, afgerond op 10 kcal."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your daily target is your total expenditure × the goal factor, rounded to 10 kcal."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dein Tagesziel ist dein Gesamtumsatz × der Zielfaktor, gerundet auf 10 kcal."
+          }
+        }
+      }
+    },
     "profile.save": {
       "localizations": {
         "nl": {
@@ -2329,6 +2373,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Speichern"
+          }
+        }
+      }
+    },
+    "profile.sync.rejected": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je laatste wijziging is niet op de server opgeslagen. Hij staat veilig op deze iPhone; we proberen het opnieuw bij de volgende wijziging."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your last change wasn’t saved on the server. It’s safe on this iPhone; we’ll try again with your next change."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deine letzte Änderung wurde nicht auf dem Server gespeichert. Sie ist auf diesem iPhone sicher; wir versuchen es bei der nächsten Änderung erneut."
           }
         }
       }
@@ -2624,7 +2690,7 @@
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doorgaan met e-mail"
+            "value": "Ga door met e-mail"
           }
         },
         "en": {
@@ -2636,7 +2702,7 @@
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Weiter mit E-Mail"
+            "value": "Mit E-Mail fortfahren"
           }
         }
       }
@@ -2646,7 +2712,7 @@
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doorgaan met Google"
+            "value": "Ga door met Google"
           }
         },
         "en": {
@@ -2658,7 +2724,7 @@
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Weiter mit Google"
+            "value": "Mit Google fortfahren"
           }
         }
       }

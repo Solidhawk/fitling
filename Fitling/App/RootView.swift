@@ -4,7 +4,6 @@ import SwiftUI
 struct RootView: View {
     @State private var viewModel: RootViewModel
     @State private var network = NetworkMonitor()
-    @State private var deletingUnderageAccount: AccountDeletion?
     @Environment(\.scenePhase) private var scenePhase
     private let context: ModelContext
 
@@ -28,10 +27,8 @@ struct RootView: View {
             .sheet(isPresented: $viewModel.showsPasswordReset) {
                 ResetPasswordView(auth: viewModel.auth)
             }
-            .sheet(item: $deletingUnderageAccount) { deletion in
-                NavigationStack {
-                    DeleteAccountView(viewModel: accountViewModel(userID: deletion.id))
-                }
+            .sheet(item: Binding(get: { viewModel.underageDeletion }, set: { if $0 == nil { viewModel.dismissUnderageDeletion() } })) { deletion in
+                UnderageDeletionSheet(viewModel: accountViewModel(userID: deletion.id))
             }
             .alert(
                 "auth.link.title",
@@ -64,7 +61,7 @@ struct RootView: View {
             OnboardingFlowView(
                 viewModel: OnboardingViewModel(userID: userID, context: context, locale: .current),
                 onFinished: { profile in await viewModel.onboardingFinished(profile) },
-                onDeleteAccount: { deletingUnderageAccount = AccountDeletion(id: userID) }
+                onDeleteAccount: { viewModel.requestUnderageDeletion(userID: userID) }
             )
             .id(userID)
         case let .home(userID):
@@ -103,6 +100,28 @@ struct NeedsConnectionView: View {
 }
 
 /// The account an under-18 user is about to delete from onboarding.
-struct AccountDeletion: Identifiable {
+struct AccountDeletion: Identifiable, Equatable {
     let id: UUID
+}
+
+/// Keeps one AccountViewModel for the whole sheet, so a re-render of RootView cannot reset it
+/// mid-request. RootViewModel closes the sheet once the account is gone.
+struct UnderageDeletionSheet: View {
+    @State private var viewModel: AccountViewModel
+    @Environment(\.dismiss) private var dismiss
+
+    init(viewModel: AccountViewModel) {
+        _viewModel = State(initialValue: viewModel)
+    }
+
+    var body: some View {
+        NavigationStack {
+            DeleteAccountView(viewModel: viewModel)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("common.cancel") { dismiss() }
+                    }
+                }
+        }
+    }
 }

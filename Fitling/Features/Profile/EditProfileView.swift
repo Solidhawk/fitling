@@ -35,7 +35,7 @@ struct EditProfileView: View {
         let weightKg = (Measurement(value: weight, unit: massUnit).converted(to: .kilograms).value * 10).rounded() / 10
         let calendar = BirthDateCalendar.calendar
         guard Limits.heightCm.contains(heightCm), Limits.weightKg.contains(weightKg),
-              isAdult(birthDate: birthDate, on: Date(), calendar: calendar) else { return nil }
+              isValidBirthDate(birthDate, on: Date(), calendar: calendar) else { return nil }
         return BodyProfile(
             birthDate: calendar.startOfDay(for: birthDate),
             sex: sex, heightCm: heightCm, weightKg: weightKg, activityLevel: activityLevel, goal: goal
@@ -46,7 +46,7 @@ struct EditProfileView: View {
         NavigationStack {
             Form {
                 Section {
-                    DatePicker("onboarding.birthDate.label", selection: $birthDate, in: ...Date(), displayedComponents: .date)
+                    DatePicker("onboarding.birthDate.label", selection: $birthDate, in: (BirthDateCalendar.calendar.date(from: Limits.earliestBirthDate) ?? .distantPast)...Date(), displayedComponents: .date)
                         .environment(\.calendar, BirthDateCalendar.calendar)
                         .environment(\.timeZone, BirthDateCalendar.calendar.timeZone)
                     Picker("onboarding.sex.title", selection: $sex) {
@@ -70,6 +70,7 @@ struct EditProfileView: View {
                     if edited == nil { Text("profile.profileInvalid") }
                 }
             }
+            .paperGround()
             .navigationTitle("profile.edit")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -145,6 +146,7 @@ struct EditTargetsView: View {
                     }
                 }
             }
+            .paperGround()
             .navigationTitle("profile.editTargets")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

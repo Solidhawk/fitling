@@ -59,6 +59,7 @@ struct EmailAuthView: View {
                 }
             }
         }
+        .paperGround()
         .navigationTitle(titleKey)
     }
 }

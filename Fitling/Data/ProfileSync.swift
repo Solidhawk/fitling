@@ -32,6 +32,11 @@ final class ProfileSync {
     private let upsertRemote: @Sendable (ProfileRecord) async throws -> Void
     private(set) var lastRejection: String?
 
+    /// String Catalog key for a sync problem the user should see; nil when the last push went through.
+    var problemKey: String? {
+        lastRejection == nil ? nil : "profile.sync.rejected"
+    }
+
     init(
         context: ModelContext,
         fetchRemote: @escaping @Sendable (UUID) async throws -> ProfileRecord?,

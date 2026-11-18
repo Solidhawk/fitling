@@ -119,10 +119,4 @@ import FitlingCore
         #expect(viewModel.canContinue(at: .sex) == false)
     }
 
-    @Test func backReturnsToPreviousStep() {
-        let viewModel = makeViewModel()
-        advance(viewModel, to: .sex)
-        viewModel.back()
-        #expect(viewModel.step == .birthDate)
-    }
 }

@@ -2,7 +2,11 @@ import SwiftUI
 import FitlingCore
 
 struct OnboardingFlowView: View {
+    typealias Step = OnboardingViewModel.Step
+
     @State private var viewModel: OnboardingViewModel
+    /// Every step after consent is pushed, so the system back button and edge swipe work.
+    @State private var path: [Step] = []
     @State private var feet: Double?
     @State private var inches: Double?
     @State private var saveFailed = false
@@ -20,27 +24,32 @@ struct OnboardingFlowView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            Form { content }
-                // On the form only: on the whole view it would replace the identifier of the button below.
-                .accessibilityIdentifier("onboarding.step.\(String(describing: viewModel.step))")
-                .navigationTitle(title)
-                .toolbar {
-                    if viewModel.step != .consent {
-                        ToolbarItem(placement: .topBarLeading) {
-                            Button("onboarding.back") { viewModel.back() }
-                        }
-                    }
+        NavigationStack(path: $path) {
+            screen(for: .consent)
+                .navigationDestination(for: Step.self) { step in
+                    screen(for: step)
                 }
-                .safeAreaInset(edge: .bottom) { bottomBar }
-                .alert("error.server", isPresented: $saveFailed) {
-                    Button("common.ok", role: .cancel) {}
-                }
+        }
+        .onChange(of: path) { _, newPath in
+            viewModel.returnTo(newPath.last ?? .consent)
+        }
+        .alert("error.server", isPresented: $saveFailed) {
+            Button("common.ok", role: .cancel) {}
         }
     }
 
-    private var title: LocalizedStringKey {
-        switch viewModel.step {
+    private func screen(for step: Step) -> some View {
+        List { content(for: step) }
+            .paperGround()
+            // On the list only: on the whole screen it would replace the identifier of the button below.
+            .accessibilityIdentifier("onboarding.step.\(String(describing: step))")
+            .navigationTitle(title(for: step))
+            .navigationBarTitleDisplayMode(.inline)
+            .safeAreaInset(edge: .bottom) { bottomBar(for: step) }
+    }
+
+    private func title(for step: Step) -> LocalizedStringKey {
+        switch step {
         case .consent: "consent.title"
         case .birthDate: "onboarding.birthDate.title"
         case .sex: "onboarding.sex.title"
@@ -53,26 +62,34 @@ struct OnboardingFlowView: View {
     }
 
     @ViewBuilder
-    private var content: some View {
-        switch viewModel.step {
+    private func content(for step: Step) -> some View {
+        switch step {
         case .consent:
             Section {
                 Text("consent.body")
             }
+            .listRowBackground(Color.paper)
             Section {
                 Toggle("consent.agree", isOn: $viewModel.consentGiven)
                     .accessibilityIdentifier("consent.agree")
             }
+            .listRowBackground(Color.paper)
         case .birthDate:
             Section {
-                DatePicker("onboarding.birthDate.label", selection: $viewModel.birthDate, in: ...Date(), displayedComponents: .date)
-                    .datePickerStyle(.wheel)
-                    .labelsHidden()
-                    .environment(\.calendar, BirthDateCalendar.calendar)
-                    .environment(\.timeZone, BirthDateCalendar.calendar.timeZone)
+                DatePicker(
+                    "onboarding.birthDate.label",
+                    selection: $viewModel.birthDate,
+                    in: viewModel.earliestBirthDate...Date(),
+                    displayedComponents: .date
+                )
+                .datePickerStyle(.wheel)
+                .labelsHidden()
+                .environment(\.calendar, BirthDateCalendar.calendar)
+                .environment(\.timeZone, BirthDateCalendar.calendar.timeZone)
             } footer: {
                 Text("onboarding.birthDate.footer")
             }
+            .listRowBackground(Color.paper)
         case .sex:
             Section {
                 Picker("onboarding.sex.title", selection: $viewModel.sex) {
@@ -85,6 +102,7 @@ struct OnboardingFlowView: View {
             } footer: {
                 Text("onboarding.sex.footer")
             }
+            .listRowBackground(Color.paper)
         case .height:
             Section {
                 if viewModel.usesMetric {
@@ -94,10 +112,17 @@ struct OnboardingFlowView: View {
                     numberRow("onboarding.height.inches", value: inchesBinding, unit: UnitLength.inches.symbol, identifier: "input.inches")
                 }
             }
+            .listRowBackground(Color.paper)
         case .weight:
             Section {
-                numberRow("onboarding.weight.field", value: weight, unit: (viewModel.usesMetric ? UnitMass.kilograms : UnitMass.pounds).symbol, identifier: "input.weight")
+                numberRow(
+                    "onboarding.weight.field",
+                    value: weight,
+                    unit: (viewModel.usesMetric ? UnitMass.kilograms : UnitMass.pounds).symbol,
+                    identifier: "input.weight"
+                )
             }
+            .listRowBackground(Color.paper)
         case .activity:
             Section {
                 Picker("onboarding.activity.title", selection: $viewModel.activityLevel) {
@@ -108,6 +133,7 @@ struct OnboardingFlowView: View {
                 .pickerStyle(.inline)
                 .labelsHidden()
             }
+            .listRowBackground(Color.paper)
         case .goal:
             Section {
                 Picker("onboarding.goal.title", selection: $viewModel.goal) {
@@ -118,6 +144,7 @@ struct OnboardingFlowView: View {
                 .pickerStyle(.inline)
                 .labelsHidden()
             }
+            .listRowBackground(Color.paper)
         case .result:
             if let calculation = viewModel.calculation {
                 Section {
@@ -134,6 +161,7 @@ struct OnboardingFlowView: View {
                         .padding(.horizontal, -Spacing.l)
                         .padding(.bottom, Spacing.s)
                 }
+                .listRowBackground(Color.paper)
             }
         }
     }
@@ -149,6 +177,9 @@ struct OnboardingFlowView: View {
         HStack {
             TextField(label, value: value, format: .number)
                 .keyboardType(.decimalPad)
+                .font(.title3.weight(.semibold))
+                .monospacedDigit()
+                .foregroundStyle(Color.ink)
                 .accessibilityIdentifier(identifier)
             Text(verbatim: unit).foregroundStyle(.secondary)
         }
@@ -181,39 +212,45 @@ struct OnboardingFlowView: View {
         )
     }
 
-    @ViewBuilder
-    private var bottomBar: some View {
-        VStack(spacing: Spacing.s) {
-            if viewModel.step == .birthDate && viewModel.isUnderage {
+    private func bottomBar(for step: Step) -> some View {
+        VStack(spacing: Spacing.m) {
+            OnboardingProgress(current: step)
+            if step == .birthDate && viewModel.isUnderage {
                 Text("onboarding.underage.body")
                     .font(.footnote)
+                    .foregroundStyle(Color.ink)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                Button(role: .destructive) {
+                Button {
                     Task { await onDeleteAccount() }
                 } label: {
-                    Text("onboarding.underage.delete").frame(maxWidth: .infinity)
+                    Text("onboarding.underage.delete")
                 }
-                .buttonStyle(.bordered)
-                .controlSize(.large)
+                .buttonStyle(SecondaryButtonStyle())
             } else {
                 Button {
-                    if viewModel.step == .result {
-                        finish()
-                    } else {
-                        viewModel.next()
-                    }
+                    advance(from: step)
                 } label: {
-                    Text(viewModel.step == .result ? LocalizedStringKey("onboarding.finish") : "onboarding.continue")
-                        .frame(maxWidth: .infinity)
+                    Text(step == .result ? LocalizedStringKey("onboarding.finish") : "onboarding.continue")
                 }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-                .disabled(!viewModel.canContinue)
+                .buttonStyle(PrimaryButtonStyle())
+                .disabled(!viewModel.canContinue(at: step))
                 .accessibilityIdentifier("onboarding.continue")
             }
         }
         .padding(Spacing.l)
-        .background(.bar)
+        .ruledBar()
+    }
+
+    private func advance(from step: Step) {
+        guard viewModel.step == step else { return }
+        if step == .result {
+            finish()
+            return
+        }
+        viewModel.next()
+        if viewModel.step != step {
+            path.append(viewModel.step)
+        }
     }
 
     private func finish() {
@@ -223,6 +260,25 @@ struct OnboardingFlowView: View {
         } catch {
             saveFailed = true
         }
+    }
+}
+
+/// Eight cells drawn in the rule system: done and current steps are ink, the rest paper.
+struct OnboardingProgress: View {
+    let current: OnboardingViewModel.Step
+
+    var body: some View {
+        HStack(spacing: Rule.width) {
+            ForEach(OnboardingViewModel.Step.allCases, id: \.self) { step in
+                Rectangle()
+                    .fill(step.rawValue <= current.rawValue ? Color.ink : Color.paper)
+                    .frame(height: 8)
+            }
+        }
+        .padding(Rule.width)
+        .background(Color.ink)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text("onboarding.progress \(current.rawValue + 1) \(OnboardingViewModel.Step.allCases.count)"))
     }
 }
 

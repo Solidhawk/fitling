@@ -14,14 +14,19 @@ struct WelcomeView: View {
 
     var body: some View {
         NavigationStack {
+            // The composition fills the screen; the sign-in actions sit at the bottom, within thumb reach.
             ScrollView {
-                VStack(alignment: .leading, spacing: Spacing.xl) {
-                    composition
-                    actions
-                }
-                .padding(Spacing.l)
+                composition
+                    .containerRelativeFrame(.vertical) { length, _ in max(300, length - Spacing.l * 2) }
+                    .padding(Spacing.l)
             }
+            .scrollBounceBehavior(.basedOnSize)
             .background(Color.paper)
+            .safeAreaInset(edge: .bottom) {
+                actions
+                    .padding(Spacing.l)
+                    .background(Color.paper)
+            }
         }
     }
 
@@ -91,20 +96,18 @@ struct WelcomeView: View {
             Button {
                 Task { await viewModel.signInWithGoogle() }
             } label: {
-                Text("welcome.google").frame(maxWidth: .infinity)
+                Text("welcome.google")
             }
-            .buttonStyle(.bordered)
-            .controlSize(.large)
+            .buttonStyle(SecondaryButtonStyle())
             .disabled(viewModel.isWorking)
             .accessibilityIdentifier("welcome.google")
 
             NavigationLink {
                 EmailAuthView(auth: auth, mode: .signIn)
             } label: {
-                Text("welcome.email").frame(maxWidth: .infinity)
+                Text("welcome.email")
             }
-            .buttonStyle(.bordered)
-            .controlSize(.large)
+            .buttonStyle(SecondaryButtonStyle())
             .accessibilityIdentifier("welcome.email")
 
             if let key = viewModel.messageKey {
