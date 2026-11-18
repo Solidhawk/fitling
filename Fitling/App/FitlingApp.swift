@@ -5,12 +5,17 @@ import SwiftUI
 struct FitlingApp: App {
     @State private var environment = AppEnvironment.make()
 
+    init() {
+        NavigationBarStyle.apply()
+    }
+
     var body: some Scene {
         WindowGroup {
             switch environment {
             case let .success(environment):
                 RootView(viewModel: environment.root, context: environment.container.mainContext)
                     .modelContainer(environment.container)
+                    .fontDesign(.rounded)
                     #if DEBUG
                     .preferredColorScheme(UITestEnvironment.colorScheme)
                     #endif
@@ -20,6 +25,7 @@ struct FitlingApp: App {
                 } description: {
                     Text("error.configuration.body")
                 }
+                .fontDesign(.rounded)
             }
         }
     }

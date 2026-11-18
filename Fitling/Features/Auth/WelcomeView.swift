@@ -6,6 +6,7 @@ struct WelcomeView: View {
     @State private var viewModel: WelcomeViewModel
     @State private var nonce = ""
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     init(auth: any AuthProviding) {
         self.auth = auth
@@ -14,60 +15,53 @@ struct WelcomeView: View {
 
     var body: some View {
         NavigationStack {
-            // The composition fills the screen; the sign-in actions sit at the bottom, within thumb reach.
+            // The catalog fills the screen; the sign-in actions sit at the bottom, within thumb reach.
             ScrollView {
-                composition
-                    .containerRelativeFrame(.vertical) { length, _ in max(300, length - Spacing.l * 2) }
-                    .padding(Spacing.l)
+                VStack(alignment: .leading, spacing: Spacing.xl) {
+                    VStack(alignment: .leading, spacing: Spacing.s) {
+                        Text("welcome.title")
+                            .font(.largeTitle.weight(.heavy))
+                            .accessibilityAddTraits(.isHeader)
+                        Text("welcome.tagline")
+                            .font(.title3)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .foregroundStyle(Color.ink)
+                    catalog
+                }
+                .padding(Spacing.l)
             }
             .scrollBounceBehavior(.basedOnSize)
-            .background(Color.paper)
+            .background(Color.ground)
             .safeAreaInset(edge: .bottom) {
                 actions
                     .padding(Spacing.l)
-                    .background(Color.paper)
+                    .background(Color.ground)
             }
         }
     }
 
-    /// The colour system introduced as a De Stijl panel: the three fields are the macro colours
-    /// used everywhere else in the app.
-    private var composition: some View {
-        HStack(spacing: Rule.width) {
-            VStack(alignment: .leading, spacing: Spacing.m) {
-                Text("welcome.title")
-                    .font(.largeTitle.weight(.heavy))
-                    .foregroundStyle(Color.ink)
-                Spacer(minLength: Spacing.xl)
-                Text("welcome.tagline")
-                    .font(.title3)
-                    .foregroundStyle(Color.ink)
-                    .fixedSize(horizontal: false, vertical: true)
+    /// The four species as a catalog: who can grow along with you.
+    @ViewBuilder
+    private var catalog: some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            VStack(spacing: Spacing.m) {
+                ForEach(Species.allCases) { species in
+                    FigureCard(species: species)
+                }
             }
-            .padding(Spacing.l)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .background(Color.paper)
-
-            VStack(spacing: Rule.width) {
-                legendField("welcome.legend.protein", fill: .protein, text: .white)
-                legendField("welcome.legend.carbs", fill: .carbs, text: .onCarbs)
-                legendField("welcome.legend.fat", fill: .fat, text: .white)
+        } else {
+            Grid(horizontalSpacing: Spacing.m, verticalSpacing: Spacing.m) {
+                GridRow {
+                    FigureCard(species: .sprout)
+                    FigureCard(species: .ember)
+                }
+                GridRow {
+                    FigureCard(species: .pip)
+                    FigureCard(species: .pebble)
+                }
             }
-            .frame(width: 128)
-            .accessibilityHidden(true)
         }
-        .frame(minHeight: 300)
-        .padding(Rule.width)
-        .background(Color.ink)
-    }
-
-    private func legendField(_ key: LocalizedStringKey, fill: Color, text: Color) -> some View {
-        Text(key)
-            .font(.footnote.weight(.semibold))
-            .foregroundStyle(text)
-            .padding(Spacing.s)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
-            .background(fill)
     }
 
     private var actions: some View {
@@ -90,7 +84,9 @@ struct WelcomeView: View {
                 }
             }
             .signInWithAppleButtonStyle(colorScheme == .dark ? .white : .black)
-            .frame(height: 50)
+            .frame(height: ButtonMetrics.height)
+            // The HIG allows a pill shape, which matches the other buttons.
+            .clipShape(Capsule())
             .accessibilityIdentifier("welcome.apple")
 
             Button {

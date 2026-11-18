@@ -20,22 +20,16 @@ struct ForgotPasswordView: View {
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
             }
+            .listRowBackground(Color.card)
             Section {
-                Button {
+                SubmitButton(title: "auth.forgot.submit", isWorking: viewModel.isWorking) {
                     Task { await viewModel.submit() }
-                } label: {
-                    HStack {
-                        Text("auth.forgot.submit")
-                        if viewModel.isWorking {
-                            Spacer()
-                            ProgressView()
-                        }
-                    }
                 }
                 .disabled(!viewModel.canSubmit)
-
+                .buttonRow()
+            } footer: {
                 if let key = viewModel.messageKey {
-                    Text(LocalizedStringKey(key)).foregroundStyle(.secondary)
+                    Text(LocalizedStringKey(key)).foregroundStyle(Color.ink)
                 }
             }
             Section {
@@ -43,8 +37,9 @@ struct ForgotPasswordView: View {
                     EmailAuthView(auth: auth, mode: .signUp)
                 }
             }
+            .listRowBackground(Color.card)
         }
-        .paperGround()
+        .groundBackground()
         .navigationTitle("auth.forgot.title")
     }
 }
@@ -67,26 +62,20 @@ struct ResetPasswordView: View {
                 } footer: {
                     Text("auth.password.hint")
                 }
+                .listRowBackground(Color.card)
                 Section {
-                    Button {
+                    SubmitButton(title: "auth.reset.submit", isWorking: viewModel.isWorking) {
                         Task { await viewModel.submit() }
-                    } label: {
-                        HStack {
-                            Text("auth.reset.submit")
-                            if viewModel.isWorking {
-                                Spacer()
-                                ProgressView()
-                            }
-                        }
                     }
                     .disabled(!viewModel.canSubmit)
-
+                    .buttonRow()
+                } footer: {
                     if let key = viewModel.messageKey {
-                        Text(LocalizedStringKey(key)).foregroundStyle(.secondary)
+                        Text(LocalizedStringKey(key)).foregroundStyle(Color.ink)
                     }
                 }
             }
-            .paperGround()
+            .groundBackground()
             .navigationTitle("auth.reset.title")
             .onChange(of: viewModel.isDone) { _, isDone in
                 if isDone { dismiss() }
@@ -105,9 +94,13 @@ struct VerifyEmailView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Spacing.l) {
-                Image(systemName: "envelope")
-                    .font(.largeTitle)
-                    .foregroundStyle(Color.ink)
+                // The envelope as a sticker badge, in the same keyline style as the figures.
+                Image(systemName: "envelope.fill")
+                    .font(.title)
+                    .foregroundStyle(Color.onRibbon)
+                    .frame(width: 72, height: 72)
+                    .background(Color.pip, in: Circle())
+                    .overlay(Circle().strokeBorder(Color.white, lineWidth: 3))
                     .accessibilityHidden(true)
                 Text("auth.verify.title")
                     .font(.largeTitle.weight(.heavy))
@@ -136,6 +129,6 @@ struct VerifyEmailView: View {
             }
             .padding(Spacing.l)
         }
-        .background(Color.paper)
+        .background(Color.ground)
     }
 }

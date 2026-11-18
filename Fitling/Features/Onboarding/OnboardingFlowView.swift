@@ -40,7 +40,7 @@ struct OnboardingFlowView: View {
 
     private func screen(for step: Step) -> some View {
         List { content(for: step) }
-            .paperGround()
+            .groundBackground()
             // On the list only: on the whole screen it would replace the identifier of the button below.
             .accessibilityIdentifier("onboarding.step.\(String(describing: step))")
             .navigationTitle(title(for: step))
@@ -68,12 +68,13 @@ struct OnboardingFlowView: View {
             Section {
                 Text("consent.body")
             }
-            .listRowBackground(Color.paper)
+            .listRowBackground(Color.card)
             Section {
                 Toggle("consent.agree", isOn: $viewModel.consentGiven)
+                    .tint(Color.sprout)
                     .accessibilityIdentifier("consent.agree")
             }
-            .listRowBackground(Color.paper)
+            .listRowBackground(Color.card)
         case .birthDate:
             Section {
                 DatePicker(
@@ -89,7 +90,7 @@ struct OnboardingFlowView: View {
             } footer: {
                 Text("onboarding.birthDate.footer")
             }
-            .listRowBackground(Color.paper)
+            .listRowBackground(Color.card)
         case .sex:
             Section {
                 Picker("onboarding.sex.title", selection: $viewModel.sex) {
@@ -102,7 +103,7 @@ struct OnboardingFlowView: View {
             } footer: {
                 Text("onboarding.sex.footer")
             }
-            .listRowBackground(Color.paper)
+            .listRowBackground(Color.card)
         case .height:
             Section {
                 if viewModel.usesMetric {
@@ -112,7 +113,7 @@ struct OnboardingFlowView: View {
                     numberRow("onboarding.height.inches", value: inchesBinding, unit: UnitLength.inches.symbol, identifier: "input.inches")
                 }
             }
-            .listRowBackground(Color.paper)
+            .listRowBackground(Color.card)
         case .weight:
             Section {
                 numberRow(
@@ -122,7 +123,7 @@ struct OnboardingFlowView: View {
                     identifier: "input.weight"
                 )
             }
-            .listRowBackground(Color.paper)
+            .listRowBackground(Color.card)
         case .activity:
             Section {
                 Picker("onboarding.activity.title", selection: $viewModel.activityLevel) {
@@ -133,7 +134,7 @@ struct OnboardingFlowView: View {
                 .pickerStyle(.inline)
                 .labelsHidden()
             }
-            .listRowBackground(Color.paper)
+            .listRowBackground(Color.card)
         case .goal:
             Section {
                 Picker("onboarding.goal.title", selection: $viewModel.goal) {
@@ -144,7 +145,7 @@ struct OnboardingFlowView: View {
                 .pickerStyle(.inline)
                 .labelsHidden()
             }
-            .listRowBackground(Color.paper)
+            .listRowBackground(Color.card)
         case .result:
             if let calculation = viewModel.calculation {
                 Section {
@@ -153,15 +154,14 @@ struct OnboardingFlowView: View {
                     }
                     Text("onboarding.result.footer")
                 } header: {
-                    // A section header is not clipped to the rounded row shape, so the De Stijl
-                    // fields keep their square corners.
-                    TargetsComposition(targets: calculation.targets)
+                    // In the header the card keeps its own shape and shadow instead of becoming a row.
+                    TargetsCard(targets: calculation.targets)
                         .textCase(nil)
                         // Section headers sit one margin further in than rows; line the fields up with the list.
                         .padding(.horizontal, -Spacing.l)
                         .padding(.bottom, Spacing.s)
                 }
-                .listRowBackground(Color.paper)
+                .listRowBackground(Color.card)
             }
         }
     }
@@ -169,7 +169,7 @@ struct OnboardingFlowView: View {
     private func choice(_ title: LocalizedStringKey, detail: LocalizedStringKey) -> some View {
         VStack(alignment: .leading, spacing: Spacing.xs) {
             Text(title)
-            Text(detail).font(.footnote).foregroundStyle(.secondary)
+            Text(detail).font(.footnote).foregroundStyle(Color.inkSoft)
         }
     }
 
@@ -181,7 +181,7 @@ struct OnboardingFlowView: View {
                 .monospacedDigit()
                 .foregroundStyle(Color.ink)
                 .accessibilityIdentifier(identifier)
-            Text(verbatim: unit).foregroundStyle(.secondary)
+            Text(verbatim: unit).foregroundStyle(Color.inkSoft)
         }
     }
 
@@ -238,7 +238,7 @@ struct OnboardingFlowView: View {
             }
         }
         .padding(Spacing.l)
-        .ruledBar()
+        .background(Color.ground)
     }
 
     private func advance(from step: Step) {
@@ -263,20 +263,18 @@ struct OnboardingFlowView: View {
     }
 }
 
-/// Eight cells drawn in the rule system: done and current steps are ink, the rest paper.
+/// One pill per step: done and current steps are ink, the rest the track colour.
 struct OnboardingProgress: View {
     let current: OnboardingViewModel.Step
 
     var body: some View {
-        HStack(spacing: Rule.width) {
+        HStack(spacing: Spacing.xs) {
             ForEach(OnboardingViewModel.Step.allCases, id: \.self) { step in
-                Rectangle()
-                    .fill(step.rawValue <= current.rawValue ? Color.ink : Color.paper)
+                Capsule()
+                    .fill(step.rawValue <= current.rawValue ? Color.ink : Color.track)
                     .frame(height: 8)
             }
         }
-        .padding(Rule.width)
-        .background(Color.ink)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text("onboarding.progress \(current.rawValue + 1) \(OnboardingViewModel.Step.allCases.count)"))
     }

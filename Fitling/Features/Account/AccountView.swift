@@ -19,13 +19,15 @@ struct AccountView: View {
             } footer: {
                 if let key = viewModel.messageKey { Text(LocalizedStringKey(key)) }
             }
+            .listRowBackground(Color.card)
             Section {
                 NavigationLink("account.delete") {
                     DeleteAccountView(viewModel: viewModel)
                 }
             }
+            .listRowBackground(Color.card)
         }
-        .paperGround()
+        .groundBackground()
         .navigationTitle("account.title")
         .alert("account.unsynced.title", isPresented: $showsUnsyncedWarning) {
             Button("account.unsynced.force", role: .destructive) {
@@ -49,10 +51,13 @@ struct DeleteAccountView: View {
         Form {
             Section {
                 Text("account.delete.body")
-            }
-            Section {
                 if viewModel.usesApple {
                     Text("account.delete.apple").font(.footnote)
+                }
+            }
+            .listRowBackground(Color.card)
+            Section {
+                if viewModel.usesApple {
                     SignInWithAppleButton(.continue) { request in
                         request.requestedScopes = []
                     } onCompletion: { result in
@@ -62,17 +67,19 @@ struct DeleteAccountView: View {
                         Task { await viewModel.deleteAccount(appleAuthorizationCode: code) }
                     }
                     .signInWithAppleButtonStyle(colorScheme == .dark ? .white : .black)
-                    .frame(height: 50)
-                    .listRowInsets(EdgeInsets())
+                    .frame(height: ButtonMetrics.height)
+                    .clipShape(Capsule())
+                    .buttonRow()
                 } else {
                     Button("account.delete.confirm", role: .destructive) { confirming = true }
                         .disabled(viewModel.isWorking)
+                        .listRowBackground(Color.card)
                 }
             } footer: {
                 if let key = viewModel.messageKey { Text(LocalizedStringKey(key)) }
             }
         }
-        .paperGround()
+        .groundBackground()
         .navigationTitle("account.delete")
         .confirmationDialog("account.delete", isPresented: $confirming, titleVisibility: .visible) {
             Button("account.delete.confirm", role: .destructive) {

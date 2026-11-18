@@ -55,10 +55,12 @@ struct EditProfileView: View {
                         Text("onboarding.sex.other").tag(Sex.other)
                     }
                 }
+                .listRowBackground(Color.card)
                 Section {
                     numberRow("onboarding.height.field", value: $height, unit: lengthUnit.symbol)
                     numberRow("onboarding.weight.field", value: $weight, unit: massUnit.symbol)
                 }
+                .listRowBackground(Color.card)
                 Section {
                     Picker("onboarding.activity.title", selection: $activityLevel) {
                         ForEach(ActivityLevel.allCases, id: \.self) { Text($0.titleKey).tag($0) }
@@ -69,8 +71,9 @@ struct EditProfileView: View {
                 } footer: {
                     if edited == nil { Text("profile.profileInvalid") }
                 }
+                .listRowBackground(Color.card)
             }
-            .paperGround()
+            .groundBackground()
             .navigationTitle("profile.edit")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -96,7 +99,7 @@ struct EditProfileView: View {
         HStack {
             TextField(label, value: value, format: .number)
                 .keyboardType(.decimalPad)
-            Text(verbatim: unit).foregroundStyle(.secondary)
+            Text(verbatim: unit).foregroundStyle(Color.inkSoft)
         }
     }
 
@@ -139,14 +142,16 @@ struct EditTargetsView: View {
                 } footer: {
                     if showsRangeError { Text("profile.targets.outOfRange") }
                 }
+                .listRowBackground(Color.card)
                 Section {
                     Button("profile.recalculate.confirm") {
                         viewModel.recalculateTargets()
                         dismiss()
                     }
                 }
+                .listRowBackground(Color.card)
             }
-            .paperGround()
+            .groundBackground()
             .navigationTitle("profile.editTargets")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

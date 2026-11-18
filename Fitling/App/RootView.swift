@@ -48,7 +48,7 @@ struct RootView: View {
                 .accessibilityLabel(Text("common.loading"))
                 .accessibilityIdentifier("root.loading")
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color.paper)
+                .background(Color.ground)
         case .welcome:
             WelcomeView(auth: viewModel.auth)
         case let .verifyEmail(email):
@@ -95,7 +95,7 @@ struct NeedsConnectionView: View {
             Button("common.connection.retry", action: retry)
                 .buttonStyle(.bordered)
         }
-        .background(Color.paper)
+        .background(Color.ground)
     }
 }
 

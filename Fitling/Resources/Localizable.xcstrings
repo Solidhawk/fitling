@@ -1057,6 +1057,182 @@
         }
       }
     },
+    "creature.ember.name": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ember"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ember"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ember"
+          }
+        }
+      }
+    },
+    "creature.ember.note": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brandt feller als je traint."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Burns brighter when you train."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brennt heller, wenn du trainierst."
+          }
+        }
+      }
+    },
+    "creature.pebble.name": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pebble"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pebble"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pebble"
+          }
+        }
+      }
+    },
+    "creature.pebble.note": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rustig. Houdt van een goede rustdag."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calm. Loves a good rest day."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ruhig. Mag einen guten Ruhetag."
+          }
+        }
+      }
+    },
+    "creature.pip.name": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pip"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pip"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pip"
+          }
+        }
+      }
+    },
+    "creature.pip.note": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Piept zodra het honger heeft."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chirps as soon as it’s hungry."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Piepst, sobald es Hunger hat."
+          }
+        }
+      }
+    },
+    "creature.sprout.name": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprout"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprout"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprout"
+          }
+        }
+      }
+    },
+    "creature.sprout.note": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Krijgt een bloem na elke training."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grows a flower after every workout."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bekommt nach jedem Training eine Blüte."
+          }
+        }
+      }
+    },
     "error.configuration.body": {
       "localizations": {
         "nl": {
@@ -2725,72 +2901,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mit Google fortfahren"
-          }
-        }
-      }
-    },
-    "welcome.legend.carbs": {
-      "localizations": {
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Koolhydraten"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Carbs"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kohlenhydrate"
-          }
-        }
-      }
-    },
-    "welcome.legend.fat": {
-      "localizations": {
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vet"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fat"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fett"
-          }
-        }
-      }
-    },
-    "welcome.legend.protein": {
-      "localizations": {
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Eiwit"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Protein"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Eiweiß"
           }
         }
       }

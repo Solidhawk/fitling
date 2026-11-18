@@ -1,49 +1,73 @@
 import SwiftUI
 
-/// The main action: an ink field with a paper label and square corners. Disabled keeps the 2 pt ink
-/// outline so the next step stays visible, with a dimmed but readable label.
+/// The main action: an ink capsule with the label in the card colour. Disabled turns to the track
+/// colour with a readable soft-ink label, so the next step stays visible.
 struct PrimaryButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.headline)
-            .frame(maxWidth: .infinity, minHeight: 50)
+            .font(.headline.weight(.bold))
+            .foregroundStyle(isEnabled ? Color.card : Color.inkSoft)
             .padding(.horizontal, Spacing.l)
-            .foregroundStyle(isEnabled ? Color.paper : Color.ink.opacity(0.55))
-            .background(isEnabled ? Color.ink : Color.paper)
-            .overlay(Rectangle().strokeBorder(Color.ink, lineWidth: Rule.width))
-            .opacity(configuration.isPressed ? 0.75 : 1)
+            .frame(maxWidth: .infinity, minHeight: ButtonMetrics.height)
+            .background(isEnabled ? Color.ink : Color.track, in: Capsule())
+            .scaleEffect(configuration.isPressed ? 0.97 : 1)
+            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
     }
 }
 
-/// A secondary action: paper with an ink outline and ink label.
+/// A secondary action: a card-coloured capsule lifted off the ground by a soft shadow.
 struct SecondaryButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.headline)
-            .frame(maxWidth: .infinity, minHeight: 50)
+            .font(.headline.weight(.bold))
+            .foregroundStyle(isEnabled ? Color.ink : Color.inkSoft)
             .padding(.horizontal, Spacing.l)
-            .foregroundStyle(isEnabled ? Color.ink : Color.ink.opacity(0.55))
-            .background(configuration.isPressed ? Color.ink.opacity(0.08) : Color.paper)
-            .overlay(Rectangle().strokeBorder(Color.ink, lineWidth: Rule.width))
+            .frame(maxWidth: .infinity, minHeight: ButtonMetrics.height)
+            .background {
+                Capsule()
+                    .fill(Color.card)
+                    .shadow(color: Color.cardShadow, radius: 6, y: 2)
+            }
+            .scaleEffect(configuration.isPressed ? 0.97 : 1)
+            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
+    }
+}
+
+/// The primary action of a form, with a spinner while the request runs. The form disables it
+/// while working, so the spinner sits on the track colour.
+struct SubmitButton: View {
+    let title: LocalizedStringKey
+    let isWorking: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: Spacing.s) {
+                Text(title)
+                if isWorking {
+                    ProgressView()
+                        .tint(Color.inkSoft)
+                }
+            }
+        }
+        .buttonStyle(PrimaryButtonStyle())
     }
 }
 
 extension View {
-    /// Lists and forms on the paper ground instead of the grey grouped background.
-    func paperGround() -> some View {
+    /// Lists and forms on the pastel ground instead of the system grouped background.
+    func groundBackground() -> some View {
         scrollContentBackground(.hidden)
-            .background(Color.paper)
+            .background(Color.ground)
     }
 
-    /// A bar pinned to the bottom edge: paper with one ink rule on top.
-    func ruledBar() -> some View {
-        background(Color.paper)
-            .overlay(alignment: .top) {
-                Rectangle().fill(Color.ink).frame(height: Rule.width)
-            }
+    /// A full-width capsule button as the only content of a form row.
+    func buttonRow() -> some View {
+        listRowInsets(EdgeInsets())
+            .listRowBackground(Color.clear)
     }
 }

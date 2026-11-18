@@ -28,16 +28,14 @@ struct ProfileView: View {
                         Text("profile.proteinPerKg.value \(viewModel.profile.bodyProfile.goal.proteinPerKg, format: .number.precision(.fractionLength(1)))")
                     }
                 } header: {
-                    // A section header is not clipped to the rounded row shape, so the De Stijl
-                    // fields keep their square corners.
+                    // In the header the card keeps its own shape and shadow instead of becoming a row.
                     VStack(alignment: .leading, spacing: Spacing.m) {
-                        TargetsComposition(targets: viewModel.profile.targets)
-                            // Section headers sit one margin further in than rows; line the fields up with the list.
+                        TargetsCard(targets: viewModel.profile.targets)
+                            // Section headers sit one margin further in than rows; line the card up with the list.
                             .padding(.horizontal, -Spacing.l)
                         if let problem = viewModel.syncProblemKey {
                             Label(LocalizedStringKey(problem), systemImage: "exclamationmark.arrow.triangle.2.circlepath")
                                 .font(.footnote)
-                                .foregroundStyle(Color.ink)
                         }
                         if viewModel.profile.targetsAreManual {
                             Text("profile.targets.manual")
@@ -46,26 +44,27 @@ struct ProfileView: View {
                         if viewModel.isBelowSafeMinimum {
                             Label("targets.warning.low", systemImage: "exclamationmark.triangle")
                                 .font(.footnote)
-                                .foregroundStyle(Color.ink)
                         }
                         Text("profile.howCalculated")
-                            .textCase(.uppercase)
-                            .padding(.top, Spacing.s)
+                            .font(.headline.weight(.heavy))
+                            .padding(.top, Spacing.m)
+                            .accessibilityAddTraits(.isHeader)
                     }
+                    .foregroundStyle(Color.ink)
                     .textCase(nil)
                 } footer: {
                     Text("profile.rounding")
                 }
-                .listRowBackground(Color.paper)
+                .listRowBackground(Color.card)
 
                 Section {
                     NavigationLink("account.title") {
                         AccountView(viewModel: account)
                     }
                 }
-                .listRowBackground(Color.paper)
+                .listRowBackground(Color.card)
             }
-            .paperGround()
+            .groundBackground()
             .navigationTitle("profile.title")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -85,11 +84,11 @@ struct ProfileView: View {
         }
     }
 
-    /// Numbers are part of the composition's language: heavy, tabular, in ink.
+    /// Numbers stay strict in the rounded world: heavy, tabular, in ink.
     private func value(_ label: LocalizedStringKey, _ content: () -> Text) -> some View {
         LabeledContent(label) {
             content()
-                .fontWeight(.semibold)
+                .fontWeight(.heavy)
                 .monospacedDigit()
                 .foregroundStyle(Color.ink)
         }

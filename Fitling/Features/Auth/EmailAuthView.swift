@@ -27,24 +27,18 @@ struct EmailAuthView: View {
             } footer: {
                 if isSignUp { Text("auth.password.hint") }
             }
+            .listRowBackground(Color.card)
 
             Section {
-                Button {
+                SubmitButton(title: submitKey, isWorking: viewModel.isWorking) {
                     Task { await viewModel.submit() }
-                } label: {
-                    HStack {
-                        Text(submitKey)
-                        if viewModel.isWorking {
-                            Spacer()
-                            ProgressView()
-                        }
-                    }
                 }
                 .disabled(!viewModel.canSubmit)
                 .accessibilityIdentifier("auth.submit")
-
+                .buttonRow()
+            } footer: {
                 if let key = viewModel.messageKey {
-                    Text(LocalizedStringKey(key)).foregroundStyle(.secondary)
+                    Text(LocalizedStringKey(key)).foregroundStyle(Color.ink)
                 }
             }
 
@@ -58,8 +52,9 @@ struct EmailAuthView: View {
                     }
                 }
             }
+            .listRowBackground(Color.card)
         }
-        .paperGround()
+        .groundBackground()
         .navigationTitle(titleKey)
     }
 }
