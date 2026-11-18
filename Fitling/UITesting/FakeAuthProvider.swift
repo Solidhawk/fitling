@@ -12,15 +12,26 @@ final class FakeAuthProvider: AuthProviding {
     var nextLink: AuthLink = .signedIn
     private(set) var calls: [String: Int] = [:]
     private(set) var lastAppleAuthorizationCode: String??
+    /// When true, every call waits until `releaseHeldCalls()`, like a slow network request. Tests use
+    /// it to tap a second time while the first request is certainly still in flight.
+    var holdsCalls = false
+    private var heldCalls: [CheckedContinuation<Void, Never>] = []
 
     init(state: AuthState = .signedOut) {
         self.state = state
     }
 
+    func releaseHeldCalls() {
+        let held = heldCalls
+        heldCalls = []
+        held.forEach { $0.resume() }
+    }
+
     private func record(_ name: String) async throws(AuthFailure) {
         calls[name, default: 0] += 1
-        // Lets a second tap run while this call is still in flight, as a network call would.
-        await Task.yield()
+        if holdsCalls {
+            await withCheckedContinuation { heldCalls.append($0) }
+        }
         if let error = nextError.removeValue(forKey: name) { throw error }
     }
 

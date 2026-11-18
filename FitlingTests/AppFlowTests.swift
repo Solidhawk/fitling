@@ -51,7 +51,7 @@ struct FlowFixture {
     let fixture: FlowFixture
     init() throws { fixture = try FlowFixture() }
 
-    @Test func signedOutShowsWelcome() async {
+    @Test(.timeLimit(.minutes(1))) func signedOutShowsWelcome() async {
         let root = RootViewModel(auth: FakeAuthProvider(state: .signedOut), sync: fixture.sync())
         await root.refresh()
         #expect(root.screen == .welcome)
@@ -243,10 +243,7 @@ struct FlowFixture {
     @Test func deleteAccountDoubleTapCallsOnce() async {
         let auth = FakeAuthProvider(state: .signedIn(userID: fixture.userID, usesApple: false))
         let viewModel = AccountViewModel(auth: auth, sync: fixture.sync(), userID: fixture.userID, usesApple: false)
-        async let first: Void = viewModel.deleteAccount(appleAuthorizationCode: nil)
-        async let second: Void = viewModel.deleteAccount(appleAuthorizationCode: nil)
-        _ = await (first, second)
-        #expect(auth.calls["deleteAccount"] == 1)
+        await expectSingleCall("deleteAccount", on: auth) { await viewModel.deleteAccount(appleAuthorizationCode: nil) }
     }
 
     @Test func deleteAccountWipesLocalData() async {

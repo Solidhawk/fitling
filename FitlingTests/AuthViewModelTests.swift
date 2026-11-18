@@ -12,17 +12,14 @@ import Testing
         return viewModel
     }
 
-    @Test func signUpCallsAuthOnce() async {
+    @Test(.timeLimit(.minutes(1))) func signUpCallsAuthOnce() async {
         let auth = FakeAuthProvider()
         let viewModel = makeViewModel(.signUp, auth: auth)
-        async let first: Void = viewModel.submit()
-        async let second: Void = viewModel.submit()
-        _ = await (first, second)
-        #expect(auth.calls["signUp"] == 1)
+        await expectSingleCall("signUp", on: auth) { await viewModel.submit() }
         #expect(auth.state == .awaitingEmailVerification(email: "a@example.test"))
     }
 
-    @Test func invalidCredentialsShowsMessage() async {
+    @Test(.timeLimit(.minutes(1))) func invalidCredentialsShowsMessage() async {
         let auth = FakeAuthProvider()
         auth.nextError["signIn"] = .invalidCredentials
         let viewModel = makeViewModel(.signIn, auth: auth)
@@ -58,13 +55,10 @@ import Testing
     @Test func googleCallsAuthOnce() async {
         let auth = FakeAuthProvider()
         let viewModel = WelcomeViewModel(auth: auth)
-        async let first: Void = viewModel.signInWithGoogle()
-        async let second: Void = viewModel.signInWithGoogle()
-        _ = await (first, second)
-        #expect(auth.calls["signInWithGoogle"] == 1)
+        await expectSingleCall("signInWithGoogle", on: auth) { await viewModel.signInWithGoogle() }
     }
 
-    @Test func cancelledGoogleShowsNothing() async {
+    @Test(.timeLimit(.minutes(1))) func cancelledGoogleShowsNothing() async {
         let auth = FakeAuthProvider()
         auth.nextError["signInWithGoogle"] = .cancelled
         let viewModel = WelcomeViewModel(auth: auth)
@@ -124,16 +118,13 @@ import Testing
     @Test func doubleTapSendsOnce() async {
         let auth = FakeAuthProvider()
         let viewModel = makeViewModel(auth)
-        async let first: Void = viewModel.submit()
-        async let second: Void = viewModel.submit()
-        _ = await (first, second)
-        #expect(auth.calls["requestPasswordReset"] == 1)
+        await expectSingleCall("requestPasswordReset", on: auth) { await viewModel.submit() }
     }
 }
 
 @MainActor
 @Suite struct ResetPasswordViewModelTests {
-    @Test func linkFromAnotherDeviceIsExplained() async {
+    @Test(.timeLimit(.minutes(1))) func linkFromAnotherDeviceIsExplained() async {
         let auth = FakeAuthProvider()
         auth.nextError["updatePassword"] = .invalidOrForeignLink
         let viewModel = ResetPasswordViewModel(auth: auth)
@@ -156,10 +147,7 @@ import Testing
     @Test func resendOnce() async {
         let auth = FakeAuthProvider(state: .awaitingEmailVerification(email: "a@example.test"))
         let viewModel = VerifyEmailViewModel(auth: auth, email: "a@example.test")
-        async let first: Void = viewModel.resend()
-        async let second: Void = viewModel.resend()
-        _ = await (first, second)
-        #expect(auth.calls["resendVerification"] == 1)
+        await expectSingleCall("resendVerification", on: auth) { await viewModel.resend() }
         #expect(viewModel.messageKey == "auth.verify.resent")
     }
 
