@@ -65,7 +65,7 @@ final class AuthService: AuthProviding {
         }
     }
 
-    private func perform<T>(_ operation: () async throws -> T) async throws(AuthFailure) -> T {
+    private func perform<T: Sendable>(_ operation: () async throws -> T) async throws(AuthFailure) -> T {
         do {
             return try await operation()
         } catch {
