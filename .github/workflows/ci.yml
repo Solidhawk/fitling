@@ -26,6 +26,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v3
+        with:
+          version: 3.2.0
+      - name: Database (migraties + pgTAP)
+        run: |
+          supabase db start
+          supabase test db
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.9.8
