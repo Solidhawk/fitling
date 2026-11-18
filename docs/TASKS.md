@@ -64,6 +64,7 @@ Uitkomst: iemand kan een account maken, de onboarding doorlopen en zijn dagdoel 
 ### 1.3 SyncEngine
 
 - **Doel:** één generieke sync volgens ARCHITECTURE §3, eerst voor `profiles` en `target_history`.
+- **Gebruikt:** `SyncRules` uit FitlingCore voor elke beslissing: `pullAction(local:remote:)`, `pullStart(cursor:now:)`, `nextCursor`, `canClearPushFlag`, en de constanten voor blokgrootte en overlap. De engine bevat zelf geen `if` over tijden of vlaggen.
 - **Bestanden:** `Fitling/Data/Sync/SyncEngine.swift`, `SyncTable.swift` (per tabel: naam, sleutelkolom, model ↔ record), `RemoteStore.swift` (protocol met `upsert` en `fetch(since:limit:)`, de echte versie met Supabase en een nep-versie voor tests), `Records/ProfileRecord.swift`, `Records/TargetPeriodRecord.swift`.
 - **Vastgelegd:**
   - Eén engine met een lijst tabellen in de volgorde van §3.5; geen aparte sync-klasse per tabel.
@@ -164,18 +165,13 @@ Uitkomst: iemand kan een account maken, de onboarding doorlopen en zijn dagdoel 
 - **Bestanden:** `Fitling/Data/Sync/Records/*` en de tabellijst.
 - **Tests:** per tabel een heen-en-terug-test van het record (`recordKeepsEveryColumn`), en `sharedProductsAreNeverPushed`.
 
-### 2.2 FoodMath (FitlingCore)
+### 2.2 FoodMath (FitlingCore) — al gebouwd
 
-- **Doel:** omrekenen van product naar log en van logs naar een dagtotaal.
-- **Bestanden:** `Packages/FitlingCore/Sources/FitlingCore/FoodMath.swift` + tests.
-- **Vastgelegd:**
-  - `nutrients(per100:quantity:unit:servingSize:)`: g of ml → `per100 × hoeveelheid / 100`; porties → eerst `× servingSize`; zonder `servingSize` geeft porties `nil`.
-  - Een onbekende waarde (`nil`) blijft `nil` in de log.
-  - `DayTotals` telt `nil` als 0 en houdt per macro bij van hoeveel logs de waarde onbekend was.
-  - kJ → kcal: delen door 4,184.
-  - `isConsistent(kcal:protein:carbs:fat:)`: onwaar als `4p + 4c + 9f` meer dan 25 % én meer dan 30 kcal afwijkt.
-- **Tests:** `gramsScaleLinearly`, `servingsUseTheServingSize`, `servingsWithoutServingSizeAreNotPossible`, `unknownMacroStaysUnknown`, `dayTotalsCountUnknownAsZeroAndReportIt`, `kilojoulesBecomeKilocalories`, `labelThatDoesNotAddUpIsInconsistent`, `smallDifferenceOnALowCalorieProductIsFine`.
-- **Mac-run:** nee.
+`FoodMath` staat in FitlingCore, met tests. Gebruik in 2.3, 2.6 en 2.7:
+
+- `FoodMath.nutrients(per100:quantity:unit:servingSize:)` geeft de waarden van één log, of `nil` als het product geen kcal heeft of porties niet kunnen (geen `servingSize`).
+- `FoodMath.totals(_:)` geeft `DayTotals`: onbekende macro's tellen als 0 en worden geteld in `unknownProtein`, `unknownCarbs`, `unknownFat`.
+- `FoodMath.kcal(fromKilojoules:)` en `FoodMath.isConsistent(kcal:proteinG:carbsG:fatG:)`. De Edge Function `lookup-product` is TypeScript en bouwt deze twee regels na met dezelfde getallen (4,184; 25 % én 30 kcal); neem de testgevallen uit `FoodMathTests` over.
 
 ### 2.3 Edge Function `lookup-product`
 
@@ -347,10 +343,9 @@ Na twee tot vier weken echt gebruik: kloppen de drempels, de snelheid van de vor
 
 ## Fase 6 – Boodschappenlijst en aanbiedingen
 
-### 6.1 ShoppingListBuilder (FitlingCore)
+### 6.1 ShoppingListBuilder (FitlingCore) — al gebouwd
 
-- **Doel:** uit het weekmenu één lijst: hoeveelheden per product en eenheid opgeteld (`× porties ÷ porties van het recept`), gegroepeerd per schap.
-- **Tests:** `sumsTheSameProductAcrossRecipes`, `keepsDifferentUnitsApart`, `scalesByServings`, `groupsByAisle`, `leftoversAreNotBoughtTwice`.
+`ShoppingListBuilder.lines(for:)` maakt uit het weekmenu één lijst: per product en eenheid opgeteld, naar boven afgerond op wat je kunt kopen, in de volgorde van de winkel. Geef per `MealPlanEntry` één `PlannedRecipeUse` mee, ook voor restjes: een restje is een portie uit dezelfde pan en hoort dus bij wat er gekocht wordt.
 
 ### 6.2 Lijst en items
 
@@ -364,10 +359,9 @@ Na twee tot vier weken echt gebruik: kloppen de drempels, de snelheid van de vor
 
 - **Vooraf (gebruiker):** RISKS R-13 beantwoord. Zonder bron: alleen de provider met testdata.
 
-### 6.5 OfferMatcher (FitlingCore)
+### 6.5 OfferMatcher (FitlingCore) — al gebouwd
 
-- **Doel:** ARCHITECTURE §6.1, als pure functie.
-- **Tests:** `sameBarcodeIsACertainMatch`, `fullNameMatchIsCertain`, `partialNameMatchIsUncertain`, `otherBrandIsNoMatch`, `fourTimesTheQuantityIsNoMatch`, `quantitiesAndStopWordsAreIgnoredInNames`, `pluralStillMatches`, `expiredOffersAreIgnored`, `cheapestStorePerItemUsesOnlyConfirmedMatches`.
+`OfferMatcher.matches(items:offers:on:ignoredWords:)`, `cheapestPerItem` en `storeTotals` staan in FitlingCore, met tests (ARCHITECTURE §6.1). In de app: geef de namen van de favoriete supermarkten mee als `ignoredWords`, en bewaar lokaal welke onzekere aanbiedingen de gebruiker met "Klopt" heeft bevestigd (`confirmedOfferIDs`).
 
 ### 6.6 Kwaliteit van de matches — **→ Fable** als er te veel verkeerde of gemiste matches zijn.
 

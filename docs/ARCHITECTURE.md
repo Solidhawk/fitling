@@ -2,13 +2,13 @@
 
 Dit document legt vast hoe de app in elkaar zit en waarom. Het hoort bij `PROMPT.md` (wat de app moet doen), `supabase/schema.sql` (de database), `Packages/FitlingCore` (de rekenregels) en `docs/TASKS.md` (wat er nog gebouwd wordt). Waar dit document en het oudere ontwerp in `docs/superpowers/specs/` verschillen, geldt dit document.
 
-Status: het fundament staat op branch `fundament`. Bewezen in CI: de rekenregels (Linux), het schema met RLS (Linux), de gelijkheid tussen modellen en schema (Linux) en de lokale database met alle modellen (Mac-simulator). Er zijn nog geen schermen.
+Status: het fundament staat op branch `fundament`. Bewezen in CI: de rekenregels (Linux), het schema met RLS (Linux), de gelijkheid tussen modellen en schema (Linux) en de lokale database met alle modellen (Mac-simulator). Er zijn nog geen schermen, geen sync-code in de app en geen Edge Functions behalve `delete-account`.
 
 ## 1. Lagen
 
 | Laag | Map | Wat hoort hier | Mag afhangen van |
 |---|---|---|---|
-| Core (regels) | `Packages/FitlingCore` | Rekenregels en waardetypes zonder UI, opslag of netwerk: `NutritionEngine`, `CreatureEngine`, `ProgressionEngine`, `WeekMenuPlanner`, `Day`, `Barcode`, `LocalizedText`, `Limits` | alleen Foundation |
+| Core (regels) | `Packages/FitlingCore` | Rekenregels en waardetypes zonder UI, opslag of netwerk: `NutritionEngine`, `CreatureEngine`, `ProgressionEngine`, `WeekMenuPlanner`, `FoodMath`, `ShoppingListBuilder`, `OfferMatcher`, `SyncRules`, `Day`, `Barcode`, `LocalizedText`, `Limits` | alleen Foundation |
 | Core (modellen) | `Fitling/Core/Models` | De SwiftData-modellen, één per tabel, en de omzetting naar de types van FitlingCore | FitlingCore, SwiftData |
 | Data | `Fitling/Data` | Sync (`SyncEngine`, per tabel een beschrijving en een record-type), opvragen van data voor schermen, de HealthKit-cache | Core, Services |
 | Services | `Fitling/Services` | Alles wat met de buitenwereld praat: `AuthService`, de Supabase-client, `ProductLookup`, `HealthKitService`, `NotificationService`, `NetworkMonitor` | Core |
@@ -52,6 +52,8 @@ Keuzes in de modellen (ook als commentaar in `FitlingSchemaV1.swift`):
 ## 3. Offline-first sync
 
 SwiftData is op het toestel de waarheid. De app werkt volledig zonder internet; sync haalt later in.
+
+De beslissingen van sync staan als pure functies in `SyncRules` (FitlingCore) en zijn op Linux getest: wat een pull met een rij doet, waar een pull begint, hoe de cursor opschuift en wanneer de push-vlag weg mag. De `SyncEngine` in de app (TASKS 1.3) voert ze uit en beslist zelf niets.
 
 ### 3.1 Per rij
 
@@ -168,7 +170,7 @@ Controles vóór opslaan (in de Edge Function, met dezelfde grenzen als de `chec
 - Een waarde buiten zijn grens (bijvoorbeeld eiwit > 100 per 100 g) wordt `null`.
 - Zijn kcal en alle drie de macro's bekend en wijkt `4·eiwit + 4·koolhydraten + 9·vet` meer dan 25 % én meer dan 30 kcal af van `kcal_100`, dan klopt het etiket niet: het product krijgt `is_verified = false` en de app toont "Controleer de waarden".
 
-Omrekenen bij het loggen (pure functie in FitlingCore, taak 2.2):
+Omrekenen bij het loggen (`FoodMath` in FitlingCore, afgerond op één decimaal zoals de database het bewaart):
 
 - hoeveelheid in g of ml: `waarde = per100 × hoeveelheid / 100`;
 - hoeveelheid in porties: eerst `hoeveelheid × serving_size`, dan dezelfde formule. Zonder `serving_size` kan niet in porties worden gelogd.
@@ -223,11 +225,11 @@ Per lijst-item, in deze volgorde:
 
 1. **Barcode.** Het item heeft een product met `gtin` en een aanbieding heeft dezelfde `gtin` → zekere match.
 2. **Naam en hoeveelheid.** Anders:
-   - Beide namen normaliseren: kleine letters, accenten weg, leestekens weg, hoeveelheden en eenheden ("500 g", "1,5 l", "6 stuks") eruit, stopwoorden weg (`de het een van met en`, en de naam van de winkel).
-   - Score = aandeel van de woorden van het lijst-item dat in de aanbieding voorkomt (een woord telt ook als het de eerste vier letters of meer deelt, voor meervoud en samenstellingen).
-   - Staat het merk van het product in de aanbieding: +0,2. Noemt de aanbieding een ander merk dan het product: de match vervalt.
-   - Hoeveelheid: hebben beide een hoeveelheid in dezelfde eenheid en verschilt die meer dan een factor 4, dan vervalt de match (500 g gehakt is geen 2 kg gehakt). Ontbreekt een hoeveelheid, dan telt dit niet mee.
-3. **Uitkomst.** Score ≥ 0,99 of barcode: zeker. Score ≥ 0,6: onzeker. Lager: geen match.
+   - Beide namen terugbrengen tot hun woorden: kleine letters, accenten weg, leestekens weg, hoeveelheden en eenheden ("500 g", "1,5 l", "6 stuks", "6x330") eruit, stopwoorden weg (`de het een van met en voor`) en woorden die niets over het product zeggen, zoals de naam van de winkel.
+   - Noemt de aanbieding een ander merk dan het product: geen match.
+   - Hebben beide een hoeveelheid in dezelfde eenheid en is de ene meer dan vier keer de andere: geen match (500 g gehakt is geen 2,5 kg gehakt). Ontbreekt een hoeveelheid, dan telt dit niet mee.
+   - Score = per woord van het lijst-item 1 als het in de aanbieding staat, 0,75 als er een verwant woord staat, anders 0; gedeeld door het aantal woorden. Verwant: beide woorden zijn minstens vier letters, beginnen hetzelfde en verschillen hoogstens in de laatste twee letters van het kortste woord ("tomaat" en "tomaten"). Hetzelfde merk: +0,2.
+3. **Uitkomst.** Zeker: dezelfde barcode, of precies dezelfde woorden. Onzeker: score ≥ 0,6. Lager: geen match. "Melk" tegenover "Halfvolle melk" is dus onzeker, want "Chocolade melk" zou net zo goed passen: de gebruiker beslist.
 
 Wat de app laat zien:
 
@@ -235,7 +237,7 @@ Wat de app laat zien:
 - **Onzeker:** onder het item staat "Mogelijk in de aanbieding: *titel van de aanbieding*" met de winkel en de prijs. Het telt **niet** mee in de totalen tot de gebruiker één keer tikt op "Klopt". Dat antwoord wordt lokaal onthouden voor die naam.
 - De goedkoopste winkel per item en het totaal per winkel rekenen alleen met zekere en bevestigde matches. Staat een item bij een winkel niet in de aanbieding, dan toont het totaal van die winkel "+ 3 items zonder prijs": de app verzint geen gewone prijs.
 
-Dit is bewust een eenvoudige woordvergelijking. Hij is uitlegbaar ("deze woorden kwamen overeen") en goed te testen. Blijkt hij in de praktijk te vaak mis, dan is dat een taak voor Fable (TASKS 6.6).
+Dit staat als pure functie in `OfferMatcher` (FitlingCore), met `cheapestPerItem` en `storeTotals` voor de totalen. Het is bewust een eenvoudige woordvergelijking: uitlegbaar ("deze woorden kwamen overeen") en goed te testen. Blijkt hij in de praktijk te vaak mis, dan is dat een taak voor Fable (TASKS 6.6).
 
 ## 7. De engines
 
