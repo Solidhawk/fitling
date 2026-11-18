@@ -121,15 +121,16 @@ struct OnboardingFlowView: View {
         case .result:
             if let calculation = viewModel.calculation {
                 Section {
-                    TargetsComposition(targets: calculation.targets)
-                        .listRowInsets(EdgeInsets())
-                } footer: {
-                    Text("onboarding.result.footer")
-                }
-                if calculation.isBelowSafeMinimum {
-                    Section {
+                    if calculation.isBelowSafeMinimum {
                         Label("targets.warning.low", systemImage: "exclamationmark.triangle")
                     }
+                    Text("onboarding.result.footer")
+                } header: {
+                    // A section header is not clipped to the rounded row shape, so the De Stijl
+                    // fields keep their square corners.
+                    TargetsComposition(targets: calculation.targets)
+                        .textCase(nil)
+                        .padding(.bottom, Spacing.s)
                 }
             }
         }

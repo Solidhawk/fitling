@@ -16,21 +16,6 @@ struct ProfileView: View {
         NavigationStack {
             List {
                 Section {
-                    TargetsComposition(targets: viewModel.profile.targets)
-                        .listRowInsets(EdgeInsets())
-                } footer: {
-                    if viewModel.profile.targetsAreManual {
-                        Text("profile.targets.manual")
-                    }
-                }
-
-                if viewModel.isBelowSafeMinimum {
-                    Section {
-                        Label("targets.warning.low", systemImage: "exclamationmark.triangle")
-                    }
-                }
-
-                Section("profile.howCalculated") {
                     LabeledContent("profile.bmr") { Text(energy(viewModel.calculation.bmr)) }
                     LabeledContent("profile.tdee") { Text(energy(viewModel.calculation.tdee)) }
                     LabeledContent("profile.activityFactor") {
@@ -42,6 +27,25 @@ struct ProfileView: View {
                     LabeledContent("profile.proteinPerKg") {
                         Text("profile.proteinPerKg.value \(viewModel.profile.bodyProfile.goal.proteinPerKg, format: .number.precision(.fractionLength(1)))")
                     }
+                } header: {
+                    // A section header is not clipped to the rounded row shape, so the De Stijl
+                    // fields keep their square corners.
+                    VStack(alignment: .leading, spacing: Spacing.m) {
+                        TargetsComposition(targets: viewModel.profile.targets)
+                        if viewModel.profile.targetsAreManual {
+                            Text("profile.targets.manual")
+                                .font(.footnote)
+                        }
+                        if viewModel.isBelowSafeMinimum {
+                            Label("targets.warning.low", systemImage: "exclamationmark.triangle")
+                                .font(.footnote)
+                                .foregroundStyle(Color.ink)
+                        }
+                        Text("profile.howCalculated")
+                            .textCase(.uppercase)
+                            .padding(.top, Spacing.s)
+                    }
+                    .textCase(nil)
                 }
 
                 Section {
