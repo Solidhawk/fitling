@@ -50,20 +50,24 @@ public enum SyncRules {
     public static let deletionRetention: TimeInterval = 90 * 24 * 60 * 60
 
     public static func pullAction(local: LocalRowState?, remote: RemoteRowState) -> PullAction {
-        .ignore
+        guard let local else { return remote.isDeleted ? .ignore : .insert }
+        if local.needsPush, local.updatedAt > remote.updatedAt { return .keepLocal }
+        return remote.isDeleted ? .deleteLocal : .overwrite
     }
 
     public static func pullStart(cursor: Date?, now: Date) -> PullStart {
-        .everything
+        guard let cursor else { return .everything }
+        if now.timeIntervalSince(cursor) > deletionRetention { return .resetThenEverything }
+        return .since(cursor.addingTimeInterval(-pullOverlap))
     }
 
     /// The highest `synced_at` seen so far. Never moves back.
     public static func nextCursor(current: Date?, pageSyncedAt: [Date]) -> Date? {
-        nil
+        ([current].compactMap { $0 } + pageSyncedAt).max()
     }
 
     /// After a successful push: only when the row did not change while it was under way.
     public static func canClearPushFlag(sentUpdatedAt: Date, currentUpdatedAt: Date) -> Bool {
-        false
+        sentUpdatedAt == currentUpdatedAt
     }
 }

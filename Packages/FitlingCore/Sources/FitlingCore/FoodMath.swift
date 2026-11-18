@@ -62,26 +62,54 @@ public enum FoodMath {
     /// The grams or millilitres that `quantity` stands for. Nil for servings of a product
     /// without a serving size, and for a quantity that is not positive.
     public static func amount(quantity: Double, unit: QuantityUnit, servingSize: Double?) -> Double? {
-        nil
+        guard quantity.isFinite, quantity > 0 else { return nil }
+        switch unit {
+        case .gram, .millilitre:
+            return quantity
+        case .serving:
+            guard let servingSize, servingSize.isFinite, servingSize > 0 else { return nil }
+            return quantity * servingSize
+        }
     }
 
     /// What `quantity` of a product adds to the day, rounded to one decimal as the database
     /// stores it. Nil when the product has no kcal or the amount cannot be worked out.
     public static func nutrients(per100: NutrientsPer100, quantity: Double, unit: QuantityUnit, servingSize: Double?) -> Nutrients? {
-        nil
+        guard let kcal = per100.kcal, let total = amount(quantity: quantity, unit: unit, servingSize: servingSize) else { return nil }
+        func scaled(_ value: Double) -> Double {
+            (value * total / 100 * 10).rounded() / 10
+        }
+        return Nutrients(
+            kcal: scaled(kcal),
+            proteinG: per100.proteinG.map(scaled),
+            carbsG: per100.carbsG.map(scaled),
+            fatG: per100.fatG.map(scaled)
+        )
     }
 
     public static func kcal(fromKilojoules kilojoules: Double) -> Double {
-        0
+        kilojoules / kilojoulesPerKcal
     }
 
     /// False when the energy on the label does not fit the macros (4 kcal per gram of protein
     /// and carbohydrate, 9 per gram of fat).
     public static func isConsistent(kcal: Double, proteinG: Double, carbsG: Double, fatG: Double) -> Bool {
-        false
+        let difference = abs(4 * proteinG + 4 * carbsG + 9 * fatG - kcal)
+        return difference <= kcal * inconsistentShare || difference <= inconsistentKcal
     }
 
     public static func totals(_ entries: [Nutrients]) -> DayTotals {
-        DayTotals()
+        var totals = DayTotals()
+        for entry in entries {
+            totals.entryCount += 1
+            totals.kcal += entry.kcal
+            totals.proteinG += entry.proteinG ?? 0
+            totals.carbsG += entry.carbsG ?? 0
+            totals.fatG += entry.fatG ?? 0
+            if entry.proteinG == nil { totals.unknownProtein += 1 }
+            if entry.carbsG == nil { totals.unknownCarbs += 1 }
+            if entry.fatG == nil { totals.unknownFat += 1 }
+        }
+        return totals
     }
 }
