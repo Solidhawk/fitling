@@ -8,3 +8,13 @@ docs/archive/
 
 # Plan-uitvoering (superpowers)
 .superpowers/
+
+# Xcode / SwiftPM
+Fitling.xcodeproj/
+DerivedData/
+.build/
+.swiftpm/
+*.xcresult
+
+# Geheimen (CI schrijft dit bestand uit GitHub-secrets)
+Config/Supabase.xcconfig
