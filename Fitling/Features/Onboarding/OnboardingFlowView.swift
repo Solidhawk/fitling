@@ -22,6 +22,8 @@ struct OnboardingFlowView: View {
     var body: some View {
         NavigationStack {
             Form { content }
+                // On the form only: on the whole view it would replace the identifier of the button below.
+                .accessibilityIdentifier("onboarding.step.\(String(describing: viewModel.step))")
                 .navigationTitle(title)
                 .toolbar {
                     if viewModel.step != .consent {
@@ -31,7 +33,6 @@ struct OnboardingFlowView: View {
                     }
                 }
                 .safeAreaInset(edge: .bottom) { bottomBar }
-                .accessibilityIdentifier("onboarding.step.\(String(describing: viewModel.step))")
                 .alert("error.server", isPresented: $saveFailed) {
                     Button("common.ok", role: .cancel) {}
                 }
