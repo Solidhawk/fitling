@@ -43,11 +43,23 @@ final class WelcomeViewModel {
     }
 
     func signInWithGoogle() async {
-        await run { auth in try await auth.signInWithGoogle() }
+        guard begin() else { return }
+        defer { isWorking = false }
+        do throws(AuthFailure) {
+            try await auth.signInWithGoogle()
+        } catch {
+            messageKey = error.messageKey
+        }
     }
 
     func signInWithApple(_ credential: AppleSignIn.Credential, nonce: String) async {
-        await run { auth in try await auth.signInWithApple(idToken: credential.idToken, nonce: nonce) }
+        guard begin() else { return }
+        defer { isWorking = false }
+        do throws(AuthFailure) {
+            try await auth.signInWithApple(idToken: credential.idToken, nonce: nonce)
+        } catch {
+            messageKey = error.messageKey
+        }
     }
 
     func appleFailed(_ error: any Error) {
@@ -58,16 +70,12 @@ final class WelcomeViewModel {
         }
     }
 
-    private func run(_ action: @MainActor (any AuthProviding) async throws(AuthFailure) -> Void) async {
-        guard !isWorking else { return }
+    /// Claims the screen for one request; a second tap while it runs is ignored.
+    private func begin() -> Bool {
+        guard !isWorking else { return false }
         isWorking = true
         messageKey = nil
-        defer { isWorking = false }
-        do throws(AuthFailure) {
-            try await action(auth)
-        } catch {
-            messageKey = error.messageKey
-        }
+        return true
     }
 }
 
