@@ -1,0 +1,69 @@
+import Foundation
+
+/// What sync knows about a row on the device.
+public struct LocalRowState: Sendable, Equatable {
+    public var updatedAt: Date
+    public var needsPush: Bool
+
+    public init(updatedAt: Date, needsPush: Bool) {
+        self.updatedAt = updatedAt
+        self.needsPush = needsPush
+    }
+}
+
+/// What sync knows about a row that came from the server.
+public struct RemoteRowState: Sendable, Equatable {
+    public var updatedAt: Date
+    public var isDeleted: Bool
+
+    public init(updatedAt: Date, isDeleted: Bool) {
+        self.updatedAt = updatedAt
+        self.isDeleted = isDeleted
+    }
+}
+
+public enum PullAction: Sendable, Equatable {
+    case insert
+    case overwrite
+    case deleteLocal
+    /// The device has a newer change that the server has not seen yet.
+    case keepLocal
+    /// A deletion of a row the device never had.
+    case ignore
+}
+
+public enum PullStart: Sendable, Equatable {
+    /// First pull of this table on this device.
+    case everything
+    /// The cursor is so old that deletions may have been cleaned up: empty the table first.
+    case resetThenEverything
+    case since(Date)
+}
+
+/// The decisions of offline-first sync, apart from storage and network (ARCHITECTURE §3).
+public enum SyncRules {
+    public static let pushBatchSize = 200
+    public static let pullPageSize = 500
+    /// Pull again from this long before the cursor, to catch transactions that committed late.
+    public static let pullOverlap: TimeInterval = 5 * 60
+    /// The server removes deletion markers after this long.
+    public static let deletionRetention: TimeInterval = 90 * 24 * 60 * 60
+
+    public static func pullAction(local: LocalRowState?, remote: RemoteRowState) -> PullAction {
+        .ignore
+    }
+
+    public static func pullStart(cursor: Date?, now: Date) -> PullStart {
+        .everything
+    }
+
+    /// The highest `synced_at` seen so far. Never moves back.
+    public static func nextCursor(current: Date?, pageSyncedAt: [Date]) -> Date? {
+        nil
+    }
+
+    /// After a successful push: only when the row did not change while it was under way.
+    public static func canClearPushFlag(sentUpdatedAt: Date, currentUpdatedAt: Date) -> Bool {
+        false
+    }
+}
