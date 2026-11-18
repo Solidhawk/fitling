@@ -11,6 +11,9 @@ struct FitlingApp: App {
             case let .success(environment):
                 RootView(viewModel: environment.root, context: environment.container.mainContext)
                     .modelContainer(environment.container)
+                    #if DEBUG
+                    .preferredColorScheme(UITestEnvironment.colorScheme)
+                    #endif
             case .failure:
                 ContentUnavailableView {
                     Label("error.configuration.title", systemImage: "exclamationmark.triangle")

@@ -113,15 +113,13 @@ final class OnboardingFlowTests: XCTestCase {
 
     @MainActor
     func testOnboardingDarkMode() {
-        XCUIDevice.shared.appearance = .dark
-        defer { XCUIDevice.shared.appearance = .light }
-        let app = launch(["--ui-testing"])
+        let app = launch(["--ui-testing", "--ui-testing-dark"])
         keepScreenshot(app, named: "11-donker-toestemming")
         giveConsent(app)
         tapContinue(app)
         keepScreenshot(app, named: "12-donker-geboortedatum")
 
-        let welcome = launch(["--ui-testing-signed-out"])
+        let welcome = launch(["--ui-testing-signed-out", "--ui-testing-dark"])
         XCTAssertTrue(welcome.buttons["welcome.email"].waitForExistence(timeout: 5))
         keepScreenshot(welcome, named: "13-donker-welkom")
     }
