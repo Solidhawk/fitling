@@ -8,6 +8,9 @@ options:
 configFiles:
   Debug: Config/Shared.xcconfig
   Release: Config/Shared.xcconfig
+packages:
+  FitlingCore:
+    path: Packages/FitlingCore
 targets:
   Fitling:
     type: application
@@ -24,6 +27,8 @@ targets:
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         SupabaseHost: $(SUPABASE_HOST)
         SupabasePublishableKey: $(SUPABASE_PUBLISHABLE_KEY)
+    dependencies:
+      - package: FitlingCore
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: nl.fitling.Fitling
@@ -41,6 +46,7 @@ targets:
       - FitlingTests
     dependencies:
       - target: Fitling
+      - package: FitlingCore
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES
