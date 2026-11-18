@@ -172,6 +172,7 @@ export function checkStrings({ root }) {
     if (file.startsWith(uiTestingDir)) continue;
     const location = relative(root, file).split(sep).join('/');
     for (const literal of stringLiterals(readFileSync(file, 'utf8'))) {
+      if (literal.before.endsWith('.accessibilityIdentifier(')) continue;
       if (KEY_PATTERN.test(literal.value)) {
         const matches = catalogKeys.filter(catalogMatcher(literal.value));
         if (matches.length === 0) {

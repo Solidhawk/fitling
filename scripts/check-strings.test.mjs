@@ -135,6 +135,15 @@ test('ignores non-UI literals such as date formats and URLs', () => {
   assert.deepEqual(errors, []);
 });
 
+test('treats accessibility identifiers as identifiers, not text keys', () => {
+  const root = makeProject({
+    swift: { 'Features/Auth/EmailAuthView.swift': 'Button { }\n  .accessibilityIdentifier("auth.submit")' },
+    strings: {},
+  });
+  const { errors } = checkStrings({ root });
+  assert.deepEqual(errors, []);
+});
+
 test('requires nl as source language', () => {
   const root = makeProject({
     swift: { 'App/RootView.swift': 'let x = 1' },

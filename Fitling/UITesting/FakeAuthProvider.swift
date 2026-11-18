@@ -76,5 +76,9 @@ final class FakeAuthProvider: AuthProviding {
         try await record("signOut")
         state = .signedOut
     }
+
+    func cancelEmailVerification() {
+        if case .awaitingEmailVerification = state { state = .signedOut }
+    }
 }
 #endif

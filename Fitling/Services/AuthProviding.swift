@@ -21,6 +21,8 @@ enum AuthFailure: Error, Equatable, Sendable {
     case network
     /// A reset or confirmation link opened on another device or after a reinstall.
     case invalidOrForeignLink
+    /// The user closed the Apple or Google sheet; not an error worth showing.
+    case cancelled
     case server
 }
 
@@ -37,4 +39,6 @@ protocol AuthProviding: AnyObject {
     func updatePassword(_ password: String) async throws(AuthFailure)
     func deleteAccount(appleAuthorizationCode: String?) async throws(AuthFailure)
     func signOut() async throws(AuthFailure)
+    /// Leaves the "confirm your email" screen, for example after a typo in the address.
+    func cancelEmailVerification()
 }

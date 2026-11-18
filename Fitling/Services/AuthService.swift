@@ -1,3 +1,4 @@
+import AuthenticationServices
 import Foundation
 import Observation
 import Supabase
@@ -44,6 +45,7 @@ final class AuthService: AuthProviding {
 
     nonisolated static func mapAuthError(_ error: any Error) -> AuthFailure {
         if error is URLError { return .network }
+        if let error = error as? ASWebAuthenticationSessionError, error.code == .canceledLogin { return .cancelled }
         guard let error = error as? AuthError else { return .server }
         switch error {
         case .weakPassword:
@@ -143,5 +145,9 @@ final class AuthService: AuthProviding {
     func signOut() async throws(AuthFailure) {
         try await perform { try await client.auth.signOut(scope: .local) }
         state = .signedOut
+    }
+
+    func cancelEmailVerification() {
+        if case .awaitingEmailVerification = state { state = .signedOut }
     }
 }
