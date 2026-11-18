@@ -40,7 +40,7 @@ import Testing
     }
 
     @Test func linkFromAnotherDevice() {
-        #expect(AuthService.mapAuthError(AuthError.pkce(.codeVerifierNotFound)) == .invalidOrForeignLink)
+        #expect(AuthService.mapAuthError(AuthError.pkceGrantCodeExchange(message: "A code verifier wasn't found in PKCE flow.")) == .invalidOrForeignLink)
     }
 
     @Test func everythingElseIsServer() {

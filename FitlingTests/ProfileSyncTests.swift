@@ -136,6 +136,14 @@ private actor CallCounter {
         #expect(await counter.count == 0)
     }
 
+    @Test func syncKeepsItsStoreAlive() throws {
+        let sync = try { () throws -> ProfileSync in
+            let container = try makeModelContainer(inMemory: true)
+            return ProfileSync(context: container.mainContext, fetchRemote: { _ in nil }, upsertRemote: { _ in })
+        }()
+        #expect(sync.localProfile(userID: userID) == nil)
+    }
+
     @Test func deleteLocalDataRemovesProfile() throws {
         makeLocal(updatedAt: .init(timeIntervalSince1970: 1_800_000_100))
         let sync = makeSync()

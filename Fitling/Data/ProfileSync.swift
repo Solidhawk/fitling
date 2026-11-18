@@ -25,6 +25,9 @@ enum SyncError: Error, Equatable, Sendable {
 @MainActor
 final class ProfileSync {
     private let context: ModelContext
+    /// A ModelContext does not keep its container alive; work that outlives the caller (the delayed
+    /// push) would otherwise touch a released store.
+    private let container: ModelContainer
     private let fetchRemote: @Sendable (UUID) async throws -> ProfileRecord?
     private let upsertRemote: @Sendable (ProfileRecord) async throws -> Void
     private(set) var lastRejection: String?
@@ -35,6 +38,7 @@ final class ProfileSync {
         upsertRemote: @escaping @Sendable (ProfileRecord) async throws -> Void
     ) {
         self.context = context
+        self.container = context.container
         self.fetchRemote = fetchRemote
         self.upsertRemote = upsertRemote
     }
