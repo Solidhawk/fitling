@@ -11,6 +11,9 @@ configFiles:
 packages:
   FitlingCore:
     path: Packages/FitlingCore
+  Supabase:
+    url: https://github.com/supabase/supabase-swift
+    exactVersion: 2.55.7
 targets:
   Fitling:
     type: application
@@ -24,11 +27,19 @@ targets:
         CFBundleDevelopmentRegion: nl
         CFBundleLocalizations: [nl, en, de]
         UILaunchScreen: {}
+        CFBundleURLTypes:
+          - CFBundleURLName: nl.fitling.Fitling
+            CFBundleURLSchemes: [fitling]
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         SupabaseHost: $(SUPABASE_HOST)
         SupabasePublishableKey: $(SUPABASE_PUBLISHABLE_KEY)
+    entitlements:
+      path: Fitling/Resources/Fitling.entitlements
+      properties:
+        com.apple.developer.applesignin: [Default]
     dependencies:
       - package: FitlingCore
+      - package: Supabase
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: nl.fitling.Fitling
@@ -47,6 +58,7 @@ targets:
     dependencies:
       - target: Fitling
       - package: FitlingCore
+      - package: Supabase
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES

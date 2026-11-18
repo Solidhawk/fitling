@@ -21,3 +21,6 @@ Config/Supabase.xcconfig
 
 # Door XcodeGen gegenereerd
 Fitling/Info.plist
+
+# Door XcodeGen gegenereerd
+Fitling/Resources/Fitling.entitlements
