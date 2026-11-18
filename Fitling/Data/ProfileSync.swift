@@ -110,7 +110,10 @@ final class ProfileSync {
     }
 
     func deleteLocalData() throws {
-        try context.delete(model: UserProfile.self)
+        // Per object rather than `delete(model:)`: that batch delete misses objects not yet saved.
+        for profile in try context.fetch(FetchDescriptor<UserProfile>()) {
+            context.delete(profile)
+        }
         try context.save()
     }
 
