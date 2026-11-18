@@ -60,6 +60,7 @@ struct OnboardingFlowView: View {
             }
             Section {
                 Toggle("consent.agree", isOn: $viewModel.consentGiven)
+                    .accessibilityIdentifier("consent.agree")
             }
         case .birthDate:
             Section {
@@ -86,15 +87,15 @@ struct OnboardingFlowView: View {
         case .height:
             Section {
                 if viewModel.usesMetric {
-                    numberRow("onboarding.height.field", value: centimetres, unit: UnitLength.centimeters.symbol)
+                    numberRow("onboarding.height.field", value: centimetres, unit: UnitLength.centimeters.symbol, identifier: "input.height")
                 } else {
-                    numberRow("onboarding.height.feet", value: feetBinding, unit: UnitLength.feet.symbol)
-                    numberRow("onboarding.height.inches", value: inchesBinding, unit: UnitLength.inches.symbol)
+                    numberRow("onboarding.height.feet", value: feetBinding, unit: UnitLength.feet.symbol, identifier: "input.feet")
+                    numberRow("onboarding.height.inches", value: inchesBinding, unit: UnitLength.inches.symbol, identifier: "input.inches")
                 }
             }
         case .weight:
             Section {
-                numberRow("onboarding.weight.field", value: weight, unit: (viewModel.usesMetric ? UnitMass.kilograms : UnitMass.pounds).symbol)
+                numberRow("onboarding.weight.field", value: weight, unit: (viewModel.usesMetric ? UnitMass.kilograms : UnitMass.pounds).symbol, identifier: "input.weight")
             }
         case .activity:
             Section {
@@ -140,10 +141,11 @@ struct OnboardingFlowView: View {
         }
     }
 
-    private func numberRow(_ label: LocalizedStringKey, value: Binding<Double?>, unit: String) -> some View {
+    private func numberRow(_ label: LocalizedStringKey, value: Binding<Double?>, unit: String, identifier: String) -> some View {
         HStack {
             TextField(label, value: value, format: .number)
                 .keyboardType(.decimalPad)
+                .accessibilityIdentifier(identifier)
             Text(verbatim: unit).foregroundStyle(.secondary)
         }
     }
