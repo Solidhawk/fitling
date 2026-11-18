@@ -1,3 +1,4 @@
+import AuthenticationServices
 import Foundation
 import Supabase
 import Testing
@@ -32,6 +33,10 @@ import Testing
     @Test func weakPassword() {
         #expect(AuthService.mapAuthError(AuthError.weakPassword(message: "short", reasons: ["length"])) == .weakPassword)
         #expect(AuthService.mapAuthError(apiError(.weakPassword, status: 422)) == .weakPassword)
+    }
+
+    @Test func cancelledWebLogin() {
+        #expect(AuthService.mapAuthError(ASWebAuthenticationSessionError(.canceledLogin)) == .cancelled)
     }
 
     @Test func linkFromAnotherDevice() {
