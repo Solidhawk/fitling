@@ -40,7 +40,7 @@ final class FakeAuthProvider: AuthProviding {
     }
 
     func signIn(email: String, password: String) async throws(AuthFailure) {
-        do {
+        do throws(AuthFailure) {
             try await record("signIn")
         } catch .emailNotConfirmed {
             state = .awaitingEmailVerification(email: email)

@@ -95,7 +95,7 @@ final class AuthService: AuthProviding {
     }
 
     func signIn(email: String, password: String) async throws(AuthFailure) {
-        do {
+        do throws(AuthFailure) {
             _ = try await perform { try await client.auth.signIn(email: email, password: password) }
         } catch .emailNotConfirmed {
             state = .awaitingEmailVerification(email: email)
