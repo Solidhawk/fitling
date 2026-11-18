@@ -42,3 +42,60 @@ jobs:
           deno fmt --check
           deno check index.ts
           deno test
+
+  strings:
+    name: Teksten (String Catalog)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node --test scripts/*.test.mjs
+      - run: node scripts/check-strings.mjs
+
+  ios:
+    name: iOS (simulator)
+    # Mac minutes are limited: only on main, on demand, or when a commit message asks with [ios].
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main' || contains(github.event.head_commit.message, '[ios]')
+    needs: [core, strings]
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchain
+        run: |
+          xcodebuild -version
+          xcrun simctl list devices available | grep -E "iPhone" | head -20
+      - run: brew install xcodegen
+      - name: Supabase-config uit secrets
+        env:
+          SUPABASE_HOST: ${{ secrets.SUPABASE_HOST }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+        run: printf 'SUPABASE_HOST = %s\nSUPABASE_PUBLISHABLE_KEY = %s\n' "$SUPABASE_HOST" "$SUPABASE_PUBLISHABLE_KEY" > Config/Supabase.xcconfig
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Caches/org.swift.swiftpm
+            DerivedData/SourcePackages
+          key: spm-${{ runner.os }}-${{ hashFiles('project.yml') }}
+      - run: xcodegen generate
+      - name: Bouwen en testen
+        run: |
+          set +e
+          xcodebuild test -scheme Fitling \
+            -destination 'platform=iOS Simulator,name=iPhone 16 Pro' \
+            -derivedDataPath DerivedData \
+            -resultBundlePath TestResults.xcresult \
+            CODE_SIGNING_ALLOWED=NO > xcodebuild.log 2>&1
+          status=$?
+          grep -E "error:|Test Suite|Test Case .*(passed|failed)|✔|✘|\*\* (TEST|BUILD)" xcodebuild.log | tail -150
+          exit $status
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: TestResults
+          path: |
+            TestResults.xcresult
+            xcodebuild.log
+          if-no-files-found: ignore

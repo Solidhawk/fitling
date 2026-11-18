@@ -1,0 +1,66 @@
+name: Fitling
+options:
+  bundleIdPrefix: nl.fitling
+  deploymentTarget:
+    iOS: "17.0"
+  developmentLanguage: nl
+  createIntermediateGroups: true
+configFiles:
+  Debug: Config/Shared.xcconfig
+  Release: Config/Shared.xcconfig
+targets:
+  Fitling:
+    type: application
+    platform: iOS
+    sources:
+      - Fitling
+    info:
+      path: Fitling/Info.plist
+      properties:
+        CFBundleDisplayName: Fitling
+        CFBundleDevelopmentRegion: nl
+        CFBundleLocalizations: [nl, en, de]
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        SupabaseHost: $(SUPABASE_HOST)
+        SupabasePublishableKey: $(SUPABASE_PUBLISHABLE_KEY)
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: nl.fitling.Fitling
+        TARGETED_DEVICE_FAMILY: "1"
+        ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS: YES
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        LOCALIZATION_PREFERS_STRING_CATALOGS: YES
+        SWIFT_EMIT_LOC_STRINGS: YES
+  FitlingTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - FitlingTests
+    dependencies:
+      - target: Fitling
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: nl.fitling.FitlingTests
+  FitlingUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - FitlingUITests
+    dependencies:
+      - target: Fitling
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: nl.fitling.FitlingUITests
+schemes:
+  Fitling:
+    build:
+      targets:
+        Fitling: all
+    test:
+      config: Debug
+      targets:
+        - FitlingTests
+        - FitlingUITests

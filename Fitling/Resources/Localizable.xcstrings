@@ -1,0 +1,28 @@
+{
+  "sourceLanguage": "nl",
+  "strings": {
+    "common.loading": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laden…"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading…"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wird geladen…"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

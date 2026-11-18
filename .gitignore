@@ -18,3 +18,6 @@ DerivedData/
 
 # Geheimen (CI schrijft dit bestand uit GitHub-secrets)
 Config/Supabase.xcconfig
+
+# Door XcodeGen gegenereerd
+Fitling/Info.plist

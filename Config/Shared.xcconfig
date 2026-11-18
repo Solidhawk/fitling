@@ -1,0 +1,7 @@
+IPHONEOS_DEPLOYMENT_TARGET = 17.0
+SWIFT_VERSION = 6.0
+MARKETING_VERSION = 0.1.0
+CURRENT_PROJECT_VERSION = 1
+
+// SUPABASE_HOST holds only the host (abcd.supabase.co): xcconfig treats // as the start of a comment.
+#include? "Supabase.xcconfig"
