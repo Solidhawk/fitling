@@ -39,9 +39,24 @@ final class OnboardingFlowTests: XCTestCase {
         field.typeText(text)
     }
 
+    /// Picker rows are buttons whose label starts with the option title (a detail line may follow).
+    @MainActor
+    private func choose(_ title: String, _ app: XCUIApplication) {
+        let option = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", title)).firstMatch
+        XCTAssertTrue(option.waitForExistence(timeout: 5), "No option \(title)")
+        option.tap()
+    }
+
     @MainActor
     private func giveConsent(_ app: XCUIApplication) {
         let toggle = app.switches["consent.agree"]
+        // At the largest text size the consent text is taller than the screen; the form only creates
+        // the switch row once it scrolls into view.
+        var swipes = 0
+        while !toggle.exists && swipes < 10 {
+            app.collectionViews.firstMatch.swipeUp()
+            swipes += 1
+        }
         XCTAssertTrue(toggle.waitForExistence(timeout: 5))
         toggle.tap()
         if toggle.value as? String == "0" { toggle.switches.firstMatch.tap() }
@@ -67,7 +82,7 @@ final class OnboardingFlowTests: XCTestCase {
         keepScreenshot(app, named: "03-geboortedatum")
         tapContinue(app)
 
-        app.staticTexts["Man"].tap()
+        choose("Man", app)
         keepScreenshot(app, named: "04-geslacht")
         tapContinue(app)
 
@@ -79,11 +94,11 @@ final class OnboardingFlowTests: XCTestCase {
         keepScreenshot(app, named: "06-gewicht")
         tapContinue(app)
 
-        app.staticTexts["Gemiddeld actief"].tap()
+        choose("Gemiddeld actief", app)
         keepScreenshot(app, named: "07-activiteit")
         tapContinue(app)
 
-        app.staticTexts["Op gewicht blijven"].tap()
+        choose("Op gewicht blijven", app)
         keepScreenshot(app, named: "08-doel")
         tapContinue(app)
 
