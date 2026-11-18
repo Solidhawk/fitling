@@ -40,3 +40,15 @@ extension LocalizedText: Codable {
         try container.encode(values)
     }
 }
+
+extension LocalizedText {
+    /// From the JSON the local store keeps. Unreadable data gives an empty text, not a crash:
+    /// a product without a name is shown as such and can be fetched again.
+    public init(json: Data) {
+        self = (try? JSONDecoder().decode(LocalizedText.self, from: json)) ?? LocalizedText()
+    }
+
+    public var json: Data {
+        (try? JSONEncoder().encode(self)) ?? Data("{}".utf8)
+    }
+}

@@ -59,4 +59,9 @@ import Testing
         #expect(String(decoding: data, as: UTF8.self) == "{\"nl\":\"Brood\"}")
         #expect(try JSONDecoder().decode(LocalizedText.self, from: data) == LocalizedText(["nl": "Brood"]))
     }
+
+    @Test func survivesTheLocalStoreAsJson() {
+        #expect(LocalizedText(json: bread.json) == bread)
+        #expect(LocalizedText(json: Data("geen json".utf8)) == LocalizedText())
+    }
 }

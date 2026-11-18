@@ -52,7 +52,7 @@ jobs:
           deno test
 
   strings:
-    name: Teksten (String Catalog)
+    name: Teksten en modellen
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -61,6 +61,7 @@ jobs:
           node-version: 22
       - run: node --test scripts/*.test.mjs
       - run: node scripts/check-strings.mjs
+      - run: node scripts/check-models.mjs
 
   ios:
     name: iOS (simulator)
