@@ -29,9 +29,11 @@ jobs:
       - uses: supabase/setup-cli@v3
         with:
           version: 3.2.0
-      - name: Database (migraties + pgTAP)
+      # Het schema is één bestand (docs/ARCHITECTURE.md, D-07): op een lege database zetten, dan testen.
+      - name: Database (schema.sql + pgTAP)
         run: |
           supabase db start
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -q -f supabase/schema.sql
           supabase test db
       - uses: denoland/setup-deno@v2
         with:
