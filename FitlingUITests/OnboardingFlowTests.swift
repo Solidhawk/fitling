@@ -23,23 +23,19 @@ final class OnboardingFlowTests: XCTestCase {
         add(attachment)
     }
 
-    /// Earlier steps stay in the navigation stack, so pick the Verder button that is on screen.
+    /// Each step has its own Verder button; earlier steps stay in the navigation stack.
     @MainActor
-    private func visibleContinue(_ app: XCUIApplication) -> XCUIElement? {
-        let deadline = Date().addingTimeInterval(5)
-        repeat {
-            if let button = app.buttons.matching(identifier: "onboarding.continue").allElementsBoundByIndex.last(where: { $0.isHittable }) {
-                return button
-            }
-        } while Date() < deadline
-        return nil
+    private func continueButton(_ step: String, _ app: XCUIApplication) -> XCUIElement {
+        app.buttons["onboarding.continue.\(step)"]
     }
 
     @MainActor
-    private func tapContinue(_ app: XCUIApplication) {
-        guard let button = visibleContinue(app) else {
-            return XCTFail("Verder is not reachable")
-        }
+    private func tapContinue(_ step: String, _ app: XCUIApplication) {
+        let button = continueButton(step, app)
+        XCTAssertTrue(button.waitForExistence(timeout: 5))
+        let hittable = NSPredicate(format: "hittable == true")
+        let reachable = XCTNSPredicateExpectation(predicate: hittable, object: button)
+        XCTAssertEqual(XCTWaiter().wait(for: [reachable], timeout: 5), .completed, "Verder is not reachable on \(step)")
         button.tap()
     }
 
@@ -88,36 +84,36 @@ final class OnboardingFlowTests: XCTestCase {
         let app = launch(["--ui-testing"])
         keepScreenshot(app, named: "02-toestemming")
         giveConsent(app)
-        tapContinue(app)
+        tapContinue("consent", app)
 
         // The date picker starts thirty years back, which is the age the expected target assumes.
         keepScreenshot(app, named: "03-geboortedatum")
-        tapContinue(app)
+        tapContinue("birthDate", app)
 
         choose("Man", app)
         keepScreenshot(app, named: "04-geslacht")
-        tapContinue(app)
+        tapContinue("sex", app)
 
         type("180", into: "input.height", app)
         keepScreenshot(app, named: "05-lengte")
-        tapContinue(app)
+        tapContinue("height", app)
 
         type("80", into: "input.weight", app)
         keepScreenshot(app, named: "06-gewicht")
-        tapContinue(app)
+        tapContinue("weight", app)
 
         choose("Gemiddeld actief", app)
         keepScreenshot(app, named: "07-activiteit")
-        tapContinue(app)
+        tapContinue("activity", app)
 
         choose("Op gewicht blijven", app)
         keepScreenshot(app, named: "08-doel")
-        tapContinue(app)
+        tapContinue("goal", app)
 
         let kcal = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "2.760")).firstMatch
         XCTAssertTrue(kcal.waitForExistence(timeout: 5))
         keepScreenshot(app, named: "09-dagdoel-resultaat")
-        tapContinue(app)
+        tapContinue("result", app)
 
         XCTAssertTrue(app.navigationBars["Dagdoel"].waitForExistence(timeout: 5))
         keepScreenshot(app, named: "10-dagdoel")
@@ -128,7 +124,7 @@ final class OnboardingFlowTests: XCTestCase {
         let app = launch(["--ui-testing", "--ui-testing-dark"])
         keepScreenshot(app, named: "11-donker-toestemming")
         giveConsent(app)
-        tapContinue(app)
+        tapContinue("consent", app)
         keepScreenshot(app, named: "12-donker-geboortedatum")
 
         let welcome = launch(["--ui-testing-signed-out", "--ui-testing-dark"])
@@ -141,9 +137,11 @@ final class OnboardingFlowTests: XCTestCase {
         let app = launch(["--ui-testing", "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"])
         keepScreenshot(app, named: "14-grootste-tekst-toestemming")
         giveConsent(app)
-        tapContinue(app)
+        tapContinue("consent", app)
         keepScreenshot(app, named: "15-grootste-tekst-geboortedatum")
-        tapContinue(app)
-        XCTAssertNotNil(visibleContinue(app), "Verder is not reachable")
+        tapContinue("birthDate", app)
+        let next = continueButton("sex", app)
+        XCTAssertTrue(next.waitForExistence(timeout: 5))
+        XCTAssertTrue(next.isHittable, "Verder is not reachable on sex")
     }
 }

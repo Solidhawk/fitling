@@ -234,7 +234,7 @@ struct OnboardingFlowView: View {
                 }
                 .buttonStyle(PrimaryButtonStyle())
                 .disabled(!viewModel.canContinue(at: step))
-                .accessibilityIdentifier("onboarding.continue")
+                .accessibilityIdentifier("onboarding.continue.\(String(describing: step))")
             }
         }
         .padding(Spacing.l)
