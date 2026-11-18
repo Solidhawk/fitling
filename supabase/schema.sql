@@ -28,7 +28,7 @@ create function private.apply_sync_rules()
 returns trigger
 language plpgsql
 set search_path = ''
-as $
+as $$
 begin
   if new.updated_at > now() + interval '5 minutes' then
     new.updated_at := now();
@@ -39,7 +39,7 @@ begin
   new.synced_at := now();
   return new;
 end;
-$;
+$$;
 
 -- ---------------------------------------------------------------------------------------------
 -- Fase 1: profiel en doelen
