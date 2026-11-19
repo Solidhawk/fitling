@@ -2,7 +2,7 @@
 
 Dit document legt vast hoe de app in elkaar zit en waarom. Het hoort bij `PROMPT.md` (wat de app moet doen), `supabase/schema.sql` (de database), `Packages/FitlingCore` (de rekenregels) en `docs/TASKS.md` (wat er nog gebouwd wordt). Waar dit document en het oudere ontwerp in `docs/superpowers/specs/` verschillen, geldt dit document.
 
-Status: het fundament staat op branch `fundament`. Bewezen in CI: de rekenregels (Linux), het schema met RLS (Linux), de gelijkheid tussen modellen en schema (Linux) en de lokale database met alle modellen (Mac-simulator). Er zijn nog geen schermen, geen sync-code in de app en geen Edge Functions behalve `delete-account`.
+Status: het fundament staat op `main`; op branch `fase-1-opbouw` staan daarbovenop inloggen als service en de sync voor `profiles` en `target_history`. Bewezen in CI: de rekenregels (Linux), het schema met RLS (Linux), de gelijkheid tussen modellen en schema (Linux), de lokale database met alle modellen en de sync tegen een nep-server (Mac-simulator). Niet bewezen: de sync tegen een echte Supabase-database (RISKS R-21). Er zijn nog geen schermen en geen Edge Functions behalve `delete-account`.
 
 ## 1. Lagen
 

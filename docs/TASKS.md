@@ -1,6 +1,6 @@
 # Fitling – taken voor Opus 5.5
 
-Het fundament staat op branch `fundament`: rekenregels (`Packages/FitlingCore`), database (`supabase/schema.sql`), lokale modellen (`Fitling/Core/Models`) en de beslissingen (`docs/ARCHITECTURE.md`). Dit bestand zegt wat er gebouwd wordt, in welke volgorde, en wanneer een taak af is. De ontwerpbeslissingen zijn genomen; staat er toch iets open, dan staat dat bij de taak.
+Het fundament staat op `main`: rekenregels (`Packages/FitlingCore`), database (`supabase/schema.sql`), lokale modellen (`Fitling/Core/Models`) en de beslissingen (`docs/ARCHITECTURE.md`). **Werk verder op branch `fase-1-opbouw`**: daar staan bovenop `main` ook inloggen als service (1.2), de sync (1.3) en twee verbeteringen van het fundament (`SyncRules.pullStart`, `SyncCursor.pulledAt`). Die branch gaat aan het eind van fase 1 in één keer naar `main`, na akkoord van de gebruiker. Dit bestand zegt wat er gebouwd wordt, in welke volgorde, en wanneer een taak af is. De ontwerpbeslissingen zijn genomen; staat er toch iets open, dan staat dat bij de taak.
 
 ## Lees eerst
 
@@ -13,7 +13,7 @@ Het fundament staat op branch `fundament`: rekenregels (`Packages/FitlingCore`),
 - **Geen getypeerde fout op een generieke async-eis van een protocol.** `func f<T>(...) async throws(E)` als protocol-eis laat de compiler van Xcode 16.4 (Swift 6.1.2) crashen, zonder foutregel in het log (zoek dan op `Stack dump` in `xcodebuild.log` uit het artefact `TestResults`). Gewone `throws` gebruiken en het fouttype in commentaar noemen, zoals in `RemoteStore`.
 - **Wat op Linux kan, hoort in FitlingCore.** Pure logica met tests daar; dat is gratis en snel.
 - **Eerst de test, dan de code**, en zie de test falen. Testnamen beschrijven gedrag (`returnsTiredWhenSevenDayAverageIsThirtyPercentUnderTarget`).
-- **Naslag.** De eerdere fase 1 werkte en was getest (88 tests). Neem over wat past: `git show origin/fase-1:<pad>`. Overnemen en aanpassen is beter dan opnieuw schrijven. Het herontwerp "Verzamelfiguren" staat alleen lokaal: `git show herontwerp-verzamelfiguren:<pad>`.
+- **Naslag.** De eerdere fase 1 werkte en was getest (88 tests). Neem over wat past: `git show origin/fase-1:<pad>`. Overnemen en aanpassen is beter dan opnieuw schrijven. Het herontwerp "Verzamelfiguren" staat op GitHub: `git show origin/herontwerp-verzamelfiguren:<pad>`.
 - **Schema wijzigen** kan zolang er geen productiedatabase is (ARCHITECTURE D-07): pas `supabase/schema.sql`, het model in `Fitling/Core/Models`, zo nodig `scripts/check-models.mjs` en een pgTAP-test aan in dezelfde commit.
 - **Partner, niet wezentje.** In alles wat de gebruiker leest (app, meldingen, widget) heet hij "je partner". In de code blijft `Creature` staan.
 - **Teksten** altijd via `Localizable.xcstrings`, in nl, en en de. De catalogus bevat al de teksten van de eerdere fase 1; hergebruik de sleutels.
@@ -35,7 +35,7 @@ Hoe: `/model fable` en de taak noemen.
 
 | Nr | Wat | Wie |
 |---|---|---|
-| 0.1 | `fundament` naar `main`: pull request openen, CI groen laten worden (de Mac-job draait op `main` altijd), mergen na akkoord van de gebruiker. | Opus + gebruiker |
+| 0.1 | Gedaan op 2026-11-19: `fundament` staat op `main` (pull request 1, alle CI-jobs groen). | – |
 | 0.2 | Het ontwikkelproject in Supabase heeft mogelijk nog de oude tabel `profiles`. Er zijn geen echte gebruikers. Na akkoord van de gebruiker: de oude tabel en `private.apply_sync_rules` verwijderen en `supabase/schema.sql` uitvoeren (SQL-editor of `psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/schema.sql`). | gebruiker, met hulp |
 | 0.3 | `CLAUDE.md` verwijst voor de architectuur al naar `docs/ARCHITECTURE.md`. Controleer dat de regel klopt. | Opus |
 
