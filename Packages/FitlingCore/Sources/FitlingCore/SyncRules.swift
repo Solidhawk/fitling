@@ -35,7 +35,7 @@ public enum PullAction: Sendable, Equatable {
 public enum PullStart: Sendable, Equatable {
     /// First pull of this table on this device.
     case everything
-    /// The cursor is so old that deletions may have been cleaned up: empty the table first.
+    /// The last pull is so long ago that deletions may have been cleaned up: empty the table first.
     case resetThenEverything
     case since(Date)
 }
@@ -55,9 +55,13 @@ public enum SyncRules {
         return remote.isDeleted ? .deleteLocal : .overwrite
     }
 
-    public static func pullStart(cursor: Date?, now: Date) -> PullStart {
+    /// `cursor` is the highest `synced_at` seen, `lastPull` the moment of the last pull that
+    /// succeeded. The retention counts from the last pull and not from the cursor: a table nobody
+    /// changes keeps an old cursor, and must not be emptied and fetched again on every round.
+    public static func pullStart(cursor: Date?, lastPull: Date?, now: Date) -> PullStart {
+        guard let lastPull else { return .everything }
+        if now.timeIntervalSince(lastPull) > deletionRetention { return .resetThenEverything }
         guard let cursor else { return .everything }
-        if now.timeIntervalSince(cursor) > deletionRetention { return .resetThenEverything }
         return .since(cursor.addingTimeInterval(-pullOverlap))
     }
 

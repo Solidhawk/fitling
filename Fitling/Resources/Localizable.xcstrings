@@ -507,6 +507,28 @@
         }
       }
     },
+    "auth.reset.linkExpired": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deze link is verlopen. Vraag een nieuwe aan."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This link has expired. Request a new one."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dieser Link ist abgelaufen. Fordere einen neuen an."
+          }
+        }
+      }
+    },
     "auth.reset.linkInvalid": {
       "localizations": {
         "nl": {
@@ -1057,6 +1079,182 @@
         }
       }
     },
+    "creature.ember.name": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ember"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ember"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ember"
+          }
+        }
+      }
+    },
+    "creature.ember.note": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brandt feller als je traint."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Burns brighter when you train."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brennt heller, wenn du trainierst."
+          }
+        }
+      }
+    },
+    "creature.pebble.name": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pebble"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pebble"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pebble"
+          }
+        }
+      }
+    },
+    "creature.pebble.note": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rustig. Houdt van een goede rustdag."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calm. Loves a good rest day."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ruhig. Mag einen guten Ruhetag."
+          }
+        }
+      }
+    },
+    "creature.pip.name": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pip"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pip"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pip"
+          }
+        }
+      }
+    },
+    "creature.pip.note": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Piept zodra het honger heeft."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chirps as soon as it’s hungry."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Piepst, sobald es Hunger hat."
+          }
+        }
+      }
+    },
+    "creature.sprout.name": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprout"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprout"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprout"
+          }
+        }
+      }
+    },
+    "creature.sprout.note": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Krijgt een bloem na elke training."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grows a flower after every workout."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bekommt nach jedem Training eine Blüte."
+          }
+        }
+      }
+    },
     "error.configuration.body": {
       "localizations": {
         "nl": {
@@ -1519,24 +1717,24 @@
         }
       }
     },
-    "onboarding.goal.buildMuscle.detail": {
+    "onboarding.goal.buildMuscle.detail %@": {
       "localizations": {
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "10% meer dan je verbruik"
+            "value": "%@ meer dan je verbruik"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "10% above what you burn"
+            "value": "%@ above what you burn"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "10 % über deinem Verbrauch"
+            "value": "%@ über deinem Verbrauch"
           }
         }
       }
@@ -1563,24 +1761,24 @@
         }
       }
     },
-    "onboarding.goal.lose.detail": {
+    "onboarding.goal.lose.detail %@": {
       "localizations": {
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "20% minder dan je verbruik"
+            "value": "%@ minder dan je verbruik"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "20% below what you burn"
+            "value": "%@ below what you burn"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "20 % unter deinem Verbrauch"
+            "value": "%@ unter deinem Verbrauch"
           }
         }
       }
@@ -1651,24 +1849,24 @@
         }
       }
     },
-    "onboarding.goal.recomp.detail": {
+    "onboarding.goal.recomp.detail %@": {
       "localizations": {
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vet verliezen en spieren opbouwen, 5% onder je verbruik"
+            "value": "Vet verliezen en spieren opbouwen, %@ onder je verbruik"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Lose fat and build muscle, 5% below what you burn"
+            "value": "Lose fat and build muscle, %@ below what you burn"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Fett verlieren und Muskeln aufbauen, 5 % unter deinem Verbrauch"
+            "value": "Fett verlieren und Muskeln aufbauen, %@ unter deinem Verbrauch"
           }
         }
       }
@@ -2619,6 +2817,28 @@
         }
       }
     },
+    "targets.floor": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We houden je doel boven een veilige ondergrens."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We keep your target above a safe minimum."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wir halten dein Ziel über einer sicheren Untergrenze."
+          }
+        }
+      }
+    },
     "targets.kcal.label": {
       "localizations": {
         "nl": {
@@ -2659,6 +2879,50 @@
           "stringUnit": {
             "state": "translated",
             "value": "Eiweiß"
+          }
+        }
+      }
+    },
+    "targets.warning.belowFloor": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dit doel ligt onder wat je lichaam in rust al verbruikt, met een kleine marge. Zo lang volhouden is zwaar."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This target is below what your body burns at rest, plus a small margin. That is hard to keep up for long."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dieses Ziel liegt unter dem, was dein Körper in Ruhe verbraucht, plus einem kleinen Puffer. Das hält man nicht lange durch."
+          }
+        }
+      }
+    },
+    "targets.warning.largeDeficit": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dit doel ligt meer dan een kwart onder je verbruik. Afvallen gaat dan snel, maar je houdt het minder lang vol."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This target is more than a quarter below what you burn. You would lose weight fast, but it is harder to keep up."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dieses Ziel liegt mehr als ein Viertel unter deinem Verbrauch. Du nimmst schnell ab, hältst es aber schwerer durch."
           }
         }
       }
@@ -2729,90 +2993,24 @@
         }
       }
     },
-    "welcome.legend.carbs": {
-      "localizations": {
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Koolhydraten"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Carbs"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kohlenhydrate"
-          }
-        }
-      }
-    },
-    "welcome.legend.fat": {
-      "localizations": {
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vet"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fat"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fett"
-          }
-        }
-      }
-    },
-    "welcome.legend.protein": {
-      "localizations": {
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Eiwit"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Protein"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Eiweiß"
-          }
-        }
-      }
-    },
     "welcome.tagline": {
       "localizations": {
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Eten bijhouden, trainen en een wezentje dat met je meegroeit."
+            "value": "Eten bijhouden, trainen en een partner die met je meegroeit."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Track your food and training, with a small creature that grows with you."
+            "value": "Track your food and training, with a partner that grows with you."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Essen und Training festhalten – mit einem kleinen Wesen, das mit dir wächst."
+            "value": "Essen und Training festhalten – mit einem Partner, der mit dir wächst."
           }
         }
       }

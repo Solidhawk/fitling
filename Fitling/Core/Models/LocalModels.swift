@@ -35,15 +35,20 @@ extension FitlingSchemaV1 {
         }
     }
 
-    /// How far a table has been pulled: the highest `synced_at` seen so far.
+    /// How far a table has been pulled.
     @Model
     final class SyncCursor {
         @Attribute(.unique) var table: String
-        var syncedAt: Date
+        /// The highest `synced_at` seen so far, on the clock of the server. Nil while the table
+        /// had no rows for this user.
+        var syncedAt: Date?
+        /// When the last pull succeeded, on the clock of this device.
+        var pulledAt: Date
 
-        init(table: String, syncedAt: Date) {
+        init(table: String, syncedAt: Date?, pulledAt: Date) {
             self.table = table
             self.syncedAt = syncedAt
+            self.pulledAt = pulledAt
         }
     }
 }

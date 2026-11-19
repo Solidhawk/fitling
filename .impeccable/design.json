@@ -1,0 +1,391 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-19T13:27:02+00:00",
+  "title": "Design System: Fitling",
+  "extensions": {
+    "colorMeta": {
+      "ink": {
+        "role": "primary",
+        "displayName": "Plum Ink",
+        "canonical": "#231A33",
+        "tonalRamp": [
+          "#241D2F",
+          "#3E3255",
+          "#59447D",
+          "#7255A6",
+          "#927DB9",
+          "#B3A5CB",
+          "#D2CBDF",
+          "#F2F0F5"
+        ]
+      },
+      "ink-soft": {
+        "role": "neutral",
+        "displayName": "Soft Ink",
+        "canonical": "#5E5470",
+        "tonalRamp": [
+          "#25222A",
+          "#413C4B",
+          "#5D546D",
+          "#796C90",
+          "#978EA8",
+          "#B6B0C0",
+          "#D4D1D9",
+          "#F2F1F3"
+        ]
+      },
+      "ground": {
+        "role": "neutral",
+        "displayName": "Lilac Ground",
+        "canonical": "#EFE9F8",
+        "tonalRamp": [
+          "#231834",
+          "#3E2760",
+          "#58338E",
+          "#713DBE",
+          "#916BCA",
+          "#B29AD6",
+          "#D2C5E5",
+          "#F1EEF6"
+        ]
+      },
+      "card": {
+        "role": "neutral",
+        "displayName": "Card White",
+        "canonical": "#FFFFFF",
+        "tonalRamp": [
+          "#262626",
+          "#434343",
+          "#616161",
+          "#7E7E7E",
+          "#9B9B9B",
+          "#B8B8B8",
+          "#D5D5D5",
+          "#F2F2F2"
+        ]
+      },
+      "track": {
+        "role": "neutral",
+        "displayName": "Track Lilac",
+        "canonical": "#DCD3EA",
+        "tonalRamp": [
+          "#241D30",
+          "#3F3057",
+          "#5A427F",
+          "#7451AA",
+          "#947ABB",
+          "#B3A3CD",
+          "#D3CAE0",
+          "#F2EFF5"
+        ]
+      },
+      "on-ribbon": {
+        "role": "neutral",
+        "displayName": "On-Ribbon Ink",
+        "canonical": "#231A33",
+        "tonalRamp": [
+          "#241D2F",
+          "#3E3255",
+          "#59447D",
+          "#7255A6",
+          "#927DB9",
+          "#B3A5CB",
+          "#D2CBDF",
+          "#F2F0F5"
+        ]
+      },
+      "sprout": {
+        "role": "secondary",
+        "displayName": "Sprout Green",
+        "canonical": "#86D45A",
+        "tonalRamp": [
+          "#223616",
+          "#3A6323",
+          "#52942D",
+          "#69C734",
+          "#8CD165",
+          "#AEDA96",
+          "#D0E7C3",
+          "#F1F7ED"
+        ]
+      },
+      "ember": {
+        "role": "secondary",
+        "displayName": "Ember Orange",
+        "canonical": "#FF9442",
+        "tonalRamp": [
+          "#42230B",
+          "#7A3C0D",
+          "#B85509",
+          "#FB6D01",
+          "#F68F3F",
+          "#F2B07E",
+          "#F4D1B6",
+          "#FAF1EA"
+        ]
+      },
+      "pip": {
+        "role": "secondary",
+        "displayName": "Pip Yellow",
+        "canonical": "#FFD23F",
+        "tonalRamp": [
+          "#42350B",
+          "#7A600D",
+          "#B88F09",
+          "#FBC001",
+          "#F6CB3F",
+          "#F2D77E",
+          "#F4E5B6",
+          "#FAF7EA"
+        ]
+      },
+      "pebble": {
+        "role": "secondary",
+        "displayName": "Pebble Blue-Grey",
+        "canonical": "#9AA9C2",
+        "tonalRamp": [
+          "#1F252D",
+          "#364051",
+          "#4B5B76",
+          "#5F769D",
+          "#8495B1",
+          "#AAB4C6",
+          "#CED3DD",
+          "#F0F2F4"
+        ]
+      },
+      "protein": {
+        "role": "tertiary",
+        "displayName": "Coral",
+        "canonical": "#FF7B6B",
+        "tonalRamp": [
+          "#42110B",
+          "#7A190D",
+          "#B81C09",
+          "#FB1C01",
+          "#F6533F",
+          "#F28A7E",
+          "#F4BDB6",
+          "#FAECEA"
+        ]
+      },
+      "carbs": {
+        "role": "tertiary",
+        "displayName": "Sunflower",
+        "canonical": "#FFC93C",
+        "tonalRamp": [
+          "#42330B",
+          "#7A5C0D",
+          "#B88709",
+          "#FBB501",
+          "#F6C43F",
+          "#F2D27E",
+          "#F4E3B6",
+          "#FAF6EA"
+        ]
+      },
+      "fat": {
+        "role": "tertiary",
+        "displayName": "Sky",
+        "canonical": "#6EC1F0",
+        "tonalRamp": [
+          "#102C3D",
+          "#175070",
+          "#1A74A7",
+          "#189AE3",
+          "#50AFE5",
+          "#88C5E7",
+          "#BCDCEE",
+          "#ECF4F9"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Welcome and verify-email titles; large navigation titles (max 40 pt). Dynamic Type .largeTitle Heavy."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Name plates and in-list headers. .headline Heavy."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Button labels and inline navigation titles (max 22 pt). .headline Bold."
+      },
+      "label-small": {
+        "displayName": "Label Small",
+        "purpose": "Macro names on ribbons. .subheadline Bold."
+      },
+      "numeral-large": {
+        "displayName": "Numeral Large",
+        "purpose": "The kcal target. .largeTitle Heavy, tabular."
+      },
+      "numeral": {
+        "displayName": "Numeral",
+        "purpose": "Grams on macro ribbons. .title3 Heavy, tabular."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Welcome tagline. .title3 Regular."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "List rows and explanations. .body Regular."
+      },
+      "caption": {
+        "displayName": "Caption",
+        "purpose": "Catalog notes, detail lines, warnings. .footnote Regular."
+      }
+    },
+    "shadows": [
+      {
+        "name": "card-lift",
+        "value": "0 4px 12px rgba(35,26,51,0.12)",
+        "purpose": "Targets card. Dark: rgba(0,0,0,0.5)."
+      },
+      {
+        "name": "button-lift",
+        "value": "0 2px 6px rgba(35,26,51,0.12)",
+        "purpose": "Secondary capsule buttons. Dark: rgba(0,0,0,0.5)."
+      },
+      {
+        "name": "ground-shadow",
+        "value": "flat ellipse 60 x 6.4 in a 100-unit figure space, card-shadow colour",
+        "purpose": "Under every partner's feet."
+      }
+    ],
+    "motion": [
+      {
+        "name": "press",
+        "value": "scale(0.97), ease-out 0.15s",
+        "purpose": "Pressed state of primary and secondary buttons."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "accessibility-size",
+        "value": "Dynamic Type AX1 and up",
+        "purpose": "Catalog to one column, sign-in actions scroll, macro ribbons stack, Apple button grows to 80 pt."
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one main action of a screen; ink capsule, disabled turns track with soft-ink label.",
+      "html": "<button class=\"ds-btn-primary\">Continue</button>",
+      "css": ".ds-btn-primary { font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif; width: 100%; min-height: 54px; padding: 0 16px; border: none; border-radius: 9999px; background: #231A33; color: #FFFFFF; font-size: 17px; font-weight: 700; transition: transform 0.15s ease-out; } .ds-btn-primary:active { transform: scale(0.97); } .ds-btn-primary:focus-visible { outline: 3px solid #86D45A; outline-offset: 2px; } .ds-btn-primary:disabled { background: #DCD3EA; color: #5E5470; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Alternative actions; card capsule with a soft lift and a 1 pt track edge.",
+      "html": "<button class=\"ds-btn-secondary\">Continue with e-mail</button>",
+      "css": ".ds-btn-secondary { font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif; width: 100%; min-height: 54px; padding: 0 16px; border: 1px solid #DCD3EA; border-radius: 9999px; background: #FFFFFF; color: #231A33; font-size: 17px; font-weight: 700; box-shadow: 0 2px 6px rgba(35,26,51,0.12); transition: transform 0.15s ease-out; } .ds-btn-secondary:active { transform: scale(0.97); } .ds-btn-secondary:focus-visible { outline: 3px solid #86D45A; outline-offset: 2px; } .ds-btn-secondary:disabled { color: #5E5470; }"
+    },
+    {
+      "name": "Name Plate",
+      "kind": "chip",
+      "refersTo": "name-plate",
+      "description": "Heavy label on a ribbon capsule; white 2 pt edge in the catalog, none inside a card.",
+      "html": "<span class=\"ds-plate\">Sprout</span> <span class=\"ds-plate ds-plate-incard\">Per day</span>",
+      "css": ".ds-plate { font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif; display: inline-block; padding: 4px 12px; border-radius: 9999px; background: #86D45A; color: #231A33; font-size: 17px; font-weight: 800; box-shadow: inset 0 0 0 2px #FFFFFF; } .ds-plate-incard { background: #DCD3EA; box-shadow: none; }"
+    },
+    {
+      "name": "Figure Card",
+      "kind": "card",
+      "refersTo": "figure-card",
+      "description": "Catalog card: partner on its species tint, name plate, one line of character.",
+      "html": "<div class=\"ds-figcard\"><svg viewBox=\"0 0 100 100\" width=\"96\" height=\"96\"><ellipse cx=\"50\" cy=\"92.5\" rx=\"30\" ry=\"3.2\" fill=\"rgba(35,26,51,0.12)\"/><ellipse cx=\"38\" cy=\"88.5\" rx=\"7.5\" ry=\"3.5\" fill=\"#57AE45\"/><ellipse cx=\"62\" cy=\"88.5\" rx=\"7.5\" ry=\"3.5\" fill=\"#57AE45\"/><clipPath id=\"ds-b\"><path d=\"M50 30C69 30 82 43 82 61C82 77 72 87 50 87C28 87 18 77 18 61C18 43 31 30 50 30Z\"/></clipPath><path d=\"M50 30C69 30 82 43 82 61C82 77 72 87 50 87C28 87 18 77 18 61C18 43 31 30 50 30Z\" fill=\"#86D45A\"/><g clip-path=\"url(#ds-b)\"><ellipse cx=\"54\" cy=\"98\" rx=\"42\" ry=\"19\" fill=\"#57AE45\"/><ellipse cx=\"35\" cy=\"44\" rx=\"9\" ry=\"5.5\" fill=\"#C2F08A\"/></g><ellipse cx=\"39.5\" cy=\"55\" rx=\"3.3\" ry=\"4.3\" fill=\"#231A33\"/><ellipse cx=\"60.5\" cy=\"55\" rx=\"3.3\" ry=\"4.3\" fill=\"#231A33\"/><path d=\"M46 63Q50 66.5 54 63\" stroke=\"#231A33\" stroke-width=\"2.2\" fill=\"none\" stroke-linecap=\"round\"/></svg><span class=\"ds-plate\">Sprout</span><p>Grows a flower after every workout.</p></div>",
+      "css": ".ds-figcard { font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 12px; border-radius: 24px; background: #DCF3DF; color: #231A33; text-align: center; width: 160px; } .ds-figcard p { margin: 0; font-size: 13px; } .ds-figcard .ds-plate { display: inline-block; padding: 4px 12px; border-radius: 9999px; background: #86D45A; color: #231A33; font-size: 17px; font-weight: 800; box-shadow: inset 0 0 0 2px #FFFFFF; }"
+    },
+    {
+      "name": "Targets Card",
+      "kind": "card",
+      "refersTo": "targets-card",
+      "description": "Daily target: in-card plate, kcal in heavy numerals, one ribbon per macro.",
+      "html": "<div class=\"ds-targets\"><span class=\"ds-tplate\">Per day</span><div class=\"ds-kcal\">2,760 kcal</div><div class=\"ds-ribbon\" style=\"background:#FF7B6B\"><span>Protein</span><b>128 g</b></div><div class=\"ds-ribbon\" style=\"background:#FFC93C\"><span>Carbs</span><b>389 g</b></div><div class=\"ds-ribbon\" style=\"background:#6EC1F0\"><span>Fat</span><b>77 g</b></div></div>",
+      "css": ".ds-targets { font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif; display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 24px; background: #FFFFFF; color: #231A33; box-shadow: 0 4px 12px rgba(35,26,51,0.12); } .ds-tplate { align-self: flex-start; padding: 4px 12px; border-radius: 9999px; background: #DCD3EA; font-size: 17px; font-weight: 800; } .ds-kcal { font-size: 34px; font-weight: 900; font-variant-numeric: tabular-nums; } .ds-ribbon { display: flex; justify-content: space-between; align-items: baseline; min-height: 44px; box-sizing: border-box; padding: 8px 16px; border-radius: 22px; color: #231A33; } .ds-ribbon span { font-size: 15px; font-weight: 700; } .ds-ribbon b { font-size: 20px; font-weight: 900; font-variant-numeric: tabular-nums; }"
+    },
+    {
+      "name": "Onboarding Progress",
+      "kind": "custom",
+      "refersTo": "progress-pill",
+      "description": "One 8 pt capsule per step; done and current in ink, the rest in track.",
+      "html": "<div class=\"ds-progress\"><i class=\"on\"></i><i class=\"on\"></i><i class=\"on\"></i><i></i><i></i></div>",
+      "css": ".ds-progress { display: flex; gap: 4px; } .ds-progress i { flex: 1; height: 8px; border-radius: 9999px; background: #DCD3EA; } .ds-progress i.on { background: #231A33; }"
+    },
+    {
+      "name": "Navigation Bar",
+      "kind": "nav",
+      "refersTo": "",
+      "description": "Opaque ground bar, rounded ink titles capped at 22 pt inline and 40 pt large.",
+      "html": "<nav class=\"ds-nav\"><span class=\"ds-nav-back\">&#8249; Weight</span><span class=\"ds-nav-title\">How active are you?</span></nav>",
+      "css": ".ds-nav { font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif; display: flex; align-items: center; gap: 24px; padding: 12px 16px; background: #EFE9F8; color: #231A33; } .ds-nav-back { font-size: 17px; } .ds-nav-title { font-size: 17px; font-weight: 700; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Character Catalog",
+    "overview": "**Creative North Star: \"The Character Catalog\"**\n\nFitling looks like a collector's catalog of four partners. Each partner (Sprout, Ember, Pip, Pebble) has its own pastel card, a name plate in its ribbon colour, and one line of character. The rest of the app is built from the same few materials: a soft lilac ground (deep plum in dark mode), white rounded cards, saturated ribbons with dark ink lettering, and heavy rounded type for names and numbers. The tone is warm and toy-like, but the numbers stay strict. Figures are tabular, heavy and in ink, and every calculation sits next to its explanation.\n\nDensity is calm. A screen holds one main idea, either a catalog grid, a single targets card, or one list section on the ground. Primary actions sit at the bottom within thumb reach. System navigation, lists, pickers and the Sign in with Apple button are kept and restyled rather than replaced, so the app reads as native iOS in its own colours.\n\nThere are no gradients anywhere. Light and shadow on the partners are flat tones. Navigation bars are opaque and part of the page, never frosted.",
+    "keyCharacteristics": [
+      "Pastel ground, white cards with continuous 24 pt corners, saturated ribbons.",
+      "SF Rounded throughout; Heavy for names and numbers, Bold for actions.",
+      "Ink (never system blue) for tint, text, checkmarks and the primary action.",
+      "Partners are vector drawings in flat tones that look the same in light and dark mode.",
+      "Every layout has an accessibility-size variant that stacks instead of squeezing."
+    ],
+    "rules": [
+      {
+        "name": "The Ink-Not-Blue Rule",
+        "body": "The app tint is `ink`. No control shows system blue; the UIKit back button gets `ink` explicitly because it ignores the SwiftUI tint.",
+        "section": "colors"
+      },
+      {
+        "name": "The Ink-On-Ribbon Rule",
+        "body": "Text on a ribbon colour is always `on-ribbon` dark plum, in light and dark mode. Ribbons never carry white text.",
+        "section": "colors"
+      },
+      {
+        "name": "The No-Gradient Rule",
+        "body": "Every fill is one flat colour. Depth on the partners comes from separate flat shading shapes, never a gradient.",
+        "section": "colors"
+      },
+      {
+        "name": "The Heavy Numbers Rule",
+        "body": "Every number the user reads as a result (kcal, grams, BMR, TDEE, factors) is Heavy, tabular and in ink.",
+        "section": "typography"
+      },
+      {
+        "name": "The Capped Bar Rule",
+        "body": "Navigation titles follow the text size at launch up to a cap: inline at 22 pt, large at 40 pt. A bar has a fixed height, and a title that keeps growing gets cut off. Body content has no cap.",
+        "section": "typography"
+      },
+      {
+        "name": "The Opaque Bar Rule",
+        "body": "Navigation bars use the opaque ground colour with no hairline. Nothing in the app is frosted or translucent.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** use `ground` behind every screen and hide the system grouped background on lists (`groundBackground()`).",
+      "**Do** put text on ribbons and name plates in `on-ribbon`, whatever the colour scheme.",
+      "**Do** set result numbers in Heavy with `.monospacedDigit()`.",
+      "**Do** use `ink-soft` (`footerStyle()`) for footers and secondary lines, never the system secondary grey.",
+      "**Do** give every new layout an accessibility-size variant that stacks or scrolls instead of truncating.",
+      "**Do** build new partners and accessories from flat `FigurePart`s: one body, shading clipped to it, feet on the y = 92 baseline.",
+      "**Do** use the 4 pt spacing tokens and the `Radius` tokens; use continuous corners for rounded rectangles."
+    ],
+    "donts": [
+      "**Don't** use gradients, glassmorphism or frosted bars.",
+      "**Don't** use emoji as icons; icons are SF Symbols.",
+      "**Don't** put a white edge on a name plate that sits inside a card.",
+      "**Don't** let a partner's colours change with the appearance, or outline a partner with a stroke.",
+      "**Don't** let navigation titles grow past 22 pt (inline) or 40 pt (large).",
+      "**Don't** put AI-generated imagery or food photos into the partner world."
+    ]
+  }
+}

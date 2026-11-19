@@ -7,8 +7,30 @@ export type Deps = {
   log(message: string): void;
 };
 
+export type Config = { url: string; secretKey: string };
+
 function json(status: number, body: unknown): Response {
   return Response.json(body, { status });
+}
+
+/** The settings the function cannot work without, or the names of those that are missing. */
+export function readConfig(env: (name: string) => string | undefined): Config | { missing: string[] } {
+  const missing: string[] = [];
+  const url = env('SUPABASE_URL') ?? '';
+  if (url === '') missing.push('SUPABASE_URL');
+  let secretKey = '';
+  try {
+    const keys = JSON.parse(env('SUPABASE_SECRET_KEYS') ?? '');
+    if (typeof keys?.default === 'string') secretKey = keys.default;
+  } catch {
+    // Unreadable counts as missing.
+  }
+  if (secretKey === '') missing.push('SUPABASE_SECRET_KEYS');
+  return missing.length > 0 ? { missing } : { url, secretKey };
+}
+
+export function misconfigured(): Response {
+  return json(500, { error: 'misconfigured' });
 }
 
 async function appleAuthorizationCode(req: Request): Promise<string | null> {

@@ -41,6 +41,25 @@ jobs:
           done
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -q -f supabase/schema.sql
           supabase test db
+      # Het ontwikkelproject wordt bij een schemawijziging leeggemaakt en opnieuw opgezet (TASKS 0.2).
+      # Na reset-dev.sql mag er niets van het schema over zijn, anders mist dat bestand een tabel.
+      - name: Leegmaken en opnieuw opzetten (reset-dev.sql + schema.sql)
+        run: |
+          db="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
+          psql "$db" -v ON_ERROR_STOP=1 -q -f supabase/reset-dev.sql
+          left=$(psql "$db" -v ON_ERROR_STOP=1 -tA -c "
+            select n.nspname || '.' || c.relname from pg_class c join pg_namespace n on n.oid = c.relnamespace
+            where n.nspname in ('public', 'private') and c.relkind in ('r', 'p', 'v', 'm', 'S')
+            union all
+            select n.nspname || '.' || p.proname || '()' from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+            where n.nspname in ('public', 'private')")
+          if [ -n "$left" ]; then
+            echo "Na reset-dev.sql staat er nog:"
+            echo "$left"
+            exit 1
+          fi
+          psql "$db" -v ON_ERROR_STOP=1 -q -f supabase/schema.sql
+          supabase test db
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.9.8
@@ -74,6 +93,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Toolchain
         run: |
+          # Fixed, so a runner image update cannot change the compiler under us.
+          sudo xcode-select -s /Applications/Xcode_16.4.app
           xcodebuild -version
           xcrun simctl list devices available | grep -E "iPhone" | head -20
       - run: brew install xcodegen

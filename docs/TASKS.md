@@ -1,6 +1,6 @@
 # Fitling – taken voor Opus 5.5
 
-Het fundament staat op branch `fundament`: rekenregels (`Packages/FitlingCore`), database (`supabase/schema.sql`), lokale modellen (`Fitling/Core/Models`) en de beslissingen (`docs/ARCHITECTURE.md`). Dit bestand zegt wat er gebouwd wordt, in welke volgorde, en wanneer een taak af is. De ontwerpbeslissingen zijn genomen; staat er toch iets open, dan staat dat bij de taak.
+Het fundament staat op `main`: rekenregels (`Packages/FitlingCore`), database (`supabase/schema.sql`), lokale modellen (`Fitling/Core/Models`) en de beslissingen (`docs/ARCHITECTURE.md`). **Werk verder op branch `fase-1-opbouw`**: daar staan bovenop `main` ook inloggen als service (1.2), de sync (1.3) en twee verbeteringen van het fundament (`SyncRules.pullStart`, `SyncCursor.pulledAt`). Die branch gaat aan het eind van fase 1 in één keer naar `main`, na akkoord van de gebruiker. Dit bestand zegt wat er gebouwd wordt, in welke volgorde, en wanneer een taak af is. De ontwerpbeslissingen zijn genomen; staat er toch iets open, dan staat dat bij de taak.
 
 ## Lees eerst
 
@@ -10,9 +10,10 @@ Het fundament staat op branch `fundament`: rekenregels (`Packages/FitlingCore`),
 ## Werkafspraken
 
 - **Geen Mac.** Bouwen en testen gebeurt in GitHub Actions. De Mac-job draait alleen als het commitbericht `[ios]` bevat. Er zijn ongeveer 190 Mac-minuten per maand; een run kost er ongeveer vijf. Bundel het werk van een taak in zo weinig mogelijk `[ios]`-commits en lees je Swift na vóór je pusht.
+- **Geen getypeerde fout op een generieke async-eis van een protocol.** `func f<T>(...) async throws(E)` als protocol-eis laat de compiler van Xcode 16.4 (Swift 6.1.2) crashen, zonder foutregel in het log (zoek dan op `Stack dump` in `xcodebuild.log` uit het artefact `TestResults`). Gewone `throws` gebruiken en het fouttype in commentaar noemen, zoals in `RemoteStore`.
 - **Wat op Linux kan, hoort in FitlingCore.** Pure logica met tests daar; dat is gratis en snel.
 - **Eerst de test, dan de code**, en zie de test falen. Testnamen beschrijven gedrag (`returnsTiredWhenSevenDayAverageIsThirtyPercentUnderTarget`).
-- **Naslag.** De eerdere fase 1 werkte en was getest (88 tests). Neem over wat past: `git show origin/fase-1:<pad>`. Overnemen en aanpassen is beter dan opnieuw schrijven. Het herontwerp "Verzamelfiguren" staat alleen lokaal: `git show herontwerp-verzamelfiguren:<pad>`.
+- **Naslag.** De eerdere fase 1 werkte en was getest (88 tests). Neem over wat past: `git show origin/fase-1:<pad>`. Overnemen en aanpassen is beter dan opnieuw schrijven. Het herontwerp "Verzamelfiguren" staat op GitHub: `git show origin/herontwerp-verzamelfiguren:<pad>`.
 - **Schema wijzigen** kan zolang er geen productiedatabase is (ARCHITECTURE D-07): pas `supabase/schema.sql`, het model in `Fitling/Core/Models`, zo nodig `scripts/check-models.mjs` en een pgTAP-test aan in dezelfde commit.
 - **Partner, niet wezentje.** In alles wat de gebruiker leest (app, meldingen, widget) heet hij "je partner". In de code blijft `Creature` staan.
 - **Teksten** altijd via `Localizable.xcstrings`, in nl, en en de. De catalogus bevat al de teksten van de eerdere fase 1; hergebruik de sleutels.
@@ -34,7 +35,7 @@ Hoe: `/model fable` en de taak noemen.
 
 | Nr | Wat | Wie |
 |---|---|---|
-| 0.1 | `fundament` naar `main`: pull request openen, CI groen laten worden (de Mac-job draait op `main` altijd), mergen na akkoord van de gebruiker. | Opus + gebruiker |
+| 0.1 | Gedaan op 2026-11-19: `fundament` staat op `main` (pull request 1, alle CI-jobs groen). | – |
 | 0.2 | Het ontwikkelproject in Supabase heeft mogelijk nog de oude tabel `profiles`. Er zijn geen echte gebruikers. Na akkoord van de gebruiker: de oude tabel en `private.apply_sync_rules` verwijderen en `supabase/schema.sql` uitvoeren (SQL-editor of `psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/schema.sql`). | gebruiker, met hulp |
 | 0.3 | `CLAUDE.md` verwijst voor de architectuur al naar `docs/ARCHITECTURE.md`. Controleer dat de regel klopt. | Opus |
 
@@ -44,7 +45,9 @@ Hoe: `/model fable` en de taak noemen.
 
 Uitkomst: iemand kan een account maken, de onboarding doorlopen en zijn dagdoel zien en aanpassen, in de nieuwe vormgeving, offline bruikbaar na de eerste keer.
 
-### 1.1 Design system "Verzamelfiguren"
+### 1.1 Design system "Verzamelfiguren" — al gebouwd
+
+Staat op branch `fase-1-opbouw`, met tests. 1.1 en 1.4 tot en met 1.8 zijn in één keer gebouwd: het startscherm verwijst naar alle schermen, en lege tussenschermen mogen niet (CLAUDE.md). Hieronder de oorspronkelijke opdracht, als naslag.
 
 - **Doel:** kleuren, afstanden, knoppen, naamplaatje, doelenkaart en de vier figuren staan in `Fitling/DesignSystem`.
 - **Bestanden:** overnemen van `herontwerp-verzamelfiguren`: `Fitling/DesignSystem/*` (`Spacing`, `Buttons`, `NamePlate`, `TargetsCard`, `NavigationBarStyle`, `Figures`), `Fitling/Resources/Assets.xcassets/*.colorset`, de sleutels `creature.*` in de String Catalog, `FitlingTests/FigureTests.swift`, `FitlingTests/NavigationBarStyleTests.swift`, en `.impeccable/surfaces/fitling.md` (het richtingscontract). Neem de stand van commit `c035b4d` of later: daarin zijn de bevindingen uit de eerste simulator-screenshots al opgelost (inkt in plaats van systeemblauw, `footerStyle()` voor leesbare toelichtingen, navigatietitels met een maximale grootte).
@@ -54,7 +57,9 @@ Uitkomst: iemand kan een account maken, de onboarding doorlopen en zijn dagdoel 
 - **Tests:** `FigureTests` (3 tests × 4 soorten) en `NavigationBarStyleTests`.
 - **Mac-run:** samen met 1.4.
 
-### 1.2 Services: Supabase en inloggen
+### 1.2 Services: Supabase en inloggen — al gebouwd
+
+Staat op branch `fase-1-opbouw`, met tests. `AuthService.failure(inLink:)` herkent de verlopen link (`AuthFailure.expiredLink`); de tekst `auth.reset.linkExpired` staat in de catalogus en wordt in 1.5 getoond. Hieronder de oorspronkelijke opdracht, als naslag.
 
 - **Doel:** `AuthService` is de enige plek die met Supabase Auth praat.
 - **Bestanden:** overnemen uit `fase-1`: `Fitling/Services/AuthProviding.swift`, `AuthService.swift`, `AppleSignIn.swift`, `NetworkMonitor.swift`, de functie `makeSupabaseClient` (stond in `Fitling/Data/ProfileSync.swift` of ernaast; zoek met `git grep makeSupabaseClient origin/fase-1`), `Fitling/UITesting/FakeAuthProvider.swift`, en de tests `AuthServiceMappingTests`, `AppleSignInTests`.
@@ -62,10 +67,12 @@ Uitkomst: iemand kan een account maken, de onboarding doorlopen en zijn dagdoel 
 - **Acceptatie:** dezelfde tests als in `fase-1` plus één voor de verlopen link.
 - **Mac-run:** samen met 1.4.
 
-### 1.3 SyncEngine
+### 1.3 SyncEngine — al gebouwd
+
+Staat op branch `fase-1-opbouw`, met tests (`SyncEngineTests`, `SyncRecordTests`, nep-server `FakeRemoteStore`). Voor een volgende tabel: een record in `Fitling/Data/Sync/Records/` met eigen `encode(to:)` (geen `synced_at`, lege waarden als null), het model `SyncableModel` maken, en `ModelTable<Model>()` op de plek van §3.5 in de lijst zetten. `SyncEngine.sync()` geeft `.completed`, `.offline`, `.failed` of `.alreadyRunning`; `problemKey` is de catalogussleutel van een melding, of nil. Het aanmaken van de engine en de momenten waarop hij draait (§3.5) horen bij 1.4. Hieronder de oorspronkelijke opdracht, als naslag.
 
 - **Doel:** één generieke sync volgens ARCHITECTURE §3, eerst voor `profiles` en `target_history`.
-- **Gebruikt:** `SyncRules` uit FitlingCore voor elke beslissing: `pullAction(local:remote:)`, `pullStart(cursor:now:)`, `nextCursor`, `canClearPushFlag`, en de constanten voor blokgrootte en overlap. De engine bevat zelf geen `if` over tijden of vlaggen.
+- **Gebruikt:** `SyncRules` uit FitlingCore voor elke beslissing: `pullAction(local:remote:)`, `pullStart(cursor:lastPull:now:)`, `nextCursor`, `canClearPushFlag`, en de constanten voor blokgrootte en overlap. De engine bevat zelf geen `if` over tijden of vlaggen.
 - **Bestanden:** `Fitling/Data/Sync/SyncEngine.swift`, `SyncTable.swift` (per tabel: naam, sleutelkolom, model ↔ record), `RemoteStore.swift` (protocol met `upsert` en `fetch(since:limit:)`, de echte versie met Supabase en een nep-versie voor tests), `Records/ProfileRecord.swift`, `Records/TargetPeriodRecord.swift`.
 - **Vastgelegd:**
   - Eén engine met een lijst tabellen in de volgorde van §3.5; geen aparte sync-klasse per tabel.
@@ -84,12 +91,21 @@ Uitkomst: iemand kan een account maken, de onboarding doorlopen en zijn dagdoel 
   - `pullAsksAgainFromFiveMinutesBeforeTheCursor`
   - `aRejectedRowDoesNotBlockTheOthers` (en `problemKey` is gezet)
   - `onlyOneRoundRunsAtATime`
-  - `oldCursorClearsTheTableAndPullsEverything` (ouder dan 90 dagen)
+  - `oldCursorClearsTheTableAndPullsEverything` (laatste pull ouder dan 90 dagen)
+  - `aQuietTableIsNotClearedWhileTheDeviceKeepsPulling`
   - `engineKeepsItsStoreAlive`
 - **Mac-run:** ja, één.
 - **→ Fable** bij een sync-fout die je niet in één poging begrijpt.
 
-### 1.4 Start en routering
+### 1.4 Start en routering — al gebouwd
+
+Staat op branch `fase-1-opbouw`, met tests. 1.1 en 1.4 tot en met 1.8 zijn in één keer gebouwd: het startscherm verwijst naar alle schermen, en lege tussenschermen mogen niet (CLAUDE.md). Hieronder de oorspronkelijke opdracht, als naslag.
+
+Wat anders is dan hieronder staat:
+- `SyncEngine.sync()` tijdens een lopende ronde wacht op één extra ronde en geeft daarvan de uitkomst; `.alreadyRunning` bestaat niet meer. Nieuw: `.interrupted`.
+- `SyncEngine.eraseLocalData()` wist alle modellen. Een verzoek dat terugkomt na een wis-actie wordt weggegooid, zodat rijen van de vorige gebruiker niet terugkomen.
+- Uitloggen en account verwijderen wissen zelf niets: `RootViewModel.refresh()` wist bij `.signedOut` en toont in dezelfde stap welkom. Zo is er geen moment met het profielscherm zonder profiel.
+- De eerste echte sync tegen het ontwikkelproject is nog niet gedaan; die wacht op 0.2 (RISKS R-21).
 
 - **Doel:** `FitlingApp` maakt de services en toont het juiste scherm: laden, welkom, e-mail bevestigen, geen verbinding, onboarding of thuis.
 - **Bestanden:** `Fitling/App/FitlingApp.swift` (uitbreiden), `RootViewModel.swift`, `RootView.swift`, `Fitling/UITesting/UITestEnvironment.swift` (overnemen), `FitlingTests/RootViewModelTests.swift` (uit `AppFlowTests` van `fase-1`).
@@ -100,16 +116,22 @@ Uitkomst: iemand kan een account maken, de onboarding doorlopen en zijn dagdoel 
 - **Acceptatie:** de tests van `RootViewModel` uit `fase-1` groen, plus `olderRefreshDoesNotOverwriteANewerOne` en `signOutGoesStraightToWelcome`. `LaunchTests` aanpassen: uitgelogd starten toont de welkomknoppen.
 - **Mac-run:** ja, met 1.1 en 1.2.
 
-### 1.5 Welkom en inloggen met e-mail
+### 1.5 Welkom en inloggen met e-mail — al gebouwd
+
+Staat op branch `fase-1-opbouw`, met tests. 1.1 en 1.4 tot en met 1.8 zijn in één keer gebouwd: het startscherm verwijst naar alle schermen, en lege tussenschermen mogen niet (CLAUDE.md). Hieronder de oorspronkelijke opdracht, als naslag.
 
 - **Doel:** welkom (catalogus van de vier figuren, Apple, Google, e-mail), inloggen, registreren, wachtwoord vergeten, nieuw wachtwoord, e-mail bevestigen.
 - **Bestanden:** `Fitling/Features/Auth/*` uit `herontwerp-verzamelfiguren` (die versies hebben de nieuwe look), `AuthViewModels.swift` en `AuthViewModelTests.swift` + `DoubleTapSupport.swift` uit `fase-1`.
-- **Vastgelegd:** wachtwoord vergeten toont altijd dezelfde melding (D-03). De Apple-knop staat bovenaan, even hoog als de andere, als capsule.
+- **Vastgelegd:** wachtwoord vergeten toont altijd dezelfde melding (D-03). Een link die `AuthFailure.expiredLink` geeft, toont `auth.reset.linkExpired`; `.invalidOrForeignLink` blijft `auth.reset.linkInvalid`. De Apple-knop staat bovenaan, even hoog als de andere, als capsule.
 - **Nog open (gebruiker):** de Google-knop heeft nog geen G-logo. Het officiële logo downloaden mag pas na akkoord van de gebruiker; tot dan alleen tekst.
 - **Acceptatie:** de ViewModel-tests uit `fase-1` groen; UI-test `testWelcomeScreen`; screenshot licht en donker naar de gebruiker.
 - **Mac-run:** ja.
 
-### 1.6 Onboarding
+### 1.6 Onboarding — al gebouwd
+
+Staat op branch `fase-1-opbouw`, met tests. 1.1 en 1.4 tot en met 1.8 zijn in één keer gebouwd: het startscherm verwijst naar alle schermen, en lege tussenschermen mogen niet (CLAUDE.md). Hieronder de oorspronkelijke opdracht, als naslag.
+
+De omrekening van ft, in en lb zit in `BodyInput` (`Fitling/Features/Profile/BodyInput.swift`), gedeeld met het bewerkscherm. De geboortedag gaat via `BirthDayPicking`.
 
 - **Doel:** toestemming, geboortedag, geslacht, lengte, gewicht, activiteit, doel, resultaat.
 - **Gebruikt:** `NutritionEngine.plan(for:on:)`, `isValidBirthDay`, `Limits`, `Day`, `UserProfile`, `TargetPeriod`.
@@ -128,7 +150,11 @@ Uitkomst: iemand kan een account maken, de onboarding doorlopen en zijn dagdoel 
 - **Acceptatie:** UI-test loopt de hele flow door in licht, donker en bij de grootste tekst (alle acht stappen, "Verder" steeds bereikbaar), met een screenshot per stap.
 - **Mac-run:** ja.
 
-### 1.7 Dagdoel en profiel
+### 1.7 Dagdoel en profiel — al gebouwd
+
+Staat op branch `fase-1-opbouw`, met tests. 1.1 en 1.4 tot en met 1.8 zijn in één keer gebouwd: het startscherm verwijst naar alle schermen, en lege tussenschermen mogen niet (CLAUDE.md). Hieronder de oorspronkelijke opdracht, als naslag.
+
+Een wijziging wordt direct opgeslagen en twee seconden later gesynct. Een doelwijziging maakt of werkt de `TargetPeriod` van vandaag bij (`ModelContext.recordTargets`).
 
 - **Doel:** het dagdoel met uitleg (BMR, TDEE, factoren), profiel bewerken, doelen handmatig aanpassen.
 - **Gebruikt:** `NutritionEngine.plan`, `NutritionEngine.warnings(forKcal:bmr:tdee:sex:)`, `TargetsCard`.
@@ -140,7 +166,9 @@ Uitkomst: iemand kan een account maken, de onboarding doorlopen en zijn dagdoel 
 - **Tests:** de `ProfileViewModel`-tests uit `fase-1`, plus `changingTargetsStartsANewPeriodToday`, `changingTargetsTwiceOnOneDayKeepsOnePeriod`, `manualTargetBelowTheFloorWarnsButSaves`, `editSavesImmediately`.
 - **Mac-run:** ja.
 
-### 1.8 Account
+### 1.8 Account — al gebouwd
+
+Staat op branch `fase-1-opbouw`, met tests. 1.1 en 1.4 tot en met 1.8 zijn in één keer gebouwd: het startscherm verwijst naar alle schermen, en lege tussenschermen mogen niet (CLAUDE.md). Hieronder de oorspronkelijke opdracht, als naslag.
 
 - **Doel:** uitloggen (met waarschuwing bij onverstuurde wijzigingen) en account verwijderen.
 - **Bestanden:** `Fitling/Features/Account/*` en `AccountViewModel` + tests uit `fase-1`; `supabase/functions/delete-account` bestaat al.
@@ -148,7 +176,9 @@ Uitkomst: iemand kan een account maken, de onboarding doorlopen en zijn dagdoel 
 - **Acceptatie:** tests uit `fase-1` groen; Deno-tests groen.
 - **Mac-run:** ja, samen met 1.7.
 
-### 1.9 Afronden fase 1
+### 1.9 Afronden fase 1 — al gedaan
+
+Gedaan op 2026-11-19: screenshots van alle schermen in licht, donker en grootste tekst (UI-test `OnboardingFlowTests`), finish-review en de reparaties daaruit, codereview en de reparaties daaruit, `DESIGN.md`. Open en vastgelegd in `docs/UNFORGET.md`: S11 (op een echt toestel nakijken), S12 (een sessie die vanzelf afloopt wist onverstuurde wijzigingen; ontwerpkeuze). Hieronder de oorspronkelijke opdracht, als naslag.
 
 - Screenshots van alle schermen (licht, donker, grootste tekst) naar de gebruiker.
 - `impeccable` finish-review op de schermen en daarna `impeccable:impeccable-documenter` voor `DESIGN.md`.
@@ -379,7 +409,7 @@ Na twee tot vier weken echt gebruik: kloppen de drempels, de snelheid van de vor
 | 7.1 | Alle teksten nalopen in nl, en en de; eenheden via `Measurement` (kg/lb, kcal/kJ) |
 | 7.2 | Toegankelijkheid: VoiceOver op elk bedieningselement, grootste tekst, contrast |
 | 7.3 | Data-export (JSON en CSV) van alle eigen data |
-| 7.4 | Opruimen van verwijdermarkeringen ouder dan 90 dagen (geplande job) |
+| 7.4 | Opruimen van verwijdermarkeringen ouder dan 90 dagen (geplande job). De 90 dagen tellen vanaf `synced_at` (klok van de server), niet vanaf `deleted_at` (klok van een toestel): een toestel leegt zijn tabel pas na 90 dagen zonder pull, en een markering die eerder verdwijnt bereikt dat toestel nooit. Laat de job 's nachts draaien: een pull van meer dan één blok kan een rij missen als er tijdens het lezen rijen echt verdwijnen (ARCHITECTURE §3.4). |
 | 7.5 | `schema.sql` wordt de eerste migratie; productieproject in de EU (UNFORGET S4) |
 | 7.6 | Privacyverklaring gelinkt; scherm "Over" met bronvermelding (Open Food Facts, NEVO) |
 | 7.7 | TestFlight, app-icoon, eigen SMTP (UNFORGET S1 en S2) |

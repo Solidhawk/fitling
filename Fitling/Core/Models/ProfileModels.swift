@@ -101,3 +101,22 @@ extension TargetPeriod {
         NutritionTargets(kcal: kcalTarget, proteinG: proteinTargetG, carbsG: carbsTargetG, fatG: fatTargetG)
     }
 }
+
+extension UserProfile {
+    /// Takes over a profile the user entered. The caller marks the change (`updatedAt`, `needsPush`).
+    func update(body: BodyProfile) {
+        birthDate = body.birthDay.isoString
+        sex = body.sex.rawValue
+        heightCm = body.heightCm
+        weightKg = body.weightKg
+        activityLevel = body.activityLevel.rawValue
+        goal = body.goal.rawValue
+    }
+
+    func update(targets: NutritionTargets) {
+        kcalTarget = targets.kcal
+        proteinTargetG = targets.proteinG
+        carbsTargetG = targets.carbsG
+        fatTargetG = targets.fatG
+    }
+}

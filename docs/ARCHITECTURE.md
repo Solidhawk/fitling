@@ -2,7 +2,7 @@
 
 Dit document legt vast hoe de app in elkaar zit en waarom. Het hoort bij `PROMPT.md` (wat de app moet doen), `supabase/schema.sql` (de database), `Packages/FitlingCore` (de rekenregels) en `docs/TASKS.md` (wat er nog gebouwd wordt). Waar dit document en het oudere ontwerp in `docs/superpowers/specs/` verschillen, geldt dit document.
 
-Status: het fundament staat op branch `fundament`. Bewezen in CI: de rekenregels (Linux), het schema met RLS (Linux), de gelijkheid tussen modellen en schema (Linux) en de lokale database met alle modellen (Mac-simulator). Er zijn nog geen schermen, geen sync-code in de app en geen Edge Functions behalve `delete-account`.
+Status: het fundament staat op `main`; op branch `fase-1-opbouw` staan daarbovenop inloggen als service en de sync voor `profiles` en `target_history`. Bewezen in CI: de rekenregels (Linux), het schema met RLS (Linux), de gelijkheid tussen modellen en schema (Linux), de lokale database met alle modellen en de sync tegen een nep-server (Mac-simulator). Niet bewezen: de sync tegen een echte Supabase-database (RISKS R-21). Er zijn nog geen schermen en geen Edge Functions behalve `delete-account`.
 
 ## 1. Lagen
 
@@ -76,11 +76,11 @@ De beslissingen van sync staan als pure functies in `SyncRules` (FitlingCore) en
 
 ### 3.4 Pull
 
-- Per tabel een cursor (`SyncCursor`): de hoogste `synced_at` die is gezien.
-- Ophalen waar `synced_at > cursor − 5 minuten`, gesorteerd op `synced_at, id`, per 500 rijen. De overlap vangt transacties op die later committen; dubbel binnenhalen is onschuldig.
+- Per tabel een cursor (`SyncCursor`): de hoogste `synced_at` die is gezien (klok van de server) en het moment van de laatste geslaagde pull (klok van het toestel).
+- Ophalen waar `synced_at > cursor − 5 minuten`, nieuwste eerst (`synced_at desc`, dan de sleutel), per 500 rijen. Die volgorde is er voor een pull van meer dan één blok: een rij die tussendoor verandert, schuift naar voren. De volgende blokken kunnen dan een rij herhalen, maar slaan er geen over; de verschoven rij zelf komt met de volgende pull mee, want de cursor is de hoogste `synced_at` die gezien is. De overlap vangt transacties op die later committen; dubbel binnenhalen is onschuldig.
 - Toepassen: lokaal opzoeken op id. Bestaat de rij niet, dan toevoegen. Bestaat hij wel en heeft hij `needsPush` met een nieuwere `updatedAt`, dan blijft de lokale versie staan. Anders wint de server. Een rij met `deleted_at` wordt lokaal verwijderd.
 - Nieuw toestel of herinstallatie: eerst alles ophalen, dan pas data tonen. De onboarding start alleen als een geslaagde pull bevestigt dat er geen profiel is.
-- Is de cursor ouder dan 90 dagen, dan wordt de tabel lokaal geleegd en opnieuw opgehaald. De server ruimt verwijdermarkeringen na 90 dagen op (taak in fase 7); een ouder toestel zou die anders missen.
+- Is de laatste geslaagde pull ouder dan 90 dagen, dan wordt de tabel lokaal geleegd (op rijen die nog verstuurd moeten worden na) en opnieuw opgehaald. De 90 dagen tellen vanaf de laatste pull en niet vanaf de laatste wijziging: een tabel waar niets in verandert, wordt anders bij elke ronde opnieuw opgehaald. De server ruimt verwijdermarkeringen na 90 dagen op (taak in fase 7); een ouder toestel zou die anders missen.
 
 ### 3.5 Volgorde en momenten
 
