@@ -422,17 +422,19 @@ Het menu loopt van vandaag tot zes dagen later. Gelogde maaltijden blijven bij e
 
 `ShoppingListBuilder.lines(for:)` maakt uit het weekmenu één lijst: per product en eenheid opgeteld, naar boven afgerond op wat je kunt kopen, in de volgorde van de winkel. Geef per `MealPlanEntry` één `PlannedRecipeUse` mee, ook voor restjes: een restje is een portie uit dezelfde pan en hoort dus bij wat er gekocht wordt.
 
-### 6.2 Lijst en items
+### 6.2 Lijst en items — gebouwd
 
 - **Vastgelegd:** de eerste lijst wordt lokaal aangemaakt, ook offline: `ShoppingList` + `ShoppingListMember` als eigenaar. Items van het menu hebben `source = "menu"` en worden vervangen als het menu verandert; handmatige items blijven.
 
-### 6.3 Delen
+### 6.3 Delen — gebouwd
 
 - **Gebruikt:** `create_shopping_list_invite`, `join_shopping_list`, Realtime als seintje om te pullen (D-18).
 
-### 6.4 `sync-offers`
+### 6.4 `sync-offers` — gebouwd, met alleen testdata
 
 - **Vooraf (gebruiker):** RISKS R-13 beantwoord. Zonder bron: alleen de provider met testdata.
+- **Gebouwd:** `supabase/functions/sync-offers` met `OfferProvider`, `TestDataProvider` (winkel `testwinkel`, tien producten van maandag tot en met zondag van deze week) en 17 Deno-tests. De functie draait alleen met de geheime sleutel in `Authorization`. Een echte bron is één bestand naast `testdata.ts` en één regel in `index.ts`.
+- **Nog te doen bij het productieproject (UNFORGET S20):** de functie deployen en dagelijks laten aanroepen met Supabase Cron (pg_cron + pg_net), met de geheime sleutel uit Vault.
 
 ### 6.5 OfferMatcher (FitlingCore) — al gebouwd
 
@@ -440,7 +442,7 @@ Het menu loopt van vandaag tot zes dagen later. Gelogde maaltijden blijven bij e
 
 ### 6.6 Kwaliteit van de matches — **→ Fable** als er te veel verkeerde of gemiste matches zijn.
 
-### 6.7 Aanbiedingen tonen
+### 6.7 Aanbiedingen tonen — gebouwd
 
 - Favoriete supermarkten, postcode, per item de goedkoopste winkel, totaal per winkel met "+ n items zonder prijs".
 
@@ -452,9 +454,9 @@ Het menu loopt van vandaag tot zes dagen later. Gelogde maaltijden blijven bij e
 |---|---|
 | 7.1 | Alle teksten nalopen in nl, en en de; eenheden via `Measurement` (kg/lb, kcal/kJ) |
 | 7.2 | Toegankelijkheid: VoiceOver op elk bedieningselement, grootste tekst, contrast |
-| 7.3 | Data-export (JSON en CSV) van alle eigen data |
-| 7.4 | Opruimen van verwijdermarkeringen ouder dan 90 dagen (geplande job). De 90 dagen tellen vanaf `synced_at` (klok van de server), niet vanaf `deleted_at` (klok van een toestel): een toestel leegt zijn tabel pas na 90 dagen zonder pull, en een markering die eerder verdwijnt bereikt dat toestel nooit. Laat de job 's nachts draaien: een pull van meer dan één blok kan een rij missen als er tijdens het lezen rijen echt verdwijnen (ARCHITECTURE §3.4). |
+| 7.3 | Data-export (JSON en CSV) van alle eigen data. **Gebouwd:** `DataExport` (Account → Gegevens exporteren), met `DataExportTests`. Alle tabellen die syncen, zonder verwijderde en gedeelde rijen; voortgangsfoto's staan alleen op het toestel en zitten er niet in |
+| 7.4 | **Gebouwd:** `private.purge_deletion_markers()` met pg_cron om 03:30 UTC, getest in `supabase/tests/purge_test.sql`. Opruimen van verwijdermarkeringen ouder dan 90 dagen (geplande job). De 90 dagen tellen vanaf `synced_at` (klok van de server), niet vanaf `deleted_at` (klok van een toestel): een toestel leegt zijn tabel pas na 90 dagen zonder pull, en een markering die eerder verdwijnt bereikt dat toestel nooit. Laat de job 's nachts draaien: een pull van meer dan één blok kan een rij missen als er tijdens het lezen rijen echt verdwijnen (ARCHITECTURE §3.4). |
 | 7.5 | `schema.sql` wordt de eerste migratie; productieproject in de EU (UNFORGET S4) |
-| 7.6 | Privacyverklaring gelinkt; scherm "Over" met bronvermelding (Open Food Facts, NEVO) |
+| 7.6 | Privacyverklaring gelinkt; scherm "Over" met bronvermelding (Open Food Facts, NEVO). **Gebouwd:** scherm "Over Fitling" (Account) met Open Food Facts, USDA, Everkinetic en Wikimedia Commons. NEVO volgt als de import er is (S15); de privacyverklaring wacht op een tekst en een adres van de gebruiker (S21) |
 | 7.7 | TestFlight, app-icoon, eigen SMTP (UNFORGET S1 en S2) |
 | 7.8 | Laatste ronde vormgeving met `impeccable` |

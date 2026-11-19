@@ -215,7 +215,7 @@ export interface RawOffer {
 
 - `sync-offers` loopt alle aangemelde providers langs, normaliseert (barcode via dezelfde regel als de app, `search_title` in kleine letters zonder accenten) en schrijft met `upsert` op `(supermarket_id, external_id, valid_from)`. Een provider die faalt, houdt de andere niet tegen. Aanbiedingen die een week verlopen zijn, worden verwijderd.
 - Een bron toevoegen of vervangen is één bestand dat `OfferProvider` implementeert. Welke bronnen gebruikt mogen worden, is een juridische vraag die vóór fase 6 beantwoord moet zijn (RISKS R-13). Tot die tijd bestaat er alleen een provider met testdata.
-- Plannen: dagelijks via Supabase Cron. De precieze opzet (pg_cron met een HTTP-aanroep of een geplande functie) staat in de Supabase-documentatie en wordt bij fase 6 gekozen; het raakt de rest van het ontwerp niet.
+- Plannen: dagelijks via Supabase Cron: pg_cron roept met pg_net de functie aan, met de geheime sleutel uit Vault in `Authorization`. Zonder die sleutel weigert de functie (401). Dat wordt ingesteld bij het opzetten van het productieproject (UNFORGET S20); in `schema.sql` staat het niet, omdat de project-URL en de sleutel per project verschillen.
 
 ### 6.1 Matchen gebeurt op het toestel (D-09)
 

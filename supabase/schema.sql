@@ -916,3 +916,61 @@ begin
   end if;
 end;
 $$;
+
+-- ---------------------------------------------------------------------------------------------
+-- Fase 7: verwijdermarkeringen opruimen
+-- ---------------------------------------------------------------------------------------------
+
+-- Een verwijderde rij blijft als markering staan, zodat andere toestellen hem bij een pull zien.
+-- Na 90 dagen gaat hij echt weg. De 90 dagen tellen vanaf synced_at (de klok van de server), niet
+-- vanaf deleted_at (de klok van een toestel): een toestel leegt zijn tabel pas na 90 dagen zonder
+-- pull (SyncRules), en een markering die eerder verdwijnt, bereikt dat toestel nooit. Elke tabel
+-- met deleted_at en synced_at doet mee, ook tabellen die later bijkomen. Een tabel waarvan een
+-- markering nog naar een levende rij verwijst, slaat de job over en probeert hij de volgende nacht weer.
+create function private.purge_deletion_markers()
+returns integer
+language plpgsql
+set search_path = ''
+as $$
+declare
+  t record;
+  n integer;
+  removed integer := 0;
+begin
+  for t in
+    select c.table_name
+    from information_schema.columns c
+    where c.table_schema = 'public' and c.column_name = 'deleted_at'
+      and exists (
+        select 1 from information_schema.columns s
+        where s.table_schema = 'public' and s.table_name = c.table_name and s.column_name = 'synced_at'
+      )
+    order by c.table_name
+  loop
+    begin
+      execute format(
+        'delete from public.%I where deleted_at is not null and synced_at < now() - interval ''90 days''',
+        t.table_name
+      );
+      get diagnostics n = row_count;
+      removed := removed + n;
+    exception when foreign_key_violation then
+      raise notice 'purge_deletion_markers: % overgeslagen', t.table_name;
+    end;
+  end loop;
+  return removed;
+end;
+$$;
+
+revoke execute on function private.purge_deletion_markers() from public, anon, authenticated;
+
+-- 's Nachts (03:30 UTC): een pull van meer dan één blok kan een rij missen als er tijdens het lezen
+-- rijen echt verdwijnen (ARCHITECTURE §3.4). Alleen waar pg_cron geladen is; dat is het geval op Supabase.
+do $$
+begin
+  if current_setting('shared_preload_libraries', true) like '%pg_cron%' then
+    create extension if not exists pg_cron;
+    perform cron.schedule('purge-deletion-markers', '30 3 * * *', 'select private.purge_deletion_markers()');
+  end if;
+end;
+$$;

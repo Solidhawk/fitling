@@ -11896,6 +11896,226 @@
           }
         }
       }
+    },
+    "account.export": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gegevens exporteren"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Export data"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Daten exportieren"
+          }
+        }
+      }
+    },
+    "account.export.footer": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Al je eigen gegevens: één JSON-bestand en een CSV-bestand per onderdeel, om te bewaren of mee te nemen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All your own data: one JSON file and a CSV file per part, to keep or to take elsewhere."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alle deine eigenen Daten: eine JSON-Datei und eine CSV-Datei pro Bereich, zum Aufbewahren oder Mitnehmen."
+          }
+        }
+      }
+    },
+    "account.export.failed": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exporteren lukte niet. Probeer het opnieuw."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The export did not work. Please try again."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Export hat nicht geklappt. Versuch es bitte noch einmal."
+          }
+        }
+      }
+    },
+    "account.about": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Over Fitling"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About Fitling"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Über Fitling"
+          }
+        }
+      }
+    },
+    "account.about.sources": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bronnen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sources"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quellen"
+          }
+        }
+      }
+    },
+    "account.about.off": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Productgegevens van Open Food Facts, beschikbaar onder de Open Database License (ODbL)."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Product data from Open Food Facts, available under the Open Database License (ODbL)."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Produktdaten von Open Food Facts, verfügbar unter der Open Database License (ODbL)."
+          }
+        }
+      }
+    },
+    "account.about.usda": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voedingswaarden van de recepten berekend met USDA FoodData Central (publiek domein)."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nutrition of the recipes calculated with USDA FoodData Central (public domain)."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nährwerte der Rezepte berechnet mit USDA FoodData Central (gemeinfrei)."
+          }
+        }
+      }
+    },
+    "account.about.everkinetic": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tekeningen van oefeningen gebaseerd op Everkinetic, CC BY-SA 4.0."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exercise drawings based on Everkinetic, CC BY-SA 4.0."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Übungszeichnungen nach Everkinetic, CC BY-SA 4.0."
+          }
+        }
+      }
+    },
+    "account.about.photos": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foto's van recepten komen van Wikimedia Commons. Bij elk recept staan de maker en de licentie."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recipe photos come from Wikimedia Commons. Each recipe names the maker and the licence."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rezeptfotos stammen von Wikimedia Commons. Bei jedem Rezept stehen Urheber und Lizenz."
+          }
+        }
+      }
+    },
+    "account.about.version %@": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Versie %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version %@"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version %@"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

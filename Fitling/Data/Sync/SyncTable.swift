@@ -37,6 +37,8 @@ protocol SyncTable {
     func push(with engine: SyncEngine) async throws
     func pull(with engine: SyncEngine) async throws
     func hasPendingRows(in context: ModelContext) -> Bool
+    /// The user's own rows of this table, for the data export (TASKS 7.3).
+    func export(in context: ModelContext, encoder: JSONEncoder) -> DataExport.Table?
 }
 
 /// The tables that sync, parents before children (ARCHITECTURE §3.5). Later phases add theirs here.
