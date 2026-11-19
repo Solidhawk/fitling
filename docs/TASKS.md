@@ -65,7 +65,7 @@ Uitkomst: iemand kan een account maken, de onboarding doorlopen en zijn dagdoel 
 ### 1.3 SyncEngine
 
 - **Doel:** één generieke sync volgens ARCHITECTURE §3, eerst voor `profiles` en `target_history`.
-- **Gebruikt:** `SyncRules` uit FitlingCore voor elke beslissing: `pullAction(local:remote:)`, `pullStart(cursor:now:)`, `nextCursor`, `canClearPushFlag`, en de constanten voor blokgrootte en overlap. De engine bevat zelf geen `if` over tijden of vlaggen.
+- **Gebruikt:** `SyncRules` uit FitlingCore voor elke beslissing: `pullAction(local:remote:)`, `pullStart(cursor:lastPull:now:)`, `nextCursor`, `canClearPushFlag`, en de constanten voor blokgrootte en overlap. De engine bevat zelf geen `if` over tijden of vlaggen.
 - **Bestanden:** `Fitling/Data/Sync/SyncEngine.swift`, `SyncTable.swift` (per tabel: naam, sleutelkolom, model ↔ record), `RemoteStore.swift` (protocol met `upsert` en `fetch(since:limit:)`, de echte versie met Supabase en een nep-versie voor tests), `Records/ProfileRecord.swift`, `Records/TargetPeriodRecord.swift`.
 - **Vastgelegd:**
   - Eén engine met een lijst tabellen in de volgorde van §3.5; geen aparte sync-klasse per tabel.
@@ -84,7 +84,8 @@ Uitkomst: iemand kan een account maken, de onboarding doorlopen en zijn dagdoel 
   - `pullAsksAgainFromFiveMinutesBeforeTheCursor`
   - `aRejectedRowDoesNotBlockTheOthers` (en `problemKey` is gezet)
   - `onlyOneRoundRunsAtATime`
-  - `oldCursorClearsTheTableAndPullsEverything` (ouder dan 90 dagen)
+  - `oldCursorClearsTheTableAndPullsEverything` (laatste pull ouder dan 90 dagen)
+  - `aQuietTableIsNotClearedWhileTheDeviceKeepsPulling`
   - `engineKeepsItsStoreAlive`
 - **Mac-run:** ja, één.
 - **→ Fable** bij een sync-fout die je niet in één poging begrijpt.
@@ -104,7 +105,7 @@ Uitkomst: iemand kan een account maken, de onboarding doorlopen en zijn dagdoel 
 
 - **Doel:** welkom (catalogus van de vier figuren, Apple, Google, e-mail), inloggen, registreren, wachtwoord vergeten, nieuw wachtwoord, e-mail bevestigen.
 - **Bestanden:** `Fitling/Features/Auth/*` uit `herontwerp-verzamelfiguren` (die versies hebben de nieuwe look), `AuthViewModels.swift` en `AuthViewModelTests.swift` + `DoubleTapSupport.swift` uit `fase-1`.
-- **Vastgelegd:** wachtwoord vergeten toont altijd dezelfde melding (D-03). De Apple-knop staat bovenaan, even hoog als de andere, als capsule.
+- **Vastgelegd:** wachtwoord vergeten toont altijd dezelfde melding (D-03). Een link die `AuthFailure.expiredLink` geeft, toont `auth.reset.linkExpired`; `.invalidOrForeignLink` blijft `auth.reset.linkInvalid`. De Apple-knop staat bovenaan, even hoog als de andere, als capsule.
 - **Nog open (gebruiker):** de Google-knop heeft nog geen G-logo. Het officiële logo downloaden mag pas na akkoord van de gebruiker; tot dan alleen tekst.
 - **Acceptatie:** de ViewModel-tests uit `fase-1` groen; UI-test `testWelcomeScreen`; screenshot licht en donker naar de gebruiker.
 - **Mac-run:** ja.

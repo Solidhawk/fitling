@@ -192,11 +192,15 @@ import FitlingCore
         try save([
             ProgressPhoto(id: UUID(), takenOn: today, fileName: "voor.jpg"),
             DayActivity(day: today, workoutKcal: 412, updatedAt: now),
-            SyncCursor(table: "food_entries", syncedAt: now),
+            SyncCursor(table: "food_entries", syncedAt: now, pulledAt: now.addingTimeInterval(60)),
+            SyncCursor(table: "water_entries", syncedAt: nil, pulledAt: now),
         ], in: container)
 
         #expect(try reread(ProgressPhoto.self, from: container).first?.takenOn == "2026-11-18")
         #expect(try reread(DayActivity.self, from: container).first?.workoutKcal == 412)
-        #expect(try reread(SyncCursor.self, from: container).first?.table == "food_entries")
+        let cursors = try reread(SyncCursor.self, from: container).sorted { $0.table < $1.table }
+        #expect(cursors.map(\.table) == ["food_entries", "water_entries"])
+        #expect(cursors.map(\.syncedAt) == [now, nil])
+        #expect(cursors.first?.pulledAt == now.addingTimeInterval(60))
     }
 }

@@ -1,0 +1,60 @@
+import Foundation
+import Supabase
+
+/// A row as it travels to and from Supabase.
+protocol SyncRecord: Codable, Sendable {
+    var id: UUID { get }
+    var updatedAt: Date { get }
+    /// Set by the server. Nil for a record made on this device; never sent.
+    var syncedAt: Date? { get }
+    /// Tables without deletion markers always give nil.
+    var deletedAt: Date? { get }
+}
+
+enum RemoteStoreError: Error, Equatable {
+    case network
+    /// The server refused the rows (a check constraint, an unknown reference); retrying will not help.
+    case rejected(String)
+}
+
+/// The server side of sync. One real implementation and one for tests.
+protocol RemoteStore: Sendable {
+    /// Rows with `synced_at` after `since` (all rows when nil), newest first. That order matters
+    /// when a pull takes more than one page: a row that changes meanwhile moves to the front, so
+    /// the pages that follow can repeat a row but never skip one.
+    func fetch<Record: SyncRecord>(_ type: Record.Type, table: String, keyColumn: String, since: Date?, offset: Int, limit: Int) async throws(RemoteStoreError) -> [Record]
+    func upsert<Record: SyncRecord>(_ records: [Record], table: String, keyColumn: String) async throws(RemoteStoreError)
+}
+
+struct SupabaseRemoteStore: RemoteStore {
+    let client: SupabaseClient
+
+    func fetch<Record: SyncRecord>(_ type: Record.Type, table: String, keyColumn: String, since: Date?, offset: Int, limit: Int) async throws(RemoteStoreError) -> [Record] {
+        do {
+            var query = client.from(table).select()
+            if let since {
+                query = query.gt("synced_at", value: since.formatted(.iso8601))
+            }
+            return try await query
+                .order("synced_at", ascending: false)
+                .order(keyColumn, ascending: false)
+                .range(from: offset, to: offset + limit - 1)
+                .execute()
+                .value
+        } catch {
+            throw Self.storeError(error)
+        }
+    }
+
+    func upsert<Record: SyncRecord>(_ records: [Record], table: String, keyColumn: String) async throws(RemoteStoreError) {
+        do {
+            try await client.from(table).upsert(records, onConflict: keyColumn, returning: .minimal).execute()
+        } catch {
+            throw Self.storeError(error)
+        }
+    }
+
+    static func storeError(_ error: any Error) -> RemoteStoreError {
+        error is URLError ? .network : .rejected(String(describing: error))
+    }
+}

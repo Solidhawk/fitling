@@ -507,6 +507,28 @@
         }
       }
     },
+    "auth.reset.linkExpired": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deze link is verlopen. Vraag een nieuwe aan."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This link has expired. Request a new one."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dieser Link ist abgelaufen. Fordere einen neuen an."
+          }
+        }
+      }
+    },
     "auth.reset.linkInvalid": {
       "localizations": {
         "nl": {
