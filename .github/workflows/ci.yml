@@ -63,12 +63,12 @@ jobs:
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.9.8
-      - name: Edge Function delete-account
-        working-directory: supabase/functions/delete-account
+      - name: Edge Functions
         run: |
-          deno fmt --check
-          deno check index.ts
-          deno test
+          for dir in supabase/functions/*/; do
+            echo "== $dir"
+            (cd "$dir" && deno fmt --check && deno check index.ts && deno test --allow-read) || exit 1
+          done
 
   strings:
     name: Teksten en modellen

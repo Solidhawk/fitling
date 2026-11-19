@@ -1,0 +1,31 @@
+{
+  "code": "8712100849084",
+  "product": {
+    "brands": "Magnum, Unilever",
+    "code": "8712100849084",
+    "image_front_url": "https://images.openfoodfacts.org/images/products/871/210/084/9084/front_en.100.400.jpg",
+    "lc": "fr",
+    "nutriments": {
+      "energy-kcal_100g": 338,
+      "energy-kj_100g": 1408,
+      "energy_100g": 1408,
+      "proteins_100g": 3.2,
+      "carbohydrates_100g": 36,
+      "sugars_100g": 33,
+      "fat_100g": 20,
+      "saturated-fat_100g": 14,
+      "salt_100g": 0.17
+    },
+    "nutrition_data": "on",
+    "nutrition_data_per": "100g",
+    "nutrition_data_prepared_per": "100g",
+    "product_name": "Magnum Glace Bâtonnet Double Caramel 4x88ml",
+    "product_name_de": "Double Caramel",
+    "product_name_en": "",
+    "product_name_nl": "",
+    "serving_quantity": 88,
+    "serving_size": "88ml"
+  },
+  "status": 1,
+  "status_verbose": "product found"
+}
