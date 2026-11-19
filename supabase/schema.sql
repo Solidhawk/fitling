@@ -843,6 +843,71 @@ revoke execute on function public.join_shopping_list(text, text) from public, an
 grant execute on function public.create_shopping_list_invite(uuid) to authenticated;
 grant execute on function public.join_shopping_list(text, text) to authenticated;
 
+-- ---------------------------------------------------------------------------------------------
+-- Voor Edge Functions (alleen service_role)
+-- ---------------------------------------------------------------------------------------------
+
+-- Telt één aanroep in het lopende uur. False als de grens daarmee overschreden is; de aanroep
+-- telt dan wel mee, zodat blijven proberen niet helpt.
+create function public.consume_rate_limit(bucket text, max_calls integer)
+returns boolean
+language sql
+security definer
+set search_path = ''
+as $$
+  insert into private.rate_limits as r (bucket, window_start, count)
+  values (consume_rate_limit.bucket, date_trunc('hour', now()), 1)
+  on conflict (bucket, window_start) do update set count = r.count + 1
+  returning r.count <= consume_rate_limit.max_calls;
+$$;
+
+-- Zet een product uit een externe bron in de gedeelde cache: één rij per barcode, ook als twee
+-- aanroepen tegelijk komen. Een eigen product van een gebruiker met dezelfde barcode blijft los.
+create function public.store_shared_product(product jsonb)
+returns public.products
+language sql
+set search_path = ''
+as $$
+  insert into public.products as p (
+    source, source_id, gtin, name, brand, search_name, quantity_unit, serving_size,
+    kcal_100, protein_100, carbs_100, sugars_100, fat_100, saturated_fat_100, fiber_100, salt_100,
+    image_url, is_verified, fetched_at, updated_at
+  )
+  select
+    r.source, r.source_id, r.gtin, r.name, r.brand, r.search_name, r.quantity_unit, r.serving_size,
+    r.kcal_100, r.protein_100, r.carbs_100, r.sugars_100, r.fat_100, r.saturated_fat_100, r.fiber_100, r.salt_100,
+    r.image_url, r.is_verified, r.fetched_at, now()
+  from jsonb_populate_record(null::public.products, store_shared_product.product) as r
+  -- Without a WHERE the parser can read ON CONFLICT as part of the FROM clause.
+  where true
+  on conflict (gtin) where owner_id is null and gtin is not null do update set
+    source = excluded.source,
+    source_id = excluded.source_id,
+    name = excluded.name,
+    brand = excluded.brand,
+    search_name = excluded.search_name,
+    quantity_unit = excluded.quantity_unit,
+    serving_size = excluded.serving_size,
+    kcal_100 = excluded.kcal_100,
+    protein_100 = excluded.protein_100,
+    carbs_100 = excluded.carbs_100,
+    sugars_100 = excluded.sugars_100,
+    fat_100 = excluded.fat_100,
+    saturated_fat_100 = excluded.saturated_fat_100,
+    fiber_100 = excluded.fiber_100,
+    salt_100 = excluded.salt_100,
+    image_url = excluded.image_url,
+    is_verified = excluded.is_verified,
+    fetched_at = excluded.fetched_at,
+    updated_at = excluded.updated_at
+  returning p.*;
+$$;
+
+revoke execute on function public.consume_rate_limit(text, integer) from public, anon, authenticated;
+revoke execute on function public.store_shared_product(jsonb) from public, anon, authenticated;
+grant execute on function public.consume_rate_limit(text, integer) to service_role;
+grant execute on function public.store_shared_product(jsonb) to service_role;
+
 -- Wijzigingen in de lijst komen direct bij huisgenoten binnen.
 do $$
 begin

@@ -43,6 +43,8 @@ drop table if exists
   cascade;
 
 drop function if exists
+  public.consume_rate_limit(text, integer),
+  public.store_shared_product(jsonb),
   public.create_shopping_list_invite(uuid),
   public.join_shopping_list(text, text),
   private.apply_sync_rules(),
