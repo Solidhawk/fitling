@@ -385,7 +385,7 @@ Na twee tot vier weken echt gebruik: kloppen de drempels, de snelheid van de vor
 | 7.1 | Alle teksten nalopen in nl, en en de; eenheden via `Measurement` (kg/lb, kcal/kJ) |
 | 7.2 | Toegankelijkheid: VoiceOver op elk bedieningselement, grootste tekst, contrast |
 | 7.3 | Data-export (JSON en CSV) van alle eigen data |
-| 7.4 | Opruimen van verwijdermarkeringen ouder dan 90 dagen (geplande job) |
+| 7.4 | Opruimen van verwijdermarkeringen ouder dan 90 dagen (geplande job). De 90 dagen tellen vanaf `synced_at` (klok van de server), niet vanaf `deleted_at` (klok van een toestel): een toestel leegt zijn tabel pas na 90 dagen zonder pull, en een markering die eerder verdwijnt bereikt dat toestel nooit. Laat de job 's nachts draaien: een pull van meer dan één blok kan een rij missen als er tijdens het lezen rijen echt verdwijnen (ARCHITECTURE §3.4). |
 | 7.5 | `schema.sql` wordt de eerste migratie; productieproject in de EU (UNFORGET S4) |
 | 7.6 | Privacyverklaring gelinkt; scherm "Over" met bronvermelding (Open Food Facts, NEVO) |
 | 7.7 | TestFlight, app-icoon, eigen SMTP (UNFORGET S1 en S2) |
