@@ -67,6 +67,7 @@ struct LogFoodView: View {
             }
             .foregroundStyle(Color.ink)
             .groundBackground()
+            .accessibilityIdentifier("log.list")
             .navigationTitle(viewModel.meal.titleKey)
             .navigationBarTitleDisplayMode(.inline)
             .searchable(text: $viewModel.query, prompt: Text("log.search.prompt"))
@@ -166,7 +167,8 @@ struct ProductRow: View {
     let product: Product
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline) {
+        HStack(alignment: .center, spacing: Spacing.m) {
+            ProductThumbnail(imageURL: product.imageURL, name: product.name.text(preferring: Locale.preferredLanguages))
             VStack(alignment: .leading, spacing: Spacing.xs) {
                 Text(product.name.text(preferring: Locale.preferredLanguages))
                     .foregroundStyle(Color.ink)

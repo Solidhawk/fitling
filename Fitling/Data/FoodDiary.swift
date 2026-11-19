@@ -27,7 +27,7 @@ struct FoodDiary {
         let descriptor = FetchDescriptor<WaterEntry>(
             predicate: #Predicate<WaterEntry> { $0.consumedOn == dayString && $0.deletedAt == nil }
         )
-        return 0
+        return ((try? context.fetch(descriptor)) ?? []).reduce(0) { $0 + $1.amountMl }
     }
 
     /// One glass at a time, so two devices that log water offline add up instead of colliding.
@@ -41,7 +41,6 @@ struct FoodDiary {
     /// worked out (servings of a product without a serving size).
     @discardableResult
     func log(_ product: Product, quantity: Double, unit: QuantityUnit, meal: MealSlot, on day: Day, languages: [String]) -> FoodEntry? {
-        return nil
         let per100 = NutrientsPer100(kcal: product.kcal100, proteinG: product.protein100, carbsG: product.carbs100, fatG: product.fat100)
         guard let nutrients = FoodMath.nutrients(per100: per100, quantity: quantity, unit: unit, servingSize: product.servingSize) else {
             return nil

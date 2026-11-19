@@ -365,3 +365,14 @@ struct FoodFixture {
         #expect(viewModel.isToday)
     }
 }
+
+// MARK: - 2.10 Afbeeldingen
+
+@Suite struct ProductThumbnailTests {
+    @Test func thePlaceholderShowsTheFirstLetterOrDigit() {
+        #expect(ProductThumbnail.initial(of: "volkorenbrood") == "V")
+        #expect(ProductThumbnail.initial(of: "  'Oma's taart") == "O")
+        #expect(ProductThumbnail.initial(of: "7up") == "7")
+        #expect(ProductThumbnail.initial(of: "") == "–")
+    }
+}

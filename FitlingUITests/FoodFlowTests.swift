@@ -23,12 +23,15 @@ final class FoodFlowTests: XCTestCase {
         add(attachment)
     }
 
-    /// Rows further down the day are only created once they scroll into view.
+    /// Rows further down a list are only created once they scroll into view. Several lists can
+    /// be on screen (the day under the log sheet), so the one to swipe is named.
     @MainActor
-    private func reveal(_ element: XCUIElement, in app: XCUIApplication) {
+    private func reveal(_ element: XCUIElement, inList list: String, _ app: XCUIApplication) {
+        let collection = app.collectionViews[list]
+        XCTAssertTrue(collection.waitForExistence(timeout: 10), "No list \(list)")
         var swipes = 0
         while !(element.exists && element.isHittable) && swipes < 10 {
-            app.collectionViews.firstMatch.swipeUp(velocity: .slow)
+            collection.swipeUp(velocity: .slow)
             swipes += 1
         }
         XCTAssertTrue(element.waitForExistence(timeout: 5))
@@ -40,7 +43,7 @@ final class FoodFlowTests: XCTestCase {
         keepScreenshot(app, named: "\(prefix)-1-vandaag-leeg")
 
         let addLunch = app.buttons["day.add.lunch"]
-        reveal(addLunch, in: app)
+        reveal(addLunch, inList: "day.list", app)
         addLunch.tap()
 
         let scan = app.buttons["log.scan"]
@@ -56,14 +59,18 @@ final class FoodFlowTests: XCTestCase {
         keepScreenshot(app, named: "\(prefix)-3-scannen")
         app.buttons["scan.manual.submit"].tap()
 
-        let save = app.buttons["portion.save"]
-        XCTAssertTrue(save.waitForExistence(timeout: 10))
+        XCTAssertTrue(app.collectionViews["portion.form"].waitForExistence(timeout: 10))
         keepScreenshot(app, named: "\(prefix)-4-portie")
+        let save = app.buttons["portion.save"]
+        reveal(save, inList: "portion.form", app)
         XCTAssertTrue(save.isEnabled)
         save.tap()
 
-        let entry = app.staticTexts["Double Caramel"]
-        reveal(entry, in: app)
+        // Saving closes the log sheet; the entry is then on the day itself.
+        XCTAssertTrue(app.collectionViews["portion.form"].waitForNonExistence(timeout: 10))
+        XCTAssertTrue(app.navigationBars["Vandaag"].waitForExistence(timeout: 5))
+        let entry = app.collectionViews["day.list"].staticTexts["Double Caramel"]
+        reveal(entry, inList: "day.list", app)
         keepScreenshot(app, named: "\(prefix)-5-vandaag-gelogd")
     }
 
@@ -72,9 +79,9 @@ final class FoodFlowTests: XCTestCase {
         let app = launch()
         logScannedProduct(app, prefix: "voeding-licht")
 
-        app.collectionViews.firstMatch.swipeDown(velocity: .fast)
+        app.collectionViews["day.list"].swipeDown(velocity: .fast)
         let water = app.buttons["water.add"]
-        reveal(water, in: app)
+        reveal(water, inList: "day.list", app)
         water.tap()
         water.tap()
         XCTAssertTrue(app.staticTexts["500 ml"].waitForExistence(timeout: 5))

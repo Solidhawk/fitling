@@ -15,6 +15,19 @@ struct PortionView: View {
     var body: some View {
         Form {
             Section {
+                HStack(spacing: Spacing.m) {
+                    ProductThumbnail(imageURL: viewModel.product.imageURL, name: viewModel.name, size: 64)
+                    VStack(alignment: .leading, spacing: Spacing.xs) {
+                        Text(viewModel.name).font(.headline.weight(.heavy))
+                        if let brand = viewModel.product.brand {
+                            Text(brand).font(.footnote).foregroundStyle(Color.inkSoft)
+                        }
+                    }
+                }
+            }
+            .listRowBackground(Color.card)
+
+            Section {
                 if viewModel.units.count > 1 {
                     Picker("portion.unit", selection: $viewModel.unit) {
                         ForEach(viewModel.units, id: \.self) { unit in
@@ -71,6 +84,7 @@ struct PortionView: View {
         }
         .foregroundStyle(Color.ink)
         .groundBackground()
+        .accessibilityIdentifier("portion.form")
         .navigationTitle(viewModel.name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {

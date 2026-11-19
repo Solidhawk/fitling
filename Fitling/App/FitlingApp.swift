@@ -7,6 +7,7 @@ struct FitlingApp: App {
 
     init() {
         NavigationBarStyle.apply()
+        ImageCache.configure()
     }
 
     var body: some Scene {

@@ -79,7 +79,6 @@ final class DayViewModel {
     /// newest row when two devices made one for the same day. Workout energy is added when the
     /// user chose that (ARCHITECTURE §7).
     private func targets(on day: Day) -> NutritionTargets {
-        return profile.targets
         let userID = profile.id
         let dayString = day.isoString
         var descriptor = FetchDescriptor<TargetPeriod>(

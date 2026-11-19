@@ -54,7 +54,6 @@ final class LogFoodViewModel {
 
     /// Local results at once; online results after them, without the products already shown.
     func runSearch() async {
-        return
         searchGeneration += 1
         let generation = searchGeneration
         let term = FoodDiary.searchKey(query)

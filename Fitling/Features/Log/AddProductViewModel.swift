@@ -46,7 +46,6 @@ final class AddProductViewModel {
     }
 
     func save() -> Product? {
-        return nil
         guard canSave, let kcal, let gtinValue = normalizedGtin else { return nil }
         // Stored under the user's own language; other languages fall back to it (`LocalizedText`).
         let language = Locale.preferredLanguages.first.map { String($0.prefix { $0 != "-" && $0 != "_" }) } ?? "nl"

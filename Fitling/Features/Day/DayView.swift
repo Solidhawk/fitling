@@ -53,6 +53,7 @@ struct DayView: View {
             }
             .foregroundStyle(Color.ink)
             .groundBackground()
+            .accessibilityIdentifier("day.list")
             .navigationTitle(title)
             .toolbar {
                 ToolbarItemGroup(placement: .topBarTrailing) {
