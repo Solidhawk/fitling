@@ -2,7 +2,8 @@ import SwiftUI
 import UIKit
 
 /// Navigation bars on the opaque ground with rounded titles, so a bar is part of the page and
-/// never a frosted layer. Title sizes follow the text size at launch.
+/// never a frosted layer. Title sizes follow the text size at launch, up to a maximum: a bar has a
+/// fixed height, and a title that keeps growing is cut off.
 @MainActor
 enum NavigationBarStyle {
     static let inlineTitleMaximum: CGFloat = 22
@@ -18,6 +19,8 @@ enum NavigationBarStyle {
         appearance.largeTitleTextAttributes = [.font: largeTitleFont(traits: nil), .foregroundColor: ink]
 
         let bar = UINavigationBar.appearance()
+        // The back button is drawn by UIKit and does not see the SwiftUI tint.
+        bar.tintColor = ink
         bar.standardAppearance = appearance
         bar.compactAppearance = appearance
         bar.scrollEdgeAppearance = appearance
@@ -25,11 +28,11 @@ enum NavigationBarStyle {
 
     /// `traits` nil means the text size the app runs with.
     static func inlineTitleFont(traits: UITraitCollection?) -> UIFont {
-        rounded(.headline, weight: .bold, maximumSize: .greatestFiniteMagnitude, traits: traits)
+        rounded(.headline, weight: .bold, maximumSize: inlineTitleMaximum, traits: traits)
     }
 
     static func largeTitleFont(traits: UITraitCollection?) -> UIFont {
-        rounded(.largeTitle, weight: .heavy, maximumSize: .greatestFiniteMagnitude, traits: traits)
+        rounded(.largeTitle, weight: .heavy, maximumSize: largeTitleMaximum, traits: traits)
     }
 
     private static func rounded(_ style: UIFont.TextStyle, weight: UIFont.Weight, maximumSize: CGFloat, traits: UITraitCollection?) -> UIFont {

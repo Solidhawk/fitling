@@ -53,7 +53,7 @@ struct ProfileView: View {
                     .foregroundStyle(Color.ink)
                     .textCase(nil)
                 } footer: {
-                    Text("profile.rounding")
+                    Text("profile.rounding").footerStyle()
                 }
                 .listRowBackground(Color.card)
 
@@ -64,6 +64,7 @@ struct ProfileView: View {
                 }
                 .listRowBackground(Color.card)
             }
+            .foregroundStyle(Color.ink)
             .groundBackground()
             .navigationTitle("profile.title")
             .toolbar {

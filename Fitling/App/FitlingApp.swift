@@ -16,6 +16,8 @@ struct FitlingApp: App {
                 RootView(viewModel: environment.root, context: environment.container.mainContext)
                     .modelContainer(environment.container)
                     .fontDesign(.rounded)
+                    // Checkmarks, links, the caret and toolbar buttons in ink instead of system blue.
+                    .tint(Color.ink)
                     #if DEBUG
                     .preferredColorScheme(UITestEnvironment.colorScheme)
                     #endif
@@ -26,6 +28,7 @@ struct FitlingApp: App {
                     Text("error.configuration.body")
                 }
                 .fontDesign(.rounded)
+                .tint(Color.ink)
             }
         }
     }

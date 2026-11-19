@@ -40,6 +40,7 @@ struct OnboardingFlowView: View {
 
     private func screen(for step: Step) -> some View {
         List { content(for: step) }
+            .foregroundStyle(Color.ink)
             .groundBackground()
             // On the list only: on the whole screen it would replace the identifier of the button below.
             .accessibilityIdentifier("onboarding.step.\(String(describing: step))")
@@ -88,7 +89,7 @@ struct OnboardingFlowView: View {
                 .environment(\.calendar, BirthDateCalendar.calendar)
                 .environment(\.timeZone, BirthDateCalendar.calendar.timeZone)
             } footer: {
-                Text("onboarding.birthDate.footer")
+                Text("onboarding.birthDate.footer").footerStyle()
             }
             .listRowBackground(Color.card)
         case .sex:
@@ -101,7 +102,7 @@ struct OnboardingFlowView: View {
                 .pickerStyle(.inline)
                 .labelsHidden()
             } footer: {
-                Text("onboarding.sex.footer")
+                Text("onboarding.sex.footer").footerStyle()
             }
             .listRowBackground(Color.card)
         case .height:

@@ -25,7 +25,7 @@ struct EmailAuthView: View {
                 SecureField("auth.password.field", text: $viewModel.password)
                     .textContentType(isSignUp ? .newPassword : .password)
             } footer: {
-                if isSignUp { Text("auth.password.hint") }
+                if isSignUp { Text("auth.password.hint").footerStyle() }
             }
             .listRowBackground(Color.card)
 
@@ -54,6 +54,7 @@ struct EmailAuthView: View {
             }
             .listRowBackground(Color.card)
         }
+        .foregroundStyle(Color.ink)
         .groundBackground()
         .navigationTitle(titleKey)
     }

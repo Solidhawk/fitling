@@ -59,6 +59,12 @@ struct SubmitButton: View {
 }
 
 extension View {
+    /// Explanations under a list section. The system grey reaches only about 2.8:1 on the pastel
+    /// ground; soft ink stays above 4.5:1 in light and dark.
+    func footerStyle() -> some View {
+        foregroundStyle(Color.inkSoft)
+    }
+
     /// Lists and forms on the pastel ground instead of the system grouped background.
     func groundBackground() -> some View {
         scrollContentBackground(.hidden)

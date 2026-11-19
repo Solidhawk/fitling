@@ -69,10 +69,11 @@ struct EditProfileView: View {
                         ForEach(Goal.allCases, id: \.self) { Text($0.titleKey).tag($0) }
                     }
                 } footer: {
-                    if edited == nil { Text("profile.profileInvalid") }
+                    if edited == nil { Text("profile.profileInvalid").foregroundStyle(Color.ink) }
                 }
                 .listRowBackground(Color.card)
             }
+            .foregroundStyle(Color.ink)
             .groundBackground()
             .navigationTitle("profile.edit")
             .navigationBarTitleDisplayMode(.inline)
@@ -140,7 +141,7 @@ struct EditTargetsView: View {
                     TextField("profile.targets.carbs", value: $carbs, format: .number).keyboardType(.numberPad)
                     TextField("profile.targets.fat", value: $fat, format: .number).keyboardType(.numberPad)
                 } footer: {
-                    if showsRangeError { Text("profile.targets.outOfRange") }
+                    if showsRangeError { Text("profile.targets.outOfRange").foregroundStyle(Color.ink) }
                 }
                 .listRowBackground(Color.card)
                 Section {
@@ -151,6 +152,7 @@ struct EditTargetsView: View {
                 }
                 .listRowBackground(Color.card)
             }
+            .foregroundStyle(Color.ink)
             .groundBackground()
             .navigationTitle("profile.editTargets")
             .navigationBarTitleDisplayMode(.inline)

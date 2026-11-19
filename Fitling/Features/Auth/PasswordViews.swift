@@ -39,6 +39,7 @@ struct ForgotPasswordView: View {
             }
             .listRowBackground(Color.card)
         }
+        .foregroundStyle(Color.ink)
         .groundBackground()
         .navigationTitle("auth.forgot.title")
     }
@@ -60,7 +61,7 @@ struct ResetPasswordView: View {
                     SecureField("auth.reset.field", text: $viewModel.password)
                         .textContentType(.newPassword)
                 } footer: {
-                    Text("auth.password.hint")
+                    Text("auth.password.hint").footerStyle()
                 }
                 .listRowBackground(Color.card)
                 Section {
@@ -75,6 +76,7 @@ struct ResetPasswordView: View {
                     }
                 }
             }
+            .foregroundStyle(Color.ink)
             .groundBackground()
             .navigationTitle("auth.reset.title")
             .onChange(of: viewModel.isDone) { _, isDone in

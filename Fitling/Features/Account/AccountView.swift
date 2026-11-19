@@ -17,7 +17,7 @@ struct AccountView: View {
                 }
                 .disabled(viewModel.isWorking)
             } footer: {
-                if let key = viewModel.messageKey { Text(LocalizedStringKey(key)) }
+                if let key = viewModel.messageKey { Text(LocalizedStringKey(key)).foregroundStyle(Color.ink) }
             }
             .listRowBackground(Color.card)
             Section {
@@ -76,7 +76,7 @@ struct DeleteAccountView: View {
                         .listRowBackground(Color.card)
                 }
             } footer: {
-                if let key = viewModel.messageKey { Text(LocalizedStringKey(key)) }
+                if let key = viewModel.messageKey { Text(LocalizedStringKey(key)).foregroundStyle(Color.ink) }
             }
         }
         .groundBackground()
