@@ -46,6 +46,29 @@ struct ProfileRecord: SyncRecord, Equatable {
         case updatedAt = "updated_at"
         case syncedAt = "synced_at"
     }
+
+    /// Written out for two reasons: `synced_at` belongs to the server and is never sent, and an
+    /// empty value goes as null. A column that is left out keeps its old value on the server.
+    func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(healthConsentAt, forKey: .healthConsentAt)
+        try container.encode(healthConsentVersion, forKey: .healthConsentVersion)
+        try container.encode(birthDate, forKey: .birthDate)
+        try container.encode(sex, forKey: .sex)
+        try container.encode(heightCm, forKey: .heightCm)
+        try container.encode(weightKg, forKey: .weightKg)
+        try container.encode(activityLevel, forKey: .activityLevel)
+        try container.encode(goal, forKey: .goal)
+        try container.encode(kcalTarget, forKey: .kcalTarget)
+        try container.encode(proteinTargetG, forKey: .proteinTargetG)
+        try container.encode(carbsTargetG, forKey: .carbsTargetG)
+        try container.encode(fatTargetG, forKey: .fatTargetG)
+        try container.encode(targetsAreManual, forKey: .targetsAreManual)
+        try container.encode(countsWorkoutEnergy, forKey: .countsWorkoutEnergy)
+        try container.encode(postalCode, forKey: .postalCode)
+        try container.encode(updatedAt, forKey: .updatedAt)
+    }
 }
 
 extension UserProfile: SyncableModel {

@@ -27,6 +27,20 @@ struct TargetPeriodRecord: SyncRecord, Equatable {
         case deletedAt = "deleted_at"
         case syncedAt = "synced_at"
     }
+
+    /// See `ProfileRecord.encode(to:)`: no `synced_at`, and an empty `deleted_at` as null.
+    func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(userID, forKey: .userID)
+        try container.encode(effectiveOn, forKey: .effectiveOn)
+        try container.encode(kcalTarget, forKey: .kcalTarget)
+        try container.encode(proteinTargetG, forKey: .proteinTargetG)
+        try container.encode(carbsTargetG, forKey: .carbsTargetG)
+        try container.encode(fatTargetG, forKey: .fatTargetG)
+        try container.encode(updatedAt, forKey: .updatedAt)
+        try container.encode(deletedAt, forKey: .deletedAt)
+    }
 }
 
 extension TargetPeriod: SyncableModel {

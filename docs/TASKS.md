@@ -10,6 +10,7 @@ Het fundament staat op branch `fundament`: rekenregels (`Packages/FitlingCore`),
 ## Werkafspraken
 
 - **Geen Mac.** Bouwen en testen gebeurt in GitHub Actions. De Mac-job draait alleen als het commitbericht `[ios]` bevat. Er zijn ongeveer 190 Mac-minuten per maand; een run kost er ongeveer vijf. Bundel het werk van een taak in zo weinig mogelijk `[ios]`-commits en lees je Swift na vóór je pusht.
+- **Geen getypeerde fout op een generieke async-eis van een protocol.** `func f<T>(...) async throws(E)` als protocol-eis laat de compiler van Xcode 16.4 (Swift 6.1.2) crashen, zonder foutregel in het log (zoek dan op `Stack dump` in `xcodebuild.log` uit het artefact `TestResults`). Gewone `throws` gebruiken en het fouttype in commentaar noemen, zoals in `RemoteStore`.
 - **Wat op Linux kan, hoort in FitlingCore.** Pure logica met tests daar; dat is gratis en snel.
 - **Eerst de test, dan de code**, en zie de test falen. Testnamen beschrijven gedrag (`returnsTiredWhenSevenDayAverageIsThirtyPercentUnderTarget`).
 - **Naslag.** De eerdere fase 1 werkte en was getest (88 tests). Neem over wat past: `git show origin/fase-1:<pad>`. Overnemen en aanpassen is beter dan opnieuw schrijven. Het herontwerp "Verzamelfiguren" staat alleen lokaal: `git show herontwerp-verzamelfiguren:<pad>`.
@@ -54,7 +55,9 @@ Uitkomst: iemand kan een account maken, de onboarding doorlopen en zijn dagdoel 
 - **Tests:** `FigureTests` (3 tests × 4 soorten) en `NavigationBarStyleTests`.
 - **Mac-run:** samen met 1.4.
 
-### 1.2 Services: Supabase en inloggen
+### 1.2 Services: Supabase en inloggen — al gebouwd
+
+Staat op branch `fase-1-opbouw`, met tests. `AuthService.failure(inLink:)` herkent de verlopen link (`AuthFailure.expiredLink`); de tekst `auth.reset.linkExpired` staat in de catalogus en wordt in 1.5 getoond. Hieronder de oorspronkelijke opdracht, als naslag.
 
 - **Doel:** `AuthService` is de enige plek die met Supabase Auth praat.
 - **Bestanden:** overnemen uit `fase-1`: `Fitling/Services/AuthProviding.swift`, `AuthService.swift`, `AppleSignIn.swift`, `NetworkMonitor.swift`, de functie `makeSupabaseClient` (stond in `Fitling/Data/ProfileSync.swift` of ernaast; zoek met `git grep makeSupabaseClient origin/fase-1`), `Fitling/UITesting/FakeAuthProvider.swift`, en de tests `AuthServiceMappingTests`, `AppleSignInTests`.
@@ -62,7 +65,9 @@ Uitkomst: iemand kan een account maken, de onboarding doorlopen en zijn dagdoel 
 - **Acceptatie:** dezelfde tests als in `fase-1` plus één voor de verlopen link.
 - **Mac-run:** samen met 1.4.
 
-### 1.3 SyncEngine
+### 1.3 SyncEngine — al gebouwd
+
+Staat op branch `fase-1-opbouw`, met tests (`SyncEngineTests`, `SyncRecordTests`, nep-server `FakeRemoteStore`). Voor een volgende tabel: een record in `Fitling/Data/Sync/Records/` met eigen `encode(to:)` (geen `synced_at`, lege waarden als null), het model `SyncableModel` maken, en `ModelTable<Model>()` op de plek van §3.5 in de lijst zetten. `SyncEngine.sync()` geeft `.completed`, `.offline`, `.failed` of `.alreadyRunning`; `problemKey` is de catalogussleutel van een melding, of nil. Het aanmaken van de engine en de momenten waarop hij draait (§3.5) horen bij 1.4. Hieronder de oorspronkelijke opdracht, als naslag.
 
 - **Doel:** één generieke sync volgens ARCHITECTURE §3, eerst voor `profiles` en `target_history`.
 - **Gebruikt:** `SyncRules` uit FitlingCore voor elke beslissing: `pullAction(local:remote:)`, `pullStart(cursor:lastPull:now:)`, `nextCursor`, `canClearPushFlag`, en de constanten voor blokgrootte en overlap. De engine bevat zelf geen `if` over tijden of vlaggen.

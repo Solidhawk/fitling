@@ -71,7 +71,10 @@ final class AuthService: AuthProviding {
     /// link as a PKCE error, which would tell the user to open it on the device that asked for it;
     /// for an expired link that advice is wrong.
     nonisolated static func failure(inLink url: URL) -> AuthFailure? {
-        nil
+        // Supabase reports it in the query (PKCE) or in the fragment (implicit flow).
+        let parts = [url.query(percentEncoded: true), url.fragment(percentEncoded: true)].compactMap { $0 }
+        let isExpired = parts.contains { $0.split(separator: "&").contains("error_code=otp_expired") }
+        return isExpired ? .expiredLink : nil
     }
 
     private func perform<T: Sendable>(_ operation: () async throws -> T) async throws(AuthFailure) -> T {
