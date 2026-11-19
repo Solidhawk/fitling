@@ -35,7 +35,7 @@ final class OnboardingViewModel {
         self.now = now
         body = BodyInput(locale: locale)
         // Thirty years back from the user's own today, which is also the age the picker opens on.
-        birthDay = BirthDayPicking.day(30, yearsBefore: Day(now(), timeZone: .current))
+        birthDay = BirthDayPicking.day(30, yearsBefore: Day(now(), timeZone: timeZone))
     }
 
     /// Today where the user is.
@@ -107,6 +107,7 @@ final class OnboardingViewModel {
             updatedAt: moment
         )
         context.insert(profile)
+        context.recordTargets(plan.targets, for: userID, from: today, at: moment)
         try context.save()
         return profile
     }

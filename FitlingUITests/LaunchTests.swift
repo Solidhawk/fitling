@@ -1,11 +1,13 @@
 import XCTest
 
 final class LaunchTests: XCTestCase {
-    /// Without test arguments the app opens its real database file and its real configuration.
-    /// Signed out, that ends on the welcome screen, not on the configuration error.
+    /// The database with every model must open as a real file, as on a device; when it cannot,
+    /// the app shows the configuration error. The fake server stands in for Supabase: the CI has
+    /// no Supabase settings.
     @MainActor
     func testAppStartsWithTheLocalDatabase() {
         let app = XCUIApplication()
+        app.launchArguments = ["--ui-testing-signed-out", "--ui-testing-on-disk"]
         app.launch()
         XCTAssertTrue(app.buttons["welcome.email"].waitForExistence(timeout: 15))
         XCTAssertFalse(app.descendants(matching: .any)["error.configuration"].exists)

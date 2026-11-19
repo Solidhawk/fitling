@@ -53,7 +53,7 @@ final class SyncEngine {
 
     /// Whether any table holds a change the server has not seen yet.
     var hasUnsentChanges: Bool {
-        false
+        tables.contains { $0.hasPendingRows(in: context) }
     }
 
     /// One round: push every table, then pull every table. Never more than one round at a time:
@@ -61,7 +61,8 @@ final class SyncEngine {
     @discardableResult
     func sync() async -> Outcome {
         guard !isRunning else {
-            return .interrupted
+            runAgain = true
+            return await withCheckedContinuation { waiting.append($0) }
         }
         isRunning = true
         var outcome = await round()
@@ -79,6 +80,12 @@ final class SyncEngine {
     /// Removes everything this device stores: after signing out or deleting the account, the data
     /// of the previous user must not stay behind (ARCHITECTURE §3.7).
     func eraseLocalData() {
+        epoch += 1
+        for model in FitlingSchemaV1.models {
+            erase(model)
+        }
+        try? context.save()
+        problemKey = nil
     }
 
     // Per object rather than `delete(model:)`: that batch delete misses objects not yet saved.

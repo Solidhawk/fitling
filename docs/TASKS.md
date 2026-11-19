@@ -45,7 +45,9 @@ Hoe: `/model fable` en de taak noemen.
 
 Uitkomst: iemand kan een account maken, de onboarding doorlopen en zijn dagdoel zien en aanpassen, in de nieuwe vormgeving, offline bruikbaar na de eerste keer.
 
-### 1.1 Design system "Verzamelfiguren"
+### 1.1 Design system "Verzamelfiguren" — al gebouwd
+
+Staat op branch `fase-1-opbouw`, met tests. 1.1 en 1.4 tot en met 1.8 zijn in één keer gebouwd: het startscherm verwijst naar alle schermen, en lege tussenschermen mogen niet (CLAUDE.md). Hieronder de oorspronkelijke opdracht, als naslag.
 
 - **Doel:** kleuren, afstanden, knoppen, naamplaatje, doelenkaart en de vier figuren staan in `Fitling/DesignSystem`.
 - **Bestanden:** overnemen van `herontwerp-verzamelfiguren`: `Fitling/DesignSystem/*` (`Spacing`, `Buttons`, `NamePlate`, `TargetsCard`, `NavigationBarStyle`, `Figures`), `Fitling/Resources/Assets.xcassets/*.colorset`, de sleutels `creature.*` in de String Catalog, `FitlingTests/FigureTests.swift`, `FitlingTests/NavigationBarStyleTests.swift`, en `.impeccable/surfaces/fitling.md` (het richtingscontract). Neem de stand van commit `c035b4d` of later: daarin zijn de bevindingen uit de eerste simulator-screenshots al opgelost (inkt in plaats van systeemblauw, `footerStyle()` voor leesbare toelichtingen, navigatietitels met een maximale grootte).
@@ -95,7 +97,15 @@ Staat op branch `fase-1-opbouw`, met tests (`SyncEngineTests`, `SyncRecordTests`
 - **Mac-run:** ja, één.
 - **→ Fable** bij een sync-fout die je niet in één poging begrijpt.
 
-### 1.4 Start en routering
+### 1.4 Start en routering — al gebouwd
+
+Staat op branch `fase-1-opbouw`, met tests. 1.1 en 1.4 tot en met 1.8 zijn in één keer gebouwd: het startscherm verwijst naar alle schermen, en lege tussenschermen mogen niet (CLAUDE.md). Hieronder de oorspronkelijke opdracht, als naslag.
+
+Wat anders is dan hieronder staat:
+- `SyncEngine.sync()` tijdens een lopende ronde wacht op één extra ronde en geeft daarvan de uitkomst; `.alreadyRunning` bestaat niet meer. Nieuw: `.interrupted`.
+- `SyncEngine.eraseLocalData()` wist alle modellen. Een verzoek dat terugkomt na een wis-actie wordt weggegooid, zodat rijen van de vorige gebruiker niet terugkomen.
+- Uitloggen en account verwijderen wissen zelf niets: `RootViewModel.refresh()` wist bij `.signedOut` en toont in dezelfde stap welkom. Zo is er geen moment met het profielscherm zonder profiel.
+- De eerste echte sync tegen het ontwikkelproject is nog niet gedaan; die wacht op 0.2 (RISKS R-21).
 
 - **Doel:** `FitlingApp` maakt de services en toont het juiste scherm: laden, welkom, e-mail bevestigen, geen verbinding, onboarding of thuis.
 - **Bestanden:** `Fitling/App/FitlingApp.swift` (uitbreiden), `RootViewModel.swift`, `RootView.swift`, `Fitling/UITesting/UITestEnvironment.swift` (overnemen), `FitlingTests/RootViewModelTests.swift` (uit `AppFlowTests` van `fase-1`).
@@ -106,7 +116,9 @@ Staat op branch `fase-1-opbouw`, met tests (`SyncEngineTests`, `SyncRecordTests`
 - **Acceptatie:** de tests van `RootViewModel` uit `fase-1` groen, plus `olderRefreshDoesNotOverwriteANewerOne` en `signOutGoesStraightToWelcome`. `LaunchTests` aanpassen: uitgelogd starten toont de welkomknoppen.
 - **Mac-run:** ja, met 1.1 en 1.2.
 
-### 1.5 Welkom en inloggen met e-mail
+### 1.5 Welkom en inloggen met e-mail — al gebouwd
+
+Staat op branch `fase-1-opbouw`, met tests. 1.1 en 1.4 tot en met 1.8 zijn in één keer gebouwd: het startscherm verwijst naar alle schermen, en lege tussenschermen mogen niet (CLAUDE.md). Hieronder de oorspronkelijke opdracht, als naslag.
 
 - **Doel:** welkom (catalogus van de vier figuren, Apple, Google, e-mail), inloggen, registreren, wachtwoord vergeten, nieuw wachtwoord, e-mail bevestigen.
 - **Bestanden:** `Fitling/Features/Auth/*` uit `herontwerp-verzamelfiguren` (die versies hebben de nieuwe look), `AuthViewModels.swift` en `AuthViewModelTests.swift` + `DoubleTapSupport.swift` uit `fase-1`.
@@ -115,7 +127,11 @@ Staat op branch `fase-1-opbouw`, met tests (`SyncEngineTests`, `SyncRecordTests`
 - **Acceptatie:** de ViewModel-tests uit `fase-1` groen; UI-test `testWelcomeScreen`; screenshot licht en donker naar de gebruiker.
 - **Mac-run:** ja.
 
-### 1.6 Onboarding
+### 1.6 Onboarding — al gebouwd
+
+Staat op branch `fase-1-opbouw`, met tests. 1.1 en 1.4 tot en met 1.8 zijn in één keer gebouwd: het startscherm verwijst naar alle schermen, en lege tussenschermen mogen niet (CLAUDE.md). Hieronder de oorspronkelijke opdracht, als naslag.
+
+De omrekening van ft, in en lb zit in `BodyInput` (`Fitling/Features/Profile/BodyInput.swift`), gedeeld met het bewerkscherm. De geboortedag gaat via `BirthDayPicking`.
 
 - **Doel:** toestemming, geboortedag, geslacht, lengte, gewicht, activiteit, doel, resultaat.
 - **Gebruikt:** `NutritionEngine.plan(for:on:)`, `isValidBirthDay`, `Limits`, `Day`, `UserProfile`, `TargetPeriod`.
@@ -134,7 +150,11 @@ Staat op branch `fase-1-opbouw`, met tests (`SyncEngineTests`, `SyncRecordTests`
 - **Acceptatie:** UI-test loopt de hele flow door in licht, donker en bij de grootste tekst (alle acht stappen, "Verder" steeds bereikbaar), met een screenshot per stap.
 - **Mac-run:** ja.
 
-### 1.7 Dagdoel en profiel
+### 1.7 Dagdoel en profiel — al gebouwd
+
+Staat op branch `fase-1-opbouw`, met tests. 1.1 en 1.4 tot en met 1.8 zijn in één keer gebouwd: het startscherm verwijst naar alle schermen, en lege tussenschermen mogen niet (CLAUDE.md). Hieronder de oorspronkelijke opdracht, als naslag.
+
+Een wijziging wordt direct opgeslagen en twee seconden later gesynct. Een doelwijziging maakt of werkt de `TargetPeriod` van vandaag bij (`ModelContext.recordTargets`).
 
 - **Doel:** het dagdoel met uitleg (BMR, TDEE, factoren), profiel bewerken, doelen handmatig aanpassen.
 - **Gebruikt:** `NutritionEngine.plan`, `NutritionEngine.warnings(forKcal:bmr:tdee:sex:)`, `TargetsCard`.
@@ -146,7 +166,9 @@ Staat op branch `fase-1-opbouw`, met tests (`SyncEngineTests`, `SyncRecordTests`
 - **Tests:** de `ProfileViewModel`-tests uit `fase-1`, plus `changingTargetsStartsANewPeriodToday`, `changingTargetsTwiceOnOneDayKeepsOnePeriod`, `manualTargetBelowTheFloorWarnsButSaves`, `editSavesImmediately`.
 - **Mac-run:** ja.
 
-### 1.8 Account
+### 1.8 Account — al gebouwd
+
+Staat op branch `fase-1-opbouw`, met tests. 1.1 en 1.4 tot en met 1.8 zijn in één keer gebouwd: het startscherm verwijst naar alle schermen, en lege tussenschermen mogen niet (CLAUDE.md). Hieronder de oorspronkelijke opdracht, als naslag.
 
 - **Doel:** uitloggen (met waarschuwing bij onverstuurde wijzigingen) en account verwijderen.
 - **Bestanden:** `Fitling/Features/Account/*` en `AccountViewModel` + tests uit `fase-1`; `supabase/functions/delete-account` bestaat al.

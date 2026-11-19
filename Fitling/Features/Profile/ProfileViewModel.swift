@@ -79,12 +79,14 @@ final class ProfileViewModel {
     /// New targets hold from today on; earlier days keep the targets they had.
     private func setTargets(_ targets: NutritionTargets) {
         profile.update(targets: targets)
+        sync.context.recordTargets(targets, for: profile.id, from: today, at: now())
     }
 
     /// Saved right away, so a change survives the app being closed; sent a moment later.
     private func markChanged() {
         profile.updatedAt = now()
         profile.needsPush = true
+        try? sync.context.save()
         scheduleSync()
     }
 

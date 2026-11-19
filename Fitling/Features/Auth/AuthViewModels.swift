@@ -12,7 +12,7 @@ extension AuthFailure {
         case .rateLimited: "auth.error.rateLimited"
         case .network: "error.network"
         case .invalidOrForeignLink: "auth.reset.linkInvalid"
-        case .expiredLink: "auth.reset.linkInvalid"
+        case .expiredLink: "auth.reset.linkExpired"
         case .cancelled: nil
         case .server: "error.server"
         }

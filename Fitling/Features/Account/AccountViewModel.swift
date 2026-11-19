@@ -46,7 +46,6 @@ final class AccountViewModel {
                 return .failed
             }
         }
-        sync.eraseLocalData()
         return .signedOut
     }
 

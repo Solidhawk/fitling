@@ -67,6 +67,7 @@ final class RootViewModel {
         // Never start onboarding before the server has confirmed there is no profile: a new phone
         // or a reinstall would otherwise overwrite the real one.
         let outcome = await sync.sync()
+        guard current == generation else { return }
         if outcome == .completed {
             screen = sync.context.profile(of: userID) == nil ? .onboarding(userID) : .home(userID)
         } else if screen != .onboarding(userID) {

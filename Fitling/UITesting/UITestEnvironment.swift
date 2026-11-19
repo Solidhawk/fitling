@@ -6,6 +6,7 @@ import SwiftUI
 /// on `FakeAuthProvider`, `FakeRemoteStore` and an in-memory store. Never compiled into a release build.
 @MainActor
 enum UITestEnvironment {
+    /// `--ui-testing-on-disk` keeps the database in a real file, as on a device.
     /// `--ui-testing-dark` forces dark mode; setting the appearance from XCUITest did not reach the app on the CI simulator.
     static var colorScheme: ColorScheme? {
         ProcessInfo.processInfo.arguments.contains("--ui-testing-dark") ? .dark : nil
@@ -20,7 +21,7 @@ enum UITestEnvironment {
         } else {
             return nil
         }
-        let container = try makeModelContainer(inMemory: true)
+        let container = try makeModelContainer(inMemory: !arguments.contains("--ui-testing-on-disk"))
         let sync = SyncEngine(container: container, remote: FakeRemoteStore(), tables: SyncTables.all)
         return AppEnvironment(container: container, root: RootViewModel(auth: FakeAuthProvider(state: state), sync: sync))
     }
