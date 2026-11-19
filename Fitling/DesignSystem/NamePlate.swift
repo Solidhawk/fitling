@@ -39,7 +39,8 @@ struct FigureCard: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(Spacing.m)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        // Top-aligned, so the partners in one row stand on one line whatever the length of their note.
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(species.tint, in: RoundedRectangle(cornerRadius: Radius.card, style: .continuous))
         .accessibilityElement(children: .combine)
     }
