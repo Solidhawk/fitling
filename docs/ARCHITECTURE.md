@@ -14,7 +14,7 @@ Status: het fundament staat op branch `fundament`. Bewezen in CI: de rekenregels
 | Services | `Fitling/Services` | Alles wat met de buitenwereld praat: `AuthService`, de Supabase-client, `ProductLookup`, `HealthKitService`, `NotificationService`, `NetworkMonitor` | Core |
 | Features | `Fitling/Features/<Naam>` | Per onderdeel de schermen (`View`) en hun `@Observable @MainActor` ViewModels | Core, Data, Services, DesignSystem |
 | App | `Fitling/App` | Startpunt, de keuze welk scherm bovenaan staat, en het aanmaken en doorgeven van services | alles |
-| DesignSystem | `Fitling/DesignSystem` | Kleuren, afstanden, knoppen, de tekeningen van de wezentjes | SwiftUI |
+| DesignSystem | `Fitling/DesignSystem` | Kleuren, afstanden, knoppen, de tekeningen van de partners | SwiftUI |
 | Backend | `supabase/` | `schema.sql`, pgTAP-tests, Edge Functions | – |
 
 Regels:
@@ -45,7 +45,7 @@ Keuzes in de modellen (ook als commentaar in `FitlingSchemaV1.swift`):
 - Enums staan als tekst: `#Predicate` kan erop filteren en een onbekende waarde van een nieuwere app-versie laat een oudere niet crashen. De omzetting naar het enum geeft dan `nil`.
 - Tekst per taal (`name`, `title`, `instructions`) is `jsonb` op de server en JSON in `Data` lokaal, met `LocalizedText` als type. Interfaceteksten staan in de String Catalog; inhoud uit de database niet.
 - Een voedingslog bewaart naam en waarden op het moment van loggen. Een bijgewerkt product verandert oude dagen niet.
-- Het wezentje bewaart alleen wat niet uit de logs te herleiden is (vorm, XP, laatst verwerkte dag). De toestand rekent `CreatureEngine` steeds opnieuw uit.
+- De partner bewaart alleen wat niet uit de logs te herleiden is (vorm, XP, laatst verwerkte dag). De toestand rekent `CreatureEngine` steeds opnieuw uit.
 - `target_history` bewaart de doelen per periode, zodat een dag wordt vergeleken met het doel dat toen gold.
 - Voortgangsfoto's en trainingsenergie uit HealthKit verlaten het toestel niet.
 
@@ -257,7 +257,7 @@ De code is de bron; dit zijn de regels in het kort. Elke constante staat met naa
 
 - **Toestand** uit de zeven dagen vóór vandaag. Alleen dagen die voor minstens de helft van het doel zijn gelogd tellen mee; een dag met alleen een ontbijt zegt niets over te weinig eten. Minder dan drie zulke dagen: normaal.
   - fit: 90–110 % van het doel · te veel: boven 110 % · te weinig: onder 75 % · normaal: daartussen.
-  - slaapt: drie dagen achter elkaar niets gelogd. Eén gelogde maaltijd maakt het wakker. Het wezentje gaat nooit dood.
+  - slaapt: drie dagen achter elkaar niets gelogd. Eén gelogde maaltijd maakt de partner wakker. De partner gaat nooit dood.
 - **Vorm** is een getal van 0 (slank en fit) tot 1 (rond), start 0,3, hoogstens 0,05 per dag.
   - fit: richting 0 · te veel: richting 0,5–1,0, naar gelang hoe ver boven het doel (150 % = helemaal rond).
   - **te weinig, normaal en slapen veranderen de vorm niet.** Slanker worden is nooit het gevolg van te weinig eten.
@@ -268,7 +268,7 @@ De code is de bron; dit zijn de regels in het kort. Elke constante staat met naa
 - `advance` verwerkt alle afgeronde dagen sinds de laatste keer en is veilig om vaker aan te roepen. `snapshot` geeft wat de UI nodig heeft.
 - **Meldingen:** sleutels `creature.message.<onderwerp>.<toon>.<1–3>`, met onderwerp `fit`, `normal`, `tooMuch`, `tooLittle`, `asleep`, `hungry` en toon `sweet`, `funny`, `coach`. De engine kiest per dag een andere variant. De teksten zelf worden in fase 3 geschreven. Voorbeeld per toon voor `hungry` (van de gebruiker): lief "Ik heb honger 🥺", grappig "Mijn maag knort harder dan jouw wekker", coach "Tijd voor eiwit. Wat eet je?".
 
-De getallen van het wezentje (drempels, XP, levels) zijn een eerste afstelling. Bijstellen na echt gebruik is een taak voor Fable (TASKS 3.9).
+De getallen van de partner (drempels, XP, levels) zijn een eerste afstelling. Bijstellen na echt gebruik is een taak voor Fable (TASKS 3.9).
 
 ### ProgressionEngine
 
@@ -308,8 +308,8 @@ Waarom geen exacte optimalisatie: het probleem is klein (zeven dagen, drie of vi
 | D-09 | Aanbiedingen matchen op het toestel | Matchen in de backend-job (PROMPT.md) | Werkt offline en de server leest geen boodschappenlijsten. De job haalt alleen aanbiedingen op |
 | D-10 | Een handmatig doel onder de ondergrens geeft een waarschuwing, geen blokkade | Blokkeren | De ondergrens geldt voor wat de app voorstelt. Wie met een diëtist een ander doel heeft, moet dat kunnen invullen |
 | D-11 | De helft van de trainingsenergie telt bij het budget op | Alles; niets | De activiteitsfactor dekt al een deel van de training en horloges schatten hoog |
-| D-12 | Te weinig eten verandert de vorm van het wezentje niet en geeft geen XP | Slanker worden bij minder eten | "Minder eten wordt nooit beloond" (PROMPT.md). De slanke vorm is alleen te bereiken door op het doel te eten |
-| D-13 | Dagen die voor minder dan de helft van het doel zijn gelogd, tellen niet mee in het gemiddelde | Elke gelogde dag telt | Half loggen zou anders als te weinig eten gelden en het wezentje onterecht moe maken |
+| D-12 | Te weinig eten verandert de vorm van de partner niet en geeft geen XP | Slanker worden bij minder eten | "Minder eten wordt nooit beloond" (PROMPT.md). De slanke vorm is alleen te bereiken door op het doel te eten |
+| D-13 | Dagen die voor minder dan de helft van het doel zijn gelogd, tellen niet mee in het gemiddelde | Elke gelogde dag telt | Half loggen zou anders als te weinig eten gelden en de partner onterecht moe maken |
 | D-14 | Inhoud uit de database is `jsonb` per taal; interfaceteksten staan in de String Catalog | Alles in de String Catalog | Producten, recepten en oefeningen veranderen zonder app-update en Open Food Facts levert namen in veel talen |
 | D-15 | Eén tabel `products` voor de gedeelde cache en eigen producten | Twee tabellen | Een voedingslog verwijst zo altijd naar één soort product |
 | D-16 | De gedeelde cache wordt alleen door Edge Functions geschreven | Clients schrijven zelf | Eén schrijver voorkomt dubbele en gemanipuleerde producten en houdt sleutels van bronnen op de server |
@@ -322,6 +322,6 @@ Waarom geen exacte optimalisatie: het probleem is klein (zeven dagen, drie of vi
 
 - Welke bronnen voor aanbiedingen gebruikt mogen worden (RISKS R-13).
 - Of er een betaalde productbron komt en welke (RISKS R-04).
-- De definitieve teksten van de meldingen van het wezentje en de afstelling van zijn getallen (TASKS 3.6 en 3.9).
-- De animatietechniek van het wezentje (SpriteKit of Rive): de engine is er onafhankelijk van; de keuze valt in fase 3.
+- De definitieve teksten van de meldingen van de partner en de afstelling van zijn getallen (TASKS 3.6 en 3.9).
+- De animatietechniek van de partner (SpriteKit of Rive): de engine is er onafhankelijk van; de keuze valt in fase 3.
 - De vormgeving: de richting "Verzamelfiguren" is gekozen; het werk staat lokaal op branch `herontwerp-verzamelfiguren` (TASKS 1.2).

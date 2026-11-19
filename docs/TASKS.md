@@ -14,6 +14,7 @@ Het fundament staat op branch `fundament`: rekenregels (`Packages/FitlingCore`),
 - **Eerst de test, dan de code**, en zie de test falen. Testnamen beschrijven gedrag (`returnsTiredWhenSevenDayAverageIsThirtyPercentUnderTarget`).
 - **Naslag.** De eerdere fase 1 werkte en was getest (88 tests). Neem over wat past: `git show origin/fase-1:<pad>`. Overnemen en aanpassen is beter dan opnieuw schrijven. Het herontwerp "Verzamelfiguren" staat alleen lokaal: `git show herontwerp-verzamelfiguren:<pad>`.
 - **Schema wijzigen** kan zolang er geen productiedatabase is (ARCHITECTURE D-07): pas `supabase/schema.sql`, het model in `Fitling/Core/Models`, zo nodig `scripts/check-models.mjs` en een pgTAP-test aan in dezelfde commit.
+- **Partner, niet wezentje.** In alles wat de gebruiker leest (app, meldingen, widget) heet hij "je partner". In de code blijft `Creature` staan.
 - **Teksten** altijd via `Localizable.xcstrings`, in nl, en en de. De catalogus bevat al de teksten van de eerdere fase 1; hergebruik de sleutels.
 - **Klaar** is: gebouwd, tests groen in CI, en bij schermen een screenshot naar de gebruiker (die wil tussendoor meekijken).
 - **Vraag de gebruiker** vóór een merge naar `main`, vóór iets op het echte Supabase-project, en vóór een download van materiaal van derden.
@@ -23,7 +24,7 @@ Het fundament staat op branch `fundament`: rekenregels (`Packages/FitlingCore`),
 Stop en meld het, in plaats van zelf te beslissen, bij:
 
 - een sync-fout die je na één gerichte poging niet begrijpt (verloren of dubbele rijen, rijen die blijven terugkomen);
-- een wens om een regel of constante in `FitlingCore` te veranderen (drempels van het wezentje, XP, progressie, ondergrens);
+- een wens om een regel of constante in `FitlingCore` te veranderen (drempels van de partner, XP, progressie, ondergrens);
 - een wijziging in de betekenis van het schema (wie mag wat zien, hoe conflicten worden opgelost);
 - de taken die hieronder met **→ Fable** zijn gemarkeerd.
 
@@ -223,11 +224,11 @@ Uitkomst: iemand kan een account maken, de onboarding doorlopen en zijn dagdoel 
 
 ---
 
-## Fase 3 – Wezentje
+## Fase 3 – Partner
 
 TestFlight (UNFORGET S1) moet er vóór deze fase zijn: meldingen, widget en Live Activity zijn in de simulator niet te bewijzen.
 
-### 3.1 Wezentje kiezen
+### 3.1 Partner kiezen
 
 - **Doel:** soort, naam (1–24 tekens), kleur (0–2) en toon kiezen; opslaan als `Creature`. Bestaande gebruikers krijgen de stap bij de eerste start na de update.
 - **Gebruikt:** `CreatureState`, `Creature`, de figuren uit het design system.
@@ -235,12 +236,12 @@ TestFlight (UNFORGET S1) moet er vóór deze fase zijn: meldingen, widget en Liv
 
 ### 3.2 Dagen samenstellen en verwerken
 
-- **Doel:** uit de lokale data een lijst `DayRecord` maken en het wezentje bijwerken.
+- **Doel:** uit de lokale data een lijst `DayRecord` maken en de partner bijwerken.
 - **Bestanden:** `Fitling/Data/CreatureHistory.swift`.
 - **Vastgelegd:** per dag: som van de logs (kcal, eiwit, aantal), het doel uit `TargetPeriod` met `NutritionEngine.dayTargets` als trainingen meetellen, en "training voltooid" als er die dag een `WorkoutSession` met `endedAt` is of HealthKit een training meldt. Aanroepen bij app-start en als de dag wisselt: `CreatureEngine.advance`, daarna `creature.apply(_:at:)` en opslaan. Lever de records vanaf zes dagen vóór de laatst verwerkte dag.
 - **Tests:** `buildsOneRecordPerDayWithLogs`, `usesTheTargetOfThatDay`, `workoutFromHealthKitCounts`, `advanceIsAppliedAndSavedOnce`.
 
-### 3.3 Het wezentje tekenen
+### 3.3 De partner tekenen
 
 - **Vastgelegd:** SwiftUI (`Canvas` + `TimelineView`), geen SpriteKit of Rive. Reden: de figuren zijn al vector, er komt geen library bij, en een widget kan dezelfde tekening gebruiken (SpriteKit en Rive kunnen dat niet).
 - **Doel:** een View die een `CreatureSnapshot` tekent: vorm (0–1 als breedte van het lijf), stemming (ogen en mond), energie (tempo van de beweging), groeistadium per soort, accessoires, trainingsbonus. Met "Verminder beweging" aan staat het stil.
@@ -262,11 +263,11 @@ TestFlight (UNFORGET S1) moet er vóór deze fase zijn: meldingen, widget en Liv
 
 ### 3.7 Widget
 
-- **Doel:** het wezentje op het beginscherm. Vraagt een App Group om de snapshot te delen (UNFORGET S1).
+- **Doel:** de partner op het beginscherm. Vraagt een App Group om de snapshot te delen (UNFORGET S1).
 
 ### 3.8 Live Activity
 
-- **Doel:** het wezentje tijdens een maaltijdmoment of training (PROMPT.md §2). Bepaal met de gebruiker wanneer hij start en stopt vóór je bouwt.
+- **Doel:** de partner tijdens een maaltijdmoment of training (PROMPT.md §2). Bepaal met de gebruiker wanneer hij start en stopt vóór je bouwt.
 
 ### 3.9 Afstelling herzien — **→ Fable**
 
