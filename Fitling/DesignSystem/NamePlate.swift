@@ -30,7 +30,7 @@ struct FigureCard: View {
     var body: some View {
         VStack(spacing: Spacing.s) {
             FigureView(species: species)
-                .frame(width: 88, height: 88)
+                .frame(width: 96, height: 96)
             NamePlate(species.nameKey, fill: species.ribbon)
             Text(species.noteKey)
                 .font(.footnote)

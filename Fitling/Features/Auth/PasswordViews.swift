@@ -96,7 +96,7 @@ struct VerifyEmailView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Spacing.l) {
-                // The envelope as a sticker badge, in the same keyline style as the figures.
+                // The envelope as a round badge in one of the partner colours.
                 Image(systemName: "envelope.fill")
                     .font(.title)
                     .foregroundStyle(Color.onRibbon)

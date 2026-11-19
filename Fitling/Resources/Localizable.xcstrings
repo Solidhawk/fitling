@@ -2910,19 +2910,19 @@
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Eten bijhouden, trainen en een wezentje dat met je meegroeit."
+            "value": "Eten bijhouden, trainen en een partner die met je meegroeit."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Track your food and training, with a small creature that grows with you."
+            "value": "Track your food and training, with a partner that grows with you."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Essen und Training festhalten – mit einem kleinen Wesen, das mit dir wächst."
+            "value": "Essen und Training festhalten – mit einem Partner, der mit dir wächst."
           }
         }
       }

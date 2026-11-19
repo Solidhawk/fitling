@@ -22,7 +22,12 @@ struct FigureTests {
 
     @Test(arguments: Species.allCases)
     func partnersStayInsideTheirDrawingSpace(_ species: Species) {
-        let bounds = species.parts.map(\.path.boundingRect).reduce(CGRect.null) { $0.union($1) }
+        let parts = species.parts
+        let body = parts.first { $0.role == .body }?.path.boundingRect ?? .null
+        // Shading is clipped to the body, so only the part inside the body is drawn.
+        let bounds = parts
+            .map { $0.role == .shading ? $0.path.boundingRect.intersection(body) : $0.path.boundingRect }
+            .reduce(CGRect.null) { $0.union($1) }
         #expect(!bounds.isNull)
         #expect(bounds.minX >= 0 && bounds.minY >= 0 && bounds.maxX <= 100 && bounds.maxY <= 100)
         #expect(FigurePart.groundShadow.maxY <= 100)

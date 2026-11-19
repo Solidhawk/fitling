@@ -1,13 +1,13 @@
 import SwiftUI
 
-/// The four species from PRODUCT.md. In phase 1 they make up the catalog on the welcome screen;
-/// choosing and naming one is part of phase 3.
+/// The four species of partner from PRODUCT.md. In phase 1 they make up the catalog on the welcome
+/// screen; choosing and naming one is part of phase 3.
 enum Species: CaseIterable, Identifiable {
     case sprout, ember, pip, pebble
 
     var id: Self { self }
 
-    /// The saturated colour of the species: its body, its name plate and later its own ribbon.
+    /// The main colour of the species: its body, its name plate and later its own ribbon.
     var ribbon: Color {
         switch self {
         case .sprout: Color.sprout
@@ -47,8 +47,7 @@ enum Species: CaseIterable, Identifiable {
     }
 }
 
-/// One flat part of a figure, drawn in a 100 × 100 space. The parts marked `keyline` together form
-/// the silhouette that gets the white sticker edge.
+/// One flat part of a partner, drawn in a 100 × 100 space.
 struct FigurePart {
     enum Paint: Equatable {
         case fill
@@ -57,25 +56,40 @@ struct FigurePart {
     }
 
     enum Role: Equatable {
+        /// Feet, arms, leaves, crest: the outline next to the body.
         case silhouette
+        /// The one body shape. Shading is clipped to it.
         case body
+        /// Light on top or shadow underneath: flat tones instead of a gradient, only inside the body.
         case shading
+        /// Eyes, mouth, beak, speckles.
         case detail
     }
 
-    /// Every silhouette ends here, so the figures in the catalog stand on one line.
+    /// Every partner's feet end here, so the figures in the catalog stand on one line.
     static let baseline: CGFloat = 92
-    static let keylineWidth: CGFloat = 7
+    /// The soft shadow the partner stands on.
     static let groundShadow = CGRect(x: 20, y: 89.3, width: 60, height: 6.4)
 
     let path: Path
     let color: Color
     var paint: Paint = .fill
-    var keyline = false
     var role: Role = .detail
+
+    func draw(in context: inout GraphicsContext) {
+        switch paint {
+        case .fill:
+            context.fill(path, with: .color(color))
+        case let .stroke(width):
+            context.stroke(path, with: .color(color), style: StrokeStyle(lineWidth: width, lineCap: .round, lineJoin: .round))
+        case let .fillAndStroke(width):
+            context.fill(path, with: .color(color))
+            context.stroke(path, with: .color(color), style: StrokeStyle(lineWidth: width, lineJoin: .round))
+        }
+    }
 }
 
-/// A figure as a flat sticker: a white keyline round the silhouette, one flat colour per part.
+/// A partner: a chunky body in flat tones, light from the upper left, standing on its own shadow.
 struct FigureView: View {
     let species: Species
 
@@ -84,43 +98,41 @@ struct FigureView: View {
             let side = min(size.width, size.height)
             context.translateBy(x: (size.width - side) / 2, y: (size.height - side) / 2)
             context.scaleBy(x: side / 100, y: side / 100)
+            context.fill(Path(ellipseIn: FigurePart.groundShadow), with: .color(Color.cardShadow))
             let parts = species.parts
-            for part in parts where part.keyline {
-                context.stroke(
-                    part.path,
-                    with: .color(.white),
-                    style: StrokeStyle(lineWidth: FigurePart.keylineWidth, lineCap: .round, lineJoin: .round)
-                )
-            }
+            let bodyShape = parts.first { $0.role == .body }?.path
             for part in parts {
-                switch part.paint {
-                case .fill:
-                    context.fill(part.path, with: .color(part.color))
-                case let .stroke(width):
-                    context.stroke(part.path, with: .color(part.color), style: StrokeStyle(lineWidth: width, lineCap: .round, lineJoin: .round))
-                case let .fillAndStroke(width):
-                    context.fill(part.path, with: .color(part.color))
-                    context.stroke(part.path, with: .color(part.color), style: StrokeStyle(lineWidth: width, lineJoin: .round))
+                if part.role == .shading, let bodyShape {
+                    context.drawLayer { layer in
+                        layer.clip(to: bodyShape)
+                        part.draw(in: &layer)
+                    }
+                } else {
+                    part.draw(in: &context)
                 }
             }
         }
-        .shadow(color: Color.cardShadow, radius: 3, y: 2)
         .accessibilityHidden(true)
     }
 }
 
-/// Artwork colours that are not ribbons. A figure looks the same in light and dark mode, like a
-/// printed sticker.
+/// Artwork colours next to the species' main colour. A partner looks the same in light and dark
+/// mode.
 private enum Artwork {
-    static let sproutLeaf = Color(artwork: 0x3E9E57)
-    static let sproutBlush = Color(artwork: 0xFF9AA2)
-    static let emberGlow = Color(artwork: 0xFFC93C)
-    static let emberBlush = Color(artwork: 0xE8503A)
-    static let pipWing = Color(artwork: 0xF0B000)
+    static let sproutShadow = Color(artwork: 0x57AE45)
+    static let sproutGloss = Color(artwork: 0xC2F08A)
+    static let sproutLeaf = Color(artwork: 0x6CC24A)
+    static let sproutLeafDark = Color(artwork: 0x3E8E36)
+    static let emberShadow = Color(artwork: 0xE8603A)
+    static let emberGloss = Color(artwork: 0xFFC56B)
+    static let emberFlame = Color(artwork: 0xFF6A2B)
+    static let emberFlameCore = Color(artwork: 0xFFD54F)
+    static let pipShadow = Color(artwork: 0xF0A500)
+    static let pipGloss = Color(artwork: 0xFFEC9A)
     static let pipBeak = Color(artwork: 0xFF8A3D)
-    static let pipBlush = Color(artwork: 0xFF9E80)
-    static let pebbleSpeckle = Color(artwork: 0x73839D)
-    static let pebbleBlush = Color(artwork: 0xFFA8B0)
+    static let pebbleShadow = Color(artwork: 0x74839E)
+    static let pebbleGloss = Color(artwork: 0xC5CEDF)
+    static let moss = Color(artwork: 0x6CC24A)
 }
 
 private extension Color {
@@ -140,151 +152,187 @@ private func pt(_ x: CGFloat, _ y: CGFloat) -> CGPoint {
 }
 
 extension Species {
-    /// The figure's parts, back to front.
+    /// The partner's parts, back to front.
     var parts: [FigurePart] {
         switch self {
         case .sprout: [
             FigurePart(path: Path { p in
-                p.move(to: pt(48, 36))
-                p.addLine(to: pt(48, 22))
-                p.addCurve(to: pt(52, 22), control1: pt(48, 20.5), control2: pt(52, 20.5))
-                p.addLine(to: pt(52, 36))
+                p.move(to: pt(49, 31))
+                p.addLine(to: pt(49, 22))
+                p.addCurve(to: pt(51, 22), control1: pt(49, 20.5), control2: pt(51, 20.5))
+                p.addLine(to: pt(51, 31))
                 p.closeSubpath()
-            }, color: Artwork.sproutLeaf, keyline: true),
+            }, color: Artwork.sproutLeafDark, role: .silhouette),
             FigurePart(path: Path { p in
-                p.move(to: pt(50, 24))
-                p.addCurve(to: pt(21, 15), control1: pt(42, 12), control2: pt(28, 10))
-                p.addCurve(to: pt(50, 24), control1: pt(26, 26), control2: pt(40, 30))
+                p.move(to: pt(50, 23))
+                p.addCurve(to: pt(27, 18), control1: pt(44, 14), control2: pt(33, 13))
+                p.addCurve(to: pt(50, 23), control1: pt(31, 26), control2: pt(42, 28))
                 p.closeSubpath()
-            }, color: Artwork.sproutLeaf, keyline: true),
+            }, color: Artwork.sproutLeaf, role: .silhouette),
+            FigurePart(path: Path { p in
+                p.move(to: pt(50, 23))
+                p.addCurve(to: pt(27, 18), control1: pt(42, 28), control2: pt(31, 26))
+                p.addCurve(to: pt(50, 23), control1: pt(36, 22), control2: pt(44, 23))
+                p.closeSubpath()
+            }, color: Artwork.sproutLeafDark),
             FigurePart(path: Path { p in
                 p.move(to: pt(50, 22))
-                p.addCurve(to: pt(80, 9), control1: pt(56, 8), control2: pt(72, 4))
-                p.addCurve(to: pt(50, 22), control1: pt(76, 22), control2: pt(62, 28))
+                p.addCurve(to: pt(75, 13), control1: pt(55, 11), control2: pt(68, 8))
+                p.addCurve(to: pt(50, 22), control1: pt(71, 23), control2: pt(59, 27))
                 p.closeSubpath()
-            }, color: Artwork.sproutLeaf, keyline: true),
+            }, color: Artwork.sproutLeaf, role: .silhouette),
             FigurePart(path: Path { p in
-                p.move(to: pt(50, 34))
-                p.addCurve(to: pt(84, 68), control1: pt(70, 34), control2: pt(84, 48))
-                p.addCurve(to: pt(50, 92), control1: pt(84, 84), control2: pt(70, 92))
-                p.addCurve(to: pt(16, 68), control1: pt(30, 92), control2: pt(16, 84))
-                p.addCurve(to: pt(50, 34), control1: pt(16, 48), control2: pt(30, 34))
+                p.move(to: pt(50, 22))
+                p.addCurve(to: pt(75, 13), control1: pt(59, 27), control2: pt(71, 23))
+                p.addCurve(to: pt(50, 22), control1: pt(67, 19), control2: pt(58, 21))
                 p.closeSubpath()
-            }, color: Color.sprout, keyline: true),
-            FigurePart(path: Path(ellipseIn: CGRect(x: 26, y: 69.8, width: 10, height: 6.4)), color: Artwork.sproutBlush),
-            FigurePart(path: Path(ellipseIn: CGRect(x: 64, y: 69.8, width: 10, height: 6.4)), color: Artwork.sproutBlush),
-            FigurePart(path: Path(ellipseIn: CGRect(x: 35.4, y: 57.4, width: 9.2, height: 11.2)), color: Color.onRibbon),
-            FigurePart(path: Path(ellipseIn: CGRect(x: 55.4, y: 57.4, width: 9.2, height: 11.2)), color: Color.onRibbon),
-            FigurePart(path: Path(ellipseIn: CGRect(x: 39.9, y: 59.3, width: 3.4, height: 3.4)), color: Color.white),
-            FigurePart(path: Path(ellipseIn: CGRect(x: 59.9, y: 59.3, width: 3.4, height: 3.4)), color: Color.white),
+            }, color: Artwork.sproutLeafDark),
+            FigurePart(path: Path(ellipseIn: CGRect(x: 30.5, y: 85, width: 15, height: 7)), color: Artwork.sproutShadow, role: .silhouette),
+            FigurePart(path: Path(ellipseIn: CGRect(x: 54.5, y: 85, width: 15, height: 7)), color: Artwork.sproutShadow, role: .silhouette),
             FigurePart(path: Path { p in
-                p.move(to: pt(45, 74))
-                p.addQuadCurve(to: pt(55, 74), control: pt(50, 78.5))
-            }, color: Color.onRibbon, paint: .stroke(2.6)),
+                p.move(to: pt(50, 30))
+                p.addCurve(to: pt(82, 61), control1: pt(69, 30), control2: pt(82, 43))
+                p.addCurve(to: pt(50, 87), control1: pt(82, 77), control2: pt(72, 87))
+                p.addCurve(to: pt(18, 61), control1: pt(28, 87), control2: pt(18, 77))
+                p.addCurve(to: pt(50, 30), control1: pt(18, 43), control2: pt(31, 30))
+                p.closeSubpath()
+            }, color: Color.sprout, role: .body),
+            FigurePart(path: Path(ellipseIn: CGRect(x: 12, y: 79, width: 84, height: 38)), color: Artwork.sproutShadow, role: .shading),
+            FigurePart(path: Path(ellipseIn: CGRect(x: 26, y: 38.5, width: 18, height: 11)), color: Artwork.sproutGloss, role: .shading),
+            FigurePart(path: Path(ellipseIn: CGRect(x: 14.9, y: 60.5, width: 7.2, height: 11)), color: Artwork.sproutShadow, role: .silhouette),
+            FigurePart(path: Path(ellipseIn: CGRect(x: 77.9, y: 60.5, width: 7.2, height: 11)), color: Artwork.sproutShadow, role: .silhouette),
+            FigurePart(path: Path(ellipseIn: CGRect(x: 36.2, y: 50.7, width: 6.6, height: 8.6)), color: Color.onRibbon),
+            FigurePart(path: Path(ellipseIn: CGRect(x: 57.2, y: 50.7, width: 6.6, height: 8.6)), color: Color.onRibbon),
+            FigurePart(path: Path(ellipseIn: CGRect(x: 39.4, y: 52.3, width: 2.2, height: 2.2)), color: Color.white),
+            FigurePart(path: Path(ellipseIn: CGRect(x: 60.4, y: 52.3, width: 2.2, height: 2.2)), color: Color.white),
+            FigurePart(path: Path { p in
+                p.move(to: pt(46, 63))
+                p.addQuadCurve(to: pt(54, 63), control: pt(50, 66.5))
+            }, color: Color.onRibbon, paint: .stroke(2.2)),
         ]
         case .ember: [
             FigurePart(path: Path { p in
-                p.move(to: pt(50, 8))
-                p.addCurve(to: pt(80, 50), control1: pt(57, 22), control2: pt(74, 32))
-                p.addCurve(to: pt(50, 92), control1: pt(87, 70), control2: pt(74, 92))
-                p.addCurve(to: pt(18, 57), control1: pt(27, 92), control2: pt(13, 76))
-                p.addCurve(to: pt(33, 31), control1: pt(21, 46), control2: pt(29, 41))
-                p.addCurve(to: pt(45, 45), control1: pt(38, 40), control2: pt(41, 44))
-                p.addCurve(to: pt(50, 8), control1: pt(42, 31), control2: pt(44, 19))
+                p.move(to: pt(50, 6))
+                p.addCurve(to: pt(65, 33), control1: pt(57, 15), control2: pt(66, 21))
+                p.addCurve(to: pt(35, 33), control1: pt(65, 38), control2: pt(35, 38))
+                p.addCurve(to: pt(42, 14), control1: pt(34, 24), control2: pt(40, 20))
+                p.addCurve(to: pt(48, 24), control1: pt(45, 19), control2: pt(46, 22))
+                p.addCurve(to: pt(50, 6), control1: pt(46, 17), control2: pt(47, 11))
                 p.closeSubpath()
-            }, color: Color.ember, keyline: true),
+            }, color: Artwork.emberFlame, role: .silhouette),
             FigurePart(path: Path { p in
-                p.move(to: pt(50, 70))
-                p.addCurve(to: pt(62, 84), control1: pt(57, 74), control2: pt(62, 78.5))
-                p.addCurve(to: pt(50, 90), control1: pt(62, 88.5), control2: pt(57, 90))
-                p.addCurve(to: pt(38, 84), control1: pt(43, 90), control2: pt(38, 88.5))
-                p.addCurve(to: pt(50, 70), control1: pt(38, 78.5), control2: pt(43, 74))
+                p.move(to: pt(50, 16))
+                p.addCurve(to: pt(58, 33), control1: pt(54, 22), control2: pt(59, 26))
+                p.addLine(to: pt(42, 33))
+                p.addCurve(to: pt(47, 21), control1: pt(42, 28), control2: pt(45, 24))
+                p.addCurve(to: pt(50, 26), control1: pt(48, 24), control2: pt(49, 25))
+                p.addCurve(to: pt(50, 16), control1: pt(49, 22), control2: pt(49, 19))
                 p.closeSubpath()
-            }, color: Artwork.emberGlow),
-            FigurePart(path: Path(ellipseIn: CGRect(x: 26, y: 62.8, width: 10, height: 6.4)), color: Artwork.emberBlush),
-            FigurePart(path: Path(ellipseIn: CGRect(x: 64, y: 62.8, width: 10, height: 6.4)), color: Artwork.emberBlush),
-            FigurePart(path: Path(ellipseIn: CGRect(x: 35.4, y: 52.4, width: 9.2, height: 11.2)), color: Color.onRibbon),
-            FigurePart(path: Path(ellipseIn: CGRect(x: 55.4, y: 52.4, width: 9.2, height: 11.2)), color: Color.onRibbon),
-            FigurePart(path: Path(ellipseIn: CGRect(x: 39.9, y: 54.3, width: 3.4, height: 3.4)), color: Color.white),
-            FigurePart(path: Path(ellipseIn: CGRect(x: 59.9, y: 54.3, width: 3.4, height: 3.4)), color: Color.white),
+            }, color: Artwork.emberFlameCore),
+            FigurePart(path: Path(ellipseIn: CGRect(x: 30.5, y: 85, width: 15, height: 7)), color: Artwork.emberShadow, role: .silhouette),
+            FigurePart(path: Path(ellipseIn: CGRect(x: 54.5, y: 85, width: 15, height: 7)), color: Artwork.emberShadow, role: .silhouette),
             FigurePart(path: Path { p in
-                p.move(to: pt(45.5, 67))
-                p.addQuadCurve(to: pt(54.5, 67), control: pt(50, 71))
-            }, color: Color.onRibbon, paint: .stroke(2.6)),
+                p.move(to: pt(50, 30))
+                p.addCurve(to: pt(82, 61), control1: pt(69, 30), control2: pt(82, 43))
+                p.addCurve(to: pt(50, 87), control1: pt(82, 77), control2: pt(72, 87))
+                p.addCurve(to: pt(18, 61), control1: pt(28, 87), control2: pt(18, 77))
+                p.addCurve(to: pt(50, 30), control1: pt(18, 43), control2: pt(31, 30))
+                p.closeSubpath()
+            }, color: Color.ember, role: .body),
+            FigurePart(path: Path(ellipseIn: CGRect(x: 12, y: 79, width: 84, height: 38)), color: Artwork.emberShadow, role: .shading),
+            FigurePart(path: Path(ellipseIn: CGRect(x: 26, y: 38.5, width: 18, height: 11)), color: Artwork.emberGloss, role: .shading),
+            FigurePart(path: Path(ellipseIn: CGRect(x: 14.9, y: 60.5, width: 7.2, height: 11)), color: Artwork.emberShadow, role: .silhouette),
+            FigurePart(path: Path(ellipseIn: CGRect(x: 77.9, y: 60.5, width: 7.2, height: 11)), color: Artwork.emberShadow, role: .silhouette),
+            FigurePart(path: Path(ellipseIn: CGRect(x: 36.2, y: 50.7, width: 6.6, height: 8.6)), color: Color.onRibbon),
+            FigurePart(path: Path(ellipseIn: CGRect(x: 57.2, y: 50.7, width: 6.6, height: 8.6)), color: Color.onRibbon),
+            FigurePart(path: Path(ellipseIn: CGRect(x: 39.4, y: 52.3, width: 2.2, height: 2.2)), color: Color.white),
+            FigurePart(path: Path(ellipseIn: CGRect(x: 60.4, y: 52.3, width: 2.2, height: 2.2)), color: Color.white),
+            FigurePart(path: Path { p in
+                p.move(to: pt(46, 63))
+                p.addQuadCurve(to: pt(54, 63), control: pt(50, 66.5))
+            }, color: Color.onRibbon, paint: .stroke(2.2)),
         ]
         case .pip: [
             FigurePart(path: Path { p in
-                p.move(to: pt(47, 29))
-                p.addCurve(to: pt(52, 13), control1: pt(44, 19), control2: pt(47, 12))
-                p.addCurve(to: pt(52, 28), control1: pt(50, 17), control2: pt(50, 22))
+                p.move(to: pt(47, 32))
+                p.addCurve(to: pt(52, 17), control1: pt(44, 22), control2: pt(47, 16))
+                p.addCurve(to: pt(52, 31), control1: pt(50, 21), control2: pt(50, 26))
                 p.closeSubpath()
-            }, color: Color.pip, keyline: true),
+            }, color: Color.pip, role: .silhouette),
             FigurePart(path: Path { p in
-                p.move(to: pt(52, 28))
-                p.addCurve(to: pt(65, 17), control1: pt(54, 19), control2: pt(60, 14))
-                p.addCurve(to: pt(55, 29), control1: pt(60, 20), control2: pt(57, 24))
+                p.move(to: pt(52, 31))
+                p.addCurve(to: pt(65, 21), control1: pt(54, 22), control2: pt(60, 18))
+                p.addCurve(to: pt(55, 32), control1: pt(60, 24), control2: pt(57, 27))
                 p.closeSubpath()
-            }, color: Color.pip, keyline: true),
+            }, color: Color.pip, role: .silhouette),
+            FigurePart(path: Path(ellipseIn: CGRect(x: 30.5, y: 85, width: 15, height: 7)), color: Artwork.pipBeak, role: .silhouette),
+            FigurePart(path: Path(ellipseIn: CGRect(x: 54.5, y: 85, width: 15, height: 7)), color: Artwork.pipBeak, role: .silhouette),
             FigurePart(path: Path { p in
-                p.move(to: pt(50, 26))
-                p.addCurve(to: pt(86, 62), control1: pt(72, 26), control2: pt(86, 42))
-                p.addCurve(to: pt(50, 92), control1: pt(86, 80), control2: pt(70, 92))
-                p.addCurve(to: pt(14, 62), control1: pt(30, 92), control2: pt(14, 80))
-                p.addCurve(to: pt(50, 26), control1: pt(14, 42), control2: pt(28, 26))
+                p.move(to: pt(50, 30))
+                p.addCurve(to: pt(82, 61), control1: pt(69, 30), control2: pt(82, 43))
+                p.addCurve(to: pt(50, 87), control1: pt(82, 77), control2: pt(72, 87))
+                p.addCurve(to: pt(18, 61), control1: pt(28, 87), control2: pt(18, 77))
+                p.addCurve(to: pt(50, 30), control1: pt(18, 43), control2: pt(31, 30))
                 p.closeSubpath()
-            }, color: Color.pip, keyline: true),
+            }, color: Color.pip, role: .body),
+            FigurePart(path: Path(ellipseIn: CGRect(x: 12, y: 79, width: 84, height: 38)), color: Artwork.pipShadow, role: .shading),
+            FigurePart(path: Path(ellipseIn: CGRect(x: 26, y: 38.5, width: 18, height: 11)), color: Artwork.pipGloss, role: .shading),
             FigurePart(path: Path { p in
-                p.move(to: pt(71, 66))
-                p.addCurve(to: pt(83, 74), control1: pt(79, 61), control2: pt(86, 66))
-                p.addCurve(to: pt(71, 66), control1: pt(79, 79), control2: pt(72, 76))
+                p.move(to: pt(24, 60))
+                p.addCurve(to: pt(20, 74), control1: pt(16, 58), control2: pt(13, 68))
+                p.addCurve(to: pt(24, 60), control1: pt(23, 70), control2: pt(25, 65))
                 p.closeSubpath()
-            }, color: Artwork.pipWing),
+            }, color: Artwork.pipShadow, role: .silhouette),
             FigurePart(path: Path { p in
-                p.move(to: pt(17, 66))
-                p.addCurve(to: pt(29, 70), control1: pt(21, 61), control2: pt(28, 64))
-                p.addCurve(to: pt(17, 66), control1: pt(26, 76), control2: pt(19, 75))
+                p.move(to: pt(76, 60))
+                p.addCurve(to: pt(80, 74), control1: pt(84, 58), control2: pt(87, 68))
+                p.addCurve(to: pt(76, 60), control1: pt(77, 70), control2: pt(75, 65))
                 p.closeSubpath()
-            }, color: Artwork.pipWing),
-            FigurePart(path: Path(ellipseIn: CGRect(x: 24, y: 62.8, width: 10, height: 6.4)), color: Artwork.pipBlush),
-            FigurePart(path: Path(ellipseIn: CGRect(x: 66, y: 62.8, width: 10, height: 6.4)), color: Artwork.pipBlush),
-            FigurePart(path: Path(ellipseIn: CGRect(x: 34.4, y: 49.4, width: 9.2, height: 11.2)), color: Color.onRibbon),
-            FigurePart(path: Path(ellipseIn: CGRect(x: 56.4, y: 49.4, width: 9.2, height: 11.2)), color: Color.onRibbon),
-            FigurePart(path: Path(ellipseIn: CGRect(x: 38.9, y: 51.3, width: 3.4, height: 3.4)), color: Color.white),
-            FigurePart(path: Path(ellipseIn: CGRect(x: 60.9, y: 51.3, width: 3.4, height: 3.4)), color: Color.white),
+            }, color: Artwork.pipShadow, role: .silhouette),
+            FigurePart(path: Path(ellipseIn: CGRect(x: 36.2, y: 50.7, width: 6.6, height: 8.6)), color: Color.onRibbon),
+            FigurePart(path: Path(ellipseIn: CGRect(x: 57.2, y: 50.7, width: 6.6, height: 8.6)), color: Color.onRibbon),
+            FigurePart(path: Path(ellipseIn: CGRect(x: 39.4, y: 52.3, width: 2.2, height: 2.2)), color: Color.white),
+            FigurePart(path: Path(ellipseIn: CGRect(x: 60.4, y: 52.3, width: 2.2, height: 2.2)), color: Color.white),
             FigurePart(path: Path { p in
-                p.move(to: pt(44.5, 63))
-                p.addLine(to: pt(55.5, 63))
-                p.addLine(to: pt(50, 70))
+                p.move(to: pt(46, 61))
+                p.addLine(to: pt(54, 61))
+                p.addLine(to: pt(50, 66.5))
                 p.closeSubpath()
             }, color: Artwork.pipBeak, paint: .fillAndStroke(2)),
         ]
         case .pebble: [
+            FigurePart(path: Path(ellipseIn: CGRect(x: 30.5, y: 85, width: 15, height: 7)), color: Artwork.pebbleShadow, role: .silhouette),
+            FigurePart(path: Path(ellipseIn: CGRect(x: 54.5, y: 85, width: 15, height: 7)), color: Artwork.pebbleShadow, role: .silhouette),
             FigurePart(path: Path { p in
-                p.move(to: pt(50, 38))
-                p.addCurve(to: pt(92, 69), control1: pt(76, 38), control2: pt(92, 51))
-                p.addCurve(to: pt(50, 92), control1: pt(92, 84), control2: pt(75, 92))
-                p.addCurve(to: pt(8, 69), control1: pt(25, 92), control2: pt(8, 84))
-                p.addCurve(to: pt(50, 38), control1: pt(8, 51), control2: pt(24, 38))
+                p.move(to: pt(50, 40))
+                p.addCurve(to: pt(88, 66), control1: pt(73, 40), control2: pt(88, 51))
+                p.addCurve(to: pt(50, 87), control1: pt(88, 80), control2: pt(75, 87))
+                p.addCurve(to: pt(12, 66), control1: pt(25, 87), control2: pt(12, 80))
+                p.addCurve(to: pt(50, 40), control1: pt(12, 51), control2: pt(27, 40))
                 p.closeSubpath()
-            }, color: Color.pebble, keyline: true),
-            FigurePart(path: Path(ellipseIn: CGRect(x: 22.4, y: 52.4, width: 5.2, height: 5.2)), color: Artwork.pebbleSpeckle),
-            FigurePart(path: Path(ellipseIn: CGRect(x: 71, y: 46, width: 4, height: 4)), color: Artwork.pebbleSpeckle),
-            FigurePart(path: Path(ellipseIn: CGRect(x: 78, y: 71, width: 6, height: 6)), color: Artwork.pebbleSpeckle),
-            FigurePart(path: Path(ellipseIn: CGRect(x: 16, y: 75, width: 4, height: 4)), color: Artwork.pebbleSpeckle),
-            FigurePart(path: Path(ellipseIn: CGRect(x: 27, y: 69.8, width: 10, height: 6.4)), color: Artwork.pebbleBlush),
-            FigurePart(path: Path(ellipseIn: CGRect(x: 63, y: 69.8, width: 10, height: 6.4)), color: Artwork.pebbleBlush),
+            }, color: Color.pebble, role: .body),
+            FigurePart(path: Path(ellipseIn: CGRect(x: 12, y: 79, width: 84, height: 38)), color: Artwork.pebbleShadow, role: .shading),
+            FigurePart(path: Path(ellipseIn: CGRect(x: 26, y: 38.5, width: 18, height: 11)), color: Artwork.pebbleGloss, role: .shading),
+            FigurePart(path: Path(ellipseIn: CGRect(x: 8.9, y: 64.5, width: 7.2, height: 11)), color: Artwork.pebbleShadow, role: .silhouette),
+            FigurePart(path: Path(ellipseIn: CGRect(x: 83.9, y: 64.5, width: 7.2, height: 11)), color: Artwork.pebbleShadow, role: .silhouette),
             FigurePart(path: Path { p in
-                p.move(to: pt(34.5, 65))
-                p.addQuadCurve(to: pt(45.5, 65), control: pt(40, 70))
-            }, color: Color.onRibbon, paint: .stroke(2.8)),
+                p.move(to: pt(38, 42))
+                p.addCurve(to: pt(50, 37), control1: pt(40, 35), control2: pt(47, 33))
+                p.addCurve(to: pt(62, 41), control1: pt(53, 32), control2: pt(61, 34))
+                p.addCurve(to: pt(38, 42), control1: pt(55, 39), control2: pt(45, 39))
+                p.closeSubpath()
+            }, color: Artwork.moss, role: .silhouette),
+            FigurePart(path: Path(ellipseIn: CGRect(x: 25, y: 56, width: 4, height: 4)), color: Artwork.pebbleShadow),
+            FigurePart(path: Path(ellipseIn: CGRect(x: 72.4, y: 52.4, width: 3.2, height: 3.2)), color: Artwork.pebbleShadow),
+            FigurePart(path: Path(ellipseIn: CGRect(x: 76.6, y: 70.6, width: 4.8, height: 4.8)), color: Artwork.pebbleShadow),
+            FigurePart(path: Path(ellipseIn: CGRect(x: 35.7, y: 56.7, width: 6.6, height: 8.6)), color: Color.onRibbon),
+            FigurePart(path: Path(ellipseIn: CGRect(x: 57.7, y: 56.7, width: 6.6, height: 8.6)), color: Color.onRibbon),
+            FigurePart(path: Path(ellipseIn: CGRect(x: 38.9, y: 58.3, width: 2.2, height: 2.2)), color: Color.white),
+            FigurePart(path: Path(ellipseIn: CGRect(x: 60.9, y: 58.3, width: 2.2, height: 2.2)), color: Color.white),
             FigurePart(path: Path { p in
-                p.move(to: pt(54.5, 65))
-                p.addQuadCurve(to: pt(65.5, 65), control: pt(60, 70))
-            }, color: Color.onRibbon, paint: .stroke(2.8)),
-            FigurePart(path: Path { p in
-                p.move(to: pt(47, 76))
-                p.addQuadCurve(to: pt(53, 76), control: pt(50, 78.5))
-            }, color: Color.onRibbon, paint: .stroke(2.4)),
+                p.move(to: pt(46, 69))
+                p.addQuadCurve(to: pt(54, 69), control: pt(50, 72.5))
+            }, color: Color.onRibbon, paint: .stroke(2.2)),
         ]
         }
     }
