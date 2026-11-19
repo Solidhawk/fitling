@@ -6,11 +6,15 @@ struct NamePlate: View {
     let title: LocalizedStringKey
     let fill: Color
     let foreground: Color
+    /// The white sticker rim of the catalog. Nil inside a card, where a white rim is invisible in
+    /// light mode and glaring in dark mode.
+    let edge: Color?
 
-    init(_ title: LocalizedStringKey, fill: Color, foreground: Color = Color.onRibbon) {
+    init(_ title: LocalizedStringKey, fill: Color, foreground: Color = Color.onRibbon, edge: Color? = Color.white) {
         self.title = title
         self.fill = fill
         self.foreground = foreground
+        self.edge = edge
     }
 
     var body: some View {
@@ -20,7 +24,11 @@ struct NamePlate: View {
             .padding(.horizontal, Spacing.m)
             .padding(.vertical, Spacing.xs)
             .background(fill, in: Capsule())
-            .overlay(Capsule().strokeBorder(Color.white, lineWidth: 2))
+            .overlay {
+                if let edge {
+                    Capsule().strokeBorder(edge, lineWidth: 2)
+                }
+            }
     }
 }
 

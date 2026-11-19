@@ -48,8 +48,11 @@ final class RootViewModel {
         case .loading:
             screen = .loading
         case .signedOut:
-            // Health data belongs to the signed-in user only, whatever ended the session.
-            sync.eraseLocalData()
+            // Health data belongs to the signed-in user only, whatever ended the session. Once on
+            // the welcome screen nothing new can be stored, so later refreshes skip the erase.
+            if screen != .welcome {
+                sync.eraseLocalData()
+            }
             screen = .welcome
         case let .awaitingEmailVerification(email):
             screen = .verifyEmail(email)

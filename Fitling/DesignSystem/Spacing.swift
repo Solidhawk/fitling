@@ -20,4 +20,6 @@ enum Radius {
 /// Shared button height: the system Apple button and our own capsules line up.
 enum ButtonMetrics {
     static let height: CGFloat = 54
+    /// Where the Apple button stops growing with the text; its label is drawn by the system.
+    static let largestHeight: CGFloat = 80
 }

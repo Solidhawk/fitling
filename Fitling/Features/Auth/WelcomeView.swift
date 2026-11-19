@@ -8,6 +8,8 @@ struct WelcomeView: View {
     @State private var nonce = ""
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    /// The system Apple button sizes its label from its height, so it grows with the text too.
+    @ScaledMetric(relativeTo: .headline) private var appleButtonHeight = ButtonMetrics.height
 
     init(auth: any AuthProviding) {
         self.auth = auth
@@ -17,6 +19,8 @@ struct WelcomeView: View {
     var body: some View {
         NavigationStack {
             // The catalog fills the screen; the sign-in actions sit at the bottom, within thumb reach.
+            // At accessibility sizes the actions would cover most of the screen, so there they
+            // scroll along below the catalog.
             ScrollView {
                 VStack(alignment: .leading, spacing: Spacing.xl) {
                     VStack(alignment: .leading, spacing: Spacing.s) {
@@ -29,15 +33,20 @@ struct WelcomeView: View {
                     }
                     .foregroundStyle(Color.ink)
                     catalog
+                    if dynamicTypeSize.isAccessibilitySize {
+                        actions
+                    }
                 }
                 .padding(Spacing.l)
             }
             .scrollBounceBehavior(.basedOnSize)
             .background(Color.ground)
             .safeAreaInset(edge: .bottom) {
-                actions
-                    .padding(Spacing.l)
-                    .background(Color.ground)
+                if !dynamicTypeSize.isAccessibilitySize {
+                    actions
+                        .padding(Spacing.l)
+                        .background(Color.ground)
+                }
             }
         }
     }
@@ -85,7 +94,7 @@ struct WelcomeView: View {
                 }
             }
             .signInWithAppleButtonStyle(colorScheme == .dark ? .white : .black)
-            .frame(height: ButtonMetrics.height)
+            .frame(height: min(appleButtonHeight, ButtonMetrics.largestHeight))
             // The HIG allows a pill shape, which matches the other buttons.
             .clipShape(Capsule())
             .accessibilityIdentifier("welcome.apple")

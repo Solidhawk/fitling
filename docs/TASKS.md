@@ -176,7 +176,9 @@ Staat op branch `fase-1-opbouw`, met tests. 1.1 en 1.4 tot en met 1.8 zijn in é
 - **Acceptatie:** tests uit `fase-1` groen; Deno-tests groen.
 - **Mac-run:** ja, samen met 1.7.
 
-### 1.9 Afronden fase 1
+### 1.9 Afronden fase 1 — al gedaan
+
+Gedaan op 2026-11-19: screenshots van alle schermen in licht, donker en grootste tekst (UI-test `OnboardingFlowTests`), finish-review en de reparaties daaruit, codereview en de reparaties daaruit, `DESIGN.md`. Open en vastgelegd in `docs/UNFORGET.md`: S11 (op een echt toestel nakijken), S12 (een sessie die vanzelf afloopt wist onverstuurde wijzigingen; ontwerpkeuze). Hieronder de oorspronkelijke opdracht, als naslag.
 
 - Screenshots van alle schermen (licht, donker, grootste tekst) naar de gebruiker.
 - `impeccable` finish-review op de schermen en daarna `impeccable:impeccable-documenter` voor `DESIGN.md`.
