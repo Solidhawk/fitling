@@ -9,6 +9,9 @@ protocol SyncableModel: PersistentModel {
     static var tableName: String { get }
     /// The column that tells rows apart on the server.
     static var keyColumn: String { get }
+    /// Set for tables that also hold shared rows (`owner_id` is null): only the user's own rows
+    /// are pulled; shared rows reach the device another way (a lookup or a search).
+    static var ownerColumn: String? { get }
     /// The rows the server has not seen yet.
     static var pending: FetchDescriptor<Self> { get }
     static func matching(ids: [UUID]) -> FetchDescriptor<Self>
@@ -22,6 +25,10 @@ protocol SyncableModel: PersistentModel {
     var record: Record { get }
     /// Takes over the server's version.
     func apply(_ record: Record)
+}
+
+extension SyncableModel {
+    static var ownerColumn: String? { nil }
 }
 
 /// One table in a sync round. The engine walks a list of these in the order of ARCHITECTURE §3.5.

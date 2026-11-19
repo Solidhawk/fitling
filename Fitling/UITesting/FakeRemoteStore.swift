@@ -35,7 +35,7 @@ final class FakeRemoteStore: RemoteStore {
     private var rows: [String: [String: [String: Any]]] = [:]
     private var release: CheckedContinuation<Void, Never>?
 
-    func fetch<Record: SyncRecord>(_ type: Record.Type, table: String, keyColumn: String, since: Date?, offset: Int, limit: Int) async throws -> [Record] {
+    func fetch<Record: SyncRecord>(_ type: Record.Type, table: String, keyColumn: String, ownerColumn: String?, since: Date?, offset: Int, limit: Int) async throws -> [Record] {
         fetches.append(Fetch(table: table, since: since, offset: offset))
         if isOffline { throw RemoteStoreError.network }
         await holdIfAsked()
