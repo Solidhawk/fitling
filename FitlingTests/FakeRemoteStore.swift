@@ -33,10 +33,10 @@ final class FakeRemoteStore: RemoteStore {
     private var rows: [String: [String: [String: Any]]] = [:]
     private var release: CheckedContinuation<Void, Never>?
 
-    func fetch<Record: SyncRecord>(_ type: Record.Type, table: String, keyColumn: String, since: Date?, offset: Int, limit: Int) async throws(RemoteStoreError) -> [Record] {
+    func fetch<Record: SyncRecord>(_ type: Record.Type, table: String, keyColumn: String, since: Date?, offset: Int, limit: Int) async throws -> [Record] {
         fetches.append(Fetch(table: table, since: since, offset: offset))
-        if isOffline { throw .network }
-        if refusesReads { throw .rejected("permission denied for table \(table)") }
+        if isOffline { throw RemoteStoreError.network }
+        if refusesReads { throw RemoteStoreError.rejected("permission denied for table \(table)") }
         let page = (rows[table] ?? [:])
             .filter { row in since.map { Self.syncedAt(row.value) > $0 } ?? true }
             .sorted { (Self.syncedAt($0.value), $0.key) > (Self.syncedAt($1.value), $1.key) }
@@ -46,7 +46,7 @@ final class FakeRemoteStore: RemoteStore {
         do {
             records = try page.map { try JSONDecoder().decode(Record.self, from: JSONSerialization.data(withJSONObject: $0.value)) }
         } catch {
-            throw .rejected(String(describing: error))
+            throw RemoteStoreError.rejected(String(describing: error))
         }
         if let change = afterFirstFetch {
             afterFirstFetch = nil
@@ -55,9 +55,9 @@ final class FakeRemoteStore: RemoteStore {
         return records
     }
 
-    func upsert<Record: SyncRecord>(_ records: [Record], table: String, keyColumn: String) async throws(RemoteStoreError) {
+    func upsert<Record: SyncRecord>(_ records: [Record], table: String, keyColumn: String) async throws {
         upserts.append(Upsert(table: table, ids: records.map(\.id)))
-        if isOffline { throw .network }
+        if isOffline { throw RemoteStoreError.network }
         if holdsNextUpsert {
             holdsNextUpsert = false
             await withCheckedContinuation { release = $0 }
@@ -68,7 +68,7 @@ final class FakeRemoteStore: RemoteStore {
         }
         // Like a real request: one refused row fails the whole batch.
         if let refused = records.first(where: { rejectedIDs.contains($0.id) }) {
-            throw .rejected("row \(refused.id) breaks a check constraint")
+            throw RemoteStoreError.rejected("row \(refused.id) breaks a check constraint")
         }
         do {
             for record in records {
@@ -80,7 +80,7 @@ final class FakeRemoteStore: RemoteStore {
                 clock += 1
             }
         } catch {
-            throw .rejected(String(describing: error))
+            throw RemoteStoreError.rejected(String(describing: error))
         }
     }
 

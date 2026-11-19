@@ -27,16 +27,16 @@ protocol SyncableModel: PersistentModel {
 /// One table in a sync round. The engine walks a list of these in the order of ARCHITECTURE §3.5.
 @MainActor
 protocol SyncTable {
-    func push(with engine: SyncEngine) async throws(RemoteStoreError)
-    func pull(with engine: SyncEngine) async throws(RemoteStoreError)
+    func push(with engine: SyncEngine) async throws
+    func pull(with engine: SyncEngine) async throws
 }
 
 struct ModelTable<Model: SyncableModel>: SyncTable {
-    func push(with engine: SyncEngine) async throws(RemoteStoreError) {
+    func push(with engine: SyncEngine) async throws {
         try await engine.push(Model.self)
     }
 
-    func pull(with engine: SyncEngine) async throws(RemoteStoreError) {
+    func pull(with engine: SyncEngine) async throws {
         try await engine.pull(Model.self)
     }
 }

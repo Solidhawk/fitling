@@ -46,9 +46,9 @@ final class SyncEngine {
         .completed
     }
 
-    func push<Model: SyncableModel>(_ type: Model.Type) async throws(RemoteStoreError) {
+    func push<Model: SyncableModel>(_ type: Model.Type) async throws {
     }
 
-    func pull<Model: SyncableModel>(_ type: Model.Type) async throws(RemoteStoreError) {
+    func pull<Model: SyncableModel>(_ type: Model.Type) async throws {
     }
 }
