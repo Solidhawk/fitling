@@ -290,6 +290,8 @@ Aangeroepen bij de start, als de app terugkomt, als de dag wisselt en als het pa
 
 ### 3.3 De partner tekenen — gebouwd, wacht op goedkeuring
 
+**Nieuwe richting (2026-11-19):** de gebruiker koos zestien nieuwe partners als zachte 3D-figuurtjes, elk in zes vormen (`design/partners/nieuw/`, generator `partners_3d.py`, borden `vormen-bord-1..4.png`). Hommel, mol, kikker, uil, egel, slak, axolotl, zeehond, pinguïn, schildpad, konijn, wasbeer, lieveheersbeestje, octopus, eekhoorn en lammetje vervangen Sprout, Ember, Pip en Pebble. Inbouwen is een grote verbouwing (UNFORGET S16) en wacht op akkoord over: `Species` van 4 naar 16 (ook de check in `schema.sql`), afbeeldingen per vorm in plaats van `PartnerDrawing`, en hoe stemming en vorm (slank tot rond) zichtbaar worden op een vaste 3D-render.
+
 De galerij (`--ui-testing-partner-gallery`, UI-test `PartnerGalleryTests`) toont elke soort in elke toestand; de schermafbeeldingen gaan naar de gebruiker. DESIGN.md beschrijft gezichten, vorm, groei, accessoires, kleuren en beweging.
 
 - **Vastgelegd:** SwiftUI (`Canvas` + `TimelineView`), geen SpriteKit of Rive. Reden: de figuren zijn al vector, er komt geen library bij, en een widget kan dezelfde tekening gebruiken (SpriteKit en Rive kunnen dat niet).
