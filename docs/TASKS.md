@@ -46,11 +46,11 @@ Uitkomst: iemand kan een account maken, de onboarding doorlopen en zijn dagdoel 
 ### 1.1 Design system "Verzamelfiguren"
 
 - **Doel:** kleuren, afstanden, knoppen, naamplaatje, doelenkaart en de vier figuren staan in `Fitling/DesignSystem`.
-- **Bestanden:** overnemen van `herontwerp-verzamelfiguren`: `Fitling/DesignSystem/*` (`Spacing`, `Buttons`, `NamePlate`, `TargetsCard`, `NavigationBarStyle`, `Figures`), `Fitling/Resources/Assets.xcassets/*.colorset`, de sleutels `creature.*` in de String Catalog, `FitlingTests/FigureTests.swift`, en `.impeccable/surfaces/fitling.md` (het richtingscontract).
+- **Bestanden:** overnemen van `herontwerp-verzamelfiguren`: `Fitling/DesignSystem/*` (`Spacing`, `Buttons`, `NamePlate`, `TargetsCard`, `NavigationBarStyle`, `Figures`), `Fitling/Resources/Assets.xcassets/*.colorset`, de sleutels `creature.*` in de String Catalog, `FitlingTests/FigureTests.swift`, `FitlingTests/NavigationBarStyleTests.swift`, en `.impeccable/surfaces/fitling.md` (het richtingscontract). Neem de stand van commit `c035b4d` of later: daarin zijn de bevindingen uit de eerste simulator-screenshots al opgelost (inkt in plaats van systeemblauw, `footerStyle()` voor leesbare toelichtingen, navigatietitels met een maximale grootte).
 - **Ook overnemen:** de regel `sudo xcode-select -s /Applications/Xcode_16.4.app` in de stap "Toolchain" van `.github/workflows/ci.yml` (Xcode vastzetten; open punt uit de eindreview).
-- **Aanpassen:** `Species` komt nu uit FitlingCore. Verwijder het enum uit `Figures.swift` en maak van `ribbon`, `tint`, `nameKey`, `noteKey` en `parts` een `extension Species`. `NavigationBarStyle.apply()` aanroepen in `FitlingApp.init` en `.fontDesign(.rounded)` op de root zetten.
+- **Aanpassen:** `Species` komt nu uit FitlingCore. Verwijder het enum uit `Figures.swift` en maak van `ribbon`, `tint`, `nameKey`, `noteKey` en `parts` een `extension Species`. `NavigationBarStyle.apply()` aanroepen in `FitlingApp.init`, en `.fontDesign(.rounded)` en `.tint(Color.ink)` op de root zetten. Lijsten van onboarding, profiel en inloggen krijgen `.foregroundStyle(Color.ink)`; toelichtingen onder een sectie `.footerStyle()`. Accountschermen niet: de rode verwijderknop moet rood blijven.
 - **Acceptatie:** `FigureTests` groen; geen verwijzing meer naar `Color.paper`, `Rule` of `TargetsComposition`.
-- **Tests:** `FigureTests` (3 tests × 4 soorten).
+- **Tests:** `FigureTests` (3 tests × 4 soorten) en `NavigationBarStyleTests`.
 - **Mac-run:** samen met 1.4.
 
 ### 1.2 Services: Supabase en inloggen
