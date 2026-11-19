@@ -33,15 +33,21 @@ final class OnboardingFlowTests: XCTestCase {
         let hittable = NSPredicate(format: "hittable == true")
         let reachable = XCTNSPredicateExpectation(predicate: hittable, object: button)
         XCTAssertEqual(XCTWaiter().wait(for: [reachable], timeout: 5), .completed, "Verder is not reachable on \(step)")
+        // A disabled button is still hittable; tapping it would silently leave the test on this step.
+        XCTAssertTrue(button.isEnabled, "Verder is disabled on \(step)")
         button.tap()
     }
 
-    /// A list only creates the rows that are on screen; at the largest text many are not.
+    /// A list only creates the rows that are on screen; at the largest text many are not, and a
+    /// row can sit under the Verder bar. Earlier steps stay in the navigation stack, so the list
+    /// to swipe is the one of this step.
     @MainActor
-    private func scrollTo(_ element: XCUIElement, _ app: XCUIApplication) {
+    private func scrollTo(_ element: XCUIElement, onStep step: String, _ app: XCUIApplication) {
+        let list = app.collectionViews["onboarding.step.\(step)"]
         var swipes = 0
         while !(element.exists && element.isHittable) && swipes < 10 {
-            app.collectionViews.firstMatch.swipeUp()
+            // A row that is partly on screen scrolls its own list; otherwise the step's list.
+            (element.exists ? element : list).swipeUp()
             swipes += 1
         }
     }
@@ -56,9 +62,9 @@ final class OnboardingFlowTests: XCTestCase {
 
     /// Picker rows are buttons whose label starts with the option title (a detail line may follow).
     @MainActor
-    private func choose(_ title: String, _ app: XCUIApplication) {
+    private func choose(_ title: String, onStep step: String, _ app: XCUIApplication) {
         let option = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", title)).firstMatch
-        scrollTo(option, app)
+        scrollTo(option, onStep: step, app)
         XCTAssertTrue(option.waitForExistence(timeout: 5), "No option \(title)")
         option.tap()
     }
@@ -66,7 +72,7 @@ final class OnboardingFlowTests: XCTestCase {
     @MainActor
     private func giveConsent(_ app: XCUIApplication) {
         let toggle = app.switches["consent.agree"]
-        scrollTo(toggle, app)
+        scrollTo(toggle, onStep: "consent", app)
         XCTAssertTrue(toggle.waitForExistence(timeout: 5))
         toggle.tap()
         if toggle.value as? String == "0" { toggle.switches.firstMatch.tap() }
@@ -83,7 +89,7 @@ final class OnboardingFlowTests: XCTestCase {
         keepScreenshot(app, named: "\(prefix)-2-geboortedatum")
         tapContinue("birthDate", app)
 
-        choose("Man", app)
+        choose("Man", onStep: "sex", app)
         keepScreenshot(app, named: "\(prefix)-3-geslacht")
         tapContinue("sex", app)
 
@@ -95,11 +101,11 @@ final class OnboardingFlowTests: XCTestCase {
         keepScreenshot(app, named: "\(prefix)-5-gewicht")
         tapContinue("weight", app)
 
-        choose("Gemiddeld actief", app)
+        choose("Gemiddeld actief", onStep: "activity", app)
         keepScreenshot(app, named: "\(prefix)-6-activiteit")
         tapContinue("activity", app)
 
-        choose("Op gewicht blijven", app)
+        choose("Op gewicht blijven", onStep: "goal", app)
         keepScreenshot(app, named: "\(prefix)-7-doel")
         tapContinue("goal", app)
 
