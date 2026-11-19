@@ -93,6 +93,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Toolchain
         run: |
+          # Fixed, so a runner image update cannot change the compiler under us.
+          sudo xcode-select -s /Applications/Xcode_16.4.app
           xcodebuild -version
           xcrun simctl list devices available | grep -E "iPhone" | head -20
       - run: brew install xcodegen

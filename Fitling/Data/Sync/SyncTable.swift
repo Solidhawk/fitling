@@ -29,9 +29,22 @@ protocol SyncableModel: PersistentModel {
 protocol SyncTable {
     func push(with engine: SyncEngine) async throws
     func pull(with engine: SyncEngine) async throws
+    func hasPendingRows(in context: ModelContext) -> Bool
+}
+
+/// The tables that sync, parents before children (ARCHITECTURE §3.5). Later phases add theirs here.
+@MainActor
+enum SyncTables {
+    static var all: [any SyncTable] {
+        [ModelTable<UserProfile>(), ModelTable<TargetPeriod>()]
+    }
 }
 
 struct ModelTable<Model: SyncableModel>: SyncTable {
+    func hasPendingRows(in context: ModelContext) -> Bool {
+        ((try? context.fetchCount(Model.pending)) ?? 0) > 0
+    }
+
     func push(with engine: SyncEngine) async throws {
         try await engine.push(Model.self)
     }

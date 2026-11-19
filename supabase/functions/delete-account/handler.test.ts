@@ -1,5 +1,5 @@
 import { assertEquals } from '@std/assert';
-import { type Deps, handle, type User } from './handler.ts';
+import { type Deps, handle, misconfigured, readConfig, type User } from './handler.ts';
 
 type Recorder = Deps & { deleted: string[]; revoked: string[]; logs: string[] };
 
@@ -99,4 +99,32 @@ Deno.test('a failed delete returns 500', async () => {
   const response = await handle(request(), d);
   assertEquals(response.status, 500);
   assertEquals(await response.json(), { error: 'delete_failed' });
+});
+
+function env(values: Record<string, string>): (name: string) => string | undefined {
+  return (name) => values[name];
+}
+
+Deno.test('the configuration is read from the url and the default secret key', () => {
+  const config = readConfig(env({
+    SUPABASE_URL: 'https://abcd.supabase.co',
+    SUPABASE_SECRET_KEYS: JSON.stringify({ default: 'sb_secret_test' }),
+  }));
+  assertEquals(config, { url: 'https://abcd.supabase.co', secretKey: 'sb_secret_test' });
+});
+
+Deno.test('a missing secret key is named instead of starting with an empty one', () => {
+  assertEquals(readConfig(env({ SUPABASE_URL: 'https://abcd.supabase.co' })), { missing: ['SUPABASE_SECRET_KEYS'] });
+  assertEquals(readConfig(env({ SUPABASE_URL: 'https://abcd.supabase.co', SUPABASE_SECRET_KEYS: 'no json' })), {
+    missing: ['SUPABASE_SECRET_KEYS'],
+  });
+  assertEquals(readConfig(env({ SUPABASE_SECRET_KEYS: JSON.stringify({ other: 'x' }) })), {
+    missing: ['SUPABASE_URL', 'SUPABASE_SECRET_KEYS'],
+  });
+});
+
+Deno.test('a misconfigured function answers 500 misconfigured', async () => {
+  const response = misconfigured();
+  assertEquals(response.status, 500);
+  assertEquals(await response.json(), { error: 'misconfigured' });
 });

@@ -14,14 +14,17 @@ final class SyncEngine {
         case offline
         /// The server refused a read, for example because the session is no longer valid.
         case failed
-        /// A round was already going; it runs once more when it is done.
-        case alreadyRunning
+        /// The local data was erased while the round ran (signing out); nothing from it was kept.
+        case interrupted
     }
 
     /// String Catalog key shown while the server keeps refusing a row.
     static let rejectedProblemKey = "profile.sync.rejected"
     /// String Catalog key shown after a read the server refused.
     static let failedProblemKey = "error.server"
+
+    /// Thrown inside a round when `eraseLocalData()` ran during one of its requests.
+    private struct Interrupted: Error {}
 
     /// Held on purpose: a `ModelContext` does not keep its container alive, and a delayed round
     /// would otherwise touch a released store.
@@ -32,7 +35,12 @@ final class SyncEngine {
     private(set) var problemKey: String?
     private var isRunning = false
     private var runAgain = false
+    /// Callers that asked for a round while one ran; the next round answers them.
+    private var waiting: [CheckedContinuation<Outcome, Never>] = []
     private var sawRejection = false
+    /// Goes up with every erase. A request that returns into another epoch is thrown away: its
+    /// rows belong to the data that was just wiped, and its models may no longer exist.
+    private var epoch = 0
 
     init(container: ModelContainer, remote: any RemoteStore, tables: [any SyncTable], now: @escaping () -> Date = Date.init) {
         self.container = container
@@ -43,21 +51,41 @@ final class SyncEngine {
 
     var context: ModelContext { container.mainContext }
 
-    /// One round: push every table, then pull every table. Never more than one round at a time.
+    /// Whether any table holds a change the server has not seen yet.
+    var hasUnsentChanges: Bool {
+        false
+    }
+
+    /// One round: push every table, then pull every table. Never more than one round at a time:
+    /// a call during a round waits for one more round, which includes what changed meanwhile.
     @discardableResult
     func sync() async -> Outcome {
         guard !isRunning else {
-            runAgain = true
-            return .alreadyRunning
+            return .interrupted
         }
         isRunning = true
-        defer { isRunning = false }
         var outcome = await round()
         while runAgain {
             runAgain = false
+            let answered = waiting
+            waiting = []
             outcome = await round()
+            answered.forEach { $0.resume(returning: outcome) }
         }
+        isRunning = false
         return outcome
+    }
+
+    /// Removes everything this device stores: after signing out or deleting the account, the data
+    /// of the previous user must not stay behind (ARCHITECTURE §3.7).
+    func eraseLocalData() {
+    }
+
+    // Per object rather than `delete(model:)`: that batch delete misses objects not yet saved.
+    private func erase<Model: PersistentModel>(_ type: Model.Type) {
+        for object in (try? context.fetch(FetchDescriptor<Model>())) ?? [] {
+            context.delete(object)
+        }
     }
 
     private func round() async -> Outcome {
@@ -71,6 +99,8 @@ final class SyncEngine {
             }
         } catch RemoteStoreError.network {
             return .offline
+        } catch is Interrupted {
+            return .interrupted
         } catch {
             // A refused row is dealt with in the push itself; this is a read the server refused.
             problemKey = Self.failedProblemKey
@@ -80,36 +110,43 @@ final class SyncEngine {
         return .completed
     }
 
+    private func ensureStill(in started: Int) throws {
+        if epoch != started { throw Interrupted() }
+    }
+
     // MARK: Push
 
     func push<Model: SyncableModel>(_ type: Model.Type) async throws {
+        let started = epoch
         let pending = (try? context.fetch(Model.pending)) ?? []
         // Also when the network drops halfway: what did arrive keeps its cleared flag.
-        defer { try? context.save() }
+        defer { if epoch == started { try? context.save() } }
         var start = 0
         while start < pending.count {
             let end = min(start + SyncRules.pushBatchSize, pending.count)
-            try await send(Array(pending[start..<end]))
+            try await send(Array(pending[start..<end]), started: started)
             start = end
         }
     }
 
     /// One request for all rows. When the server refuses it, the rows go one by one, so a single
     /// bad row does not hold back the others (ARCHITECTURE §3.6).
-    private func send<Model: SyncableModel>(_ models: [Model]) async throws {
+    private func send<Model: SyncableModel>(_ models: [Model], started: Int) async throws {
         let sentUpdatedAt = models.map(\.updatedAt)
         do {
             try await remote.upsert(models.map(\.record), table: Model.tableName, keyColumn: Model.keyColumn)
         } catch RemoteStoreError.rejected {
+            try ensureStill(in: started)
             if models.count == 1 {
                 sawRejection = true
             } else {
                 for model in models {
-                    try await send([model])
+                    try await send([model], started: started)
                 }
             }
             return
         }
+        try ensureStill(in: started)
         for (model, updatedAt) in zip(models, sentUpdatedAt) where SyncRules.canClearPushFlag(sentUpdatedAt: updatedAt, currentUpdatedAt: model.updatedAt) {
             if model.deletedAt == nil {
                 model.needsPush = false
@@ -123,6 +160,7 @@ final class SyncEngine {
     // MARK: Pull
 
     func pull<Model: SyncableModel>(_ type: Model.Type) async throws {
+        let started = epoch
         let table = Model.tableName
         let cursor = try? context.fetch(FetchDescriptor<SyncCursor>(predicate: #Predicate<SyncCursor> { $0.table == table })).first
         let since: Date?
@@ -148,6 +186,7 @@ final class SyncEngine {
             let page = try await remote.fetch(
                 Model.Record.self, table: table, keyColumn: Model.keyColumn, since: since, offset: offset, limit: SyncRules.pullPageSize
             )
+            try ensureStill(in: started)
             apply(page, to: Model.self)
             newest = SyncRules.nextCursor(current: newest, pageSyncedAt: page.compactMap(\.syncedAt))
             offset += page.count

@@ -15,7 +15,7 @@ import FitlingCore
         // The container is made here and handed over: nothing but the engine holds it afterwards.
         SyncEngine(
             container: try makeModelContainer(inMemory: true), remote: remote,
-            tables: [ModelTable<UserProfile>(), ModelTable<TargetPeriod>()], now: { [now] in now }
+            tables: SyncTables.all, now: { [now] in now }
         )
     }
 
@@ -369,17 +369,72 @@ import FitlingCore
         let remote = FakeRemoteStore()
         let engine = try makeEngine(remote)
         addPeriod(to: engine)
-        remote.holdsNextUpsert = true
+        remote.holdsNextRequest = true
 
         let first = Task { await engine.sync() }
-        try #require(await remote.upsertArrived())
-        #expect(await engine.sync() == .alreadyRunning)
-        remote.releaseUpsert()
+        try #require(await remote.requestArrived())
+        let second = Task { await engine.sync() }
+        let third = Task { await engine.sync() }
+        // Both calls reach the engine while the first round is still waiting on the server.
+        for _ in 0..<100 {
+            await Task.yield()
+        }
+        remote.releaseRequest()
 
         #expect(await first.value == .completed)
+        #expect(await second.value == .completed)
+        #expect(await third.value == .completed)
         #expect(remote.upserts.count == 1)
-        // The request that came in during the round started one more round afterwards.
+        // The two calls during the round were answered by one more round, not by two.
         #expect(remote.fetches.filter { $0.table == periods }.count == 2)
+    }
+
+    @Test func erasingDuringARoundKeepsNothingFromIt() async throws {
+        let remote = FakeRemoteStore()
+        try remote.serve(record(kcal: 1800, updatedAt: now), table: periods, syncedAt: now)
+        let engine = try makeEngine(remote)
+        addPeriod(to: engine)
+        remote.holdsNextRequest = true
+
+        let round = Task { await engine.sync() }
+        try #require(await remote.requestArrived())
+        engine.eraseLocalData()
+        remote.releaseRequest()
+
+        #expect(await round.value == .interrupted)
+        #expect(try storedPeriods(engine).isEmpty)
+        #expect(try engine.context.fetch(FetchDescriptor<SyncCursor>()).isEmpty)
+        #expect(remote.fetches.isEmpty)
+    }
+
+    @Test func eraseRemovesEveryKindOfLocalData() throws {
+        let engine = try makeEngine(FakeRemoteStore())
+        engine.context.insert(makeProfile())
+        addPeriod(to: engine)
+        engine.context.insert(SyncCursor(table: periods, syncedAt: now, pulledAt: now))
+        engine.context.insert(DayActivity(day: today, workoutKcal: 300, updatedAt: now))
+        #expect(engine.hasUnsentChanges)
+
+        engine.eraseLocalData()
+
+        #expect(try engine.context.fetch(FetchDescriptor<UserProfile>()).isEmpty)
+        #expect(try storedPeriods(engine).isEmpty)
+        #expect(try engine.context.fetch(FetchDescriptor<SyncCursor>()).isEmpty)
+        #expect(try engine.context.fetch(FetchDescriptor<DayActivity>()).isEmpty)
+        #expect(!engine.hasUnsentChanges)
+    }
+
+    @Test func unsentChangesAreSeenInEveryTable() throws {
+        let engine = try makeEngine(FakeRemoteStore())
+        #expect(!engine.hasUnsentChanges)
+        addPeriod(to: engine, needsPush: false)
+        #expect(!engine.hasUnsentChanges)
+        let profile = makeProfile()
+        engine.context.insert(profile)
+        #expect(engine.hasUnsentChanges)
+        profile.needsPush = false
+        addPeriod(to: engine, needsPush: true)
+        #expect(engine.hasUnsentChanges)
     }
 
     @Test func engineKeepsItsStoreAlive() async throws {

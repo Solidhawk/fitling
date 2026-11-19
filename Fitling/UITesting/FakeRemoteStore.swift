@@ -1,9 +1,10 @@
+#if DEBUG
 import Foundation
-@testable import Fitling
 
 /// A stand-in for Supabase that keeps rows the way PostgREST does: one JSON object per row,
 /// merged per key on upsert (a key that was not sent keeps its old value), stamped with
-/// `synced_at` by the server and handed out newest first.
+/// `synced_at` by the server and handed out newest first. Used by the unit tests and by the UI
+/// test, which cannot reach a real server; never compiled into a release build.
 @MainActor
 final class FakeRemoteStore: RemoteStore {
     struct Fetch: Equatable {
@@ -28,7 +29,8 @@ final class FakeRemoteStore: RemoteStore {
     var duringUpsert: (() -> Void)?
     /// Runs once, after the first page of a pull has been handed out.
     var afterFirstFetch: (() -> Void)?
-    var holdsNextUpsert = false
+    /// The next request (read or write) waits until `releaseRequest()`, like a slow network.
+    var holdsNextRequest = false
 
     private var rows: [String: [String: [String: Any]]] = [:]
     private var release: CheckedContinuation<Void, Never>?
@@ -36,6 +38,7 @@ final class FakeRemoteStore: RemoteStore {
     func fetch<Record: SyncRecord>(_ type: Record.Type, table: String, keyColumn: String, since: Date?, offset: Int, limit: Int) async throws -> [Record] {
         fetches.append(Fetch(table: table, since: since, offset: offset))
         if isOffline { throw RemoteStoreError.network }
+        await holdIfAsked()
         if refusesReads { throw RemoteStoreError.rejected("permission denied for table \(table)") }
         let page = (rows[table] ?? [:])
             .filter { row in since.map { Self.syncedAt(row.value) > $0 } ?? true }
@@ -58,10 +61,7 @@ final class FakeRemoteStore: RemoteStore {
     func upsert<Record: SyncRecord>(_ records: [Record], table: String, keyColumn: String) async throws {
         upserts.append(Upsert(table: table, ids: records.map(\.id)))
         if isOffline { throw RemoteStoreError.network }
-        if holdsNextUpsert {
-            holdsNextUpsert = false
-            await withCheckedContinuation { release = $0 }
-        }
+        await holdIfAsked()
         if let change = duringUpsert {
             duringUpsert = nil
             change()
@@ -84,16 +84,22 @@ final class FakeRemoteStore: RemoteStore {
         }
     }
 
-    /// Gives the round that is under way the chance to reach the held upsert. False when it
+    private func holdIfAsked() async {
+        guard holdsNextRequest else { return }
+        holdsNextRequest = false
+        await withCheckedContinuation { release = $0 }
+    }
+
+    /// Gives the work that is under way the chance to reach the held request. False when it
     /// never got there, so a test fails instead of waiting forever.
-    func upsertArrived() async -> Bool {
+    func requestArrived() async -> Bool {
         for _ in 0..<1000 where release == nil {
             await Task.yield()
         }
         return release != nil
     }
 
-    func releaseUpsert() {
+    func releaseRequest() {
         release?.resume()
         release = nil
     }
@@ -121,3 +127,4 @@ final class FakeRemoteStore: RemoteStore {
         (row["synced_at"] as? Double).map(Date.init(timeIntervalSinceReferenceDate:)) ?? .distantPast
     }
 }
+#endif
