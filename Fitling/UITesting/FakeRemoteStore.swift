@@ -42,6 +42,9 @@ final class FakeRemoteStore: RemoteStore {
         if refusesReads { throw RemoteStoreError.rejected("permission denied for table \(table)") }
         let page = (rows[table] ?? [:])
             .filter { row in since.map { Self.syncedAt(row.value) > $0 } ?? true }
+            // Like `not.is.null` on the owner column: only rows that belong to someone, which Row
+            // Level Security narrows to the user's own.
+            .filter { row in ownerColumn.map { column in row.value[column].map { !($0 is NSNull) } ?? false } ?? true }
             .sorted { (Self.syncedAt($0.value), $0.key) > (Self.syncedAt($1.value), $1.key) }
             .dropFirst(offset)
             .prefix(limit)

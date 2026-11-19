@@ -43,7 +43,10 @@ protocol SyncTable {
 @MainActor
 enum SyncTables {
     static var all: [any SyncTable] {
-        [ModelTable<UserProfile>(), ModelTable<TargetPeriod>()]
+        [
+            ModelTable<UserProfile>(), ModelTable<TargetPeriod>(),
+            ModelTable<Product>(), ModelTable<FoodEntry>(), ModelTable<WaterEntry>(), ModelTable<FavoriteProduct>(),
+        ]
     }
 }
 
