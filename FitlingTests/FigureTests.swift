@@ -3,27 +3,37 @@ import SwiftUI
 import Testing
 @testable import Fitling
 
-/// The catalog shows the four figures side by side, so they share one drawing space and stand on
-/// one baseline.
+/// The partners are drawn from flat parts. The catalog shows them side by side, so they share one
+/// drawing space and stand on one baseline; light and shadow only ever fall on the body.
 struct FigureTests {
     @Test(arguments: Species.allCases)
-    func everyFigureHasASilhouette(_ species: Species) {
-        #expect(species.parts.contains { $0.keyline })
+    func everyPartnerHasExactlyOneBody(_ species: Species) {
+        #expect(species.parts.filter { $0.role == .body }.count == 1)
     }
 
     @Test(arguments: Species.allCases)
-    func figuresStayInsideTheirDrawingSpace(_ species: Species) {
+    func shadingIsDrawnAfterTheBodyItFallsOn(_ species: Species) {
+        let parts = species.parts
+        let body = parts.firstIndex { $0.role == .body }
+        let shading = parts.indices.filter { parts[$0].role == .shading }
+        #expect(!shading.isEmpty)
+        #expect(shading.allSatisfy { index in body.map { index > $0 } ?? false })
+    }
+
+    @Test(arguments: Species.allCases)
+    func partnersStayInsideTheirDrawingSpace(_ species: Species) {
         let bounds = species.parts.map(\.path.boundingRect).reduce(CGRect.null) { $0.union($1) }
         #expect(!bounds.isNull)
-        // The keyline is drawn on the outline, so half of it falls outside the parts.
-        let margin = FigurePart.keylineWidth / 2
-        #expect(bounds.minX >= margin && bounds.minY >= margin)
-        #expect(bounds.maxX <= 100 - margin && bounds.maxY <= 100 - margin)
+        #expect(bounds.minX >= 0 && bounds.minY >= 0 && bounds.maxX <= 100 && bounds.maxY <= 100)
+        #expect(FigurePart.groundShadow.maxY <= 100)
     }
 
     @Test(arguments: Species.allCases)
-    func figuresStandOnTheSameBaseline(_ species: Species) {
-        let silhouette = species.parts.filter(\.keyline).map(\.path.boundingRect).reduce(CGRect.null) { $0.union($1) }
-        #expect(abs(silhouette.maxY - FigurePart.baseline) < 0.5)
+    func partnersStandOnTheSameBaseline(_ species: Species) {
+        let outline = species.parts
+            .filter { $0.role == .silhouette || $0.role == .body }
+            .map(\.path.boundingRect)
+            .reduce(CGRect.null) { $0.union($1) }
+        #expect(abs(outline.maxY - FigurePart.baseline) < 0.5)
     }
 }

@@ -56,14 +56,23 @@ struct FigurePart {
         case fillAndStroke(CGFloat)
     }
 
+    enum Role: Equatable {
+        case silhouette
+        case body
+        case shading
+        case detail
+    }
+
     /// Every silhouette ends here, so the figures in the catalog stand on one line.
     static let baseline: CGFloat = 92
     static let keylineWidth: CGFloat = 7
+    static let groundShadow = CGRect(x: 20, y: 89.3, width: 60, height: 6.4)
 
     let path: Path
     let color: Color
     var paint: Paint = .fill
     var keyline = false
+    var role: Role = .detail
 }
 
 /// A figure as a flat sticker: a white keyline round the silhouette, one flat colour per part.
