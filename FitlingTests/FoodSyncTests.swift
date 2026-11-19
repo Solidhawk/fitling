@@ -37,22 +37,27 @@ import FitlingCore
         return product
     }
 
-    /// Pushes from one device and pulls into a second one, which starts empty.
-    func roundTrip<Model: SyncableModel>(_ model: Model, remote: FakeRemoteStore) async throws -> Model? {
+    /// Pushes from one device and pulls into a second one, which starts empty. The check runs
+    /// while the second device's store is still alive: a model whose container is gone traps.
+    func roundTrip<Model: SyncableModel>(_ model: Model, remote: FakeRemoteStore, check: (Model) throws -> Void) async throws {
         let phone = try makeEngine(remote)
         phone.context.insert(model)
         #expect(await phone.sync() == .completed)
         let tablet = try makeEngine(remote)
         #expect(await tablet.sync() == .completed)
-        return try tablet.context.fetch(FetchDescriptor<Model>()).first
+        let received = try #require(try tablet.context.fetch(FetchDescriptor<Model>()).first)
+        try withExtendedLifetime((phone, tablet)) {
+            try check(received)
+        }
     }
 
     @Test func productRecordKeepsEveryColumn() async throws {
         let product = ownProduct()
         let sent = product.record
-        let received = try #require(try await roundTrip(product, remote: FakeRemoteStore()))
-        #expect(received.record == sent)
-        #expect(!received.needsPush)
+        try await roundTrip(product, remote: FakeRemoteStore()) { received in
+            #expect(received.record == sent)
+            #expect(!received.needsPush)
+        }
     }
 
     @Test func foodEntryRecordKeepsEveryColumn() async throws {
@@ -65,23 +70,26 @@ import FitlingCore
         entry.carbsG = nil
         entry.fatG = 21.6
         let sent = entry.record
-        let received = try #require(try await roundTrip(entry, remote: FakeRemoteStore()))
-        #expect(received.record == sent)
-        #expect(received.carbsG == nil)
+        try await roundTrip(entry, remote: FakeRemoteStore()) { received in
+            #expect(received.record == sent)
+            #expect(received.carbsG == nil)
+        }
     }
 
     @Test func waterEntryRecordKeepsEveryColumn() async throws {
         let entry = WaterEntry(id: UUID(), userID: userID, consumedOn: today, amountMl: 250, updatedAt: now)
         let sent = entry.record
-        let received = try #require(try await roundTrip(entry, remote: FakeRemoteStore()))
-        #expect(received.record == sent)
+        try await roundTrip(entry, remote: FakeRemoteStore()) { received in
+            #expect(received.record == sent)
+        }
     }
 
     @Test func favoriteProductRecordKeepsEveryColumn() async throws {
         let favorite = FavoriteProduct(id: UUID(), userID: userID, productID: UUID(), updatedAt: now)
         let sent = favorite.record
-        let received = try #require(try await roundTrip(favorite, remote: FakeRemoteStore()))
-        #expect(received.record == sent)
+        try await roundTrip(favorite, remote: FakeRemoteStore()) { received in
+            #expect(received.record == sent)
+        }
     }
 
     @Test func sharedProductsAreNeverPushed() async throws {

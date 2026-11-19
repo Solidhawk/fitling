@@ -31,6 +31,8 @@ targets:
           - CFBundleURLName: nl.fitling.Fitling
             CFBundleURLSchemes: [fitling]
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        # Translated in Fitling/Resources/InfoPlist.xcstrings.
+        NSCameraUsageDescription: Fitling gebruikt de camera om de barcode van een product te scannen.
         SupabaseHost: $(SUPABASE_HOST)
         SupabasePublishableKey: $(SUPABASE_PUBLISHABLE_KEY)
     entitlements:

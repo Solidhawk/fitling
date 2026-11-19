@@ -49,7 +49,8 @@ struct AppEnvironment {
             let client = makeSupabaseClient(config)
             let container = try makeModelContainer(inMemory: false)
             let sync = SyncEngine(container: container, remote: SupabaseRemoteStore(client: client), tables: SyncTables.all)
-            return .success(AppEnvironment(container: container, root: RootViewModel(auth: AuthService(client: client), sync: sync)))
+            let food = FoodServices(source: SupabaseProductSource(client: client), search: SupabaseProductSearch(client: client))
+            return .success(AppEnvironment(container: container, root: RootViewModel(auth: AuthService(client: client), sync: sync, food: food)))
         } catch {
             return .failure(error)
         }

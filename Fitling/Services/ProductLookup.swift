@@ -63,7 +63,6 @@ final class ProductLookup {
     }
 
     func lookUp(scanned code: String) async -> ProductLookupResult {
-        return .unavailable
         guard let gtin = Barcode.normalized(code) else { return .invalidBarcode }
         let local = localProduct(gtin: gtin)
         if let local, isFresh(local) { return .found(local.id) }

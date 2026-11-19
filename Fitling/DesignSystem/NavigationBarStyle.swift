@@ -24,6 +24,15 @@ enum NavigationBarStyle {
         bar.standardAppearance = appearance
         bar.compactAppearance = appearance
         bar.scrollEdgeAppearance = appearance
+
+        // The tab bar on the same opaque ground, so the page does not end in a frosted strip.
+        let tabs = UITabBarAppearance()
+        tabs.configureWithOpaqueBackground()
+        tabs.backgroundColor = UIColor(resource: .ground)
+        tabs.shadowColor = UIColor(resource: .track)
+        let tabBar = UITabBar.appearance()
+        tabBar.standardAppearance = tabs
+        tabBar.scrollEdgeAppearance = tabs
     }
 
     /// `traits` nil means the text size the app runs with.

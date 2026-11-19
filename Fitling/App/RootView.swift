@@ -64,7 +64,7 @@ struct RootView: View {
             .id(userID)
         case let .home(userID):
             if let profile = viewModel.sync.context.profile(of: userID) {
-                ProfileView(profile: profile, sync: viewModel.sync, account: accountViewModel())
+                HomeView(profile: profile, sync: viewModel.sync, food: viewModel.food, account: accountViewModel())
                     .id(userID)
             } else {
                 // Only between a wipe and the refresh that follows it; the refresh picks the screen.

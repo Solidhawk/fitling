@@ -22,15 +22,17 @@ final class RootViewModel {
     private(set) var underageDeletion: AccountDeletion?
     let auth: any AuthProviding
     let sync: SyncEngine
+    let food: FoodServices
     private var pendingURL: URL?
     /// Goes up with every refresh. A refresh that waited on the network only shows its result
     /// when no newer one started meanwhile; otherwise it could put back a screen that no longer
     /// fits, such as "no connection" after signing out.
     private var generation = 0
 
-    init(auth: any AuthProviding, sync: SyncEngine) {
+    init(auth: any AuthProviding, sync: SyncEngine, food: FoodServices) {
         self.auth = auth
         self.sync = sync
+        self.food = food
     }
 
     func refresh() async {

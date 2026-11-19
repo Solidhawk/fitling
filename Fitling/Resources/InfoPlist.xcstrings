@@ -1,0 +1,28 @@
+{
+  "sourceLanguage": "nl",
+  "strings": {
+    "NSCameraUsageDescription": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fitling gebruikt de camera om de barcode van een product te scannen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fitling uses the camera to scan the barcode of a product."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fitling nutzt die Kamera, um den Barcode eines Produkts zu scannen."
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

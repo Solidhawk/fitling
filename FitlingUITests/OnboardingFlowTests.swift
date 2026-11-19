@@ -124,8 +124,12 @@ final class OnboardingFlowTests: XCTestCase {
         keepScreenshot(app, named: "\(prefix)-8-resultaat")
         tapContinue("result", app)
 
+        // After onboarding the app opens on today; the daily target is the second tab.
+        XCTAssertTrue(app.navigationBars["Vandaag"].waitForExistence(timeout: 5))
+        keepScreenshot(app, named: "\(prefix)-9-vandaag")
+        app.tabBars.buttons["Dagdoel"].tap()
         XCTAssertTrue(app.navigationBars["Dagdoel"].waitForExistence(timeout: 5))
-        keepScreenshot(app, named: "\(prefix)-9-dagdoel")
+        keepScreenshot(app, named: "\(prefix)-10-dagdoel")
     }
 
     @MainActor

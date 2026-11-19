@@ -49,7 +49,7 @@ struct FlowFixture {
 
     func root(_ state: AuthState) -> (RootViewModel, FakeAuthProvider) {
         let auth = FakeAuthProvider(state: state)
-        return (RootViewModel(auth: auth, sync: sync), auth)
+        return (RootViewModel(auth: auth, sync: sync, food: FoodServices(source: FakeProductSource(), search: FakeProductSearch())), auth)
     }
 
     var signedIn: AuthState { .signedIn(userID: userID, usesApple: false) }
