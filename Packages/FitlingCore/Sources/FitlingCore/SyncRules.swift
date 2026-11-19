@@ -55,7 +55,8 @@ public enum SyncRules {
         return remote.isDeleted ? .deleteLocal : .overwrite
     }
 
-    public static func pullStart(cursor: Date?, now: Date) -> PullStart {
+    /// `cursor` is the highest `synced_at` seen, `lastPull` the moment of the last pull that succeeded.
+    public static func pullStart(cursor: Date?, lastPull: Date?, now: Date) -> PullStart {
         guard let cursor else { return .everything }
         if now.timeIntervalSince(cursor) > deletionRetention { return .resetThenEverything }
         return .since(cursor.addingTimeInterval(-pullOverlap))

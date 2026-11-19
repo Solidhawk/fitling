@@ -201,18 +201,32 @@ import Testing
     }
 
     @Test func theFirstPullFetchesEverything() {
-        #expect(SyncRules.pullStart(cursor: nil, now: noon) == .everything)
+        #expect(SyncRules.pullStart(cursor: nil, lastPull: nil, now: noon) == .everything)
+    }
+
+    @Test func aTableThatWasEmptyLastTimeIsFetchedWhole() {
+        #expect(SyncRules.pullStart(cursor: nil, lastPull: noon.addingTimeInterval(-3600), now: noon) == .everything)
     }
 
     @Test func aLaterPullStartsFiveMinutesBeforeTheCursor() {
         let cursor = noon.addingTimeInterval(-3600)
-        #expect(SyncRules.pullStart(cursor: cursor, now: noon) == .since(cursor.addingTimeInterval(-300)))
+        #expect(SyncRules.pullStart(cursor: cursor, lastPull: cursor, now: noon) == .since(cursor.addingTimeInterval(-300)))
     }
 
-    @Test func aCursorOlderThanNinetyDaysStartsOver() {
+    @Test func aDeviceThatDidNotPullForNinetyDaysStartsOver() {
         let ninetyDays: TimeInterval = 90 * 24 * 60 * 60
-        #expect(SyncRules.pullStart(cursor: noon.addingTimeInterval(-ninetyDays - 1), now: noon) == .resetThenEverything)
-        #expect(SyncRules.pullStart(cursor: noon.addingTimeInterval(-ninetyDays), now: noon) == .since(noon.addingTimeInterval(-ninetyDays - 300)))
+        let cursor = noon.addingTimeInterval(-ninetyDays - 3600)
+        #expect(SyncRules.pullStart(cursor: cursor, lastPull: noon.addingTimeInterval(-ninetyDays - 1), now: noon) == .resetThenEverything)
+        #expect(SyncRules.pullStart(cursor: cursor, lastPull: noon.addingTimeInterval(-ninetyDays), now: noon) == .since(cursor.addingTimeInterval(-300)))
+        #expect(SyncRules.pullStart(cursor: nil, lastPull: noon.addingTimeInterval(-ninetyDays - 1), now: noon) == .resetThenEverything)
+    }
+
+    /// The 90 days count from the last pull, not from the last change: a table nobody touches
+    /// must not be cleared and fetched again on every round.
+    @Test func aQuietTableIsNotStartedOver() {
+        let longAgo = noon.addingTimeInterval(-200 * 24 * 60 * 60)
+        let yesterday = noon.addingTimeInterval(-24 * 60 * 60)
+        #expect(SyncRules.pullStart(cursor: longAgo, lastPull: yesterday, now: noon) == .since(longAgo.addingTimeInterval(-300)))
     }
 
     @Test func theCursorMovesToTheNewestRowAndNeverBack() {
