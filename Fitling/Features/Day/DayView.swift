@@ -271,6 +271,10 @@ private struct MacroRibbon: View {
         .background {
             GeometryReader { proxy in
                 ZStack(alignment: .leading) {
+                    // The empty part is a pale tint of the ribbon colour on white, in dark mode too:
+                    // the ink text needs a light ground (accessibility audit, TASKS 7.2).
+                    RoundedRectangle(cornerRadius: Radius.ribbon, style: .continuous)
+                        .fill(Color.white)
                     RoundedRectangle(cornerRadius: Radius.ribbon, style: .continuous)
                         .fill(fill.opacity(0.35))
                     RoundedRectangle(cornerRadius: Radius.ribbon, style: .continuous)
