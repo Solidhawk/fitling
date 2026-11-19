@@ -57,7 +57,7 @@ final class DayViewModel {
         let entries = diary.entries(on: day)
         entriesByMeal = Dictionary(grouping: entries) { MealSlot(rawValue: $0.meal) ?? .snack }
         totals = FoodMath.totals(entries.map { Nutrients(kcal: $0.kcal, proteinG: $0.proteinG, carbsG: $0.carbsG, fatG: $0.fatG) })
-        targets = targets(on: day)
+        targets = diary.context.targets(on: day, for: profile)
         waterMl = diary.waterMl(on: day)
     }
 
@@ -73,28 +73,5 @@ final class DayViewModel {
 
     func kcal(of meal: MealSlot) -> Double {
         (entriesByMeal[meal] ?? []).reduce(0) { $0 + $1.kcal }
-    }
-
-    /// The target that applied on `day`: the latest period that started on or before it, the
-    /// newest row when two devices made one for the same day. Workout energy is added when the
-    /// user chose that (ARCHITECTURE §7).
-    private func targets(on day: Day) -> NutritionTargets {
-        let userID = profile.id
-        let dayString = day.isoString
-        var descriptor = FetchDescriptor<TargetPeriod>(
-            predicate: #Predicate<TargetPeriod> { $0.userID == userID && $0.deletedAt == nil && $0.effectiveOn <= dayString },
-            sortBy: [SortDescriptor(\.effectiveOn, order: .reverse), SortDescriptor(\.updatedAt, order: .reverse)]
-        )
-        descriptor.fetchLimit = 1
-        let base = (try? diary.context.fetch(descriptor).first)?.targets ?? profile.targets
-        let workoutKcal = workoutKcal(on: day)
-        return NutritionEngine.dayTargets(base: base, workoutKcal: workoutKcal, countsWorkouts: profile.countsWorkoutEnergy)
-    }
-
-    private func workoutKcal(on day: Day) -> Double {
-        let dayString = day.isoString
-        var descriptor = FetchDescriptor<DayActivity>(predicate: #Predicate<DayActivity> { $0.day == dayString })
-        descriptor.fetchLimit = 1
-        return (try? diary.context.fetch(descriptor).first)?.workoutKcal ?? 0
     }
 }

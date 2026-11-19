@@ -1013,6 +1013,28 @@
         }
       }
     },
+    "common.save": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opslaan"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Speichern"
+          }
+        }
+      }
+    },
     "consent.agree": {
       "localizations": {
         "nl": {
@@ -1119,6 +1141,1194 @@
           "stringUnit": {
             "state": "translated",
             "value": "Brennt heller, wenn du trainierst."
+          }
+        }
+      }
+    },
+    "creature.message.asleep.coach.1": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Even pauze gehad? Log één maaltijd en je bent weer bezig."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Had a break? Log one meal and you are back at it."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kurze Pause gehabt? Erfasse eine Mahlzeit und du bist wieder dabei."
+          }
+        }
+      }
+    },
+    "creature.message.asleep.coach.2": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opnieuw beginnen is makkelijk: log je volgende maaltijd."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Starting again is easy: log your next meal."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neu anfangen ist leicht: Erfasse deine nächste Mahlzeit."
+          }
+        }
+      }
+    },
+    "creature.message.asleep.coach.3": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ik slaap. Eén log en we gaan verder waar we waren."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I'm asleep. One log and we carry on where we were."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ich schlafe. Ein Eintrag und wir machen weiter, wo wir waren."
+          }
+        }
+      }
+    },
+    "creature.message.asleep.funny.1": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ik droom van je ontbijt. Maak je het waar?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I dream of your breakfast. Will you make it real?"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ich träume von deinem Frühstück. Machst du es wahr?"
+          }
+        }
+      }
+    },
+    "creature.message.asleep.funny.2": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ik hou een winterslaap. Een log is mijn wekker."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I'm hibernating. A log is my alarm clock."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ich halte Winterschlaf. Ein Eintrag ist mein Wecker."
+          }
+        }
+      }
+    },
+    "creature.message.asleep.funny.3": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Snurk. Psst, één log en ik doe weer mee."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Snore. Psst, one log and I'm back in."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schnarch. Psst, ein Eintrag und ich bin wieder dabei."
+          }
+        }
+      }
+    },
+    "creature.message.asleep.sweet.1": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zzz… Ik word wakker zodra je iets logt."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zzz… I'll wake up as soon as you log something."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zzz… Ich wache auf, sobald du etwas erfasst."
+          }
+        }
+      }
+    },
+    "creature.message.asleep.sweet.2": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ik heb je gemist. Eén maaltijd en ik ben er weer."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I've missed you. One meal and I'm back."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ich habe dich vermisst. Eine Mahlzeit und ich bin wieder da."
+          }
+        }
+      }
+    },
+    "creature.message.asleep.sweet.3": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ik slaap, maar ik wacht op je. Geen haast."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I'm asleep, but I'm waiting for you. No rush."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ich schlafe, aber ich warte auf dich. Keine Eile."
+          }
+        }
+      }
+    },
+    "creature.message.fit.coach.1": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mooi op koers. Houd dit ritme vast."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nicely on track. Keep this rhythm."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schön auf Kurs. Halte diesen Rhythmus."
+          }
+        }
+      }
+    },
+    "creature.message.fit.coach.2": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je zit binnen je doel. Zo bouw je een gewoonte."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You're within your target. That's how a habit is built."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Du liegst im Ziel. So entsteht eine Gewohnheit."
+          }
+        }
+      }
+    },
+    "creature.message.fit.coach.3": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sterke week. Vandaag gewoon weer loggen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Strong week. Just log again today."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Starke Woche. Heute einfach wieder erfassen."
+          }
+        }
+      }
+    },
+    "creature.message.fit.funny.1": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ik ben zo fit dat ik mijn eigen schaduw inhaal."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I'm so fit I'm overtaking my own shadow."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ich bin so fit, dass ich meinen eigenen Schatten überhole."
+          }
+        }
+      }
+    },
+    "creature.message.fit.funny.2": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Groot nieuws: je partner straalt. Meer om tien uur."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Breaking news: your partner is glowing. More at ten."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eilmeldung: Dein Partner strahlt. Mehr um zehn."
+          }
+        }
+      }
+    },
+    "creature.message.fit.funny.3": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Als dit zo doorgaat, krijg ik nog spierballen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If this keeps up, I might grow muscles."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wenn das so weitergeht, kriege ich noch Muskeln."
+          }
+        }
+      }
+    },
+    "creature.message.fit.sweet.1": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ik voel me zo fijn. Dank je wel voor deze week!"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I feel so good. Thank you for this week!"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ich fühle mich so gut. Danke für diese Woche!"
+          }
+        }
+      }
+    },
+    "creature.message.fit.sweet.2": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We doen het samen echt goed, weet je dat?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We're doing really well together, you know?"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wir machen das zusammen richtig gut, weißt du?"
+          }
+        }
+      }
+    },
+    "creature.message.fit.sweet.3": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ik ben blij en sterk. Zullen we zo doorgaan?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I'm happy and strong. Shall we keep going like this?"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ich bin glücklich und stark. Machen wir so weiter?"
+          }
+        }
+      }
+    },
+    "creature.message.hungry.coach.1": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tijd voor eiwit. Wat eet je?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Time for protein. What are you eating?"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zeit für Eiweiß. Was isst du?"
+          }
+        }
+      }
+    },
+    "creature.message.hungry.coach.2": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sinds gisteren niets gelogd. Begin met je volgende maaltijd."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing logged since yesterday. Start with your next meal."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seit gestern nichts erfasst. Fang mit deiner nächsten Mahlzeit an."
+          }
+        }
+      }
+    },
+    "creature.message.hungry.coach.3": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Log wat je eet, dan weet je waar je staat."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Log what you eat, then you know where you stand."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erfasse, was du isst, dann weißt du, wo du stehst."
+          }
+        }
+      }
+    },
+    "creature.message.hungry.funny.1": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mijn maag knort harder dan jouw wekker"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "My stomach growls louder than your alarm clock"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mein Magen knurrt lauter als dein Wecker"
+          }
+        }
+      }
+    },
+    "creature.message.hungry.funny.2": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ik heb zo’n honger dat ik de barcode wil opeten."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I'm so hungry I could eat the barcode."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ich habe solchen Hunger, dass ich den Barcode essen könnte."
+          }
+        }
+      }
+    },
+    "creature.message.hungry.funny.3": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rommel, rommel. Dat was mijn buik. Wat eten we?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rumble, rumble. That was my tummy. What are we eating?"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grummel, grummel. Das war mein Bauch. Was essen wir?"
+          }
+        }
+      }
+    },
+    "creature.message.hungry.sweet.1": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ik heb honger 🥺"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I'm hungry 🥺"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ich habe Hunger 🥺"
+          }
+        }
+      }
+    },
+    "creature.message.hungry.sweet.2": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mijn buikje rommelt. Wat eten we?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "My tummy's rumbling. What are we eating?"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mein Bäuchlein grummelt. Was essen wir?"
+          }
+        }
+      }
+    },
+    "creature.message.hungry.sweet.3": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wat heb je vandaag al gegeten? Ik ben zo benieuwd."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What have you eaten today? I'm so curious."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Was hast du heute schon gegessen? Ich bin so gespannt."
+          }
+        }
+      }
+    },
+    "creature.message.normal.coach.1": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Log je volgende maaltijd, dan blijf je bij."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Log your next meal and stay up to date."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erfasse deine nächste Mahlzeit, dann bleibst du auf dem Laufenden."
+          }
+        }
+      }
+    },
+    "creature.message.normal.coach.2": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elke log telt. Wat staat er op het menu?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Every log counts. What's on the menu?"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jeder Eintrag zählt. Was steht auf dem Speiseplan?"
+          }
+        }
+      }
+    },
+    "creature.message.normal.coach.3": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Even bijwerken: wat heb je gegeten?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quick update: what did you eat?"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kurz nachtragen: Was hast du gegessen?"
+          }
+        }
+      }
+    },
+    "creature.message.normal.funny.1": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ik verveel me een beetje. Vertel me over je bord!"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I'm a little bored. Tell me about your plate!"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mir ist ein bisschen langweilig. Erzähl mir von deinem Teller!"
+          }
+        }
+      }
+    },
+    "creature.message.normal.funny.2": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mijn agenda is leeg. Die van je maaltijden ook?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "My calendar is empty. Is your meal log too?"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mein Kalender ist leer. Dein Essensprotokoll auch?"
+          }
+        }
+      }
+    },
+    "creature.message.normal.funny.3": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ik heb je lunch nog niet gezien. Was hij onzichtbaar?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I haven't seen your lunch yet. Was it invisible?"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ich habe dein Mittagessen noch nicht gesehen. War es unsichtbar?"
+          }
+        }
+      }
+    },
+    "creature.message.normal.sweet.1": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hoi! Ik ben benieuwd wat je vandaag eet."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hi! I'm curious what you'll eat today."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hallo! Ich bin gespannt, was du heute isst."
+          }
+        }
+      }
+    },
+    "creature.message.normal.sweet.2": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fijn dat je er bent. Vertel je me wat je eet?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Glad you're here. Will you tell me what you eat?"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schön, dass du da bist. Erzählst du mir, was du isst?"
+          }
+        }
+      }
+    },
+    "creature.message.normal.sweet.3": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ik zit hier lekker. Even je maaltijd loggen?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I'm comfy here. Log your meal for a moment?"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ich sitze hier gemütlich. Kurz deine Mahlzeit erfassen?"
+          }
+        }
+      }
+    },
+    "creature.message.tooLittle.coach.1": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je zit ruim onder je doel. Genoeg eten telt ook."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You're well below your target. Eating enough counts too."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Du liegst deutlich unter deinem Ziel. Genug essen zählt auch."
+          }
+        }
+      }
+    },
+    "creature.message.tooLittle.coach.2": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Te weinig eten werkt tegen je. Voeg een maaltijd of snack toe."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eating too little works against you. Add a meal or a snack."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zu wenig essen arbeitet gegen dich. Füge eine Mahlzeit oder einen Snack hinzu."
+          }
+        }
+      }
+    },
+    "creature.message.tooLittle.coach.3": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brandstof eerst. Kies iets met eiwit en koolhydraten."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fuel first. Pick something with protein and carbohydrates."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erst der Treibstoff. Wähle etwas mit Eiweiß und Kohlenhydraten."
+          }
+        }
+      }
+    },
+    "creature.message.tooLittle.funny.1": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mijn batterij is bijna leeg. Een snack doet wonderen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "My battery is nearly flat. A snack works wonders."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mein Akku ist fast leer. Ein Snack wirkt Wunder."
+          }
+        }
+      }
+    },
+    "creature.message.tooLittle.funny.2": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ik ben zo moe dat ik geeuw in mijn slaap. Tijd om te eten!"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I'm so tired I yawn in my sleep. Time to eat!"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ich bin so müde, dass ich im Schlaf gähne. Zeit zu essen!"
+          }
+        }
+      }
+    },
+    "creature.message.tooLittle.funny.3": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ik zie sterretjes, en niet de leuke. Wat eet je?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I see stars, and not the fun kind. What are you eating?"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ich sehe Sterne, und nicht die schönen. Was isst du?"
+          }
+        }
+      }
+    },
+    "creature.message.tooLittle.sweet.1": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ik ben een beetje moe. Eet je vandaag wel genoeg?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I'm a little tired. Are you eating enough today?"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ich bin ein bisschen müde. Isst du heute genug?"
+          }
+        }
+      }
+    },
+    "creature.message.tooLittle.sweet.2": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ik heb energie van je nodig. Een stevige maaltijd?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I need some energy from you. A hearty meal?"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ich brauche Energie von dir. Eine kräftige Mahlzeit?"
+          }
+        }
+      }
+    },
+    "creature.message.tooLittle.sweet.3": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zorg goed voor jezelf, dan kan ik dat ook."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Take good care of yourself, then I can too."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pass gut auf dich auf, dann kann ich das auch."
+          }
+        }
+      }
+    },
+    "creature.message.tooMuch.coach.1": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deze week iets boven je doel. Kies vandaag groente en eiwit."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A bit above your target this week. Go for vegetables and protein today."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diese Woche etwas über dem Ziel. Wähle heute Gemüse und Eiweiß."
+          }
+        }
+      }
+    },
+    "creature.message.tooMuch.coach.2": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kleine stap: een kleinere portie en een glas water erbij."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Small step: a smaller portion and a glass of water with it."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kleiner Schritt: eine kleinere Portion und ein Glas Wasser dazu."
+          }
+        }
+      }
+    },
+    "creature.message.tooMuch.coach.3": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bijsturen kan altijd. Plan je volgende maaltijd vooruit."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can always adjust. Plan your next meal ahead."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nachsteuern geht immer. Plane deine nächste Mahlzeit im Voraus."
+          }
+        }
+      }
+    },
+    "creature.message.tooMuch.funny.1": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ik rol meer dan ik loop. Een frisse salade misschien?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I roll more than I walk. A fresh salad, maybe?"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ich rolle mehr, als ich laufe. Vielleicht ein frischer Salat?"
+          }
+        }
+      }
+    },
+    "creature.message.tooMuch.funny.2": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mijn buikje wil een rustdag. Doe je mee?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "My tummy wants a rest day. Are you in?"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mein Bäuchlein will einen Ruhetag. Machst du mit?"
+          }
+        }
+      }
+    },
+    "creature.message.tooMuch.funny.3": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ik heb lang genoeg stilgezeten. Zullen we bewegen?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I've sat still long enough. Shall we move?"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ich habe lange genug stillgesessen. Wollen wir uns bewegen?"
+          }
+        }
+      }
+    },
+    "creature.message.tooMuch.sweet.1": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ik voel me wat zwaar. Zullen we het vandaag rustig aan doen?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I feel a bit heavy. Shall we take it easy today?"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ich fühle mich etwas schwer. Wollen wir es heute ruhig angehen?"
+          }
+        }
+      }
+    },
+    "creature.message.tooMuch.sweet.2": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Een lichte maaltijd zou ik nu fijn vinden."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A light meal would be lovely right now."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eine leichte Mahlzeit fände ich jetzt schön."
+          }
+        }
+      }
+    },
+    "creature.message.tooMuch.sweet.3": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geen zorgen, elke dag is een nieuwe kans. Ik ben bij je."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No worries, every day is a new chance. I'm with you."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keine Sorge, jeder Tag ist eine neue Chance. Ich bin bei dir."
           }
         }
       }
@@ -2877,6 +4087,1216 @@
           "stringUnit": {
             "state": "translated",
             "value": "Gewicht"
+          }
+        }
+      }
+    },
+    "partner.color %lld": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kleur %lld"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Colour %lld"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Farbe %lld"
+          }
+        }
+      }
+    },
+    "partner.color.locked %lld %lld": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kleur %1$lld, vanaf level %2$lld"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Colour %1$lld, from level %2$lld"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Farbe %1$lld, ab Level %2$lld"
+          }
+        }
+      }
+    },
+    "partner.color.title": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kleur"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Colour"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Farbe"
+          }
+        }
+      }
+    },
+    "partner.edit": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aanpassen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bearbeiten"
+          }
+        }
+      }
+    },
+    "partner.empty.body": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kies een partner die met je meegroeit."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a partner that grows with you."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wähle einen Partner, der mit dir wächst."
+          }
+        }
+      }
+    },
+    "partner.empty.choose": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partner kiezen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a partner"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partner wählen"
+          }
+        }
+      }
+    },
+    "partner.empty.title": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nog geen partner"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No partner yet"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Noch kein Partner"
+          }
+        }
+      }
+    },
+    "partner.item.backpack": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rugzak"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Backpack"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rucksack"
+          }
+        }
+      }
+    },
+    "partner.item.bow": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Strik"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bow"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schleife"
+          }
+        }
+      }
+    },
+    "partner.item.cap": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pet"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cap"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kappe"
+          }
+        }
+      }
+    },
+    "partner.item.crown": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kroon"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crown"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Krone"
+          }
+        }
+      }
+    },
+    "partner.item.glasses": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bril"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Glasses"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brille"
+          }
+        }
+      }
+    },
+    "partner.item.scarf": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sjaal"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scarf"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schal"
+          }
+        }
+      }
+    },
+    "partner.items.title": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accessoires"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accessories"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accessoires"
+          }
+        }
+      }
+    },
+    "partner.level %lld": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Level %lld"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Level %lld"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Level %lld"
+          }
+        }
+      }
+    },
+    "partner.level.max": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hoogste level bereikt"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Highest level reached"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Höchstes Level erreicht"
+          }
+        }
+      }
+    },
+    "partner.locked %lld": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vanaf level %lld"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From level %lld"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ab Level %lld"
+          }
+        }
+      }
+    },
+    "partner.mood.asleep %@": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ slaapt na drie dagen zonder logs. Log een maaltijd om weer samen verder te gaan."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ is asleep after three days without logs. Log a meal to carry on together."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ schläft nach drei Tagen ohne Einträge. Erfasse eine Mahlzeit, um gemeinsam weiterzumachen."
+          }
+        }
+      }
+    },
+    "partner.mood.content %@": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ voelt zich goed."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ feels fine."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ geht es gut."
+          }
+        }
+      }
+    },
+    "partner.mood.happy %@": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ is blij: je eet op je doel."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ is happy: you're eating on target."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ ist glücklich: Du isst im Ziel."
+          }
+        }
+      }
+    },
+    "partner.mood.hungry %@": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ heeft honger: sinds gisteren is er niets gelogd."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ is hungry: nothing logged since yesterday."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ hat Hunger: Seit gestern ist nichts erfasst."
+          }
+        }
+      }
+    },
+    "partner.mood.sluggish %@": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ voelt zich wat zwaar: de afgelopen week zat je boven je doel."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ feels a bit heavy: over the past week you were above your target."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ fühlt sich etwas schwer: In der letzten Woche lagst du über deinem Ziel."
+          }
+        }
+      }
+    },
+    "partner.mood.tired %@": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ is moe: de afgelopen week at je te weinig."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ is tired: over the past week you ate too little."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ ist müde: In der letzten Woche hast du zu wenig gegessen."
+          }
+        }
+      }
+    },
+    "partner.news.color": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Er is een nieuwe kleur vrijgespeeld."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A new colour is unlocked."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eine neue Farbe ist freigeschaltet."
+          }
+        }
+      }
+    },
+    "partner.news.item %@": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nieuw om te dragen: %@."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New to wear: %@."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neu zum Tragen: %@."
+          }
+        }
+      }
+    },
+    "partner.news.level %lld": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Level %lld bereikt."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reached level %lld."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Level %lld erreicht."
+          }
+        }
+      }
+    },
+    "partner.news.recovery %lld": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Terug op koers na een lastige week: %lld XP extra."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back on track after a hard week: %lld extra XP."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nach einer schwierigen Woche zurück auf Kurs: %lld XP extra."
+          }
+        }
+      }
+    },
+    "partner.news.title": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Goed bezig!"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Well done!"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gut gemacht!"
+          }
+        }
+      }
+    },
+    "partner.reminders.first": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eerste"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "First"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erste"
+          }
+        }
+      }
+    },
+    "partner.reminders.footer %@": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ stuurt je hoogstens twee berichten per dag, nooit tussen 21:00 en 08:00."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ sends you at most two messages a day, never between 9 pm and 8 am."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ schickt dir höchstens zwei Nachrichten am Tag, nie zwischen 21 und 8 Uhr."
+          }
+        }
+      }
+    },
+    "partner.reminders.refused": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meldingen staan uit voor Fitling. Zet ze aan in Instellingen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notifications are off for Fitling. Turn them on in Settings."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mitteilungen sind für Fitling aus. Schalte sie in den Einstellungen ein."
+          }
+        }
+      }
+    },
+    "partner.reminders.second": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tweede"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Second"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zweite"
+          }
+        }
+      }
+    },
+    "partner.reminders.settings": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Instellingen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Settings"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Einstellungen öffnen"
+          }
+        }
+      }
+    },
+    "partner.reminders.title": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Herinneringen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reminders"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erinnerungen"
+          }
+        }
+      }
+    },
+    "partner.reminders.toggle": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Herinneringen sturen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send reminders"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erinnerungen senden"
+          }
+        }
+      }
+    },
+    "partner.setup.color": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kleur"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Colour"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Farbe"
+          }
+        }
+      }
+    },
+    "partner.setup.done": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Klaar"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fertig"
+          }
+        }
+      }
+    },
+    "partner.setup.intro": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kies wie met je meegaat. Je partner groeit als je logt en traint."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose who comes along. Your partner grows as you log and train."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wähle, wer dich begleitet. Dein Partner wächst, wenn du erfasst und trainierst."
+          }
+        }
+      }
+    },
+    "partner.setup.name": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Naam"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name"
+          }
+        }
+      }
+    },
+    "partner.setup.name.footer": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tot 24 tekens. Je kunt de naam later nog aanpassen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Up to 24 characters. You can change the name later."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bis zu 24 Zeichen. Du kannst den Namen später ändern."
+          }
+        }
+      }
+    },
+    "partner.setup.title": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je partner"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your partner"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dein Partner"
+          }
+        }
+      }
+    },
+    "partner.setup.tone": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toon van de herinneringen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voice of the reminders"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ton der Erinnerungen"
+          }
+        }
+      }
+    },
+    "partner.setup.tone.footer": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zo klinken de herinneringen van je partner. Je kiest later zelf of en wanneer ze komen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This is how your partner's reminders sound. You choose later whether and when they come."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "So klingen die Erinnerungen deines Partners. Ob und wann sie kommen, entscheidest du später."
+          }
+        }
+      }
+    },
+    "partner.title": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partner"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partner"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partner"
+          }
+        }
+      }
+    },
+    "partner.today.footer": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De XP telt mee zodra de dag voorbij is. Dicht bij je doel betekent hoogstens een tiende eronder of erboven. Minder eten levert nooit XP op."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The XP counts once the day is over. Close to your target means at most a tenth below or above it. Eating less never earns XP."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die XP zählen, sobald der Tag vorbei ist. Nah am Ziel heißt höchstens ein Zehntel darunter oder darüber. Weniger essen bringt nie XP."
+          }
+        }
+      }
+    },
+    "partner.today.logging": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eten gelogd"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Food logged"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Essen erfasst"
+          }
+        }
+      }
+    },
+    "partner.today.protein": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eiwitdoel gehaald"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Protein target reached"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eiweißziel erreicht"
+          }
+        }
+      }
+    },
+    "partner.today.target": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dicht bij je kcal-doel"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close to your kcal target"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nah an deinem kcal-Ziel"
+          }
+        }
+      }
+    },
+    "partner.today.title": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vandaag verdiend"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Earned today"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Heute verdient"
+          }
+        }
+      }
+    },
+    "partner.today.workout": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Training gedaan"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workout done"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Training erledigt"
+          }
+        }
+      }
+    },
+    "partner.tone.coach": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coach"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coach"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coach"
+          }
+        }
+      }
+    },
+    "partner.tone.funny": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grappig"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Funny"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Witzig"
+          }
+        }
+      }
+    },
+    "partner.tone.sweet": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lief"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sweet"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lieb"
+          }
+        }
+      }
+    },
+    "partner.xp.earned %lld": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+%lld XP"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+%lld XP"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+%lld XP"
+          }
+        }
+      }
+    },
+    "partner.xp.progress %lld %lld": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld / %2$lld XP"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld / %2$lld XP"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld / %2$lld XP"
           }
         }
       }

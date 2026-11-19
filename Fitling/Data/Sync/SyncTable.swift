@@ -46,6 +46,7 @@ enum SyncTables {
         [
             ModelTable<UserProfile>(), ModelTable<TargetPeriod>(),
             ModelTable<Product>(), ModelTable<FoodEntry>(), ModelTable<WaterEntry>(), ModelTable<FavoriteProduct>(),
+            ModelTable<Creature>(),
         ]
     }
 }

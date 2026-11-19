@@ -9,6 +9,7 @@ struct FlowFixture {
     let container: ModelContainer
     let remote: FakeRemoteStore
     let sync: SyncEngine
+    let reminders = FakeReminderDelivery()
     let userID = UUID()
     /// 2026-11-18, 11:06 UTC.
     let now = Date(timeIntervalSince1970: 1_795_000_000)
@@ -39,17 +40,30 @@ struct FlowFixture {
         return profile
     }
 
+    func makePartner() -> Creature {
+        let creature = Creature(
+            userID: userID, name: "Pip",
+            state: CreatureState(species: .pip, colorIndex: 0, tone: .sweet, createdOn: today.adding(-1)),
+            updatedAt: now.addingTimeInterval(-3_600)
+        )
+        creature.needsPush = false
+        return creature
+    }
+
+    /// A user who finished onboarding and chose a partner, unless `withPartner` is false.
     @discardableResult
-    func insertProfile(needsPush: Bool = false, manualTargets: Bool = false) -> UserProfile {
+    func insertProfile(needsPush: Bool = false, manualTargets: Bool = false, withPartner: Bool = true) -> UserProfile {
         let profile = makeProfile(needsPush: needsPush, manualTargets: manualTargets)
         context.insert(profile)
+        if withPartner { context.insert(makePartner()) }
         try? context.save()
         return profile
     }
 
     func root(_ state: AuthState) -> (RootViewModel, FakeAuthProvider) {
         let auth = FakeAuthProvider(state: state)
-        return (RootViewModel(auth: auth, sync: sync, food: FoodServices(source: FakeProductSource(), search: FakeProductSearch())), auth)
+        let food = FoodServices(source: FakeProductSource(), search: FakeProductSearch())
+        return (RootViewModel(auth: auth, sync: sync, food: food, reminders: reminders), auth)
     }
 
     var signedIn: AuthState { .signedIn(userID: userID, usesApple: false) }
@@ -87,6 +101,7 @@ struct FlowFixture {
 
     @Test func firstDeviceOnlineWithRemoteGoesHome() async throws {
         try fixture.remote.serve(fixture.makeProfile().record, table: "profiles", syncedAt: fixture.now)
+        try fixture.remote.serve(fixture.makePartner().record, table: "creatures", syncedAt: fixture.now)
         let (root, _) = fixture.root(fixture.signedIn)
         await root.refresh()
         #expect(root.screen == .home(fixture.userID))
@@ -157,13 +172,68 @@ struct FlowFixture {
         #expect(root.linkMessageKey == "auth.reset.linkExpired")
     }
 
-    @Test func onboardingFinishedGoesHomeAndPushes() async {
+    @Test func onboardingFinishedAsksForThePartnerAndPushes() async {
         let (root, _) = fixture.root(fixture.signedIn)
-        let profile = fixture.insertProfile(needsPush: true)
+        let profile = fixture.insertProfile(needsPush: true, withPartner: false)
         await root.onboardingFinished(profile)
-        #expect(root.screen == .home(fixture.userID))
+        #expect(root.screen == .partnerSetup(fixture.userID))
         #expect(fixture.remote.row(fixture.userID, in: "profiles") != nil)
         #expect(!profile.needsPush)
+    }
+
+    @Test func existingUserIsAskedOnce() async throws {
+        fixture.insertProfile(withPartner: false)
+        let (root, _) = fixture.root(fixture.signedIn)
+        await root.refresh()
+        #expect(root.screen == .partnerSetup(fixture.userID))
+
+        let setup = PartnerSetupViewModel(userID: fixture.userID, context: fixture.context, timeZone: .gmt, now: { [now = fixture.now] in now })
+        setup.choose(.sprout, defaultName: "Sprout")
+        let creature = try #require(setup.save())
+        await root.partnerChosen(creature)
+        #expect(root.screen == .home(fixture.userID))
+        #expect(fixture.remote.row(fixture.userID, in: "creatures")?["species"] as? String == "sprout")
+        #expect(!creature.needsPush)
+
+        await root.refresh()
+        #expect(root.screen == .home(fixture.userID))
+    }
+
+    @Test func aPartnerChosenOnAnotherDeviceIsNotAskedFor() async throws {
+        fixture.insertProfile(withPartner: false)
+        try fixture.remote.serve(fixture.makePartner().record, table: "creatures", syncedAt: fixture.now)
+        let (root, _) = fixture.root(fixture.signedIn)
+        await root.refresh()
+        #expect(root.screen == .home(fixture.userID))
+        #expect(fixture.context.creature(of: fixture.userID)?.name == "Pip")
+    }
+
+    @Test func offlineWithoutAPartnerStillOpensTheApp() async {
+        fixture.insertProfile(withPartner: false)
+        fixture.remote.isOffline = true
+        let (root, _) = fixture.root(fixture.signedIn)
+        await root.refresh()
+        #expect(root.screen == .home(fixture.userID))
+    }
+
+    @Test func choosingAPartnerSurvivesALostConnection() async {
+        fixture.insertProfile(withPartner: false)
+        let (root, _) = fixture.root(fixture.signedIn)
+        await root.refresh()
+        #expect(root.screen == .partnerSetup(fixture.userID))
+        fixture.remote.isOffline = true
+        await root.refresh()
+        #expect(root.screen == .partnerSetup(fixture.userID))
+    }
+
+    @Test func signingOutClearsWaitingReminders() async {
+        fixture.insertProfile()
+        fixture.reminders.replace(with: [PlannedReminder(identifier: "r", day: fixture.today, minutes: 750, messageKey: "creature.message.hungry.sweet.1")], title: "Pip")
+        let (root, auth) = fixture.root(fixture.signedIn)
+        await root.refresh()
+        auth.state = .signedOut
+        await root.refresh()
+        #expect(fixture.reminders.reminders.isEmpty)
     }
 
     @Test func olderRefreshDoesNotOverwriteANewerOne() async throws {

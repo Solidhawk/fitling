@@ -86,6 +86,11 @@ final class FoodFlowTests: XCTestCase {
         water.tap()
         XCTAssertTrue(app.staticTexts["500 ml"].waitForExistence(timeout: 5))
         keepScreenshot(app, named: "voeding-licht-6-water")
+
+        // The partner sees the log straight away: today's logging XP is ticked.
+        app.tabBars.buttons["Partner"].tap()
+        XCTAssertTrue(app.descendants(matching: .any)["partner.hero"].waitForExistence(timeout: 5))
+        keepScreenshot(app, named: "voeding-licht-7-partner")
     }
 
     @MainActor

@@ -8,7 +8,8 @@ import FitlingCore
 @MainActor
 enum UITestEnvironment {
     /// `--ui-testing-on-disk` keeps the database in a real file, as on a device.
-    /// `--ui-testing-with-profile` starts signed in with a finished onboarding, on the home screen.
+    /// `--ui-testing-with-profile` starts signed in with a finished onboarding and a partner, on the home screen.
+    /// `--ui-testing-partner-gallery` shows every species in every look, for approving the drawings.
     /// `--ui-testing-dark` forces dark mode; setting the appearance from XCUITest did not reach the app on the CI simulator.
     static var colorScheme: ColorScheme? {
         ProcessInfo.processInfo.arguments.contains("--ui-testing-dark") ? .dark : nil
@@ -31,7 +32,8 @@ enum UITestEnvironment {
         let source = FakeProductSource()
         source.products[sampleProduct.gtin ?? ""] = sampleProduct
         let food = FoodServices(source: source, search: FakeProductSearch())
-        return AppEnvironment(container: container, root: RootViewModel(auth: FakeAuthProvider(state: state), sync: sync, food: food))
+        let root = RootViewModel(auth: FakeAuthProvider(state: state), sync: sync, food: food, reminders: FakeReminderDelivery())
+        return AppEnvironment(container: container, root: root)
     }
 
     /// The product the UI test scans: a real Open Food Facts answer (the lookup-product fixture).
@@ -48,6 +50,8 @@ enum UITestEnvironment {
         let targets = NutritionTargets(kcal: 2760, proteinG: 128, carbsG: 389, fatG: 77)
         sync.context.insert(UserProfile(id: userID, healthConsentAt: .now, healthConsentVersion: 1, body: body, targets: targets, targetsAreManual: false, updatedAt: .now))
         sync.context.recordTargets(targets, for: userID, from: Day(.now, timeZone: .current), at: .now)
+        let partner = CreatureState(species: .pip, colorIndex: 0, tone: .sweet, createdOn: Day(.now, timeZone: .current))
+        sync.context.insert(Creature(userID: userID, name: "Pip", state: partner, updatedAt: .now))
         try? sync.context.save()
     }
 }
