@@ -166,7 +166,8 @@ struct FoodFixture {
 
         #expect(entry.kcal == 240)
         #expect(entry.productID != shared.id)
-        let copy = try #require(fixture.diary.product(try #require(entry.productID)))
+        let copyID = try #require(entry.productID)
+        let copy = try #require(fixture.diary.product(copyID))
         #expect(copy.ownerID == fixture.userID)
         #expect(copy.source == "user")
         #expect(copy.kcal100 == 480)
