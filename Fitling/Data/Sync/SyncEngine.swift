@@ -12,12 +12,16 @@ final class SyncEngine {
         case completed
         /// The round stopped at the first request that could not reach the server.
         case offline
+        /// The server refused a read, for example because the session is no longer valid.
+        case failed
         /// A round was already going; it runs once more when it is done.
         case alreadyRunning
     }
 
     /// String Catalog key shown while the server keeps refusing a row.
     static let rejectedProblemKey = "profile.sync.rejected"
+    /// String Catalog key shown after a read the server refused.
+    static let failedProblemKey = "error.server"
 
     /// Held on purpose: a `ModelContext` does not keep its container alive, and a delayed round
     /// would otherwise touch a released store.

@@ -21,6 +21,7 @@ final class FakeRemoteStore: RemoteStore {
     private(set) var upserts: [Upsert] = []
     var rejectedIDs: Set<UUID> = []
     var isOffline = false
+    var refusesReads = false
     /// The clock of the server. Every stored row gets it as `synced_at`, then it moves on a second.
     var clock = Date(timeIntervalSince1970: 1_795_000_100)
     /// Runs once, while an upsert is under way and the rows have already left the device.
@@ -35,6 +36,7 @@ final class FakeRemoteStore: RemoteStore {
     func fetch<Record: SyncRecord>(_ type: Record.Type, table: String, keyColumn: String, since: Date?, offset: Int, limit: Int) async throws(RemoteStoreError) -> [Record] {
         fetches.append(Fetch(table: table, since: since, offset: offset))
         if isOffline { throw .network }
+        if refusesReads { throw .rejected("permission denied for table \(table)") }
         let page = (rows[table] ?? [:])
             .filter { row in since.map { Self.syncedAt(row.value) > $0 } ?? true }
             .sorted { (Self.syncedAt($0.value), $0.key) > (Self.syncedAt($1.value), $1.key) }

@@ -178,6 +178,24 @@ import FitlingCore
         #expect(!period.needsPush)
     }
 
+    @Test func aRefusedReadEndsTheRoundAsFailed() async throws {
+        let remote = FakeRemoteStore()
+        let engine = try makeEngine(remote)
+        let period = addPeriod(to: engine)
+        remote.refusesReads = true
+
+        #expect(await engine.sync() == .failed)
+
+        // What was sent before the read failed stays sent.
+        #expect(!period.needsPush)
+        #expect(engine.problemKey == "error.server")
+        #expect(remote.fetches.count == 1)
+
+        remote.refusesReads = false
+        #expect(await engine.sync() == .completed)
+        #expect(engine.problemKey == nil)
+    }
+
     // MARK: Pull
 
     @Test func pullAddsNewRowsAndMovesTheCursor() async throws {
