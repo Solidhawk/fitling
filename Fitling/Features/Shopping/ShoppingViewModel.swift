@@ -69,7 +69,7 @@ final class ShoppingViewModel {
         _ = await sync.sync()
         for member in store.unsentMembers() {
             let record = ListMemberRecord(listID: member.listID, userID: member.userID, role: member.role, displayName: member.displayName)
-            if (try? await services.sharing.addOwner(record)) != nil, record.role == "never" {
+            if (try? await services.sharing.addOwner(record)) != nil {
                 member.needsPush = false
             }
         }

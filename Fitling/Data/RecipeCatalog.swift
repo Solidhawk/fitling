@@ -56,7 +56,7 @@ struct RecipeCatalog: Decodable {
     func install(into context: ModelContext, defaults: UserDefaults = .standard, now: Date = .now) {
         let key = "fitling.recipeCatalogVersion"
         let shared = (try? context.fetchCount(FetchDescriptor<Recipe>(predicate: #Predicate<Recipe> { $0.ownerID == nil }))) ?? 0
-        guard defaults.integer(forKey: key) < version else { _ = shared; return }
+        guard defaults.integer(forKey: key) < version || shared < recipes.count else { return }
 
         let recipesByID = Dictionary(uniqueKeysWithValues: ((try? context.fetch(FetchDescriptor<Recipe>())) ?? []).map { ($0.id, $0) })
         let ingredientsByID = Dictionary(uniqueKeysWithValues: ((try? context.fetch(FetchDescriptor<RecipeIngredient>())) ?? []).map { ($0.id, $0) })

@@ -19,12 +19,6 @@ struct WorkoutView: View {
     var body: some View {
         NavigationStack {
             List {
-                if let restEndsAt = viewModel.restEndsAt {
-                    Section {
-                        RestTimer(endsAt: restEndsAt) { viewModel.skipRest() }
-                    }
-                    .listRowBackground(Color.ink)
-                }
                 ForEach(viewModel.entries) { entry in
                     Section {
                         Text(viewModel.advice(for: entry).text(unit: viewModel.unit))
@@ -63,6 +57,15 @@ struct WorkoutView: View {
             .foregroundStyle(Color.ink)
             .groundBackground()
             .accessibilityIdentifier("workout.list")
+            // The rest timer stays in view at the bottom, wherever the list is scrolled.
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                if let restEndsAt = viewModel.restEndsAt {
+                    RestTimer(endsAt: restEndsAt) { viewModel.skipRest() }
+                        .padding(.horizontal, Spacing.l)
+                        .padding(.vertical, Spacing.m)
+                        .background(Color.ink)
+                }
+            }
             .navigationTitle(viewModel.title.map { Text(verbatim: $0.text(preferring: languages)) } ?? Text("training.session.free"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

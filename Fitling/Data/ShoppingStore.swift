@@ -30,6 +30,7 @@ struct ShoppingStore {
         if let first = lists().first { return first }
         let list = ShoppingList(id: UUID(), name: String(name.prefix(60)), createdBy: userID, updatedAt: now())
         context.insert(list)
+        context.insert(ShoppingListMember(listID: list.id, userID: userID, role: "owner", displayName: String(ownerName.prefix(40)), joinedAt: now()))
         try? context.save()
         return list
     }
@@ -89,6 +90,7 @@ struct ShoppingStore {
         ))) ?? []
         let order = Dictionary(uniqueKeysWithValues: ShoppingListBuilder.aisleOrder.enumerated().map { ($1, $0) })
         return all.sorted { lhs, rhs in
+            if lhs.isChecked != rhs.isChecked { return !lhs.isChecked }
             let left = order[lhs.aisle] ?? order.count
             let right = order[rhs.aisle] ?? order.count
             if left != right { return left < right }
@@ -132,14 +134,14 @@ struct ShoppingStore {
     /// Puts what the week menu needs on the list. Items from an earlier menu are replaced;
     /// items the user added stay, and so do menu items already in the basket.
     func fill(_ list: ShoppingList, from entries: [MealPlanEntry], menu: MenuStore) {
-        for item in items(of: list) where item.source == "menu" && item.isChecked && item.isChecked == false {
+        for item in items(of: list) where item.source == "menu" && !item.isChecked {
             item.deletedAt = now()
             item.updatedAt = now()
             item.updatedBy = userID
             item.needsPush = true
         }
         let languages = [language] + Locale.preferredLanguages
-        let uses = entries.compactMap { entry -> PlannedRecipeUse? in
+        let uses = entries.filter { $0.loggedEntryID == nil }.compactMap { entry -> PlannedRecipeUse? in
             guard let recipe = menu.recipe(entry.recipeID) else { return nil }
             return PlannedRecipeUse(
                 recipeServings: recipe.servings, plannedServings: entry.servings,
@@ -226,7 +228,7 @@ struct ShoppingStore {
     func offerSummary(for list: ShoppingList, confirmed: Set<UUID>) -> (perItem: [UUID: OfferMatch], totals: [StoreTotal], matches: [OfferMatch]) {
         let favorites = Set(favoriteSupermarketIDs())
         let items = self.items(of: list).filter { !$0.isChecked }
-        let offers = ((try? context.fetch(FetchDescriptor<Offer>())) ?? []).filter { favorites.contains($0.supermarketID) || true }
+        let offers = ((try? context.fetch(FetchDescriptor<Offer>())) ?? []).filter { favorites.contains($0.supermarketID) }
         let matchingItems = items.map { ListItemForMatching(id: $0.id, name: $0.name, quantity: $0.quantity, unit: $0.unit) }
         let matchingOffers = offers.compactMap { offer -> OfferForMatching? in
             guard let from = Day(isoString: offer.validFrom), let to = Day(isoString: offer.validTo) else { return nil }

@@ -141,12 +141,12 @@ struct MenuStore {
     func generate(seed: UInt64) -> [MenuIssue] {
         let preferences = preferences()
         let existing = entries()
-        let kept = existing.filter { _ in false }
+        let kept = existing.filter { $0.isPinned || $0.loggedEntryID != nil }
         let targets = context.targets(on: today, for: profile)
         let request = MenuRequest(
             days: menuDays, kcalTarget: targets.kcal, proteinTargetG: targets.proteinG,
             slots: preferences.mealSlots.compactMap(MealSlot.init(rawValue:)),
-            excludedIngredientIDs: excludedProductIDs(), excludedTags: [],
+            excludedIngredientIDs: excludedProductIDs(), excludedTags: Set(preferences.excludedTags),
             maxCookMinutes: preferences.maxCookMinutes, budgetCents: preferences.budgetCents, mealPrep: preferences.mealPrep,
             pinned: kept.compactMap(\.plannedMeal).map { meal in
                 var meal = meal
@@ -181,6 +181,7 @@ struct MenuStore {
         guard entry.loggedEntryID == nil else { return }
         entry.recipeID = recipe.id
         entry.isLeftover = false
+        entry.isPinned = true
         touch(entry)
     }
 
@@ -193,7 +194,7 @@ struct MenuStore {
     /// servings. A second tap does nothing.
     @discardableResult
     func log(_ entry: MealPlanEntry) -> FoodEntry? {
-        guard let recipe = recipe(entry.recipeID), let meal = entry.plannedMeal else { return nil }
+        guard entry.loggedEntryID == nil, let recipe = recipe(entry.recipeID), let meal = entry.plannedMeal else { return nil }
         let food = FoodEntry(
             id: UUID(), userID: userID, consumedOn: meal.day, meal: meal.slot,
             name: recipe.title.text(preferring: Locale.preferredLanguages), quantity: entry.servings, quantityUnit: "serving",
