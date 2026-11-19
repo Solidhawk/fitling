@@ -41,8 +41,9 @@ struct ShoppingFixture {
         #expect(fixture.store.ensureList(named: "Andere", ownerName: "Ik").id == list.id)
         #expect(list.createdBy == fixture.menu.userID)
         let members = fixture.store.members(of: list)
-        #expect(members.map(\.role) == ["owner"])
-        #expect(members.allSatisfy(\.needsPush))
+        let roles = members.map(\.role)
+        #expect(roles == ["owner"])
+        #expect(members.allSatisfy { $0.needsPush })
     }
 
     @Test func itemsFollowTheShopAndCheckedOnesGoLast() {
@@ -52,7 +53,8 @@ struct ShoppingFixture {
         fixture.store.add("Brood", aisle: "bakery", to: list)
         #expect(fixture.store.add("   ", to: list) == nil)
         fixture.store.toggle(apples!)
-        #expect(fixture.store.items(of: list).map(\.name) == ["Brood", "Melk", "Appels"])
+        let names = fixture.store.items(of: list).map(\.name)
+        #expect(names == ["Brood", "Melk", "Appels"])
     }
 
     @Test func theMenuFillsTheListAndReplacesItsOwnItems() throws {
@@ -103,7 +105,8 @@ struct ShoppingFixture {
         await viewModel.refresh()
         let list = try #require(viewModel.list)
         #expect(fixture.remote.row(list.id, in: "shopping_lists") != nil)
-        #expect(try await fixture.sharing.members(of: list.id).map(\.role) == ["owner"])
+        let roles = try await fixture.sharing.members(of: list.id).map(\.role)
+        #expect(roles == ["owner"])
         #expect(fixture.store.unsentMembers().isEmpty)
     }
 
