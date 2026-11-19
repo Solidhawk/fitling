@@ -10,7 +10,7 @@ struct TargetsCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.m) {
             VStack(alignment: .leading, spacing: Spacing.s) {
-                NamePlate("targets.kcal.label", fill: Color.track, foreground: Color.ink)
+                NamePlate("targets.kcal.label", fill: Color.track, foreground: Color.ink, edge: nil)
                 Text(Measurement(value: Double(targets.kcal), unit: UnitEnergy.kilocalories), format: .measurement(width: .abbreviated, usage: .food))
                     .font(.largeTitle.weight(.heavy))
                     .monospacedDigit()

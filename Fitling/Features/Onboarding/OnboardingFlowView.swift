@@ -92,12 +92,14 @@ struct OnboardingFlowView: View {
             .listRowBackground(Color.card)
         case .sex:
             Section {
+                // Inline picker rows are buttons that reset the colour, so each title sets it again.
                 Picker("onboarding.sex.title", selection: $viewModel.sex) {
-                    Text("onboarding.sex.male").tag(Sex?.some(.male))
-                    Text("onboarding.sex.female").tag(Sex?.some(.female))
-                    Text("onboarding.sex.other").tag(Sex?.some(.other))
+                    Text("onboarding.sex.male").foregroundStyle(Color.ink).tag(Sex?.some(.male))
+                    Text("onboarding.sex.female").foregroundStyle(Color.ink).tag(Sex?.some(.female))
+                    Text("onboarding.sex.other").foregroundStyle(Color.ink).tag(Sex?.some(.other))
                 }
                 .pickerStyle(.inline)
+                .tint(Color.ink)
                 .labelsHidden()
             } footer: {
                 Text("onboarding.sex.footer").footerStyle()
@@ -126,6 +128,7 @@ struct OnboardingFlowView: View {
                     }
                 }
                 .pickerStyle(.inline)
+                .tint(Color.ink)
                 .labelsHidden()
             }
             .listRowBackground(Color.card)
@@ -137,6 +140,7 @@ struct OnboardingFlowView: View {
                     }
                 }
                 .pickerStyle(.inline)
+                .tint(Color.ink)
                 .labelsHidden()
             }
             .listRowBackground(Color.card)
@@ -165,7 +169,7 @@ struct OnboardingFlowView: View {
 
     private func choice(_ title: LocalizedStringKey, detail: Text) -> some View {
         VStack(alignment: .leading, spacing: Spacing.xs) {
-            Text(title)
+            Text(title).foregroundStyle(Color.ink)
             detail.font(.footnote).foregroundStyle(Color.inkSoft)
         }
     }

@@ -81,6 +81,12 @@ final class SyncEngine {
     /// of the previous user must not stay behind (ARCHITECTURE §3.7).
     func eraseLocalData() {
         epoch += 1
+        // Callers waiting on the interrupted round asked for the session that just ended; a round
+        // of their own would go out without it.
+        runAgain = false
+        let answered = waiting
+        waiting = []
+        answered.forEach { $0.resume(returning: .interrupted) }
         for model in FitlingSchemaV1.models {
             erase(model)
         }

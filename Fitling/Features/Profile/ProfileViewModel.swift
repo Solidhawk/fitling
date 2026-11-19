@@ -52,7 +52,7 @@ final class ProfileViewModel {
 
     func saveProfile(_ body: BodyProfile) -> SaveResult {
         profile.update(body: body)
-        if !profile.targetsAreManual, let plan {
+        if !profile.targetsAreManual, let plan, plan.targets != profile.targets {
             setTargets(plan.targets)
         }
         markChanged()

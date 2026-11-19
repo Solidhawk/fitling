@@ -8,6 +8,7 @@ struct PrimaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.headline.weight(.bold))
+            .multilineTextAlignment(.center)
             .foregroundStyle(isEnabled ? Color.card : Color.inkSoft)
             .padding(.horizontal, Spacing.l)
             .frame(maxWidth: .infinity, minHeight: ButtonMetrics.height)
@@ -24,6 +25,7 @@ struct SecondaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.headline.weight(.bold))
+            .multilineTextAlignment(.center)
             .foregroundStyle(isEnabled ? Color.ink : Color.inkSoft)
             .padding(.horizontal, Spacing.l)
             .frame(maxWidth: .infinity, minHeight: ButtonMetrics.height)
@@ -32,6 +34,9 @@ struct SecondaryButtonStyle: ButtonStyle {
                     .fill(Color.card)
                     .shadow(color: Color.cardShadow, radius: 6, y: 2)
             }
+            // In dark mode the shadow disappears and the card colour sits close to the ground;
+            // the edge keeps the capsule recognisable as a button.
+            .overlay(Capsule().strokeBorder(Color.track, lineWidth: 1))
             .scaleEffect(configuration.isPressed ? 0.97 : 1)
             .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
     }
