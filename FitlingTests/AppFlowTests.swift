@@ -237,6 +237,17 @@ struct FlowFixture {
         #expect(profile.updatedAt == fixture.now)
     }
 
+    @Test func editingTheProfileWithoutNewTargetsAddsNoPeriod() throws {
+        let profile = fixture.insertProfile()
+        let viewModel = makeViewModel(profile)
+        var body = try #require(profile.bodyProfile)
+        // A week later in the same year of life: the targets stay exactly the same.
+        body.birthDay = body.birthDay.adding(-7)
+        #expect(viewModel.saveProfile(body) == .saved)
+        #expect(profile.birthDate == body.birthDay.isoString)
+        #expect(try periods().isEmpty)
+    }
+
     @Test func editingProfileWithManualTargetsAsks() throws {
         let profile = fixture.insertProfile(manualTargets: true)
         let viewModel = makeViewModel(profile)

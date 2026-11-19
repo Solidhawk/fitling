@@ -407,6 +407,29 @@ import FitlingCore
         #expect(remote.fetches.isEmpty)
     }
 
+    /// A call that waited on the interrupted round must not start a round of its own: the
+    /// session it was meant for has just ended.
+    @Test func erasingDuringARoundAlsoAnswersTheCallersWaitingOnIt() async throws {
+        let remote = FakeRemoteStore()
+        let engine = try makeEngine(remote)
+        addPeriod(to: engine)
+        remote.holdsNextRequest = true
+
+        let round = Task { await engine.sync() }
+        try #require(await remote.requestArrived())
+        let waiting = Task { await engine.sync() }
+        for _ in 0..<100 {
+            await Task.yield()
+        }
+        engine.eraseLocalData()
+        remote.releaseRequest()
+
+        #expect(await round.value == .interrupted)
+        #expect(await waiting.value == .interrupted)
+        #expect(remote.fetches.isEmpty)
+        #expect(engine.problemKey == nil)
+    }
+
     @Test func eraseRemovesEveryKindOfLocalData() throws {
         let engine = try makeEngine(FakeRemoteStore())
         engine.context.insert(makeProfile())
