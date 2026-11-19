@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 const LANGUAGES = ['nl', 'en', 'de'];
 const PREFIXES = [
   'common', 'welcome', 'creature', 'auth', 'consent', 'onboarding', 'profile', 'targets', 'account', 'error',
-  'tab', 'day', 'water', 'meal', 'log', 'scan', 'portion', 'product', 'partner',
+  'tab', 'day', 'water', 'meal', 'log', 'scan', 'portion', 'product', 'partner', 'training', 'body', 'photos', 'muscle',
 ];
 const KEY_PATTERN = new RegExp(`^(?:${PREFIXES.join('|')})\\.[A-Za-z0-9.]+(?: .*)?$`, 's');
 const UI_CALLS = [

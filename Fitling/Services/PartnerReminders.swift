@@ -20,7 +20,7 @@ struct ReminderSettings: Codable, Equatable {
 
     /// The times that are actually used: outside the quiet hours, at most two, in order.
     var usableTimes: [Int] {
-        times
+        Array(Set(times.filter(Self.isAllowed)).sorted().prefix(Self.maximumPerDay))
     }
 }
 
@@ -42,13 +42,14 @@ enum ReminderPlanner {
         _ settings: ReminderSettings, tone: MessageTone, now: Date, timeZone: TimeZone,
         topic: (Day) -> MessageTopic
     ) -> [PlannedReminder] {
+        guard settings.isOn else { return [] }
         let today = Day(now, timeZone: timeZone)
         let minutesNow = minutes(of: now, in: timeZone)
         var reminders: [PlannedReminder] = []
         for offset in 0..<daysAhead {
             let day = today.adding(offset)
             let keys = CreatureEngine.messageKeys(topic: topic(day), tone: tone)
-            for (index, minutes) in settings.usableTimes.enumerated() where minutesNow >= 0 {
+            for (index, minutes) in settings.usableTimes.enumerated() where offset > 0 || minutes > minutesNow {
                 // Two a day, three variants: the variant moves on with every reminder.
                 let variant = ((day.ordinal * ReminderSettings.maximumPerDay + index) % keys.count + keys.count) % keys.count
                 reminders.append(PlannedReminder(

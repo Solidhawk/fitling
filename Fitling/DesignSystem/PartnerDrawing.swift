@@ -37,7 +37,7 @@ struct PartnerLook: Equatable {
 
     /// Body width against the start shape: about 92 % when lean, 120 % when round.
     var width: CGFloat {
-        1
+        1 + (CGFloat(min(max(bodyShape, 0), 1)) - CGFloat(CreatureEngine.startShape)) * 0.28
     }
 
     /// Widens the body, its outline and what is worn on it around the middle of the drawing.
@@ -143,7 +143,7 @@ extension Species {
             ].map { FigurePart(path: Path(ellipseIn: $0), color: palette.shadow).widened(by: widen) }
         }
         parts += headFront(look: look)
-        parts += Face.parts(.content, anchor: face, beak: self == .pip, palette: palette)
+        parts += Face.parts(look.mood, anchor: face, beak: self == .pip, palette: palette)
         if items.contains(.glasses) {
             parts += Accessory.glasses(face)
         }

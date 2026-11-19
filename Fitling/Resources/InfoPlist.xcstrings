@@ -22,6 +22,28 @@
           }
         }
       }
+    },
+    "NSHealthShareUsageDescription": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fitling leest je trainingen uit Apple Health, zodat ze meetellen in je dagdoel. Er gaat niets naar onze server."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fitling reads your workouts from Apple Health so they count towards your daily target. Nothing is sent to our server."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fitling liest deine Trainings aus Apple Health, damit sie in dein Tagesziel einfließen. Nichts geht an unseren Server."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

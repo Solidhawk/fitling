@@ -881,6 +881,314 @@
         }
       }
     },
+    "body.add": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opslaan"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Speichern"
+          }
+        }
+      }
+    },
+    "body.arm": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bovenarm"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Upper arm"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oberarm"
+          }
+        }
+      }
+    },
+    "body.chest": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Borst"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chest"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brust"
+          }
+        }
+      }
+    },
+    "body.date": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Datum"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Datum"
+          }
+        }
+      }
+    },
+    "body.hips": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Heupen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hips"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hüfte"
+          }
+        }
+      }
+    },
+    "body.history": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eerdere metingen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Earlier measurements"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frühere Messungen"
+          }
+        }
+      }
+    },
+    "body.kind": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meting"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Measurement"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Messung"
+          }
+        }
+      }
+    },
+    "body.neck": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nek"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neck"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hals"
+          }
+        }
+      }
+    },
+    "body.new": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nieuwe meting"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New measurement"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neue Messung"
+          }
+        }
+      }
+    },
+    "body.thigh": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bovenbeen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thigh"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oberschenkel"
+          }
+        }
+      }
+    },
+    "body.title": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lichaam"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Body"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Körper"
+          }
+        }
+      }
+    },
+    "body.value": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waarde"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Value"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wert"
+          }
+        }
+      }
+    },
+    "body.waist": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taille"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waist"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taille"
+          }
+        }
+      }
+    },
+    "body.weight": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gewicht"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weight"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gewicht"
+          }
+        }
+      }
+    },
     "common.cancel": {
       "localizations": {
         "nl": {
@@ -2487,6 +2795,28 @@
         }
       }
     },
+    "day.eaten": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gegeten"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eaten"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gegessen"
+          }
+        }
+      }
+    },
     "day.kcal.over %@": {
       "localizations": {
         "nl": {
@@ -3185,6 +3515,248 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zwischendurch"
+          }
+        }
+      }
+    },
+    "muscle.back": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rug"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rücken"
+          }
+        }
+      }
+    },
+    "muscle.biceps": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Biceps"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Biceps"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bizeps"
+          }
+        }
+      }
+    },
+    "muscle.calves": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kuiten"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calves"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waden"
+          }
+        }
+      }
+    },
+    "muscle.chest": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Borst"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chest"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brust"
+          }
+        }
+      }
+    },
+    "muscle.core": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Romp"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Core"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rumpf"
+          }
+        }
+      }
+    },
+    "muscle.forearms": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Onderarmen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Forearms"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unterarme"
+          }
+        }
+      }
+    },
+    "muscle.glutes": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Billen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Glutes"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gesäß"
+          }
+        }
+      }
+    },
+    "muscle.hamstrings": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hamstrings"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hamstrings"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oberschenkel hinten"
+          }
+        }
+      }
+    },
+    "muscle.quads": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bovenbenen voor"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quads"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oberschenkel vorn"
+          }
+        }
+      }
+    },
+    "muscle.shoulders": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schouders"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shoulders"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schultern"
+          }
+        }
+      }
+    },
+    "muscle.triceps": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triceps"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triceps"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trizeps"
           }
         }
       }
@@ -5301,6 +5873,182 @@
         }
       }
     },
+    "photos.add": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foto toevoegen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add photo"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foto hinzufügen"
+          }
+        }
+      }
+    },
+    "photos.delete": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verwijderen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Löschen"
+          }
+        }
+      }
+    },
+    "photos.delete.title": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deze foto verwijderen?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete this photo?"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dieses Foto löschen?"
+          }
+        }
+      }
+    },
+    "photos.empty": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nog geen foto's."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No photos yet."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Noch keine Fotos."
+          }
+        }
+      }
+    },
+    "photos.failed": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deze foto kon niet worden bewaard."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This photo could not be saved."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dieses Foto konnte nicht gespeichert werden."
+          }
+        }
+      }
+    },
+    "photos.privacy": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je foto's blijven op deze iPhone. Ze gaan niet naar onze server en niet mee in je iCloud-reservekopie."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your photos stay on this iPhone. They are not sent to our server and are left out of your iCloud backup."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deine Fotos bleiben auf diesem iPhone. Sie gehen nicht an unseren Server und nicht in dein iCloud-Backup."
+          }
+        }
+      }
+    },
+    "photos.title": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voortgangsfoto's"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Progress photos"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fortschrittsfotos"
+          }
+        }
+      }
+    },
+    "portion.energy": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Energie"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Energy"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Energie"
+          }
+        }
+      }
+    },
     "portion.favorite.add": {
       "localizations": {
         "nl": {
@@ -6837,6 +7585,2006 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dieses Ziel liegt unter dem, was meist als sicher gilt. Sprich im Zweifel mit einer Ärztin, einem Arzt oder einer Ernährungsberatung."
+          }
+        }
+      }
+    },
+    "training.active.title": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bezig"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In progress"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Läuft"
+          }
+        }
+      }
+    },
+    "training.advice.addReps %lld %@": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De volgende stap is groot: haal eerst %1$lld herhalingen per set op %2$@."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The next step is a big one: first reach %1$lld reps per set at %2$@."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der nächste Schritt ist groß: Schaffe erst %1$lld Wiederholungen pro Satz mit %2$@."
+          }
+        }
+      }
+    },
+    "training.advice.easeBack %@": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Even weggeweest: begin rustig op %@."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Been away for a while: ease back in at %@."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eine Weile weg gewesen: Steig ruhig mit %@ ein."
+          }
+        }
+      }
+    },
+    "training.advice.easier": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twee keer onder het bereik: kies een lichtere variant."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Under the range twice: pick an easier variation."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zweimal unter dem Bereich: Wähle eine leichtere Variante."
+          }
+        }
+      }
+    },
+    "training.advice.harder": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bovenkant van het bereik gehaald: voeg gewicht toe of kies een zwaardere variant."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Top of the range reached: add weight or pick a harder variation."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oberes Ende erreicht: Füge Gewicht hinzu oder wähle eine schwerere Variante."
+          }
+        }
+      }
+    },
+    "training.advice.increase %@": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alle sets gehaald: ga naar %@."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Every set done: move up to %@."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alle Sätze geschafft: Geh auf %@."
+          }
+        }
+      }
+    },
+    "training.advice.keepGoing %@": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Blijf op %@ en werk naar de bovenkant van het bereik."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stay at %@ and work towards the top of the range."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bleib bei %@ und arbeite dich zum oberen Ende des Bereichs."
+          }
+        }
+      }
+    },
+    "training.advice.reduce %@": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twee keer onder het bereik: ga terug naar %@ en bouw weer op."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Under the range twice: go back to %@ and build up again."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zweimal unter dem Bereich: Geh zurück auf %@ und bau wieder auf."
+          }
+        }
+      }
+    },
+    "training.advice.start": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eerste keer: kies een gewicht waarmee je de onderkant van het bereik haalt met nog twee herhalingen over."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "First time: pick a weight that gets you to the bottom of the range with two reps to spare."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erstes Mal: Wähle ein Gewicht, mit dem du das untere Ende des Bereichs mit zwei Wiederholungen Reserve schaffst."
+          }
+        }
+      }
+    },
+    "training.chart.date": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Datum"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Datum"
+          }
+        }
+      }
+    },
+    "training.chart.footer": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geschat met de formule van Epley uit je zwaarste set per training, tot 12 herhalingen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estimated with the Epley formula from your heaviest set per workout, up to 12 reps."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geschätzt mit der Epley-Formel aus deinem schwersten Satz pro Training, bis 12 Wiederholungen."
+          }
+        }
+      }
+    },
+    "training.chart.needsTwo": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na twee trainingen met deze oefening verschijnt hier een grafiek."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "After two workouts with this exercise a chart appears here."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nach zwei Trainings mit dieser Übung erscheint hier ein Diagramm."
+          }
+        }
+      }
+    },
+    "training.chart.oneRepMax": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geschatte 1RM"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estimated 1RM"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geschätzte 1RM"
+          }
+        }
+      }
+    },
+    "training.day.default %lld": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dag %lld"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Day %lld"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tag %lld"
+          }
+        }
+      }
+    },
+    "training.health.footer": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fitling leest de energie van je trainingen uit Apple Health en telt die bij je dagdoel op. Er gaat niets naar onze server."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fitling reads the energy of your workouts from Apple Health and adds it to your daily target. Nothing is sent to our server."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fitling liest die Energie deiner Trainings aus Apple Health und rechnet sie zu deinem Tagesziel. Nichts geht an unseren Server."
+          }
+        }
+      }
+    },
+    "training.health.refused": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fitling mag Apple Health niet lezen. Geef toestemming in de Health-app onder Delen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fitling may not read Apple Health. Allow it in the Health app under Sharing."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fitling darf Apple Health nicht lesen. Erlaube es in der Health-App unter Teilen."
+          }
+        }
+      }
+    },
+    "training.health.title": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Health"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Health"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Health"
+          }
+        }
+      }
+    },
+    "training.health.toggle": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trainingen tellen mee in je dagdoel"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workouts count towards your daily target"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trainings zählen zu deinem Tagesziel"
+          }
+        }
+      }
+    },
+    "training.instructions": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uitvoering"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How to do it"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ausführung"
+          }
+        }
+      }
+    },
+    "training.item.detail %lld %lld %lld %lld": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld × %2$lld–%3$lld · rust %4$lld s"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld × %2$lld–%3$lld · rest %4$lld s"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld × %2$lld–%3$lld · Pause %4$lld s"
+          }
+        }
+      }
+    },
+    "training.next.title": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volgende training"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next workout"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nächstes Training"
+          }
+        }
+      }
+    },
+    "training.picker.repMax %lld": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meeste herhalingen: %lld"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Most reps: %lld"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meiste Wiederholungen: %lld"
+          }
+        }
+      }
+    },
+    "training.picker.repMin %lld": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Minste herhalingen: %lld"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fewest reps: %lld"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wenigste Wiederholungen: %lld"
+          }
+        }
+      }
+    },
+    "training.picker.rest %lld": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rust: %lld s"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rest: %lld s"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pause: %lld s"
+          }
+        }
+      }
+    },
+    "training.picker.search": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zoek een oefening"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search for an exercise"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Übung suchen"
+          }
+        }
+      }
+    },
+    "training.picker.sets %lld": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sets: %lld"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sets: %lld"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sätze: %lld"
+          }
+        }
+      }
+    },
+    "training.picker.title": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oefening kiezen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose an exercise"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Übung wählen"
+          }
+        }
+      }
+    },
+    "training.program.addExercise": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oefening toevoegen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add exercise"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Übung hinzufügen"
+          }
+        }
+      }
+    },
+    "training.program.copy": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aanpassen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Customise"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anpassen"
+          }
+        }
+      }
+    },
+    "training.program.copyName %@": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ (eigen)"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ (mine)"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ (eigener)"
+          }
+        }
+      }
+    },
+    "training.program.days %lld": {
+      "localizations": {
+        "nl": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld trainingsdag per week"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld trainingsdagen per week"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld training day a week"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld training days a week"
+                }
+              }
+            }
+          }
+        },
+        "de": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Trainingstag pro Woche"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Trainingstage pro Woche"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "training.program.delete": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schema verwijderen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete programme"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plan löschen"
+          }
+        }
+      }
+    },
+    "training.program.delete.body": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je trainingen blijven bewaard; alleen het schema verdwijnt."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your workouts are kept; only the programme goes."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deine Trainings bleiben erhalten; nur der Plan verschwindet."
+          }
+        }
+      }
+    },
+    "training.program.delete.title": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dit schema verwijderen?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete this programme?"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diesen Plan löschen?"
+          }
+        }
+      }
+    },
+    "training.program.name": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Naam"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name"
+          }
+        }
+      }
+    },
+    "training.program.new": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eigen schema maken"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create your own programme"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eigenen Plan erstellen"
+          }
+        }
+      }
+    },
+    "training.program.options": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opties"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Options"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Optionen"
+          }
+        }
+      }
+    },
+    "training.program.own %lld": {
+      "localizations": {
+        "nl": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Eigen schema · %lld dag per week"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Eigen schema · %lld dagen per week"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your own · %lld day a week"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your own · %lld days a week"
+                }
+              }
+            }
+          }
+        },
+        "de": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Eigener Plan · %lld Tag pro Woche"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Eigener Plan · %lld Tage pro Woche"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "training.program.rename": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Naam wijzigen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rename"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Umbenennen"
+          }
+        }
+      }
+    },
+    "training.program.shared %lld": {
+      "localizations": {
+        "nl": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Kant-en-klaar · %lld dag per week"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Kant-en-klaar · %lld dagen per week"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Ready-made · %lld day a week"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Ready-made · %lld days a week"
+                }
+              }
+            }
+          }
+        },
+        "de": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Fertig · %lld Tag pro Woche"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Fertig · %lld Tage pro Woche"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "training.program.start": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deze training starten"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start this workout"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dieses Training starten"
+          }
+        }
+      }
+    },
+    "training.programs.title": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schema's"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Programmes"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trainingspläne"
+          }
+        }
+      }
+    },
+    "training.progress.empty": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nog geen sets gelogd. Na je eerste training staat hier je voortgang."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No sets logged yet. After your first workout your progress shows up here."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Noch keine Sätze erfasst. Nach deinem ersten Training steht hier dein Fortschritt."
+          }
+        }
+      }
+    },
+    "training.progress.exercises": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Per oefening"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Per exercise"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro Übung"
+          }
+        }
+      }
+    },
+    "training.progress.title": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voortgang"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Progress"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fortschritt"
+          }
+        }
+      }
+    },
+    "training.progress.volume": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volume per spiergroep"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volume per muscle group"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volumen pro Muskelgruppe"
+          }
+        }
+      }
+    },
+    "training.recent.title": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laatste trainingen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recent workouts"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Letzte Trainings"
+          }
+        }
+      }
+    },
+    "training.record.oneRepMax %@ %@": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@: beste geschatte 1RM, %2$@."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@: best estimated 1RM, %2$@."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@: beste geschätzte 1RM, %2$@."
+          }
+        }
+      }
+    },
+    "training.record.reps %@ %lld %@": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@: %2$lld herhalingen op %3$@, meer dan ooit."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@: %2$lld reps at %3$@, more than ever."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@: %2$lld Wiederholungen mit %3$@, so viele wie nie."
+          }
+        }
+      }
+    },
+    "training.record.weight %@ %@": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@: zwaarder dan ooit, %2$@."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@: heavier than ever, %2$@."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@: so schwer wie nie, %2$@."
+          }
+        }
+      }
+    },
+    "training.records.heaviest": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zwaarste gewicht"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Heaviest weight"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schwerstes Gewicht"
+          }
+        }
+      }
+    },
+    "training.records.oneRepMax": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beste geschatte 1RM"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Best estimated 1RM"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beste geschätzte 1RM"
+          }
+        }
+      }
+    },
+    "training.records.title": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Records"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Records"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rekorde"
+          }
+        }
+      }
+    },
+    "training.records.workouts": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trainingen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workouts"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trainings"
+          }
+        }
+      }
+    },
+    "training.rest.done": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volgende set"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next set"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nächster Satz"
+          }
+        }
+      }
+    },
+    "training.rest.skip": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Overslaan"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skip"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Überspringen"
+          }
+        }
+      }
+    },
+    "training.rest.title": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rust"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rest"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pause"
+          }
+        }
+      }
+    },
+    "training.session.detail %@ %lld": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ · werksets: %2$lld"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ · working sets: %2$lld"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ · Arbeitssätze: %2$lld"
+          }
+        }
+      }
+    },
+    "training.session.free": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vrije training"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Free workout"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Freies Training"
+          }
+        }
+      }
+    },
+    "training.set.log": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Set opslaan"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save set"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Satz speichern"
+          }
+        }
+      }
+    },
+    "training.set.reps": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Herhalingen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reps"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wdh."
+          }
+        }
+      }
+    },
+    "training.set.repsUnit": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "×"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "×"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "×"
+          }
+        }
+      }
+    },
+    "training.set.rpe %@": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RPE %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RPE %@"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RPE %@"
+          }
+        }
+      }
+    },
+    "training.set.rpeLabel": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zwaarte (RPE)"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Effort (RPE)"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anstrengung (RPE)"
+          }
+        }
+      }
+    },
+    "training.set.rpeNone": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geen RPE"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No RPE"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keine RPE"
+          }
+        }
+      }
+    },
+    "training.set.summary %@ %lld": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ × %2$lld"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ × %2$lld"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ × %2$lld"
+          }
+        }
+      }
+    },
+    "training.set.warmup": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Warming-up"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Warm-up"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aufwärmen"
+          }
+        }
+      }
+    },
+    "training.set.weight": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gewicht"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weight"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gewicht"
+          }
+        }
+      }
+    },
+    "training.step.footer": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De kleinste stap die je materiaal toelaat, bijvoorbeeld dumbbells per 2 kg. Het advies houdt er rekening mee."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The smallest step your equipment allows, for example dumbbells per 2 kg. The advice takes it into account."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der kleinste Schritt, den deine Geräte erlauben, zum Beispiel Kurzhanteln in 2-kg-Schritten. Die Empfehlung berücksichtigt ihn."
+          }
+        }
+      }
+    },
+    "training.step.label %@": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stap: %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Step: %@"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schritt: %@"
+          }
+        }
+      }
+    },
+    "training.step.title": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gewichtsstap"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weight step"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gewichtsschritt"
+          }
+        }
+      }
+    },
+    "training.title": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Training"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Training"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Training"
+          }
+        }
+      }
+    },
+    "training.volume.empty": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geen werksets in deze week."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No working sets in this week."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keine Arbeitssätze in dieser Woche."
+          }
+        }
+      }
+    },
+    "training.volume.footer": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Werksets per spiergroep. Een set telt helemaal voor de hoofdspieren en half voor de spieren die meehelpen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Working sets per muscle group. A set counts fully for the main muscles and half for the muscles that help."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arbeitssätze pro Muskelgruppe. Ein Satz zählt voll für die Hauptmuskeln und halb für die helfenden Muskeln."
+          }
+        }
+      }
+    },
+    "training.volume.lastWeek": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vorige week"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last week"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Letzte Woche"
+          }
+        }
+      }
+    },
+    "training.volume.muscle": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spiergroep"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Muscle group"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Muskelgruppe"
+          }
+        }
+      }
+    },
+    "training.volume.sets": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sets"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sets"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sätze"
+          }
+        }
+      }
+    },
+    "training.volume.thisWeek": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deze week"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This week"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diese Woche"
+          }
+        }
+      }
+    },
+    "training.volume.week": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Week"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Week"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Woche"
+          }
+        }
+      }
+    },
+    "training.workout.addExercise": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oefening toevoegen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add exercise"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Übung hinzufügen"
+          }
+        }
+      }
+    },
+    "training.workout.discard": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Training weggooien"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Discard workout"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Training verwerfen"
+          }
+        }
+      }
+    },
+    "training.workout.discard.title": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deze training en alle sets weggooien?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Discard this workout and all its sets?"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dieses Training und alle Sätze verwerfen?"
+          }
+        }
+      }
+    },
+    "training.workout.finish": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Klaar"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finish"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fertig"
+          }
+        }
+      }
+    },
+    "training.workout.later": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Later verdergaan"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue later"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Später weitermachen"
+          }
+        }
+      }
+    },
+    "training.workout.options": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opties"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Options"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Optionen"
+          }
+        }
+      }
+    },
+    "training.workout.target %lld %lld %lld": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doel: %1$lld × %2$lld–%3$lld"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Target: %1$lld × %2$lld–%3$lld"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ziel: %1$lld × %2$lld–%3$lld"
           }
         }
       }

@@ -46,6 +46,8 @@ struct PartnerGallery: View {
         .padding(Spacing.m)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.ground)
+        // A container, so the buttons inside keep their own identifiers.
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("gallery")
     }
 }

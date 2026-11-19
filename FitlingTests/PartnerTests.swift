@@ -138,7 +138,7 @@ struct PartnerFixture {
     let fixture: PartnerFixture
     init() throws { fixture = try PartnerFixture() }
 
-    @Test func buildsOneRecordPerDayWithLogs() {
+    @Test func buildsOneRecordPerDayWithLogs() throws {
         let profile = fixture.profile()
         let yesterday = fixture.today.adding(-1)
         fixture.log(kcal: 600, protein: 40, on: yesterday, meal: .breakfast)
@@ -147,7 +147,7 @@ struct PartnerFixture {
 
         let records = fixture.history(profile).records(from: fixture.today.adding(-6), through: fixture.today)
 
-        #expect(records.map(\.day) == [yesterday, fixture.today])
+        try #require(records.map(\.day) == [yesterday, fixture.today])
         #expect(records[0].kcal == 1500)
         #expect(records[0].proteinG == 40)
         #expect(records[0].entryCount == 2)
@@ -179,7 +179,7 @@ struct PartnerFixture {
         #expect(records.map(\.proteinTargetG) == [120, 150])
     }
 
-    @Test func aFinishedWorkoutCounts() {
+    @Test func aFinishedWorkoutCounts() throws {
         let profile = fixture.profile()
         let yesterday = fixture.today.adding(-1)
         let finished = WorkoutSession(id: UUID(), userID: fixture.userID, programDayID: nil, performedOn: yesterday, startedAt: fixture.now, updatedAt: fixture.now)
@@ -191,7 +191,7 @@ struct PartnerFixture {
 
         let records = fixture.history(profile).records(from: yesterday, through: fixture.today)
 
-        #expect(records.map(\.day) == [yesterday])
+        try #require(records.map(\.day) == [yesterday])
         #expect(records[0].workoutCompleted)
         #expect(records[0].entryCount == 0)
     }

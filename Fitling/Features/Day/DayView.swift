@@ -188,7 +188,7 @@ struct DayProgressCard: View {
                 KcalRing(fraction: totals.kcal / Double(max(targets.kcal, 1)))
                     .frame(width: 88, height: 88)
                 VStack(alignment: .leading, spacing: Spacing.xs) {
-                    NamePlate("targets.kcal.label", fill: Color.track, foreground: Color.ink, edge: nil)
+                    NamePlate("day.eaten", fill: Color.track, foreground: Color.ink, edge: nil)
                     Text(kcal(totals.kcal))
                         .font(.largeTitle.weight(.heavy))
                         .monospacedDigit()

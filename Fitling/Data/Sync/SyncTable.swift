@@ -47,6 +47,8 @@ enum SyncTables {
             ModelTable<UserProfile>(), ModelTable<TargetPeriod>(),
             ModelTable<Product>(), ModelTable<FoodEntry>(), ModelTable<WaterEntry>(), ModelTable<FavoriteProduct>(),
             ModelTable<Creature>(),
+            ModelTable<Exercise>(), ModelTable<Program>(), ModelTable<ProgramDay>(), ModelTable<ProgramExercise>(),
+            ModelTable<ExerciseSetting>(), ModelTable<WorkoutSession>(), ModelTable<WorkoutSet>(), ModelTable<BodyMeasurement>(),
         ]
     }
 }

@@ -38,7 +38,7 @@ final class PartnerSetupViewModel {
     }
 
     var cleanedName: String {
-        name
+        Self.limited(name.trimmingCharacters(in: .whitespacesAndNewlines)).trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     var canSave: Bool {
@@ -48,7 +48,10 @@ final class PartnerSetupViewModel {
     /// `defaultName` is the species' own name in the user's language, filled in until the user types one.
     func choose(_ species: Species, defaultName: String) {
         self.species = species
-        name = defaultName
+        if name.isEmpty || name == suggestedName {
+            name = defaultName
+            suggestedName = defaultName
+        }
     }
 
     /// While typing: cut off at the limit, keep spaces, so "Mr Pip" can be typed.
@@ -68,6 +71,7 @@ final class PartnerSetupViewModel {
     @discardableResult
     func save() -> Creature? {
         guard let species, canSave else { return nil }
+        if let existing = context.creature(of: userID) { return existing }
         let state = CreatureState(
             species: species, colorIndex: min(max(colorIndex, 0), colorCount - 1), tone: tone,
             createdOn: Day(now(), timeZone: timeZone)

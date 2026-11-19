@@ -61,7 +61,7 @@ struct PortionView: View {
 
             if let preview = viewModel.preview {
                 Section {
-                    LabeledContent("targets.kcal.label") { Text(energy(preview.kcal)).fontWeight(.heavy).monospacedDigit() }
+                    LabeledContent("portion.energy") { Text(energy(preview.kcal)).fontWeight(.heavy).monospacedDigit() }
                     macroRow("targets.protein", preview.proteinG)
                     macroRow("targets.carbs", preview.carbsG)
                     macroRow("targets.fat", preview.fatG)

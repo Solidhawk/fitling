@@ -79,9 +79,10 @@ final class PartnerViewModel {
     /// Puts an unlocked item on or takes it off. A cap and a crown do not fit on one head: putting
     /// one on takes the other off.
     func toggle(_ item: CreatureItem) {
-        guard let creature else { return }
+        guard let creature, isUnlocked(item) else { return }
         var worn = creature.equippedItems.filter { $0 != item.rawValue }
         if !isWorn(item) {
+            worn.removeAll { $0 == item.blocked?.rawValue }
             worn.append(item.rawValue)
         }
         // Stored in a fixed order, so two devices that wear the same things store the same row.
@@ -89,7 +90,7 @@ final class PartnerViewModel {
     }
 
     func setColor(_ index: Int) {
-        guard let creature, snapshot != nil else { return }
+        guard let creature, let snapshot, index >= 0, index < snapshot.unlockedColorCount, index != creature.colorIndex else { return }
         save(creature) { $0.colorIndex = index }
         refresh()
     }
@@ -121,7 +122,10 @@ final class PartnerViewModel {
     /// Turning reminders on asks the system first; when it refuses, they stay off.
     func setRemindersOn(_ isOn: Bool) async {
         remindersRefused = false
-        _ = await delivery.requestPermission()
+        if isOn, !(await delivery.requestPermission()) {
+            remindersRefused = true
+            return
+        }
         reminders.isOn = isOn
         store.save(reminders)
         planReminders()
@@ -129,7 +133,7 @@ final class PartnerViewModel {
 
     /// `minutes` after midnight; only times outside the quiet hours are kept.
     func setReminderTime(at index: Int, to minutes: Int) {
-        guard reminders.times.indices.contains(index) else { return }
+        guard reminders.times.indices.contains(index), ReminderSettings.isAllowed(minutes) else { return }
         reminders.times[index] = minutes
         store.save(reminders)
         planReminders()

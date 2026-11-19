@@ -10,6 +10,7 @@ struct FlowFixture {
     let remote: FakeRemoteStore
     let sync: SyncEngine
     let reminders = FakeReminderDelivery()
+    let health = FakeHealthReader()
     let userID = UUID()
     /// 2026-11-18, 11:06 UTC.
     let now = Date(timeIntervalSince1970: 1_795_000_000)
@@ -63,7 +64,7 @@ struct FlowFixture {
     func root(_ state: AuthState) -> (RootViewModel, FakeAuthProvider) {
         let auth = FakeAuthProvider(state: state)
         let food = FoodServices(source: FakeProductSource(), search: FakeProductSearch())
-        return (RootViewModel(auth: auth, sync: sync, food: food, reminders: reminders), auth)
+        return (RootViewModel(auth: auth, sync: sync, food: food, reminders: reminders, health: health), auth)
     }
 
     var signedIn: AuthState { .signedIn(userID: userID, usesApple: false) }

@@ -261,6 +261,7 @@ A heavy label on a capsule of ribbon colour.
 - **Inside a card:** no edge (`edge: nil`). A white edge cannot be seen on a white card in light mode and glares in dark mode. The "per day" plate on the targets card uses `track` fill with `ink` text.
 
 ### Cards / Containers
+- **Partner hero (partner tab):** the species tint, 24 pt corners, 16 pt padding: the moving partner at 200 × 200 pt, the name plate, one line on how it is doing and why, and the level ribbon (level in Heavy, XP towards the next level as an `ink` bar on a `card` track).
 - **Figure card (catalog):** the species tint as background, 24 pt corners, 12 pt padding, no shadow. Contents, centred and 8 pt apart: the partner at 96 × 96 pt, the name plate with its white edge, and one footnote line of character in `ink`. VoiceOver reads it as one element; the drawing itself is hidden.
 - **Targets card:** `card` fill, 24 pt corners, 16 pt padding, card lift shadow. From top to bottom: an in-card name plate, the kcal target in Numeral Large, then three macro ribbons 12 pt apart.
 - **Macro ribbon:** full-width, 44 pt minimum height, 22 pt corners, 16 × 8 pt padding. Macro fill with `on-ribbon` lettering: the name in Label Small and the grams in Numeral, on one baseline. They stack at accessibility sizes. In phase 2 the ribbons will fill up as the day is logged.
@@ -277,8 +278,13 @@ The signature component. Each partner is drawn in a SwiftUI `Canvas` from flat `
 - **Parts by role:** `silhouette` (feet, arms, leaves, flame, crest), exactly one `body`, `shading` (one shadow band at the bottom and one gloss ellipse at the upper left, so light comes from the upper left), and `detail` (eyes, glints, mouth, beak, speckles).
 - **One body:** every partner has a single body shape. Shading is clipped to that body, so light and shadow never spill outside the outline.
 - **Shared baseline:** every partner's feet end at y = 92, standing on the shared ground-shadow ellipse. That way the four partners in the catalog stand on one line.
-- **Faces:** the eyes are `on-ribbon` ovals (6.6 × 8.6) with a 2.2 white glint at the upper right; the mouth is a 2.2 rounded stroke (Pip has a beak instead).
-- **Colours:** the species ribbon colour for the body, plus fixed artwork tones for shadow, gloss and accessories (`Artwork` in `Figures.swift`). A partner looks identical in light and dark mode. The edge is not stroked.
+- **Faces:** the eyes are `on-ribbon` ovals (6.6 × 8.6) with a 2.2 white glint at the upper right; the mouth is a 2.2 rounded stroke (Pip has a beak instead). The face follows the mood (`PartnerDrawing.swift`): content is the catalog face; happy has slightly larger eyes, an open smile and pink cheeks; sluggish has the lids half down in the body's shadow tone and a wavy mouth; tired has drooping lids and a small frown; hungry has big eyes with a second glint and an open mouth with a tongue (Pip opens its beak); asleep has closed eyes as arcs, a small round mouth and two Z's in `ink`.
+- **Shape:** `bodyShape` (0 lean, 1 round) widens the body, feet, arms, shading and what is worn on the body around the middle: 92 % of the catalog width when lean, 120 % when round. The face and everything on the head keep their size.
+- **Growth:** five stages. Sprout's leaves grow, then a bud and a flower appear on a longer stem; Ember's flame grows and throws sparks; Pip's crest grows a third feather and then belly feathers; Pebble grows moss and then one and two crystals. The catalog shows stage 2.
+- **Workout bonus:** Ember's flame core burns larger and lighter, Sprout holds a flower, Pip and Pebble wear a white sweatband with a red stripe.
+- **Accessories:** scarf (red band under the mouth with a hanging end), cap (blue, brim to the right), bow (pink, upper left of the head), glasses (thin `on-ribbon` rings), backpack (tan, peeking out behind the shoulders, straps in front), crown (gold with a red jewel). A cap and a crown are never worn together.
+- **Colours:** five body colours per species, each as a flat body, shadow and gloss tone (`PartnerPalette`): colour 0 is the species ribbon colour, 1 and 2 can be chosen at once, 3 and 4 unlock at level 5 and 12. Fixed artwork tones for leaves, flame, beak, moss and accessories live in `Artwork`. A partner looks identical in light and dark mode. The edge is not stroked.
+- **Movement:** the partner bobs on its shadow and squashes a little as it lands, faster and higher with more energy; asleep it only breathes. With Reduce Motion on it stands still, and the catalog never moves.
 
 ### Progress Pills
 - One capsule per onboarding step, 8 pt high, filling the width. Done and current steps are `ink`; the rest are `track`. VoiceOver reads them as one "step n of m" label.

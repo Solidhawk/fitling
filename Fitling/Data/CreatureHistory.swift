@@ -35,8 +35,7 @@ struct CreatureHistory {
 
         let entriesByDay = Dictionary(grouping: entries, by: \.consumedOn)
         let workoutDays = Set(sessions.map(\.performedOn)).union(activities.map(\.day))
-        _ = workoutDays
-        return Set<String>()
+        return Set(entriesByDay.keys).union(workoutDays)
             .compactMap(Day.init(isoString:))
             .sorted()
             .map { day in
@@ -62,8 +61,10 @@ struct CreatureHistory {
         // The engine judges a day by the seven days ending on it.
         let start = (state.lastProcessedDay ?? state.createdOn).adding(-(CreatureEngine.windowDays - 1))
         let update = CreatureEngine.advance(state, records: records(from: start, through: today), today: today)
-        _ = update
-        return []
+        guard update.state != state else { return update.events }
+        creature.apply(update.state, at: now())
+        try? context.save()
+        return update.events
     }
 
     /// The partner right now, from the days that decide its mood: the last week and today.

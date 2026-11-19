@@ -190,7 +190,7 @@ Gedaan op 2026-11-19: screenshots van alle schermen in licht, donker en grootste
 
 ## Fase 2 – Voeding loggen
 
-### 2.1 Sync voor voeding
+### 2.1 Sync voor voeding — gebouwd
 
 - **Doel:** `products` (alleen eigen rijen pushen), `food_entries`, `water_entries`, `favorite_products` in de `SyncEngine`.
 - **Bestanden:** `Fitling/Data/Sync/Records/*` en de tabellijst.
@@ -221,43 +221,47 @@ Hieronder de oorspronkelijke opdracht, als naslag.
 - **Tests (Deno, met een vastgelegd antwoord van Open Food Facts als bestand):** `returnsTheCachedProductWithoutCallingTheSource`, `refreshesAProductOlderThanThirtyDays`, `storesANewProductOnce` (twee gelijktijdige aanroepen, één rij), `convertsKilojoulesWhenKcalIsMissing`, `leavesMissingNutrientsEmpty`, `dropsValuesOutsideTheirLimits`, `marksAnInconsistentLabelAsUnverified`, `retriesThreeTimesOnA503`, `rejectsAWrongCheckDigit`, `limitsCallsPerUserPerHour`.
 - **Controleer** de veldnamen van Open Food Facts met één echte aanroep vóór je het testbestand vastlegt.
 
-### 2.4 ProductLookup (app)
+### 2.4 ProductLookup (app) — gebouwd
 
 - **Doel:** lokaal → `lookup-product` → niet gevonden, met de regels van §5 (30 dagen, offline).
 - **Bestanden:** `Fitling/Services/ProductLookup.swift` (protocol `ProductLookingUp` + echte en nep-versie).
 - **Tests:** `usesTheLocalProductWhenFresh`, `asksTheServerWhenStale`, `keepsTheStaleProductWhenOffline`, `reportsNotFound`, `invalidBarcodeNeverReachesTheServer`.
 
-### 2.5 Scannen
+### 2.5 Scannen — gebouwd
+
+Echt scannen met de camera is gebouwd maar pas op een toestel te bewijzen (UNFORGET S1). In de simulator typt de UI-test de barcode in het veld onder de camera.
 
 - **Doel:** `DataScannerViewController` voor EAN-13, EAN-8 en UPC-A; het resultaat gaat door `Barcode.normalized`.
 - **Let op:** de simulator heeft geen camera. De UI-test gebruikt een DEBUG-startargument dat een barcode aanlevert. Echt scannen is "gebouwd, niet bewezen" tot TestFlight.
 - **Tests:** ViewModel: `scanOfAKnownProductOpensTheLogSheet`, `scanOfAnUnknownProductOffersToAddIt`, `misreadIsIgnored`.
 
-### 2.6 Loggen
+### 2.6 Loggen — gebouwd
 
 - **Doel:** zoeken op naam, recent, favorieten, maaltijd kiezen, hoeveelheid in gram/ml of porties, opslaan als `FoodEntry` met momentopname.
 - **Vastgelegd:** zoeken eerst lokaal, online daarna in `products` met `search_name ilike '%' || term || '%'` (de trigram-index maakt dat snel), hoogstens 30 resultaten. "Recent" is de laatste 20 verschillende producten uit `FoodEntry`. Een product zonder kcal kan pas gelogd worden na aanvullen (§5.2).
 - **Tests:** `loggingStoresASnapshotOfNameAndValues`, `editingAProductLaterDoesNotChangeOldEntries`, `productWithoutKcalAsksForIt`, `recentShowsEachProductOnce`.
 
-### 2.7 Dagoverzicht
+### 2.7 Dagoverzicht — gebouwd
 
 - **Doel:** kcal-ring, eiwit/koolhydraten/vet, water, per maaltijd de logs.
 - **Gebruikt:** `FoodMath.DayTotals`, `TargetPeriod` (het doel dat op die dag gold), `NutritionEngine.dayTargets`.
 - **Vastgelegd:** de ring en de macro-linten vullen zich in de kleuren uit het design system, zonder verloop. Onbekende macro's worden gemeld (§5.2).
 - **Tests:** `usesTheTargetsThatAppliedOnThatDay`, `reportsUnknownMacros`, `waterAddsUp`.
 
-### 2.8 Zelf een product toevoegen
+### 2.8 Zelf een product toevoegen — deels gebouwd
+
+Gebouwd: een eigen, privé product met de hand invoeren (naam, merk, kcal en macro's per 100 g, portie, barcode), gecontroleerd tegen `Limits`. Uitgesteld (UNFORGET S14): de foto's, Vision en `submit-product`.
 
 - **Doel:** foto verpakking + etiket, Vision leest het etiket, gebruiker controleert, `submit-product` slaat op.
 - **Bestanden:** `supabase/functions/submit-product/*`; een privé Storage-bucket `product-photos` met policies (alleen eigen map `<user-id>/…`); `delete-account` verwijdert ook de bestanden van de gebruiker.
 - **Tests:** Deno: `rejectsValuesOutsideLimits`, `createsTheSharedRowOnce`, `keepsTheSubmission`; pgTAP of Deno: een gebruiker kan alleen de eigen map lezen en schrijven; `deleteAccountRemovesThePhotos`.
 
-### 2.9 NEVO importeren
+### 2.9 NEVO importeren — wacht op de gebruiker (UNFORGET S15)
 
 - **Vooraf (gebruiker):** RISKS R-03 beantwoord.
 - **Doel:** een script dat de NEVO-tabel inleest en als gedeelde rijen (`source = 'nevo'`, `is_verified = true`) schrijft.
 
-### 2.10 Afbeeldingen
+### 2.10 Afbeeldingen — gebouwd
 
 - **Doel:** productfoto's laden en bewaren (`URLCache`), met een getekende placeholder in de stijl van het design system. Geen AI-foto's.
 
@@ -265,46 +269,58 @@ Hieronder de oorspronkelijke opdracht, als naslag.
 
 ## Fase 3 – Partner
 
-TestFlight (UNFORGET S1) moet er vóór deze fase zijn: meldingen, widget en Live Activity zijn in de simulator niet te bewijzen.
+TestFlight (UNFORGET S1) zou er vóór deze fase zijn, maar de gebruiker koos ervoor eerst de hele app af te bouwen en het developer account later te regelen. Meldingen zijn daarom alleen met unit tests bewezen; widget en Live Activity wachten op het account.
 
-### 3.1 Partner kiezen
+### 3.1 Partner kiezen — gebouwd
+
+Keuzes: het scherm komt direct na de onboarding en, bij bestaande gebruikers, bij de eerste start zonder partner. Pas als de server bevestigt dat er geen partner is; zonder verbinding opent de app gewoon en biedt het partnertabblad de keuze. De naam telt in Unicode-tekens (zoals Postgres), zodat een emoji uit meerdere tekens de grens van 24 niet stiekem overschrijdt. De soortnaam wordt voorgesteld tot de gebruiker zelf iets typt.
 
 - **Doel:** soort, naam (1–24 tekens), kleur (0–2) en toon kiezen; opslaan als `Creature`. Bestaande gebruikers krijgen de stap bij de eerste start na de update.
 - **Gebruikt:** `CreatureState`, `Creature`, de figuren uit het design system.
 - **Tests:** `setupStoresTheChoices`, `nameIsTrimmedAndLimited`, `existingUserIsAskedOnce`.
 
-### 3.2 Dagen samenstellen en verwerken
+### 3.2 Dagen samenstellen en verwerken — gebouwd
+
+Aangeroepen bij de start, als de app terugkomt, als de dag wisselt en als het partnertabblad verschijnt. Een dag met alleen een training telt ook (XP voor de training).
 
 - **Doel:** uit de lokale data een lijst `DayRecord` maken en de partner bijwerken.
 - **Bestanden:** `Fitling/Data/CreatureHistory.swift`.
 - **Vastgelegd:** per dag: som van de logs (kcal, eiwit, aantal), het doel uit `TargetPeriod` met `NutritionEngine.dayTargets` als trainingen meetellen, en "training voltooid" als er die dag een `WorkoutSession` met `endedAt` is of HealthKit een training meldt. Aanroepen bij app-start en als de dag wisselt: `CreatureEngine.advance`, daarna `creature.apply(_:at:)` en opslaan. Lever de records vanaf zes dagen vóór de laatst verwerkte dag.
 - **Tests:** `buildsOneRecordPerDayWithLogs`, `usesTheTargetOfThatDay`, `workoutFromHealthKitCounts`, `advanceIsAppliedAndSavedOnce`.
 
-### 3.3 De partner tekenen
+### 3.3 De partner tekenen — gebouwd, wacht op goedkeuring
+
+De galerij (`--ui-testing-partner-gallery`, UI-test `PartnerGalleryTests`) toont elke soort in elke toestand; de schermafbeeldingen gaan naar de gebruiker. DESIGN.md beschrijft gezichten, vorm, groei, accessoires, kleuren en beweging.
 
 - **Vastgelegd:** SwiftUI (`Canvas` + `TimelineView`), geen SpriteKit of Rive. Reden: de figuren zijn al vector, er komt geen library bij, en een widget kan dezelfde tekening gebruiken (SpriteKit en Rive kunnen dat niet).
 - **Doel:** een View die een `CreatureSnapshot` tekent: vorm (0–1 als breedte van het lijf), stemming (ogen en mond), energie (tempo van de beweging), groeistadium per soort, accessoires, trainingsbonus. Met "Verminder beweging" aan staat het stil.
 - **Acceptatie:** screenshots van elke soort in elke toestand naar de gebruiker; die keurt de tekeningen.
 
-### 3.4 Level, XP en vrijspelen
+### 3.4 Level, XP en vrijspelen — gebouwd
+
+Keuzes: vijf kleuren per soort (drie vanaf het begin, twee vanaf level 5 en 12). Een pet en een kroon kunnen niet samen op. Wat er gebeurde (level, accessoire, kleur, herstelbonus) verschijnt één keer als melding in de app. Naam en toon zijn later aan te passen; de soort niet.
 
 - **Doel:** voortgang naar het volgende level, wat `CreatureEvent` meldt (level, accessoire, kleur, herstelbonus), accessoires aan- en uitdoen (`equippedItems`).
 
-### 3.5 Meldingen
+### 3.5 Meldingen — gebouwd
+
+Keuzes: de instellingen staan op het toestel (`UserDefaults`), standaard uit, tijden 12:30 en 18:30. Bij aanzetten vraagt de app toestemming; bij weigeren blijft het uit en wijst de app naar Instellingen. Gepland worden vandaag en morgen, met de tekst die past bij de toestand van die dag; elke start en elke dagwissel plant opnieuw. Bij uitloggen worden ze gewist. Op een toestel nog niet bewezen (UNFORGET S1).
 
 - **Vastgelegd:** lokale meldingen (`UNUserNotificationCenter`), geen server. Hoogstens twee per dag, niet tussen 21:00 en 08:00, tijden instelbaar, alles uit te zetten. Onderwerp via `CreatureEngine.topic(for:)`, tekst via `messageKey(topic:tone:on:)`.
 - **Tests:** `schedulesAtMostTwoPerDay`, `neverSchedulesAtNight`, `nothingIsScheduledWhenTurnedOff`.
 
-### 3.6 Teksten van de meldingen
+### 3.6 Teksten van de meldingen — geschreven, wacht op de gebruiker
+
+6 × 3 × 3 = 54 teksten per taal (de 162 hieronder is het totaal over drie talen). De Engelse en Duitse staan er al, zodat de app compleet is; past de gebruiker de Nederlandse aan, dan volgen de vertalingen.
 
 - **Doel:** 6 onderwerpen × 3 tonen × 3 varianten in nl, en en de (162 teksten per taal). Vriendelijk, nooit beschamend, kort. De gebruiker leest de Nederlandse set na vóór de vertaling.
 - **Voorbeelden van de gebruiker** voor `hungry`: lief "Ik heb honger 🥺", grappig "Mijn maag knort harder dan jouw wekker", coach "Tijd voor eiwit. Wat eet je?".
 
-### 3.7 Widget
+### 3.7 Widget — wacht op het developer account
 
 - **Doel:** de partner op het beginscherm. Vraagt een App Group om de snapshot te delen (UNFORGET S1).
 
-### 3.8 Live Activity
+### 3.8 Live Activity — wacht op het developer account
 
 - **Doel:** de partner tijdens een maaltijdmoment of training (PROMPT.md §2). Bepaal met de gebruiker wanneer hij start en stopt vóór je bouwt.
 
@@ -316,40 +332,52 @@ Na twee tot vier weken echt gebruik: kloppen de drempels, de snelheid van de vor
 
 ## Fase 4 – Sport
 
-### 4.1 Oefeningen en schema's vullen
+### 4.1 Oefeningen en schema's vullen — gebouwd
+
+Keuzes: één bronbestand, `Fitling/Resources/SportCatalog.json` (33 oefeningen, de drie schema's), met vaste id's (UUID v5 uit de naam). De app zet de gedeelde rijen daaruit op het toestel; `scripts/sport-seed.mjs` maakt er `supabase/seed/sport.sql` van voor de server, en CI controleert dat beide gelijk zijn en dat de seed op het schema past. Afbeeldingen: nog geen; elke oefening toont een SF Symbol voor het materiaal (rechtenvrije of eigen tekeningen later, UNFORGET S19).
 
 - **Doel:** de gedeelde oefeningen en de drie schema's (Full body 3×, Upper/Lower 4×, PPL 6×) als databestand en een script dat ze schrijft.
 - **Vastgelegd:** per oefening `kind`, `load_type`, `equipment`, spieren en `default_step_kg` (barbell 2,5 · dumbbell 2 · machine en cable 5 · kettlebell 4 · lichaamsgewicht 2,5). Namen en instructies in nl, en en de. Afbeeldingen alleen rechtenvrij of zelf getekend.
 
-### 4.2 Sync voor sport
+### 4.2 Sync voor sport — gebouwd
 
 - `exercises`, `programs`, `program_days`, `program_exercises` (alleen eigen rijen pushen), `exercise_settings`, `workout_sessions`, `workout_sets`, `body_measurements`.
 
-### 4.3 Schema's kiezen en zelf maken
+### 4.3 Schema's kiezen en zelf maken — gebouwd
 
-### 4.4 Training loggen
+Keuzes: geen "actief schema"; de app biedt de dag na de laatst afgeronde training aan. Een kant-en-klaar schema pas je aan door het te kopiëren; het origineel blijft ongewijzigd.
+
+### 4.4 Training loggen — gebouwd
+
+De rusttimer staat in de app; als Live Activity wacht hij op het developer account (UNFORGET S18). Een training kan later verder of worden weggegooid; nieuwe records verschijnen bij afronden.
 
 - **Doel:** sets, herhalingen, gewicht, RPE, warming-up-vinkje, rusttimer met Live Activity.
 - **Tests:** `finishingSetsEndedAt`, `restTimerStartsAfterASet`, `weightIsStoredInKilograms` (invoer in lb wordt omgerekend).
 
-### 4.5 Progressie-advies
+### 4.5 Progressie-advies — gebouwd
 
 - **Gebruikt:** `ProgressionEngine.advise`, `personalRecords`, `ExerciseSetting`.
 - **Vastgelegd:** de geschiedenis is per oefening de lijst trainingen met alleen werksets (`WorkoutSet.workingSet`). De regels komen uit `ExerciseSetting` als die er is, anders uit het schema en de oefening. Elk advies heeft één zin tekst en één knop om het over te nemen.
 - **Tests:** `adviceUsesTheUsersOwnStep`, `warmUpSetsAreIgnored`, `acceptingAdvicePrefillsTheNextSet`.
 
-### 4.6 Grafieken
+### 4.6 Grafieken — gebouwd
+
+Per oefening de geschatte 1RM per training, records en de eigen gewichtsstap; volume per spiergroep voor deze en vorige week.
 
 - **Gebruikt:** `estimatedOneRepMax`, `weeklyVolume`, Swift Charts.
 
-### 4.7 HealthKit
+### 4.7 HealthKit — gebouwd, niet bewezen op een toestel
 
 - **Vastgelegd:** alleen lezen: trainingen, stappen, actieve energie. Trainingsenergie per dag naar `DayActivity`. De schakelaar `countsWorkoutEnergy` staat standaard uit. Niets hiervan gaat naar Supabase (D-19).
 - **Tests:** met een nep-`HealthReading`: `storesWorkoutEnergyPerDay`, `budgetGrowsOnlyWhenTheSwitchIsOn`.
 
-### 4.8 Lichaamsgewicht en omtrekken
+### 4.8 Lichaamsgewicht en omtrekken — gebouwd
 
-### 4.9 Voortgangsfoto's
+Invoer in kg en cm, of in lb en inch als het toestel imperiaal meet; opgeslagen in kg en cm.
+
+### 4.9 Voortgangsfoto's — gebouwd
+
+Bij uitloggen worden de bestanden ook verwijderd.
 
 - **Vastgelegd:** alleen lokaal, in de eigen map van de app, met `isExcludedFromBackup`. Nooit naar de server.
 
