@@ -14,7 +14,8 @@ struct AccountView: View {
             Section {
                 Button("account.export", action: export)
             } footer: {
-                Text(exportFailed ? "account.export.failed" : "account.export.footer").foregroundStyle(Color.ink)
+                Text(exportFailed ? LocalizedStringKey("account.export.failed") : LocalizedStringKey("account.export.footer"))
+                    .foregroundStyle(Color.ink)
             }
             .listRowBackground(Color.card)
             Section {

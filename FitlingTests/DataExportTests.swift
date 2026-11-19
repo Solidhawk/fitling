@@ -77,13 +77,10 @@ struct DataExportTests {
             ["b": "say \"hi\"", "a": "1,2", "c": NSNull()],
             ["a": "line\nbreak", "d": 3, "e": ["nl": "melk"]],
         ])
-        #expect(DataExport.csv(table) == """
-        a,b,c,d,e\r
-        "1,2","say ""hi""",,,\r
-        "line
-        break",,,3,"{""nl"":""melk""}"\r
-
-        """)
+        let expected = "a,b,c,d,e\r\n"
+            + "\"1,2\",\"say \"\"hi\"\"\",,,\r\n"
+            + "\"line\nbreak\",,,3,\"{\"\"nl\"\":\"\"melk\"\"}\"\r\n"
+        #expect(DataExport.csv(table) == expected)
     }
 
     @Test func writesOneJSONFileAndOneCSVPerTable() throws {
