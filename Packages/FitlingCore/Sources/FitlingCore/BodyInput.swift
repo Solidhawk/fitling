@@ -12,6 +12,19 @@ public struct BodyInput: Equatable, Sendable {
     public var inches: Double?
     /// Kilograms or pounds, following `usesMetric`.
     public var weight: Double?
+    /// The stored values the fields were filled from. As long as a field still shows its
+    /// converted value, the stored value comes back unchanged: converting to inches and pounds
+    /// and back would otherwise move it by a tenth.
+    private var stored: Stored?
+
+    private struct Stored: Equatable, Sendable {
+        var centimetres: Double?
+        var feet: Double?
+        var inches: Double?
+        var weight: Double?
+        var heightCm: Double
+        var weightKg: Double
+    }
 
     public init(usesMetric: Bool) {
         self.usesMetric = usesMetric
@@ -23,21 +36,29 @@ public struct BodyInput: Equatable, Sendable {
             centimetres = heightCm
             weight = weightKg
         } else {
-            let totalInches = heightCm / Self.centimetresPerInch
+            // Rounded before splitting, so 71.97 in becomes 6 ft 0 in and never 5 ft 12 in.
+            let totalInches = Self.oneDecimal(heightCm / Self.centimetresPerInch)
             let wholeFeet = (totalInches / 12).rounded(.down)
             feet = wholeFeet
             inches = Self.oneDecimal(totalInches - wholeFeet * 12)
             weight = Self.oneDecimal(weightKg / Self.kilogramsPerPound)
         }
+        stored = Stored(centimetres: centimetres, feet: feet, inches: inches, weight: weight, heightCm: heightCm, weightKg: weightKg)
     }
 
     public var heightCm: Double? {
+        if let stored, stored.centimetres == centimetres, stored.feet == feet, stored.inches == inches {
+            return stored.heightCm
+        }
         let centimetres = usesMetric ? centimetres : feet.map { ($0 * 12 + (inches ?? 0)) * Self.centimetresPerInch }
         return centimetres.map(Self.oneDecimal)
     }
 
     public var weightKg: Double? {
-        weight.map { Self.oneDecimal(usesMetric ? $0 : $0 * Self.kilogramsPerPound) }
+        if let stored, stored.weight == weight {
+            return stored.weightKg
+        }
+        return weight.map { Self.oneDecimal(usesMetric ? $0 : $0 * Self.kilogramsPerPound) }
     }
 
     /// Both values present and within what the database accepts.
