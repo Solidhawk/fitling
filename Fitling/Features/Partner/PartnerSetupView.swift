@@ -147,8 +147,15 @@ struct ColorSwatches: View {
     let species: Species
     let count: Int
     @Binding var selection: Int
-    var unlockLevels: [Int] = []
+    let unlockLevels: [Int]
     @ScaledMetric private var size: CGFloat = 40
+
+    init(species: Species, count: Int, selection: Binding<Int>, unlockLevels: [Int] = []) {
+        self.species = species
+        self.count = count
+        _selection = selection
+        self.unlockLevels = unlockLevels
+    }
 
     var body: some View {
         HStack(spacing: Spacing.m) {

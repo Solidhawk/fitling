@@ -30,7 +30,8 @@ final class PartnerViewModel {
         self.profile = profile
         history = CreatureHistory(context: context, profile: profile, timeZone: timeZone, now: now)
         self.delivery = delivery
-        store = ReminderSettingsStore(defaults: defaults)
+        let store = ReminderSettingsStore(defaults: defaults)
+        self.store = store
         reminders = store.load()
     }
 

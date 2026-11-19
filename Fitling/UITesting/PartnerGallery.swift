@@ -8,6 +8,8 @@ import FitlingCore
 struct PartnerGallery: View {
     @State private var species: Species = .sprout
 
+    init() {}
+
     static let looks: [PartnerLook] = {
         var looks = CreatureMood.allCases.map { PartnerLook(mood: $0) }
         looks.append(PartnerLook(trainedRecently: true))

@@ -142,8 +142,14 @@ struct PartnerFigure: View {
     let species: Species
     let look: PartnerLook
     /// 0 is asleep, 1 is full of energy (`CreatureSnapshot.energy`).
-    var energy = 0.7
+    let energy: Double
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    init(species: Species, look: PartnerLook, energy: Double = 0.7) {
+        self.species = species
+        self.look = look
+        self.energy = energy
+    }
 
     var body: some View {
         if reduceMotion {

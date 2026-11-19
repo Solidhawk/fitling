@@ -91,13 +91,13 @@ extension Species {
     }
 
     func palette(_ index: Int) -> PartnerPalette {
-        let palettes = palettes
+        let palettes = self.palettes
         return palettes[min(max(index, 0), palettes.count - 1)]
     }
 
     /// The partner's parts in one look, back to front.
     func parts(for look: PartnerLook) -> [FigurePart] {
-        let palette = palette(look.colorIndex)
+        let palette = self.palette(look.colorIndex)
         let face = FaceAnchor(for: self)
         let widen = look.widening
         let items = Set(look.items)

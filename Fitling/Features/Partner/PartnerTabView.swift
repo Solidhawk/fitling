@@ -11,6 +11,11 @@ struct PartnerTabView: View {
     @State private var choosing = false
     @Environment(\.openURL) private var openURL
 
+    init(viewModel: PartnerViewModel, context: ModelContext) {
+        self.viewModel = viewModel
+        self.context = context
+    }
+
     var body: some View {
         NavigationStack {
             Group {
@@ -243,10 +248,16 @@ private struct LevelRibbon: View {
 
 /// Name and voice, edited in a sheet.
 private struct PartnerEditView: View {
-    @State var name: String
-    @State var tone: MessageTone
-    let onSave: (String, MessageTone) -> Void
+    @State private var name: String
+    @State private var tone: MessageTone
+    private let onSave: (String, MessageTone) -> Void
     @Environment(\.dismiss) private var dismiss
+
+    init(name: String, tone: MessageTone, onSave: @escaping (String, MessageTone) -> Void) {
+        _name = State(initialValue: name)
+        _tone = State(initialValue: tone)
+        self.onSave = onSave
+    }
 
     var body: some View {
         NavigationStack {

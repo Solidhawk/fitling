@@ -69,9 +69,9 @@ struct CreatureHistory {
     /// The partner right now, from the days that decide its mood: the last week and today.
     func snapshot(of creature: Creature, on day: Day? = nil) -> CreatureSnapshot? {
         guard let state = creature.state else { return nil }
-        let day = day ?? today
-        let records = records(from: day.adding(-(CreatureEngine.windowDays + 1)), through: day)
-        return CreatureEngine.snapshot(of: state, records: records, today: day)
+        let target = day ?? today
+        let records = self.records(from: target.adding(-(CreatureEngine.windowDays + 1)), through: target)
+        return CreatureEngine.snapshot(of: state, records: records, today: target)
     }
 
     /// Today's record, for the XP the partner has earned so far today.
