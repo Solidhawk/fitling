@@ -36,7 +36,7 @@ Hoe: `/model fable` en de taak noemen.
 | Nr | Wat | Wie |
 |---|---|---|
 | 0.1 | Gedaan op 2026-11-19: `fundament` staat op `main` (pull request 1, alle CI-jobs groen). | – |
-| 0.2 | Het ontwikkelproject in Supabase heeft mogelijk nog de oude tabel `profiles`. Er zijn geen echte gebruikers. Na akkoord van de gebruiker: de oude tabel en `private.apply_sync_rules` verwijderen en `supabase/schema.sql` uitvoeren (SQL-editor of `psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/schema.sql`). | gebruiker, met hulp |
+| 0.2 | Gedaan op 2026-11-19, anders dan gepland: er bestond nog geen project. Nieuw project `fitling-dev` (organisatie Fitling, gratis plan, eu-west-1), schema.sql van commit `6ed17a5` in één transactie uitgevoerd; gecontroleerd: 28 tabellen met RLS, 75 policies, sync-triggers, functies alleen voor service_role, realtime op 3 tabellen. Bij een schemawijziging: `supabase/reset-dev.sql` en dan `schema.sql`. Nog te doen door de gebruiker: de redirect-URL's in Auth (`fitling://auth-callback`, `fitling://reset-password`), de Edge Functions deployen en de GitHub-secrets (UNFORGET S10, S13). | – |
 | 0.3 | `CLAUDE.md` verwijst voor de architectuur al naar `docs/ARCHITECTURE.md`. Controleer dat de regel klopt. | Opus |
 
 ---
