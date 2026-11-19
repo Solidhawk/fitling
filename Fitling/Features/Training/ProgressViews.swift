@@ -68,7 +68,7 @@ struct ExerciseProgressView: View {
                         PointMark(x: .value("training.chart.date", point.date), y: .value("training.chart.oneRepMax", unit.value(fromKilograms: point.kg)))
                             .foregroundStyle(Color.ink)
                     }
-                    .chartYAxisLabel(Text(verbatim: unit.symbol))
+                    .chartYAxisLabel(unit.symbol)
                     .frame(height: 200)
                     .accessibilityLabel(Text("training.chart.oneRepMax"))
                 } else {

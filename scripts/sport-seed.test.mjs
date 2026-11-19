@@ -43,3 +43,9 @@ test('aanhalingstekens in teksten worden ontsnapt', () => {
   quoted.exercises[0].name.en = "Lifter's squat";
   assert.match(seedSQL(quoted), /Lifter''s squat/);
 });
+
+test('elke regel van de seed heeft een even aantal aanhalingstekens', () => {
+  for (const line of seedSQL(catalog).split('\n').filter((l) => !l.startsWith('--'))) {
+    assert.equal((line.match(/'/g) ?? []).length % 2, 0, line.slice(0, 80));
+  }
+});

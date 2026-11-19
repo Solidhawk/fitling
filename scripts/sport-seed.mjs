@@ -10,7 +10,7 @@ export const LANGUAGES = ['nl', 'en', 'de'];
 export const STEP_BY_EQUIPMENT = { barbell: 2.5, dumbbell: 2, machine: 5, cable: 5, kettlebell: 4, bodyweight: 2.5 };
 export const MUSCLES = ['chest', 'back', 'shoulders', 'biceps', 'triceps', 'forearms', 'core', 'glutes', 'quads', 'hamstrings', 'calves'];
 // Eén vaste tijd per versie van de catalogus: een nieuwe versie overschrijft de rijen op de server.
-const UPDATED_AT = (version) => `2026-11-19T00:00:00Z'::timestamptz + interval '${version - 1} seconds`;
+const UPDATED_AT = (version) => `'2026-11-19T00:00:00Z'::timestamptz + interval '${version - 1} seconds'`;
 
 const literal = (text) => `'${String(text).replaceAll("'", "''")}'`;
 const json = (value) => `${literal(JSON.stringify(value))}::jsonb`;
@@ -70,7 +70,7 @@ export function validate(catalog) {
 }
 
 export function seedSQL(catalog) {
-  const updatedAt = `'${UPDATED_AT(catalog.version)}`;
+  const updatedAt = UPDATED_AT(catalog.version);
   const lines = [
     '-- Gemaakt door scripts/sport-seed.mjs uit Fitling/Resources/SportCatalog.json. Niet met de hand aanpassen.',
     '-- Zet de gedeelde oefeningen en de kant-en-klare schema\'s neer; een tweede keer werkt ze bij.',

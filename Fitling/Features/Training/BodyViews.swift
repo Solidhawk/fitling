@@ -37,7 +37,7 @@ struct BodyView: View {
                         .foregroundStyle(Color.ink)
                     }
                     .chartYScale(domain: .automatic(includesZero: false))
-                    .chartYAxisLabel(Text(verbatim: symbol))
+                    .chartYAxisLabel(symbol)
                     .frame(height: 180)
                 }
             }
