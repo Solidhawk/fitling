@@ -119,7 +119,7 @@ final class WorkoutViewModel {
             draft.weight = rounded(unit.value(fromKilograms: weight))
             // Aim for one more rep than last time at this weight, up to the top of the range.
             let last = store.history(of: entry.exercise.id, excluding: session).last?.sets.filter { $0.weightKg == weight }.map(\.reps).max()
-            _ = last
+            draft.reps = min(max((last ?? rules.repRange.lowerBound - 1) + 1, rules.repRange.lowerBound), rules.repRange.upperBound)
         case let .addRepsFirst(weight, targetReps):
             draft.weight = rounded(unit.value(fromKilograms: weight))
             draft.reps = targetReps
@@ -139,11 +139,11 @@ final class WorkoutViewModel {
     func log(_ entry: Entry) -> WorkoutSet? {
         guard canLog(entry), let draft = drafts[entry.id], let weight = draft.weight, let reps = draft.reps else { return nil }
         let set = store.log(
-            in: session, exercise: entry.exercise, weightKg: weight, reps: reps, rpe: draft.rpe, isWarmup: draft.isWarmup
+            in: session, exercise: entry.exercise, weightKg: unit.kilograms(from: weight), reps: reps, rpe: draft.rpe, isWarmup: draft.isWarmup
         )
         reload()
         if !draft.isWarmup {
-            _ = Self.defaultRestSeconds
+            restEndsAt = store.now().addingTimeInterval(TimeInterval(entry.item?.restSeconds ?? Self.defaultRestSeconds))
         }
         // The next set starts like the one just done; RPE is asked again.
         drafts[entry.id]?.rpe = nil

@@ -140,7 +140,8 @@ final class OnboardingFlowTests: XCTestCase {
     /// Pip, with the name Pip filled in and "pa" typed after it.
     @MainActor
     private func choosePartner(_ app: XCUIApplication, prefix: String) {
-        let pip = app.buttons["partner.setup.species.pip"]
+        // The card carries the identifier; the button inside it does not.
+        let pip = app.descendants(matching: .any)["partner.setup.species.pip"]
         XCTAssertTrue(pip.waitForExistence(timeout: 10))
         keepScreenshot(app, named: "\(prefix)-9-partner-kiezen")
         pip.tap()

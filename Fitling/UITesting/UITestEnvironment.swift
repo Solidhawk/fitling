@@ -32,7 +32,11 @@ enum UITestEnvironment {
         let source = FakeProductSource()
         source.products[sampleProduct.gtin ?? ""] = sampleProduct
         let food = FoodServices(source: source, search: FakeProductSearch())
-        let root = RootViewModel(auth: FakeAuthProvider(state: state), sync: sync, food: food, reminders: FakeReminderDelivery(), health: FakeHealthReader())
+        let offerSource = FakeOfferSource()
+        offerSource.offerRecords = FakeOfferSource.sample(today: Day(.now, timeZone: .current))
+        let root = RootViewModel(auth: FakeAuthProvider(state: state), sync: sync, food: food, reminders: FakeReminderDelivery(), health: FakeHealthReader(),
+            shopping: ShoppingServices(sharing: FakeListSharing(), offers: offerSource)
+        )
         return AppEnvironment(container: container, root: root)
     }
 

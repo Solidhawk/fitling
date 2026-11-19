@@ -81,7 +81,7 @@ struct TrainingStore {
     /// new ids; the shared original stays as it is.
     @discardableResult
     func copy(_ program: Program, named name: String) -> Program {
-        let copy = Program(id: UUID(), ownerID: nil, name: LocalizedText([language: name]), daysPerWeek: program.daysPerWeek, updatedAt: now())
+        let copy = Program(id: UUID(), ownerID: userID, name: LocalizedText([language: name]), daysPerWeek: program.daysPerWeek, updatedAt: now())
         context.insert(copy)
         for day in days(of: program) {
             let newDay = ProgramDay(id: UUID(), programID: copy.id, ownerID: userID, name: day.name, position: day.position, updatedAt: now())
@@ -126,6 +126,7 @@ struct TrainingStore {
 
     @discardableResult
     func add(_ exercise: Exercise, to day: ProgramDay, sets: Int, repRange: ClosedRange<Int>, restSeconds: Int) -> ProgramExercise? {
+        guard day.ownerID == userID else { return nil }
         let item = ProgramExercise(
             id: UUID(), programDayID: day.id, ownerID: userID, exerciseID: exercise.id, position: (items(of: day).map(\.position).max() ?? -1) + 1,
             targetSets: min(max(sets, 1), 10), repRange: repRange, restSeconds: min(max(restSeconds, 0), 900), updatedAt: now()
@@ -181,6 +182,7 @@ struct TrainingStore {
     }
 
     func finish(_ session: WorkoutSession) {
+        session.endedAt = max(now(), session.startedAt)
         touch(session)
     }
 
@@ -225,7 +227,7 @@ struct TrainingStore {
 
     /// The day after the last finished workout in its programme, round and round.
     func nextDay() -> (program: Program, day: ProgramDay)? {
-        for session in finishedSessions(limit: 10).prefix(0) {
+        for session in finishedSessions(limit: 10) {
             guard let lastID = session.programDayID, let last = day(lastID), let program = program(last.programID), program.deletedAt == nil else { continue }
             let all = days(of: program)
             guard !all.isEmpty else { continue }
@@ -241,7 +243,7 @@ struct TrainingStore {
     func history(of exerciseID: UUID, excluding session: WorkoutSession? = nil) -> [ExerciseSession] {
         let userID = userID
         let sets = (try? context.fetch(FetchDescriptor<WorkoutSet>(
-            predicate: #Predicate<WorkoutSet> { $0.userID == userID && $0.exerciseID == exerciseID && $0.deletedAt == nil }
+            predicate: #Predicate<WorkoutSet> { $0.userID == userID && $0.exerciseID == exerciseID && $0.deletedAt == nil && !$0.isWarmup }
         ))) ?? []
         let excluded = session?.id
         let sessions = Dictionary(uniqueKeysWithValues: Set(sets.map(\.sessionID)).compactMap { id -> (UUID, WorkoutSession)? in
@@ -289,7 +291,7 @@ struct TrainingStore {
             loadType: LoadType(rawValue: exercise.loadType) ?? .external,
             repRange: range,
             targetSets: item?.targetSets ?? 3,
-            stepKg: exercise.defaultStepKg
+            stepKg: setting?.stepKg ?? exercise.defaultStepKg
         )
     }
 

@@ -41,6 +41,7 @@ jobs:
           done
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -q -f supabase/schema.sql
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -q -f supabase/seed/sport.sql
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -q -f supabase/seed/recipes.sql
           supabase test db
       # Het ontwikkelproject wordt bij een schemawijziging leeggemaakt en opnieuw opgezet (TASKS 0.2).
       # Na reset-dev.sql mag er niets van het schema over zijn, anders mist dat bestand een tabel.
@@ -61,6 +62,7 @@ jobs:
           fi
           psql "$db" -v ON_ERROR_STOP=1 -q -f supabase/schema.sql
           psql "$db" -v ON_ERROR_STOP=1 -q -f supabase/seed/sport.sql
+          psql "$db" -v ON_ERROR_STOP=1 -q -f supabase/seed/recipes.sql
           supabase test db
       - uses: denoland/setup-deno@v2
         with:
@@ -84,6 +86,7 @@ jobs:
       - run: node scripts/check-strings.mjs
       - run: node scripts/check-models.mjs
       - run: node scripts/sport-seed.mjs --check
+      - run: node scripts/recipe-seed.mjs --check
 
   ios:
     name: iOS (simulator)

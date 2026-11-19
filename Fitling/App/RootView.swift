@@ -71,7 +71,7 @@ struct RootView: View {
             if let profile = viewModel.sync.context.profile(of: userID) {
                 HomeView(
                     profile: profile, sync: viewModel.sync, food: viewModel.food, reminders: viewModel.reminders,
-                    health: viewModel.health, account: accountViewModel()
+                    health: viewModel.health, shopping: viewModel.shopping, account: accountViewModel()
                 )
                     .id(userID)
             } else {

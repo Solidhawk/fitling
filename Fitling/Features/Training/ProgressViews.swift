@@ -60,6 +60,14 @@ struct ExerciseProgressView: View {
 
     var body: some View {
         List {
+            if ExerciseDrawing.exists(for: exercise.id) {
+                Section {
+                    ExerciseDrawing(exerciseID: exercise.id)
+                } footer: {
+                    Text("training.drawing.credit").footerStyle()
+                }
+                .listRowBackground(Color.card)
+            }
             Section {
                 if points.count >= 2 {
                     Chart(points, id: \.date) { point in
@@ -192,5 +200,30 @@ struct VolumeView: View {
             }
         }
         weeks = ProgressionEngine.weeklyVolume(logged)
+    }
+}
+
+/// The start and end position of an exercise, as line drawings in ink. Drawings by Everkinetic
+/// (CC BY-SA 4.0), recoloured; not every exercise has one.
+struct ExerciseDrawing: View {
+    let exerciseID: UUID
+
+    static func exists(for exerciseID: UUID) -> Bool {
+        UIImage(named: "Exercises/\(exerciseID.uuidString.lowercased())-start") != nil
+    }
+
+    var body: some View {
+        HStack(alignment: .bottom, spacing: Spacing.l) {
+            ForEach(["start", "end"], id: \.self) { phase in
+                Image("Exercises/\(exerciseID.uuidString.lowercased())-\(phase)")
+                    .renderingMode(.template)
+                    .resizable()
+                    .scaledToFit()
+                    .foregroundStyle(Color.ink)
+                    .frame(maxWidth: .infinity, maxHeight: 180)
+            }
+        }
+        .padding(.vertical, Spacing.s)
+        .accessibilityHidden(true)
     }
 }

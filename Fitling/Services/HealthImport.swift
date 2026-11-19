@@ -65,8 +65,7 @@ struct HealthImport {
 
     func run() async {
         let today = Day(now(), timeZone: timeZone)
-        guard let energy = try? await reader.workoutEnergy(from: today, through: today.adding(-1), timeZone: timeZone), energy.isEmpty == false,
-              let _ = try? await reader.workoutEnergy(from: today.adding(-Self.daysBack), through: today, timeZone: timeZone) else { return }
+        guard let energy = try? await reader.workoutEnergy(from: today.adding(-Self.daysBack), through: today, timeZone: timeZone) else { return }
         for offset in 0...Self.daysBack {
             let day = today.adding(-offset)
             let kcal = (energy[day] ?? 0).rounded()

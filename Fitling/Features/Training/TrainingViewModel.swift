@@ -55,7 +55,10 @@ final class TrainingViewModel {
     func setCountsWorkoutEnergy(_ isOn: Bool) async {
         healthRefused = false
         if isOn {
-            _ = await health.requestAccess()
+            guard await health.requestAccess() else {
+                healthRefused = true
+                return
+            }
         }
         profile.countsWorkoutEnergy = isOn
         profile.updatedAt = store.now()

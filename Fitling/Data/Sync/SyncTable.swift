@@ -45,10 +45,12 @@ enum SyncTables {
     static var all: [any SyncTable] {
         [
             ModelTable<UserProfile>(), ModelTable<TargetPeriod>(),
-            ModelTable<Product>(), ModelTable<FoodEntry>(), ModelTable<WaterEntry>(), ModelTable<FavoriteProduct>(),
+            ModelTable<Product>(), ModelTable<Recipe>(), ModelTable<RecipeIngredient>(), ModelTable<FoodEntry>(), ModelTable<WaterEntry>(), ModelTable<FavoriteProduct>(),
             ModelTable<Creature>(),
             ModelTable<Exercise>(), ModelTable<Program>(), ModelTable<ProgramDay>(), ModelTable<ProgramExercise>(),
             ModelTable<ExerciseSetting>(), ModelTable<WorkoutSession>(), ModelTable<WorkoutSet>(), ModelTable<BodyMeasurement>(),
+            ModelTable<MenuPreferences>(), ModelTable<ExcludedIngredient>(), ModelTable<MealPlanEntry>(),
+            ModelTable<ShoppingList>(), ModelTable<ShoppingItem>(), ModelTable<FavoriteSupermarket>(),
         ]
     }
 }

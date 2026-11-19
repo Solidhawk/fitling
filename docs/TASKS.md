@@ -385,23 +385,30 @@ Bij uitloggen worden de bestanden ook verwijderd.
 
 ## Fase 5 – Recepten en weekmenu
 
-### 5.1 Recepten vullen en syncen
+### 5.1 Recepten vullen en syncen — gebouwd
 
 - **Vooraf (gebruiker):** waar komen de recepten en hun foto's vandaan? Het moeten echte foto's zijn die bij het recept horen.
+- **Antwoord (2026-11-19):** de gebruiker levert geen afbeeldingen; neem ze van internet. Keuzes: 24 eigen geschreven recepten in nl, en en de (`supabase/seed/recipes.json`), elk met een echte foto van het gerecht van Wikimedia Commons onder een vrije licentie (CC0, CC BY, CC BY-SA), met maker en licentie in de app en in `docs/BRONNEN.md`. Energie en macro's per portie rekent `scripts/recipe-seed.mjs` uit de ingrediënten met de USDA-tabel (SR Legacy, publiek domein); de gebruiker gaf toestemming om die te downloaden. Het script maakt de catalogus van de app en de seed voor de server; CI controleert beide.
 
-### 5.2 Recepten bekijken en zelf maken
+### 5.2 Recepten bekijken en zelf maken — gebouwd
 
-### 5.3 Voorkeuren
+Een eigen recept krijgt de waarden per portie die de gebruiker invult (van de verpakking of eigen berekening).
+
+### 5.3 Voorkeuren — gebouwd
+
+Uitsluiten gaat per soort (vlees, vis, zuivel, ei, gluten, noten, soja, sesam): de gedeelde recepten hebben geen producten als ingrediënt, dus `ExcludedIngredient` werkt alleen bij eigen recepten met een product.
 
 - `MenuPreferences` en `ExcludedIngredient`.
 
-### 5.4 Weekmenu maken
+### 5.4 Weekmenu maken — gebouwd
+
+Het menu loopt van vandaag tot zes dagen later. Gelogde maaltijden blijven bij een nieuw menu staan, net als vastgezette.
 
 - **Gebruikt:** `WeekMenuPlanner.plan`, `Recipe.plannerRecipe(ingredientIDs:)`, `MealPlanEntry`.
 - **Vastgelegd:** "Nieuw menu" is hetzelfde verzoek met een ander `seed`. Vastzetten zet `isPinned`; wisselen en verslepen passen `MealPlanEntry` aan en zetten hem vast. Elk `MenuIssue` wordt in gewone taal getoond.
 - **Tests:** `generatingStoresOneEntryPerPlannedMeal`, `pinnedMealsSurviveANewMenu`, `issuesAreShown`.
 
-### 5.5 Loggen met één tik
+### 5.5 Loggen met één tik — gebouwd
 
 - **Vastgelegd:** maakt een `FoodEntry` uit het recept en de porties en zet `loggedEntryID`; een tweede tik doet niets.
 

@@ -28,18 +28,23 @@ final class RootViewModel {
     let food: FoodServices
     let reminders: any ReminderDelivery
     let health: any HealthReading
+    let shopping: ShoppingServices
     private var pendingURL: URL?
     /// Goes up with every refresh. A refresh that waited on the network only shows its result
     /// when no newer one started meanwhile; otherwise it could put back a screen that no longer
     /// fits, such as "no connection" after signing out.
     private var generation = 0
 
-    init(auth: any AuthProviding, sync: SyncEngine, food: FoodServices, reminders: any ReminderDelivery, health: any HealthReading) {
+    init(
+        auth: any AuthProviding, sync: SyncEngine, food: FoodServices, reminders: any ReminderDelivery, health: any HealthReading,
+        shopping: ShoppingServices
+    ) {
         self.auth = auth
         self.sync = sync
         self.food = food
         self.reminders = reminders
         self.health = health
+        self.shopping = shopping
     }
 
     func refresh() async {

@@ -38,9 +38,9 @@ struct BodyLog {
     func storedValue(_ value: Double, kind: MeasurementKind) -> Double? {
         let stored: Double
         if kind.isWeight {
-            stored = value
+            stored = usesMetric ? value : WeightUnit.pounds.kilograms(from: value)
         } else {
-            stored = value
+            stored = usesMetric ? value : value * Self.centimetresPerInch
         }
         let rounded = (stored * 10).rounded() / 10
         return rounded > 0 && rounded <= 500 ? rounded : nil
@@ -58,7 +58,7 @@ struct BodyLog {
 
     @discardableResult
     func add(_ value: Double, kind: MeasurementKind, on day: Day) -> BodyMeasurement? {
-        guard let stored = storedValue(value, kind: kind) else { return nil }
+        guard let stored = storedValue(value, kind: kind), day <= Day(now(), timeZone: timeZone) else { return nil }
         let measurement = BodyMeasurement(id: UUID(), userID: userID, measuredOn: day, kind: kind.rawValue, value: stored, updatedAt: now())
         context.insert(measurement)
         try? context.save()
@@ -102,7 +102,7 @@ struct ProgressPhotoStore {
         var url = url(of: photo)
         try jpeg.write(to: url, options: [.atomic, .completeFileProtection])
         var values = URLResourceValues()
-        values.isExcludedFromBackup = false
+        values.isExcludedFromBackup = true
         try url.setResourceValues(values)
         context.insert(photo)
         try context.save()

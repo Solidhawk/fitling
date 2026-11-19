@@ -58,7 +58,7 @@ struct SportCatalog: Decodable {
     func install(into context: ModelContext, defaults: UserDefaults = .standard, now: Date = .now) {
         let key = "fitling.sportCatalogVersion"
         let shared = (try? context.fetchCount(FetchDescriptor<Exercise>(predicate: #Predicate<Exercise> { $0.ownerID == nil }))) ?? 0
-        guard defaults.integer(forKey: key) < version else { _ = shared; return }
+        guard defaults.integer(forKey: key) < version || shared < exercises.count else { return }
 
         let exercisesByID = Dictionary(uniqueKeysWithValues: ((try? context.fetch(FetchDescriptor<Exercise>())) ?? []).map { ($0.id, $0) })
         for entry in exercises {

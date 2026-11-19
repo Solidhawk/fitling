@@ -66,7 +66,9 @@ struct AppEnvironment {
             let container = try makeModelContainer(inMemory: false)
             let sync = SyncEngine(container: container, remote: SupabaseRemoteStore(client: client), tables: SyncTables.all)
             let food = FoodServices(source: SupabaseProductSource(client: client), search: SupabaseProductSearch(client: client))
-            return .success(AppEnvironment(container: container, root: RootViewModel(auth: AuthService(client: client), sync: sync, food: food, reminders: SystemReminderDelivery(), health: HealthKitReader())))
+            return .success(AppEnvironment(container: container, root: RootViewModel(auth: AuthService(client: client), sync: sync, food: food, reminders: SystemReminderDelivery(), health: HealthKitReader(),
+                shopping: ShoppingServices(sharing: SupabaseListSharing(client: client), offers: SupabaseOfferSource(client: client))
+            )))
         } catch {
             return .failure(error)
         }
