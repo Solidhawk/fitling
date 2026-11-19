@@ -38,18 +38,28 @@ final class OnboardingFlowTests: XCTestCase {
         button.tap()
     }
 
-    /// A list only creates the rows that are on screen; at the largest text many are not, and a
-    /// row can sit under the Verder bar. Earlier steps stay in the navigation stack, so the list
-    /// to swipe is the one of this step.
+    /// A list only creates the rows that are on screen; at the largest text many are not. A row can
+    /// also be half under the Verder bar: XCUITest still calls it hittable and taps its middle,
+    /// which lands on the bar. So a row counts as reachable only when it is clear of the bar
+    /// (the progress pills sit just above the button). Earlier steps stay in the navigation stack,
+    /// so the list to swipe is the one of this step.
     @MainActor
     private func scrollTo(_ element: XCUIElement, onStep step: String, _ app: XCUIApplication) {
         let list = app.collectionViews["onboarding.step.\(step)"]
+        let bar = app.buttons["onboarding.continue.\(step)"]
         var swipes = 0
-        while !(element.exists && element.isHittable) && swipes < 10 {
-            // A row that is partly on screen scrolls its own list; otherwise the step's list.
-            (element.exists ? element : list).swipeUp()
+        while !isClear(element, of: bar) && swipes < 10 {
+            // Slow, so a row that was just under the bar does not shoot past the top.
+            list.swipeUp(velocity: .slow)
             swipes += 1
         }
+    }
+
+    @MainActor
+    private func isClear(_ element: XCUIElement, of bar: XCUIElement) -> Bool {
+        guard element.exists, element.isHittable else { return false }
+        guard bar.exists else { return true }
+        return element.frame.maxY < bar.frame.minY - 48
     }
 
     @MainActor
