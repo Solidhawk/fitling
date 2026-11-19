@@ -1,0 +1,15 @@
+project_id = "fitling"
+
+[db]
+major_version = 17
+
+[auth]
+site_url = "fitling://auth-callback"
+additional_redirect_urls = ["fitling://auth-callback", "fitling://reset-password"]
+
+[auth.email]
+enable_confirmations = true
+
+# The function checks the user's token itself; the gateway check does not work with the new API keys.
+[functions.delete-account]
+verify_jwt = false

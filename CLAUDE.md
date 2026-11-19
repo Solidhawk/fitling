@@ -1,7 +1,7 @@
 # Fitling – projectregels
 - iOS 17+, Swift 6, SwiftUI, SwiftData, Supabase
 - Volledige productspecificatie: zie PROMPT.md
-- Architectuur en datamodel (goedgekeurd): docs/superpowers/specs/2026-11-18-fitling-architectuur-design.md
+- Architectuur en beslissingen: docs/ARCHITECTURE.md · taken: docs/TASKS.md · risico's: docs/RISKS.md (het oudere ontwerp in docs/superpowers/specs/ is naslag; bij verschil geldt ARCHITECTURE.md)
 - Geen hardcoded strings: altijd Localizable.xcstrings
 - Geen API-keys in de app (de publishable key van Supabase is openbaar bedoeld; geheime sleutels alleen in Edge Functions)
 - Elke nieuwe feature: unit tests in FitlingTests (app) of FitlingCoreTests (rekenregels)
