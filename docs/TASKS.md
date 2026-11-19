@@ -204,7 +204,16 @@ Gedaan op 2026-11-19: screenshots van alle schermen in licht, donker en grootste
 - `FoodMath.totals(_:)` geeft `DayTotals`: onbekende macro's tellen als 0 en worden geteld in `unknownProtein`, `unknownCarbs`, `unknownFat`.
 - `FoodMath.kcal(fromKilojoules:)` en `FoodMath.isConsistent(kcal:proteinG:carbsG:fatG:)`. De Edge Function `lookup-product` is TypeScript en bouwt deze twee regels na met dezelfde getallen (4,184; 25 % én 30 kcal); neem de testgevallen uit `FoodMathTests` over.
 
-### 2.3 Edge Function `lookup-product`
+### 2.3 Edge Function `lookup-product` — al gebouwd
+
+Staat op branch `fase-2-opbouw`, met tests (24 in Deno, 13 in `supabase/tests/lookup_product_test.sql`). Gemaakte keuzes:
+- `is_verified` is `true` als kcal en alle drie de macro's bekend zijn en kloppen (`isConsistent`); anders `false`. Producten uit Open Food Facts zijn dus niet "door ons nagekeken" in de zin van de kolom, maar wel automatisch gecontroleerd. Vraag Fable als dat anders moet.
+- Bij 503, 429 of een time-out (5 s) volgen drie herhalingen na 1, 2 en 4 seconden: vier aanroepen in totaal.
+- Is de bron onbereikbaar of kent die de barcode niet meer, dan geeft de functie een oude rij uit de cache terug als die er is, in plaats van een fout.
+- De `User-Agent` komt uit het geheim `OFF_USER_AGENT` van de functie (naam en contactadres, zoals Open Food Facts vraagt); zonder dat geheim is het `Fitling/1.0`.
+- Databasefuncties: `public.consume_rate_limit(bucket, max_calls)` en `public.store_shared_product(product jsonb)`, alleen voor `service_role`.
+
+Hieronder de oorspronkelijke opdracht, als naslag.
 
 - **Doel:** ARCHITECTURE §5 stap 2a en 2b.
 - **Bestanden:** `supabase/functions/lookup-product/{index.ts,handler.ts,openfoodfacts.ts,normalize.ts,ratelimit.ts,deno.json}` en tests; `supabase/config.toml` (`verify_jwt = false`, de functie controleert het token zelf, zoals `delete-account`).
