@@ -115,8 +115,9 @@ Deno.test('every page of one chain is fetched, politely and in turn', async () =
     },
     userAgent: 'Fitling/1.0',
   });
-  const offers = await provider.fetchOffers();
+  const { offers, more } = await provider.fetchOffers(1);
   assertEquals(offers.map((o) => o.externalId), ['ah-123-2026-11-17', 'b']);
+  assertEquals(more, false);
   assertEquals(calls.length, 2);
   const first = new URL(calls[0].url);
   assertEquals(first.origin + first.pathname, 'https://www.prijsprofeet.nl/api/v1/products');
@@ -141,7 +142,7 @@ Deno.test('with a key the key is sent and the wait is shorter', async () => {
     userAgent: 'Fitling/1.0',
     apiKey: 'pp_key',
   });
-  await provider.fetchOffers();
+  await provider.fetchOffers(1);
   assertEquals(calls[0].headers.get('X-API-Key'), 'pp_key');
   assertEquals(waits, [450]);
 });
@@ -157,7 +158,7 @@ Deno.test('a busy answer is waited out and tried again', async () => {
     },
     userAgent: 'Fitling/1.0',
   });
-  assertEquals((await provider.fetchOffers()).length, 1);
+  assertEquals((await provider.fetchOffers(1)).offers.length, 1);
   assertEquals(waits, [1000]);
 });
 
@@ -167,7 +168,52 @@ Deno.test('an error that does not pass makes the chain fail', async () => {
     sleep: () => Promise.resolve(),
     userAgent: 'Fitling/1.0',
   });
-  await assertRejects(() => provider.fetchOffers(), Error, 'prijsprofeet dirk: 500');
+  await assertRejects(() => provider.fetchOffers(1), Error, 'prijsprofeet dirk: 500');
+});
+
+const pageOf = (call: Call) => Number(new URL(call.url).searchParams.get('page'));
+
+Deno.test('a large chain comes in parts of 20 pages, so one call stays within the CPU limit', async () => {
+  const calls: Call[] = [];
+  const waits: number[] = [];
+  const pages = Array.from({ length: 45 }, (_, i) => [{ ...product, product_id: `p${i + 1}` }]);
+  const provider = new PrijsProfeetProvider('albert_heijn', 'Albert Heijn', {
+    fetch: fakeFetch(pages, 4500, calls),
+    sleep: (ms) => {
+      waits.push(ms);
+      return Promise.resolve();
+    },
+    userAgent: 'Fitling/1.0',
+  });
+
+  const second = await provider.fetchOffers(2);
+  assertEquals(calls.map(pageOf), Array.from({ length: 20 }, (_, i) => 21 + i));
+  assertEquals(second.offers.length, 20);
+  assertEquals(second.more, true);
+  // No wait before the first page of a call: the calls themselves are minutes apart.
+  assertEquals(waits.length, 19);
+
+  calls.length = 0;
+  const third = await provider.fetchOffers(3);
+  assertEquals(calls.map(pageOf), [41, 42, 43, 44, 45]);
+  assertEquals(third.more, false);
+
+  calls.length = 0;
+  const fourth = await provider.fetchOffers(4);
+  assertEquals(calls.map(pageOf), [61]);
+  assertEquals(fourth, { offers: [], more: false });
+});
+
+Deno.test('a chain of exactly one part has nothing more', async () => {
+  const calls: Call[] = [];
+  const pages = Array.from({ length: 20 }, (_, i) => [{ ...product, product_id: `p${i + 1}` }]);
+  const provider = new PrijsProfeetProvider('jumbo', 'Jumbo', {
+    fetch: fakeFetch(pages, 2000, calls),
+    sleep: () => Promise.resolve(),
+    userAgent: 'Fitling/1.0',
+  });
+  assertEquals((await provider.fetchOffers(1)).more, false);
+  assertEquals(calls.length, 20);
 });
 
 Deno.test('one provider per Dutch chain, under an id the supermarkets table accepts', () => {

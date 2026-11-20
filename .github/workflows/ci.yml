@@ -64,6 +64,21 @@ jobs:
           psql "$db" -v ON_ERROR_STOP=1 -q -f supabase/seed/sport.sql
           psql "$db" -v ON_ERROR_STOP=1 -q -f supabase/seed/recipes.sql
           supabase test db
+      # De nachtelijke ophaalronde: twee keer draaien moet dezelfde 25 jobs geven (20 ketens, Albert Heijn in
+      # 4 delen, Jumbo en PLUS in 2), elk op een eigen tijd.
+      - name: Nachtelijke ophaalronde (sync-offers-cron.sql)
+        run: |
+          db="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
+          psql "$db" -v ON_ERROR_STOP=1 -q -o /dev/null -f supabase/sync-offers-cron.sql
+          psql "$db" -v ON_ERROR_STOP=1 -q -o /dev/null -f supabase/sync-offers-cron.sql
+          got=$(psql "$db" -v ON_ERROR_STOP=1 -tA -c "
+            select count(*) || ' ' || count(distinct schedule) || ' '
+              || count(*) filter (where command like '%retailer=albert_heijn&part=4''%')
+            from cron.job where jobname like 'sync-offers-%'")
+          if [ "$got" != "25 25 1" ]; then
+            echo "Verwacht 25 jobs op 25 tijden, één voor Albert Heijn deel 4; kreeg: $got"
+            exit 1
+          fi
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.9.8

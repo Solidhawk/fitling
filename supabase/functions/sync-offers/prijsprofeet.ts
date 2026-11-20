@@ -64,8 +64,11 @@ export type Options = {
 const waitWithoutKey = 2100;
 const waitWithKey = 450;
 const pageSize = 100;
-/** Albert Heijn, the largest, has about 56 pages; this only stops a runaway loop. */
-const maxPages = 120;
+/**
+ * Pages per call. Albert Heijn's 56 pages in one call used 2.08 s of CPU on Supabase, past the 2 s limit
+ * (2026-11-20); 20 pages stays well within it.
+ */
+const pagesPerPart = 20;
 const maxRetries = 2;
 
 const units: Record<string, ['g' | 'ml' | 'piece', number]> = {
@@ -137,22 +140,24 @@ export function toRawOffer(product: PrijsProfeetProduct): RawOffer | null {
   return offer;
 }
 
-/** All running and coming promotions of one chain, page by page and within PrijsProfeet's limits. */
+/** The running and coming promotions of one chain, 20 pages per part, within PrijsProfeet's limits. */
 export class PrijsProfeetProvider implements OfferProvider {
   constructor(readonly supermarketId: string, readonly supermarketName: string, private readonly options: Options) {}
 
-  async fetchOffers(): Promise<RawOffer[]> {
+  async fetchOffers(part: number): Promise<{ offers: RawOffer[]; more: boolean }> {
     const offers: RawOffer[] = [];
-    for (let page = 1; page <= maxPages; page++) {
-      if (page > 1) await this.options.sleep(this.options.apiKey ? waitWithKey : waitWithoutKey);
+    const first = (part - 1) * pagesPerPart + 1;
+    const last = part * pagesPerPart;
+    for (let page = first; page <= last; page++) {
+      if (page > first) await this.options.sleep(this.options.apiKey ? waitWithKey : waitWithoutKey);
       const { products, total } = await this.page(page);
       for (const product of products) {
         const offer = toRawOffer(product);
         if (offer) offers.push(offer);
       }
-      if (products.length === 0 || page * pageSize >= total) break;
+      if (products.length === 0 || page * pageSize >= total) return { offers, more: false };
     }
-    return offers;
+    return { offers, more: true };
   }
 
   private async page(page: number): Promise<{ products: PrijsProfeetProduct[]; total: number }> {
