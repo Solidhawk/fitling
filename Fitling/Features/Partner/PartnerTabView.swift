@@ -134,7 +134,8 @@ struct PartnerTabView: View {
                 .fixedSize(horizontal: false, vertical: true)
             LevelRibbon(snapshot: snapshot)
         }
-        .foregroundStyle(Color.ink)
+        // The species tint is light in both modes, so the lettering on it is the dark ribbon ink.
+        .foregroundStyle(Color.onRibbon)
         .padding(Spacing.l)
         .frame(maxWidth: .infinity)
         .background(species.tint, in: RoundedRectangle(cornerRadius: Radius.card, style: .continuous))
@@ -231,8 +232,8 @@ private struct LevelRibbon: View {
             GeometryReader { proxy in
                 let fraction = snapshot.xpForNextLevel > 0 ? Double(snapshot.xpIntoLevel) / Double(snapshot.xpForNextLevel) : 1
                 ZStack(alignment: .leading) {
-                    Capsule().fill(Color.card)
-                    Capsule().fill(Color.ink)
+                    Capsule().fill(Color.white)
+                    Capsule().fill(Color.onRibbon)
                         .frame(width: max(proxy.size.width * min(max(fraction, 0), 1), fraction > 0 ? 12 : 0))
                 }
             }
@@ -242,7 +243,7 @@ private struct LevelRibbon: View {
                 Text("partner.level.max").font(.footnote)
             }
         }
-        .foregroundStyle(Color.ink)
+        .foregroundStyle(Color.onRibbon)
     }
 }
 
