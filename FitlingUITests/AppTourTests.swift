@@ -206,7 +206,9 @@ final class AppTourTests: XCTestCase {
         if openTab("Dagdoel") {
             _ = app.navigationBars["Dagdoel"].waitForExistence(timeout: 5)
             shot("dagdoel")
-            let adjust = app.navigationBars.buttons["Aanpassen"]
+            // A SwiftUI Menu is not an ordinary button to XCUITest; it is found by its label.
+            let adjust = app.navigationBars.descendants(matching: .any)
+                .matching(NSPredicate(format: "label == %@ OR identifier == %@", "Aanpassen", "profile.adjust")).firstMatch
             if tap(adjust, "aanpassen-menu"), tap(button(containing: "Profiel bewerken"), "profiel bewerken") {
                 sleep(1)
                 shot("profiel-bewerken")
