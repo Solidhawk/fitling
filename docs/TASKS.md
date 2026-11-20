@@ -442,7 +442,7 @@ Het menu loopt van vandaag tot zes dagen later. Gelogde maaltijden blijven bij e
 
 - **Vooraf (gebruiker):** RISKS R-13 beantwoord op 2026-11-20: PrijsProfeet.
 - **Gebouwd:** `supabase/functions/sync-offers` met `OfferProvider` en `prijsprofeet.ts` (20 ketens, per keten en deel van 20 pagina's aan te roepen met `?retailer=…&part=…`). Er zijn 32 Deno-tests, en de omzetting is op 2026-11-20 nagekeken met echte acties van Jumbo en Aldi. De functie draait alleen met de geheime sleutel in `Authorization`. In de app: bronvermelding met link, voorbehoud, en bij elke prijs tot wanneer hij geldt.
-- **Ontwikkelproject (2026-11-20):** gedeployd en ingepland met `supabase/sync-offers-cron.sql`; Vomar (217 acties) kwam binnen langs dezelfde weg als de nachtelijke ronde. Albert Heijn in één keer liep tegen de CPU-limiet, vandaar de delen (UNFORGET S20).
+- **Ontwikkelproject (2026-11-20):** gedeployd en ingepland met `supabase/sync-offers-cron.sql`; Vomar (217 acties) kwam binnen langs dezelfde weg als de nachtelijke ronde. Albert Heijn in één keer liep tegen de CPU-limiet (546); in delen van 20 pagina's kwam deel 1 daarna binnen (2.000 acties, versie 2). De eerste volledige nacht wordt op 2026-11-21 nagekeken (UNFORGET S20).
 - **Nog te doen bij het productieproject (UNFORGET S20):** hetzelfde: deployen, de twee Vault-geheimen, en `sync-offers-cron.sql` draaien.
 
 ### 6.5 OfferMatcher (FitlingCore) — al gebouwd
