@@ -27,8 +27,13 @@ final class TrainingFlowTests: XCTestCase {
     private func reveal(_ element: XCUIElement, inList list: String, _ app: XCUIApplication) {
         let collection = app.collectionViews[list]
         XCTAssertTrue(collection.waitForExistence(timeout: 10), "No list \(list)")
+        // Wholly inside the list: at the largest text a field can be hittable with only its top edge
+        // on screen, and a tap in its middle then lands below the screen.
+        func inView() -> Bool {
+            element.exists && element.isHittable && collection.frame.contains(element.frame)
+        }
         var swipes = 0
-        while !(element.exists && element.isHittable) && swipes < 12 {
+        while !inView() && swipes < 12 {
             collection.swipeUp(velocity: .slow)
             swipes += 1
         }

@@ -172,7 +172,7 @@ struct WorkoutView: View {
 
     /// A number with its label above it and its unit beside it, on a field background, so weight
     /// and reps never read as one value.
-    private func numberField<Field: View>(_ label: LocalizedStringKey, unit: Text, @ViewBuilder field: () -> Field) -> some View {
+    private func numberField<Field: View>(_ label: LocalizedStringKey, unit: Text, focusing target: SetField, @ViewBuilder field: () -> Field) -> some View {
         VStack(alignment: .leading, spacing: Spacing.xs) {
             Text(label)
                 .font(.caption.weight(.bold))
@@ -186,6 +186,9 @@ struct WorkoutView: View {
             .padding(.horizontal, Spacing.m)
             .padding(.vertical, Spacing.s)
             .background(Color.ground, in: RoundedRectangle(cornerRadius: Radius.card / 2, style: .continuous))
+            // A tap anywhere on the box puts the cursor in the field, not only a tap on the digits.
+            .contentShape(RoundedRectangle(cornerRadius: Radius.card / 2, style: .continuous))
+            .onTapGesture { focus = target }
         }
     }
 
@@ -201,13 +204,13 @@ struct WorkoutView: View {
             : AnyLayout(HStackLayout(spacing: Spacing.s))
         return VStack(alignment: .leading, spacing: Spacing.s) {
             fields {
-                numberField("training.set.weight", unit: Text(verbatim: viewModel.unit.symbol)) {
+                numberField("training.set.weight", unit: Text(verbatim: viewModel.unit.symbol), focusing: .weight(entry.id)) {
                     TextField("training.set.weight", value: draftBinding(entry, \.weight), format: .number)
                         .keyboardType(.decimalPad)
                         .focused($focus, equals: .weight(entry.id))
                         .accessibilityIdentifier("workout.weight.\(entry.exercise.id.uuidString)")
                 }
-                numberField("training.set.reps", unit: Text("training.set.repsUnit")) {
+                numberField("training.set.reps", unit: Text("training.set.repsUnit"), focusing: .reps(entry.id)) {
                     TextField("training.set.reps", value: draftBinding(entry, \.reps), format: .number)
                         .keyboardType(.numberPad)
                         .focused($focus, equals: .reps(entry.id))
