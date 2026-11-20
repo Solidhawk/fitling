@@ -1,11 +1,16 @@
 import { createClient } from '@supabase/supabase-js';
 import { misconfigured, readConfig } from '../delete-account/handler.ts';
 import { handle } from './handler.ts';
-import type { OfferProvider } from './provider.ts';
-import { TestDataProvider } from './testdata.ts';
+import { prijsProfeetProviders } from './prijsprofeet.ts';
 
-// The registered sources. Until RISKS R-13 is settled there is only test data.
-const providers: OfferProvider[] = [new TestDataProvider(() => new Date())];
+// The source of the offers: PrijsProfeet, one provider per Dutch chain (RISKS R-13). The optional
+// secret PRIJSPROFEET_API_KEY raises their limit from 30 to 150 requests a minute.
+const providers = prijsProfeetProviders({
+  fetch,
+  sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+  userAgent: 'Fitling/1.0',
+  apiKey: Deno.env.get('PRIJSPROFEET_API_KEY') || undefined,
+});
 
 const config = readConfig((name) => Deno.env.get(name));
 

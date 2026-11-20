@@ -4,8 +4,11 @@ export interface OfferProvider {
   readonly supermarketId: string;
   /** Shown in the app; written to supermarkets.name. */
   readonly supermarketName: string;
-  /** All offers that apply now or soon. */
-  fetchOffers(): Promise<RawOffer[]>;
+  /**
+   * The offers that apply now or soon, one part at a time (from 1): a large chain takes several calls, so
+   * each stays within the CPU limit of an Edge Function. `more` says a later part still has offers.
+   */
+  fetchOffers(part: number): Promise<{ offers: RawOffer[]; more: boolean }>;
 }
 
 export interface RawOffer {

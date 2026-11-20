@@ -51,10 +51,13 @@ final class FakeListSharing: ListSharing, @unchecked Sendable {
     }
 }
 
-/// Two test supermarkets with a few offers: the backend has no offer source yet (UNFORGET).
+/// Offers without a server: two test supermarkets, for the tests and the UI tests.
 final class FakeOfferSource: OfferSource, @unchecked Sendable {
     private let lock = NSLock()
     private var _offers: [OfferRecord] = []
+    private var _rowCap = Int.max
+    private var _failFromOffset: Int?
+    private var _requests = 0
     private let shops = [SupermarketRecord(id: "testmarkt", name: "Testmarkt"), SupermarketRecord(id: "proefsuper", name: "Proefsuper")]
 
     var offerRecords: [OfferRecord] {
@@ -62,12 +65,33 @@ final class FakeOfferSource: OfferSource, @unchecked Sendable {
         set { lock.withLock { _offers = newValue } }
     }
 
+    /// At most this many rows per request, like `max_rows` of Supabase's Data API.
+    var rowCap: Int {
+        get { lock.withLock { _rowCap } }
+        set { lock.withLock { _rowCap = newValue } }
+    }
+
+    /// Requests from this offset on fail, like a connection that drops halfway.
+    var failFromOffset: Int? {
+        get { lock.withLock { _failFromOffset } }
+        set { lock.withLock { _failFromOffset = newValue } }
+    }
+
+    /// How many times offers were asked for.
+    var requests: Int { lock.withLock { _requests } }
+
     func supermarkets() async throws -> [SupermarketRecord] {
         shops
     }
 
-    func offers(validFrom day: Day, supermarketIDs: [String]) async throws -> [OfferRecord] {
-        lock.withLock { _offers.filter { supermarketIDs.contains($0.supermarketID) && $0.validTo >= day } }
+    func offers(validFrom day: Day, supermarketIDs: [String], offset: Int, limit: Int) async throws -> [OfferRecord] {
+        try lock.withLock {
+            _requests += 1
+            if let failFrom = _failFromOffset, offset >= failFrom { throw RemoteStoreError.network }
+            let matching = _offers.filter { supermarketIDs.contains($0.supermarketID) && $0.validTo >= day }
+            guard offset < matching.count else { return [] }
+            return Array(matching[offset..<min(matching.count, offset + min(limit, _rowCap))])
+        }
     }
 
     /// Tomatoes and onions in both test supermarkets, valid for a week from `today`.

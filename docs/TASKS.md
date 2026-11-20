@@ -438,11 +438,12 @@ Het menu loopt van vandaag tot zes dagen later. Gelogde maaltijden blijven bij e
 
 - **Gebruikt:** `create_shopping_list_invite`, `join_shopping_list`, Realtime als seintje om te pullen (D-18).
 
-### 6.4 `sync-offers` — gebouwd, met alleen testdata
+### 6.4 `sync-offers` — gebouwd, met PrijsProfeet als bron
 
-- **Vooraf (gebruiker):** RISKS R-13 beantwoord. Zonder bron: alleen de provider met testdata.
-- **Gebouwd:** `supabase/functions/sync-offers` met `OfferProvider`, `TestDataProvider` (winkel `testwinkel`, tien producten van maandag tot en met zondag van deze week) en 17 Deno-tests. De functie draait alleen met de geheime sleutel in `Authorization`. Een echte bron is één bestand naast `testdata.ts` en één regel in `index.ts`.
-- **Nog te doen bij het productieproject (UNFORGET S20):** de functie deployen en dagelijks laten aanroepen met Supabase Cron (pg_cron + pg_net), met de geheime sleutel uit Vault.
+- **Vooraf (gebruiker):** RISKS R-13 beantwoord op 2026-11-20: PrijsProfeet.
+- **Gebouwd:** `supabase/functions/sync-offers` met `OfferProvider` en `prijsprofeet.ts` (20 ketens, per keten en deel van 20 pagina's aan te roepen met `?retailer=…&part=…`). Er zijn 32 Deno-tests, en de omzetting is op 2026-11-20 nagekeken met echte acties van Jumbo en Aldi. De functie draait alleen met de geheime sleutel in `Authorization`. In de app: bronvermelding met link, voorbehoud, en bij elke prijs tot wanneer hij geldt.
+- **Ontwikkelproject (2026-11-20):** gedeployd en ingepland met `supabase/sync-offers-cron.sql`; Vomar (217 acties) kwam binnen langs dezelfde weg als de nachtelijke ronde. Albert Heijn in één keer liep tegen de CPU-limiet (546); in delen van 20 pagina's kwam deel 1 daarna binnen (2.000 acties, versie 2). De eerste volledige nacht wordt op 2026-11-21 nagekeken (UNFORGET S20).
+- **Nog te doen bij het productieproject (UNFORGET S20):** hetzelfde: deployen, de twee Vault-geheimen, en `sync-offers-cron.sql` draaien.
 
 ### 6.5 OfferMatcher (FitlingCore) — al gebouwd
 
@@ -453,6 +454,7 @@ Het menu loopt van vandaag tot zes dagen later. Gelogde maaltijden blijven bij e
 ### 6.7 Aanbiedingen tonen — gebouwd
 
 - Favoriete supermarkten, postcode, per item de goedkoopste winkel, totaal per winkel met "+ n items zonder prijs".
+- Alle aanbiedingen komen binnen, per 1.000 (de Data API stuurt er niet meer per verzoek), en worden hoogstens om de 6 uur opnieuw opgehaald, behalve bij andere supermarkten of omlaag trekken (UNFORGET S23, 2026-11-20).
 
 ---
 

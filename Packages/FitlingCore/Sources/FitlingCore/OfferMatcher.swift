@@ -97,10 +97,13 @@ public enum OfferMatcher {
     public static func matches(
         items: [ListItemForMatching], offers: [OfferForMatching], on day: Day, ignoredWords: Set<String> = []
     ) -> [OfferMatch] {
-        let valid = offers.filter { $0.validFrom <= day && day <= $0.validTo }
+        let valid = offers
+            .filter { $0.validFrom <= day && day <= $0.validTo }
+            .map { ReadOffer($0, ignoring: ignoredWords) }
         return items.flatMap { item in
-            valid
-                .compactMap { match(item, $0, ignoring: ignoredWords) }
+            let read = ReadItem(item, ignoring: ignoredWords)
+            return valid
+                .compactMap { match(read, $0) }
                 .sorted { first, second in
                     if first.confidence != second.confidence { return first.confidence == .certain }
                     if first.score != second.score { return first.score > second.score }
@@ -134,7 +137,40 @@ public enum OfferMatcher {
 
     // MARK: One item against one offer
 
-    private static func match(_ item: ListItemForMatching, _ offer: OfferForMatching, ignoring ignoredWords: Set<String>) -> OfferMatch? {
+    /// An item with its words read once. Reading words is the slow part, and one list meets thousands of
+    /// offers (Albert Heijn alone has over 5,000; UNFORGET S23).
+    private struct ReadItem {
+        let item: ListItemForMatching
+        let brand: [String]
+        let words: [String]
+        let wordSet: Set<String>
+
+        init(_ item: ListItemForMatching, ignoring ignoredWords: Set<String>) {
+            self.item = item
+            brand = item.brand.map { OfferMatcher.words(in: $0) } ?? []
+            words = OfferMatcher.words(in: item.name, ignoring: ignoredWords)
+            wordSet = Set(words)
+        }
+    }
+
+    /// An offer with its words read once.
+    private struct ReadOffer {
+        let offer: OfferForMatching
+        let brand: [String]
+        let words: [String]
+        let wordSet: Set<String>
+
+        init(_ offer: OfferForMatching, ignoring ignoredWords: Set<String>) {
+            self.offer = offer
+            brand = offer.brand.map { OfferMatcher.words(in: $0) } ?? []
+            words = OfferMatcher.words(in: offer.title, ignoring: ignoredWords)
+            wordSet = Set(words)
+        }
+    }
+
+    private static func match(_ read: ReadItem, _ readOffer: ReadOffer) -> OfferMatch? {
+        let item = read.item
+        let offer = readOffer.offer
         func result(_ confidence: MatchConfidence, _ score: Double) -> OfferMatch {
             OfferMatch(
                 itemID: item.id, offerID: offer.id, supermarketID: offer.supermarketID,
@@ -143,26 +179,26 @@ public enum OfferMatcher {
         }
         if let gtin = item.gtin, gtin == offer.gtin { return result(.certain, 1) }
 
-        let itemBrand = item.brand.map { words(in: $0) } ?? []
-        let offerBrand = offer.brand.map { words(in: $0) } ?? []
+        let itemBrand = read.brand
+        let offerBrand = readOffer.brand
         if !itemBrand.isEmpty, !offerBrand.isEmpty, itemBrand != offerBrand { return nil }
         if isOtherSize(item, offer) { return nil }
 
-        let itemWords = words(in: item.name, ignoring: ignoredWords)
-        let offerWords = words(in: offer.title, ignoring: ignoredWords)
+        let itemWords = read.words
+        let offerWords = readOffer.words
         guard !itemWords.isEmpty else { return nil }
-        if Set(itemWords) == Set(offerWords) { return result(.certain, 1) }
+        if read.wordSet == readOffer.wordSet { return result(.certain, 1) }
 
         var found = 0.0
         for word in itemWords {
-            if offerWords.contains(word) {
+            if readOffer.wordSet.contains(word) {
                 found += 1
             } else if offerWords.contains(where: { isRelated(word, $0) }) {
                 found += relatedWordScore
             }
         }
         var score = found / Double(itemWords.count)
-        let sameBrand = !itemBrand.isEmpty && (itemBrand == offerBrand || itemBrand.allSatisfy { offerWords.contains($0) })
+        let sameBrand = !itemBrand.isEmpty && (itemBrand == offerBrand || itemBrand.allSatisfy { readOffer.wordSet.contains($0) })
         if sameBrand { score += brandBonus }
         // Rounded so that 0.5 + 0.2 does not fall just short of a threshold.
         score = min((score * 1_000_000).rounded() / 1_000_000, 1)
