@@ -3,6 +3,13 @@ import SwiftData
 import FitlingCore
 
 extension ModelContext {
+    /// The user whose data is on this device, if any: there is only ever one.
+    func localOwner() -> UUID? {
+        var descriptor = FetchDescriptor<UserProfile>()
+        descriptor.fetchLimit = 1
+        return try? fetch(descriptor).first?.id
+    }
+
     /// The profile of `userID` on this device, if there is one.
     func profile(of userID: UUID) -> UserProfile? {
         var descriptor = FetchDescriptor<UserProfile>(predicate: #Predicate<UserProfile> { $0.id == userID })

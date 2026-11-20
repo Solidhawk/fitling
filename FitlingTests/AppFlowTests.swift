@@ -273,8 +273,59 @@ struct FlowFixture {
         #expect(fixture.context.profile(of: fixture.userID) == nil)
     }
 
+    // MARK: A session that ends by itself (UNFORGET S12)
+
+    /// Signed in with a change the server has not seen, then the session ends without the user
+    /// asking, as when a refresh token expires after a long time offline.
+    private func sessionEndsBySelfWithUnsentChanges() async -> (RootViewModel, FakeAuthProvider) {
+        fixture.insertProfile(needsPush: true)
+        fixture.remote.isOffline = true
+        let (root, auth) = fixture.root(fixture.signedIn)
+        await root.refresh()
+        #expect(root.screen == .home(fixture.userID))
+        auth.state = .signedOut
+        await root.refresh()
+        return (root, auth)
+    }
+
+    @Test func aSessionThatEndsBySelfKeepsUnsentChanges() async {
+        let (root, _) = await sessionEndsBySelfWithUnsentChanges()
+        #expect(root.screen == .welcome)
+        #expect(fixture.context.profile(of: fixture.userID) != nil)
+        #expect(fixture.sync.hasUnsentChanges)
+    }
+
+    @Test func theSameUserSigningInAgainSendsTheKeptChanges() async {
+        let (root, auth) = await sessionEndsBySelfWithUnsentChanges()
+        fixture.remote.isOffline = false
+        auth.state = fixture.signedIn
+        await root.refresh()
+        #expect(root.screen == .home(fixture.userID))
+        #expect(fixture.remote.row(fixture.userID, in: "profiles") != nil)
+        #expect(!fixture.sync.hasUnsentChanges)
+    }
+
+    @Test func anotherUserSigningInErasesTheKeptChanges() async {
+        let (root, auth) = await sessionEndsBySelfWithUnsentChanges()
+        auth.state = .signedIn(userID: UUID(), usesApple: false)
+        await root.refresh()
+        #expect(fixture.context.profile(of: fixture.userID) == nil)
+    }
+
+    @Test func signingOutOnPurposeErasesEvenUnsentChanges() async {
+        fixture.insertProfile(needsPush: true)
+        fixture.remote.isOffline = true
+        let (root, auth) = fixture.root(fixture.signedIn)
+        await root.refresh()
+        let account = AccountViewModel(auth: auth, sync: fixture.sync, usesApple: false)
+        #expect(await account.signOut(force: true) == .signedOut)
+        await root.refresh()
+        #expect(fixture.context.profile(of: fixture.userID) == nil)
+    }
+
     @Test func deletedAccountLeavesNoDataBehind() async {
-        fixture.insertProfile()
+        fixture.insertProfile(needsPush: true)
+        fixture.remote.isOffline = true
         let (root, auth) = fixture.root(fixture.signedIn)
         await root.refresh()
         let account = AccountViewModel(auth: auth, sync: fixture.sync, usesApple: false)

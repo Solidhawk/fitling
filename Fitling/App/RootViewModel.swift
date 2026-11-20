@@ -62,20 +62,36 @@ final class RootViewModel {
         case .loading:
             screen = .loading
         case .signedOut:
-            // Health data belongs to the signed-in user only, whatever ended the session. Once on
-            // the welcome screen nothing new can be stored, so later refreshes skip the erase.
+            // Signing out or deleting the account on purpose erases everything on this device. A
+            // session that ends by itself (a refresh token that expired after a long time offline)
+            // must not take changes the server has not seen with it: they stay on this device,
+            // behind the welcome screen, until the same user signs in and they are sent; another
+            // user signing in erases them first (UNFORGET S12). Once on the welcome screen nothing
+            // new can be stored, so later refreshes skip this.
             if screen != .welcome {
-                sync.eraseLocalData()
+                if auth.signedOutOnRequest || !sync.hasUnsentChanges || sync.context.localOwner() == nil {
+                    eraseLocalData()
+                }
                 // A waiting reminder would still carry the partner's name and mood.
                 reminders.replace(with: [], title: "")
-                ProgressPhotoStore(context: sync.context).removeAll()
             }
             screen = .welcome
         case let .awaitingEmailVerification(email):
             screen = .verifyEmail(email)
         case let .signedIn(userID, _):
+            // Changes kept from a session that ended by itself belong to that user only.
+            if let owner = sync.context.localOwner(), owner != userID {
+                eraseLocalData()
+            }
             await route(userID: userID, generation: current)
         }
+    }
+
+    /// Health data belongs to the signed-in user only: the synced tables and the progress photos,
+    /// which live on this device alone.
+    private func eraseLocalData() {
+        sync.eraseLocalData()
+        ProgressPhotoStore(context: sync.context).removeAll()
     }
 
     private func route(userID: UUID, generation current: Int) async {
