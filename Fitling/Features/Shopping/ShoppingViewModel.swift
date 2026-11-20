@@ -30,6 +30,13 @@ final class ShoppingViewModel {
     private let defaults: UserDefaults
     private let listName: String
     private let ownerName: String
+    private let now: () -> Date
+
+    /// Rows asked for per request. Supabase's Data API sends at most `max_rows` (1,000 by default) whatever is
+    /// asked, so paging goes on until a page comes back empty.
+    static let offerPageSize = 1_000
+    /// The offers change once a night; until they are this old, opening the list keeps the ones on the device.
+    static let offersKeptFor: TimeInterval = 6 * 3600
 
     init(
         profile: UserProfile, sync: SyncEngine, services: ShoppingServices, defaults: UserDefaults = .standard,
@@ -42,9 +49,12 @@ final class ShoppingViewModel {
         self.defaults = defaults
         self.listName = listName
         self.ownerName = ownerName
+        self.now = now
     }
 
     private var confirmedKey: String { "fitling.confirmedOffers" }
+    /// The supermarkets the offers on the device were fetched for.
+    private var offerShopsKey: String { "fitling.offerShops" }
 
     /// Uncertain offers the user said are right; kept on this device only.
     var confirmed: Set<UUID> {
@@ -79,14 +89,34 @@ final class ShoppingViewModel {
                 store.replaceMembers(of: list.id, with: records)
             }
         }
-        await refreshOffers()
+        await refreshOffers(force: force)
         reload()
     }
 
+    /// Fetches the offers of the favourite supermarkets, page by page. Without `force` it keeps the ones on the
+    /// device while they are fresh and for the same supermarkets.
     func refreshOffers(force: Bool = false) async {
+        let shops = store.favoriteSupermarketIDs()
+        if !force, defaults.stringArray(forKey: offerShopsKey) == shops,
+           let fetched = store.offersFetchedAt(), now().timeIntervalSince(fetched) < Self.offersKeptFor {
+            return
+        }
         guard let supermarkets = try? await services.offers.supermarkets() else { return }
-        let offers = (try? await services.offers.offers(validFrom: store.today, supermarketIDs: store.favoriteSupermarketIDs())) ?? []
+        var offers: [OfferRecord] = []
+        do {
+            while true {
+                let page = try await services.offers.offers(
+                    validFrom: store.today, supermarketIDs: shops, offset: offers.count, limit: Self.offerPageSize
+                )
+                if page.isEmpty { break }
+                offers += page
+            }
+        } catch {
+            // Half the offers would hide cheaper ones; the ones on the device stay until all pages arrive.
+            return
+        }
         store.store(supermarkets: supermarkets, offers: offers)
+        defaults.set(shops, forKey: offerShopsKey)
     }
 
     func add(_ name: String) {

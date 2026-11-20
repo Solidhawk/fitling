@@ -84,11 +84,7 @@ final class FakeOfferSource: OfferSource, @unchecked Sendable {
         shops
     }
 
-    func offers(validFrom day: Day, supermarketIDs: [String]) async throws -> [OfferRecord] {
-        try page(validFrom: day, supermarketIDs: supermarketIDs, offset: 0, limit: Int.max)
-    }
-
-    private func page(validFrom day: Day, supermarketIDs: [String], offset: Int, limit: Int) throws -> [OfferRecord] {
+    func offers(validFrom day: Day, supermarketIDs: [String], offset: Int, limit: Int) async throws -> [OfferRecord] {
         try lock.withLock {
             _requests += 1
             if let failFrom = _failFromOffset, offset >= failFrom { throw RemoteStoreError.network }

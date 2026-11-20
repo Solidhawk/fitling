@@ -454,6 +454,7 @@ Het menu loopt van vandaag tot zes dagen later. Gelogde maaltijden blijven bij e
 ### 6.7 Aanbiedingen tonen — gebouwd
 
 - Favoriete supermarkten, postcode, per item de goedkoopste winkel, totaal per winkel met "+ n items zonder prijs".
+- Alle aanbiedingen komen binnen, per 1.000 (de Data API stuurt er niet meer per verzoek), en worden hoogstens om de 6 uur opnieuw opgehaald, behalve bij andere supermarkten of omlaag trekken (UNFORGET S23, 2026-11-20).
 
 ---
 

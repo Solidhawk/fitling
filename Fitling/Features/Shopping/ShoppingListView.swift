@@ -92,7 +92,7 @@ struct ShoppingListView: View {
         .groundBackground()
         .accessibilityIdentifier("shopping.list")
         .navigationTitle(Text(verbatim: viewModel.list?.name ?? ""))
-        .refreshable { await viewModel.refresh() }
+        .refreshable { await viewModel.refresh(force: true) }
         .onAppear { viewModel.reload() }
         .task { await viewModel.refresh() }
         .sheet(isPresented: $joining) {
