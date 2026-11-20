@@ -65,7 +65,7 @@ final class ShoppingViewModel {
     }
 
     /// Sends and fetches the list, then the members and the offers.
-    func refresh() async {
+    func refresh(force: Bool = false) async {
         _ = await sync.sync()
         for member in store.unsentMembers() {
             let record = ListMemberRecord(listID: member.listID, userID: member.userID, role: member.role, displayName: member.displayName)
@@ -83,7 +83,7 @@ final class ShoppingViewModel {
         reload()
     }
 
-    func refreshOffers() async {
+    func refreshOffers(force: Bool = false) async {
         guard let supermarkets = try? await services.offers.supermarkets() else { return }
         let offers = (try? await services.offers.offers(validFrom: store.today, supermarketIDs: store.favoriteSupermarketIDs())) ?? []
         store.store(supermarkets: supermarkets, offers: offers)

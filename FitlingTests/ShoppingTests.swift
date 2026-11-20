@@ -21,10 +21,30 @@ struct ShoppingFixture {
         ShoppingStore(context: menu.context, userID: menu.userID, timeZone: .gmt, now: { [now = menu.now] in now }, language: "nl")
     }
 
-    func viewModel() -> ShoppingViewModel {
+    func viewModel(now: (() -> Date)? = nil) -> ShoppingViewModel {
         ShoppingViewModel(
             profile: menu.profile, sync: sync, services: ShoppingServices(sharing: sharing, offers: offers), defaults: menu.defaults,
-            listName: "Boodschappen", ownerName: "Ik", timeZone: .gmt, now: { [now = menu.now] in now }
+            listName: "Boodschappen", ownerName: "Ik", timeZone: .gmt, now: now ?? { [now = menu.now] in now }
+        )
+    }
+
+    var localOfferCount: Int {
+        (try? menu.context.fetchCount(FetchDescriptor<Offer>())) ?? -1
+    }
+}
+
+/// A clock a test can move forward.
+final class TestClock: @unchecked Sendable {
+    var now: Date
+    init(_ now: Date) { self.now = now }
+}
+
+/// `count` offers of one shop, valid for a week from `today`.
+func manyOffers(_ count: Int, in shop: String, today: Day) -> [OfferRecord] {
+    (0..<count).map { number in
+        OfferRecord(
+            id: UUID(), supermarketID: shop, externalID: "x\(number)", title: "Product \(number)", searchTitle: "product \(number)",
+            priceCents: 100, validFrom: today, validTo: today.adding(6)
         )
     }
 }
@@ -167,5 +187,56 @@ struct ShoppingFixture {
         viewModel.reload()
         #expect(viewModel.cheapest.isEmpty)
         #expect(viewModel.totals.isEmpty)
+    }
+
+    /// The Data API sends at most `max_rows` per request (1,000 by default); Albert Heijn alone has over 5,000
+    /// offers (UNFORGET S23).
+    @Test func everyOfferArrivesHoweverFewTheServerSendsPerRequest() async {
+        fixture.offers.rowCap = 400
+        fixture.offers.offerRecords = manyOffers(2_300, in: "testmarkt", today: fixture.menu.today)
+        let viewModel = fixture.viewModel()
+        viewModel.reload()
+        await viewModel.setFavorite("testmarkt", true)
+        #expect(fixture.localOfferCount == 2_300)
+    }
+
+    @Test func aRequestThatFailsHalfwayKeepsTheOffersThatWereThere() async {
+        fixture.offers.offerRecords = FakeOfferSource.sample(today: fixture.menu.today)
+        let viewModel = fixture.viewModel()
+        viewModel.reload()
+        await viewModel.setFavorite("testmarkt", true)
+        await viewModel.setFavorite("proefsuper", true)
+        #expect(fixture.localOfferCount == 3)
+
+        fixture.offers.rowCap = 2
+        fixture.offers.failFromOffset = 2
+        await viewModel.refreshOffers(force: true)
+        #expect(fixture.localOfferCount == 3)
+    }
+
+    /// The offers change once a night; opening the list again does not fetch them all again.
+    @Test func offersAreFetchedAgainWhenOldWhenTheShopsChangeOrWhenAsked() async {
+        fixture.offers.offerRecords = FakeOfferSource.sample(today: fixture.menu.today)
+        let clock = TestClock(fixture.menu.now)
+        let viewModel = fixture.viewModel(now: { clock.now })
+        viewModel.reload()
+        await viewModel.setFavorite("testmarkt", true)
+        let afterChoosing = fixture.offers.requests
+        #expect(afterChoosing > 0)
+
+        await viewModel.refresh()
+        #expect(fixture.offers.requests == afterChoosing)
+
+        await viewModel.setFavorite("proefsuper", true)
+        let afterSecondShop = fixture.offers.requests
+        #expect(afterSecondShop > afterChoosing)
+
+        clock.now += 7 * 3600
+        await viewModel.refresh()
+        let afterSevenHours = fixture.offers.requests
+        #expect(afterSevenHours > afterSecondShop)
+
+        await viewModel.refresh(force: true)
+        #expect(fixture.offers.requests > afterSevenHours)
     }
 }
