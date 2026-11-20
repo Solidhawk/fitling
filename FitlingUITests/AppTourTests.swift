@@ -22,25 +22,42 @@ final class AppTourTests: XCTestCase {
         add(attachment)
     }
 
-    /// Scrolls until the element is on screen and taps it; notes the step when it is not there.
+    /// Scrolls until the element is on screen. A list makes its rows only when they come near the screen,
+    /// so a row far down does not exist until the list has scrolled towards it.
     @MainActor
-    @discardableResult
-    private func tap(_ element: XCUIElement, _ step: String) -> Bool {
-        guard element.waitForExistence(timeout: 5) else {
-            skipped.append(step)
-            return false
-        }
+    private func reveal(_ element: XCUIElement) -> Bool {
         var swipes = 0
-        while !element.isHittable && swipes < 8 {
+        if !element.waitForExistence(timeout: 3) {
+            while !element.exists && swipes < 15 {
+                app.swipeUp(velocity: .fast)
+                swipes += 1
+            }
+        }
+        while element.exists && !element.isHittable && swipes < 15 {
             app.swipeUp(velocity: .slow)
             swipes += 1
         }
-        guard element.isHittable else {
+        return element.exists && element.isHittable
+    }
+
+    /// Scrolls to the element and taps it; notes the step when it is not there.
+    @MainActor
+    @discardableResult
+    private func tap(_ element: XCUIElement, _ step: String) -> Bool {
+        guard reveal(element) else {
             skipped.append(step)
             return false
         }
         element.tap()
         return true
+    }
+
+    /// Turns a switch on; a tap on the row does not always reach the switch itself.
+    @MainActor
+    private func switchOn(_ name: String) {
+        let toggle = app.switches[name]
+        guard tap(toggle, "schakelaar \(name)") else { return }
+        if toggle.value as? String == "0" { toggle.switches.firstMatch.tap() }
     }
 
     @MainActor
@@ -143,13 +160,29 @@ final class AppTourTests: XCTestCase {
                 }
                 back()
             }
-            if tap(button(containing: "Boodschappen"), "boodschappen") {
+            if tap(app.buttons["menu.shopping"], "boodschappen") {
                 sleep(1)
-                shot("boodschappen")
+                shot("boodschappen-leeg")
+                if tap(app.buttons["shopping.fromMenu"], "uit het menu") {
+                    sleep(1)
+                    app.swipeDown(velocity: .fast)
+                    shot("boodschappen")
+                }
+                // The test supermarkets have offers on tomatoes and onions, which the menu needs.
                 if tap(button(containing: "Mijn supermarkten"), "supermarkten") {
+                    sleep(1)
+                    switchOn("Testmarkt")
+                    switchOn("Proefsuper")
                     sleep(1)
                     shot("supermarkten")
                     closeSheet()
+                    sleep(1)
+                    if reveal(button(containing: "Mijn supermarkten")) {
+                        app.swipeUp(velocity: .slow)
+                        shot("aanbiedingen")
+                    } else {
+                        skipped.append("aanbiedingen")
+                    }
                 }
                 back()
             }
@@ -173,9 +206,15 @@ final class AppTourTests: XCTestCase {
         if openTab("Dagdoel") {
             _ = app.navigationBars["Dagdoel"].waitForExistence(timeout: 5)
             shot("dagdoel")
-            if tap(app.buttons["profile.adjust"], "aanpassen-menu"), tap(button(containing: "Profiel bewerken"), "profiel bewerken") {
+            let adjust = app.navigationBars.buttons["Aanpassen"]
+            if tap(adjust, "aanpassen-menu"), tap(button(containing: "Profiel bewerken"), "profiel bewerken") {
                 sleep(1)
                 shot("profiel-bewerken")
+                closeSheet()
+            }
+            if tap(adjust, "aanpassen-menu"), tap(button(containing: "Doelen aanpassen"), "doelen aanpassen") {
+                sleep(1)
+                shot("doelen-aanpassen")
                 closeSheet()
             }
             if tap(button(containing: "Account"), "account") {
