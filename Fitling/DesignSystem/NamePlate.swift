@@ -14,7 +14,7 @@ struct NamePlate: View {
         self.init(text: Text(title), fill: fill, foreground: foreground, edge: edge)
     }
 
-    init(_ title: LocalizedStringResource, fill: Color, foreground: Color = Color.onRibbon, edge: Color? = Color.white) {
+    init(resource title: LocalizedStringResource, fill: Color, foreground: Color = Color.onRibbon, edge: Color? = Color.white) {
         self.init(text: Text(title), fill: fill, foreground: foreground, edge: edge)
     }
 

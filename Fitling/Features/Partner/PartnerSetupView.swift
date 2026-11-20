@@ -106,7 +106,7 @@ struct PartnerSetupView: View {
             VStack(spacing: Spacing.s) {
                 FigureView(species: species)
                     .frame(width: 72, height: 72)
-                NamePlate(species.name, fill: species.ribbon)
+                NamePlate(resource: species.name, fill: species.ribbon)
             }
             .padding(Spacing.m)
             .frame(maxWidth: .infinity, maxHeight: .infinity)

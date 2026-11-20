@@ -40,7 +40,7 @@ struct PartnerGallery: View {
                     .accessibilityIdentifier("gallery.\(candidate.rawValue)")
                 }
             }
-            NamePlate(species.name, fill: species.ribbon)
+            NamePlate(resource: species.name, fill: species.ribbon)
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: Spacing.xs), count: 5), spacing: Spacing.xs) {
                 ForEach(Self.looks.indices, id: \.self) { index in
                     PartnerCanvas(species: species, look: Self.looks[index], motion: .still)
