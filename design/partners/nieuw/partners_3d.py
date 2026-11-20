@@ -1034,15 +1034,23 @@ def eekhoorn():
     for side in (1, -1):
         drop((side * 0.38 * u, 0.05 * u, top - 0.2 * u), 0.16 * u, 0.4 * u, body, direction=(side * 0.3, 0, 1), flat=0.55)
         drop((side * 0.45 * u, 0.05 * u, top + 0.1 * u), 0.06 * u, tuft, tail, direction=(side * 0.3, 0, 1))
+    # The tail is a bushy plume, not a tube: it starts thin at the lower back, swells as it rises behind the
+    # body (a little to one side, so it shows beside the head), and curls forward over the head with a cream tip.
+    # Lumps along both edges keep it fluffy; an even, round tube beside the body reads as an arm.
     H0 = P.top - P.base
-    TL = grow(0.8, 1.9)
-    ctrl = [Vector(q) for q in ((0.15 * P.rx, P.ry, P.base + 0.2 * H0), (P.rx * 0.9 + 0.9 * TL, P.ry + 0.5, P.base + 0.5 * H0),
-                                (P.rx * 0.9 + 0.7 * TL, P.ry + 0.4, P.base + H0 + 0.6 * TL), (0.25 * P.rx, P.ry * 0.9, P.base + H0 + 0.9 * TL))]
-    for i in range(33):
-        t = i / 32
+    TL = grow(0.8, 1.6)
+    ctrl = [Vector(q) for q in ((0.3 * P.rx, P.ry * 0.8, P.base + 0.2 * H0), (P.rx + 0.75 * TL, P.ry + 0.6 * TL, P.base + 0.45 * H0),
+                                (P.rx + 0.65 * TL, P.ry + 0.3 * TL, P.top + 0.8 * TL), (0.55 * P.rx, P.ry * 0.5, P.top + 0.45 * TL))]
+    for i in range(61):
+        t = i / 60
         pos = sum((w * q for w, q in zip(((1 - t) ** 3, 3 * (1 - t) ** 2 * t, 3 * (1 - t) * t * t, t ** 3), ctrl)), Vector())
-        r = (0.26 + 0.2 * math.sin(math.pi * min(1.0, t ** 0.8 * 1.05)) ** 0.7) * TL * 0.8
-        ball(tuple(pos), r, mat('tailTip' if t > 0.82 else 'squirrelTail', rough=0.75, sheen=0.7))
+        r = (0.1 + 0.5 * math.sin(math.pi * min(1.0, 0.12 + 0.88 * t)) ** 0.55) * TL * 0.7
+        m = mat('tailTip' if t > 0.86 else 'squirrelTail', rough=0.8, sheen=0.8)
+        ball(tuple(pos), r, m)
+        if 0.12 < t < 0.95 and i % 2 == 0:
+            # Fluff on the outer and inner edge, a little out of step, so the edge is soft and uneven.
+            for side, k in ((1, 0.68), (-1, 0.55)):
+                ball(tuple(pos + Vector((side * r * k, 0.1 * r, r * 0.1 * side))), r * (0.55 + 0.1 * math.sin(i)), m)
     centre = P.hand[1] if FORM == 6 else (P.hand[1] + P.hand[-1]) / 2
     a = P.rx * grow(0.22, 0.4)
     ball(tuple(centre + Vector((0, -0.02, 0.0))), (a, a * 0.95, a * 1.1), mat('acorn', rough=0.35, coat=0.5))
