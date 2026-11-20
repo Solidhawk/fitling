@@ -11,8 +11,6 @@ final class AppTourTests: XCTestCase {
 
     override func setUp() {
         continueAfterFailure = true
-        app = XCUIApplication()
-        app.launchArguments = ["--ui-testing-with-profile", "-AppleLanguages", "(nl)", "-AppleLocale", "nl_NL"]
     }
 
     @MainActor
@@ -79,6 +77,8 @@ final class AppTourTests: XCTestCase {
 
     @MainActor
     func testTourOfEveryPage() {
+        app = XCUIApplication()
+        app.launchArguments = ["--ui-testing-with-profile", "-AppleLanguages", "(nl)", "-AppleLocale", "nl_NL"]
         app.launch()
 
         // Vandaag
