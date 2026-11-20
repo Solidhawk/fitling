@@ -140,7 +140,7 @@ struct DayView: View {
     }
 
     private func kcalText(_ kcal: Double) -> String {
-        Measurement(value: kcal.rounded(), unit: UnitEnergy.kilocalories).formatted(.measurement(width: .abbreviated, usage: .food))
+        Measurement(value: kcal.rounded(), unit: UnitEnergy.kilocalories).formatted(.measurement(width: .abbreviated, usage: .asProvided))
     }
 }
 
@@ -156,7 +156,7 @@ private struct EntryRow: View {
                     .foregroundStyle(Color.inkSoft)
             }
             Spacer()
-            Text(Measurement(value: entry.kcal.rounded(), unit: UnitEnergy.kilocalories), format: .measurement(width: .abbreviated, usage: .food))
+            Text(Measurement(value: entry.kcal.rounded(), unit: UnitEnergy.kilocalories), format: .measurement(width: .abbreviated, usage: .asProvided))
                 .fontWeight(.heavy)
                 .monospacedDigit()
         }
@@ -220,7 +220,7 @@ struct DayProgressCard: View {
     }
 
     private func kcal(_ value: Double) -> String {
-        Measurement(value: value.rounded(), unit: UnitEnergy.kilocalories).formatted(.measurement(width: .abbreviated, usage: .food))
+        Measurement(value: value.rounded(), unit: UnitEnergy.kilocalories).formatted(.measurement(width: .abbreviated, usage: .asProvided))
     }
 }
 

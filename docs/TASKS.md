@@ -460,7 +460,7 @@ Het menu loopt van vandaag tot zes dagen later. Gelogde maaltijden blijven bij e
 
 | Nr | Wat |
 |---|---|
-| 7.1 | Alle teksten nalopen in nl, en en de; eenheden via `Measurement` (kg/lb, kcal/kJ) |
+| 7.1 | Alle teksten nalopen in nl, en en de; eenheden via `Measurement` (kg/lb, kcal/kJ). **Gedaan (2026-11-20):** elke sleutel heeft nl, en en de (`check-strings`); de 49 teksten die in twee talen gelijk zijn, zijn nagelopen en kloppen (Gewicht, Datum, XP, RPE, merknamen). Gewicht en lengte volgen de regio (kg/lb, cm/in). **Besluit:** energie is overal kcal (`usage: .asProvided`), ook in de VS, omdat alle teksten over kcal spreken ("kcal-doel"); kJ zou elke tekst met kcal raken |
 | 7.2 | Toegankelijkheid: VoiceOver op elk bedieningselement, grootste tekst, contrast |
 | 7.3 | Data-export (JSON en CSV) van alle eigen data. **Gebouwd:** `DataExport` (Account → Gegevens exporteren), met `DataExportTests`. Alle tabellen die syncen, zonder verwijderde en gedeelde rijen; voortgangsfoto's staan alleen op het toestel en zitten er niet in |
 | 7.4 | **Gebouwd:** `private.purge_deletion_markers()` met pg_cron om 03:30 UTC, getest in `supabase/tests/purge_test.sql`. Opruimen van verwijdermarkeringen ouder dan 90 dagen (geplande job). De 90 dagen tellen vanaf `synced_at` (klok van de server), niet vanaf `deleted_at` (klok van een toestel): een toestel leegt zijn tabel pas na 90 dagen zonder pull, en een markering die eerder verdwijnt bereikt dat toestel nooit. Laat de job 's nachts draaien: een pull van meer dan één blok kan een rij missen als er tijdens het lezen rijen echt verdwijnen (ARCHITECTURE §3.4). |

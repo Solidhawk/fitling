@@ -15,12 +15,19 @@ struct PartnerLayersTests {
     @Test func itemsGoOnInAFixedOrderAndTheSweatbandLast() {
         let look = PartnerLook(trainedRecently: true, items: [.crown, .backpack, .glasses])
         let names = PartnerLayers.layers(.frog, look: look).dropFirst(2).map(\.name)
-        #expect(names == ["partner-frog-3-item-backpack", "partner-frog-3-item-glasses", "partner-frog-3-item-crown", "partner-frog-3-item-sweatband"])
+        #expect(names == ["partner-frog-1-item-backpack", "partner-frog-1-item-glasses", "partner-frog-1-item-crown", "partner-frog-1-item-sweatband"])
     }
 
     @Test func onlyTheBodyTakesTheColour() {
         let layers = PartnerLayers.layers(.lamb, look: PartnerLook(colorIndex: 3, items: [.scarf]))
         #expect(layers.map(\.takesColor) == [true, false, false])
+    }
+
+    @Test func theCatalogShowsOnlyTheFirstForm() {
+        // Later forms stay a surprise: they only appear on the partner once its level reaches them.
+        #expect(PartnerLook.catalog.growthStage == 0)
+        #expect(PartnerLook().growthStage == 0)
+        #expect(PartnerLayers.layers(.owl, look: .catalog).allSatisfy { $0.name.hasPrefix("partner-owl-1-") })
     }
 
     @Test func everyGrowthStageHasItsOwnForm() {

@@ -42,7 +42,7 @@ struct RecipeDetailView: View {
             }
             Section {
                 LabeledContent("menu.recipe.kcal") {
-                    Text(Measurement(value: recipe.kcalPerServing.rounded(), unit: UnitEnergy.kilocalories), format: .measurement(width: .abbreviated, usage: .food))
+                    Text(Measurement(value: recipe.kcalPerServing.rounded(), unit: UnitEnergy.kilocalories), format: .measurement(width: .abbreviated, usage: .asProvided))
                         .fontWeight(.heavy)
                         .monospacedDigit()
                 }

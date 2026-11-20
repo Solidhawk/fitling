@@ -65,16 +65,17 @@ struct PartnerLook: Equatable {
     /// 0 is lean, 1 is round (`CreatureSnapshot.bodyShape`).
     var bodyShape = CreatureEngine.startShape
     /// 0...5 (`CreatureSnapshot.growthStage`), one per form.
-    var growthStage = 2
+    var growthStage = 0
     var trainedRecently = false
     var items: [CreatureItem] = []
 
-    /// The catalog: the partners as they look once they have grown a little.
+    /// The catalog: every partner in its first form. Later forms only show on the user's own partner,
+    /// once its level reaches them.
     static let catalog = PartnerLook()
 
     init(
         colorIndex: Int = 0, mood: CreatureMood = .content, bodyShape: Double = CreatureEngine.startShape,
-        growthStage: Int = 2, trainedRecently: Bool = false, items: [CreatureItem] = []
+        growthStage: Int = 0, trainedRecently: Bool = false, items: [CreatureItem] = []
     ) {
         self.colorIndex = colorIndex
         self.mood = mood
