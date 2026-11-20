@@ -95,7 +95,7 @@ import FitlingCore
 
     @Test func creatureGivesBackTheEngineState() throws {
         let container = try makeModelContainer(inMemory: true)
-        var state = CreatureState(species: .ember, colorIndex: 2, tone: .coach, createdOn: today.adding(-10))
+        var state = CreatureState(species: .mole, colorIndex: 2, tone: .coach, createdOn: today.adding(-10))
         let creature = Creature(userID: userID, name: "Vonk", state: state, updatedAt: now)
         try save([creature], in: container)
         let stored = try #require(reread(Creature.self, from: container).first)

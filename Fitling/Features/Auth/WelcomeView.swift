@@ -51,25 +51,13 @@ struct WelcomeView: View {
         }
     }
 
-    /// The four species as a catalog: who can grow along with you.
-    @ViewBuilder
+    /// The sixteen partners as a catalog: who can grow along with you. Four in a row, two at the
+    /// accessibility sizes.
     private var catalog: some View {
-        if dynamicTypeSize.isAccessibilitySize {
-            VStack(spacing: Spacing.m) {
-                ForEach(Species.allCases, id: \.self) { species in
-                    FigureCard(species: species)
-                }
-            }
-        } else {
-            Grid(horizontalSpacing: Spacing.m, verticalSpacing: Spacing.m) {
-                GridRow {
-                    FigureCard(species: .sprout)
-                    FigureCard(species: .ember)
-                }
-                GridRow {
-                    FigureCard(species: .pip)
-                    FigureCard(species: .pebble)
-                }
+        let columns = dynamicTypeSize.isAccessibilitySize ? 2 : 4
+        return LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: Spacing.s), count: columns), spacing: Spacing.s) {
+            ForEach(Species.allCases, id: \.self) { species in
+                FigureTile(species: species)
             }
         }
     }

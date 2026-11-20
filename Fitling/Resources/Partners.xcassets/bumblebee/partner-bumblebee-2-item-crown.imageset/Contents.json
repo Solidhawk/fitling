@@ -1,0 +1,15 @@
+{
+  "images": [
+    {
+      "filename": "partner-bumblebee-2-item-crown.png",
+      "idiom": "universal"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  },
+  "properties": {
+    "compression-type": "lossy"
+  }
+}

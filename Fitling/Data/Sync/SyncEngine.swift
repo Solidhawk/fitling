@@ -197,7 +197,8 @@ final class SyncEngine {
         var pageCount = SyncRules.pullPageSize
         while pageCount == SyncRules.pullPageSize {
             let page = try await remote.fetch(
-                Model.Record.self, table: table, keyColumn: Model.keyColumn, since: since, offset: offset, limit: SyncRules.pullPageSize
+                Model.Record.self, table: table, keyColumn: Model.keyColumn, ownerColumn: Model.ownerColumn, since: since, offset: offset,
+                limit: SyncRules.pullPageSize
             )
             try ensureStill(in: started)
             apply(page, to: Model.self)

@@ -62,9 +62,17 @@ struct RootView: View {
                 onDeleteAccount: { viewModel.requestUnderageDeletion(userID: userID) }
             )
             .id(userID)
+        case let .partnerSetup(userID):
+            PartnerSetupView(viewModel: PartnerSetupViewModel(userID: userID, context: viewModel.sync.context)) { creature in
+                await viewModel.partnerChosen(creature)
+            }
+            .id(userID)
         case let .home(userID):
             if let profile = viewModel.sync.context.profile(of: userID) {
-                ProfileView(profile: profile, sync: viewModel.sync, account: accountViewModel())
+                HomeView(
+                    profile: profile, sync: viewModel.sync, food: viewModel.food, reminders: viewModel.reminders,
+                    health: viewModel.health, shopping: viewModel.shopping, account: accountViewModel()
+                )
                     .id(userID)
             } else {
                 // Only between a wipe and the refresh that follows it; the refresh picks the screen.

@@ -27,5 +27,7 @@ import Testing
         #expect(Limits.proteinG == 0...1000)
         #expect(Limits.carbsG == 0...5000)
         #expect(Limits.fatG == 0...2000)
+        #expect(Limits.foodQuantity == 0.1...10000)
+        #expect(Limits.kcalPer100 == 0...900)
     }
 }

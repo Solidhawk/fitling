@@ -12,6 +12,9 @@ final class RootViewModel {
         /// Signed in on a device without a profile and the server cannot be reached.
         case needsConnection
         case onboarding(UUID)
+        /// Signed in with a profile but no partner yet: after onboarding, or at the first start of
+        /// a version that has partners.
+        case partnerSetup(UUID)
         case home(UUID)
     }
 
@@ -22,15 +25,26 @@ final class RootViewModel {
     private(set) var underageDeletion: AccountDeletion?
     let auth: any AuthProviding
     let sync: SyncEngine
+    let food: FoodServices
+    let reminders: any ReminderDelivery
+    let health: any HealthReading
+    let shopping: ShoppingServices
     private var pendingURL: URL?
     /// Goes up with every refresh. A refresh that waited on the network only shows its result
     /// when no newer one started meanwhile; otherwise it could put back a screen that no longer
     /// fits, such as "no connection" after signing out.
     private var generation = 0
 
-    init(auth: any AuthProviding, sync: SyncEngine) {
+    init(
+        auth: any AuthProviding, sync: SyncEngine, food: FoodServices, reminders: any ReminderDelivery, health: any HealthReading,
+        shopping: ShoppingServices
+    ) {
         self.auth = auth
         self.sync = sync
+        self.food = food
+        self.reminders = reminders
+        self.health = health
+        self.shopping = shopping
     }
 
     func refresh() async {
@@ -52,6 +66,9 @@ final class RootViewModel {
             // the welcome screen nothing new can be stored, so later refreshes skip the erase.
             if screen != .welcome {
                 sync.eraseLocalData()
+                // A waiting reminder would still carry the partner's name and mood.
+                reminders.replace(with: [], title: "")
+                ProgressPhotoStore(context: sync.context).removeAll()
             }
             screen = .welcome
         case let .awaitingEmailVerification(email):
@@ -63,8 +80,23 @@ final class RootViewModel {
 
     private func route(userID: UUID, generation current: Int) async {
         if sync.context.profile(of: userID) != nil {
-            screen = .home(userID)
-            await sync.sync()
+            if sync.context.creature(of: userID) != nil {
+                screen = .home(userID)
+                await sync.sync()
+                return
+            }
+            // Another device may have chosen the partner already; ask only once the server says no.
+            // Offline the app opens anyway, and the partner tab offers the choice.
+            let outcome = await sync.sync()
+            guard current == generation else { return }
+            if sync.context.creature(of: userID) != nil {
+                screen = .home(userID)
+            } else if outcome == .completed {
+                screen = .partnerSetup(userID)
+            } else if screen != .partnerSetup(userID) {
+                // Mid-choice the server already confirmed there is no partner; keep the user's choice.
+                screen = .home(userID)
+            }
             return
         }
         // Never start onboarding before the server has confirmed there is no profile: a new phone
@@ -72,7 +104,11 @@ final class RootViewModel {
         let outcome = await sync.sync()
         guard current == generation else { return }
         if outcome == .completed {
-            screen = sync.context.profile(of: userID) == nil ? .onboarding(userID) : .home(userID)
+            if sync.context.profile(of: userID) == nil {
+                screen = .onboarding(userID)
+            } else {
+                screen = sync.context.creature(of: userID) == nil ? .partnerSetup(userID) : .home(userID)
+            }
         } else if screen != .onboarding(userID) {
             // Mid-onboarding the server already confirmed there is no profile; keep the user's answers.
             screen = .needsConnection
@@ -107,8 +143,14 @@ final class RootViewModel {
         linkMessageKey = nil
     }
 
+    /// The server confirmed there was no profile, so there is no partner either.
     func onboardingFinished(_ profile: UserProfile) async {
-        screen = .home(profile.id)
+        screen = .partnerSetup(profile.id)
+        await sync.sync()
+    }
+
+    func partnerChosen(_ creature: Creature) async {
+        screen = .home(creature.userID)
         await sync.sync()
     }
 }

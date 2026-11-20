@@ -36,7 +36,7 @@ Hoe: `/model fable` en de taak noemen.
 | Nr | Wat | Wie |
 |---|---|---|
 | 0.1 | Gedaan op 2026-11-19: `fundament` staat op `main` (pull request 1, alle CI-jobs groen). | – |
-| 0.2 | Het ontwikkelproject in Supabase heeft mogelijk nog de oude tabel `profiles`. Er zijn geen echte gebruikers. Na akkoord van de gebruiker: de oude tabel en `private.apply_sync_rules` verwijderen en `supabase/schema.sql` uitvoeren (SQL-editor of `psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/schema.sql`). | gebruiker, met hulp |
+| 0.2 | Gedaan op 2026-11-19, anders dan gepland: er bestond nog geen project. Nieuw project `fitling-dev` (organisatie Fitling, gratis plan, eu-west-1), schema.sql van commit `6ed17a5` in één transactie uitgevoerd; gecontroleerd: 28 tabellen met RLS, 75 policies, sync-triggers, functies alleen voor service_role, realtime op 3 tabellen. Bij een schemawijziging: `supabase/reset-dev.sql` en dan `schema.sql`. Nog te doen door de gebruiker: de redirect-URL's in Auth (`fitling://auth-callback`, `fitling://reset-password`), de Edge Functions deployen en de GitHub-secrets (UNFORGET S10, S13). | – |
 | 0.3 | `CLAUDE.md` verwijst voor de architectuur al naar `docs/ARCHITECTURE.md`. Controleer dat de regel klopt. | Opus |
 
 ---
@@ -190,7 +190,7 @@ Gedaan op 2026-11-19: screenshots van alle schermen in licht, donker en grootste
 
 ## Fase 2 – Voeding loggen
 
-### 2.1 Sync voor voeding
+### 2.1 Sync voor voeding — gebouwd
 
 - **Doel:** `products` (alleen eigen rijen pushen), `food_entries`, `water_entries`, `favorite_products` in de `SyncEngine`.
 - **Bestanden:** `Fitling/Data/Sync/Records/*` en de tabellijst.
@@ -204,7 +204,16 @@ Gedaan op 2026-11-19: screenshots van alle schermen in licht, donker en grootste
 - `FoodMath.totals(_:)` geeft `DayTotals`: onbekende macro's tellen als 0 en worden geteld in `unknownProtein`, `unknownCarbs`, `unknownFat`.
 - `FoodMath.kcal(fromKilojoules:)` en `FoodMath.isConsistent(kcal:proteinG:carbsG:fatG:)`. De Edge Function `lookup-product` is TypeScript en bouwt deze twee regels na met dezelfde getallen (4,184; 25 % én 30 kcal); neem de testgevallen uit `FoodMathTests` over.
 
-### 2.3 Edge Function `lookup-product`
+### 2.3 Edge Function `lookup-product` — al gebouwd
+
+Staat op branch `fase-2-opbouw`, met tests (24 in Deno, 13 in `supabase/tests/lookup_product_test.sql`). Gemaakte keuzes:
+- `is_verified` is `true` als kcal en alle drie de macro's bekend zijn en kloppen (`isConsistent`); anders `false`. Producten uit Open Food Facts zijn dus niet "door ons nagekeken" in de zin van de kolom, maar wel automatisch gecontroleerd. Vraag Fable als dat anders moet.
+- Bij 503, 429 of een time-out (5 s) volgen drie herhalingen na 1, 2 en 4 seconden: vier aanroepen in totaal.
+- Is de bron onbereikbaar of kent die de barcode niet meer, dan geeft de functie een oude rij uit de cache terug als die er is, in plaats van een fout.
+- De `User-Agent` komt uit het geheim `OFF_USER_AGENT` van de functie (naam en contactadres, zoals Open Food Facts vraagt); zonder dat geheim is het `Fitling/1.0`.
+- Databasefuncties: `public.consume_rate_limit(bucket, max_calls)` en `public.store_shared_product(product jsonb)`, alleen voor `service_role`.
+
+Hieronder de oorspronkelijke opdracht, als naslag.
 
 - **Doel:** ARCHITECTURE §5 stap 2a en 2b.
 - **Bestanden:** `supabase/functions/lookup-product/{index.ts,handler.ts,openfoodfacts.ts,normalize.ts,ratelimit.ts,deno.json}` en tests; `supabase/config.toml` (`verify_jwt = false`, de functie controleert het token zelf, zoals `delete-account`).
@@ -212,43 +221,47 @@ Gedaan op 2026-11-19: screenshots van alle schermen in licht, donker en grootste
 - **Tests (Deno, met een vastgelegd antwoord van Open Food Facts als bestand):** `returnsTheCachedProductWithoutCallingTheSource`, `refreshesAProductOlderThanThirtyDays`, `storesANewProductOnce` (twee gelijktijdige aanroepen, één rij), `convertsKilojoulesWhenKcalIsMissing`, `leavesMissingNutrientsEmpty`, `dropsValuesOutsideTheirLimits`, `marksAnInconsistentLabelAsUnverified`, `retriesThreeTimesOnA503`, `rejectsAWrongCheckDigit`, `limitsCallsPerUserPerHour`.
 - **Controleer** de veldnamen van Open Food Facts met één echte aanroep vóór je het testbestand vastlegt.
 
-### 2.4 ProductLookup (app)
+### 2.4 ProductLookup (app) — gebouwd
 
 - **Doel:** lokaal → `lookup-product` → niet gevonden, met de regels van §5 (30 dagen, offline).
 - **Bestanden:** `Fitling/Services/ProductLookup.swift` (protocol `ProductLookingUp` + echte en nep-versie).
 - **Tests:** `usesTheLocalProductWhenFresh`, `asksTheServerWhenStale`, `keepsTheStaleProductWhenOffline`, `reportsNotFound`, `invalidBarcodeNeverReachesTheServer`.
 
-### 2.5 Scannen
+### 2.5 Scannen — gebouwd
+
+Echt scannen met de camera is gebouwd maar pas op een toestel te bewijzen (UNFORGET S1). In de simulator typt de UI-test de barcode in het veld onder de camera.
 
 - **Doel:** `DataScannerViewController` voor EAN-13, EAN-8 en UPC-A; het resultaat gaat door `Barcode.normalized`.
 - **Let op:** de simulator heeft geen camera. De UI-test gebruikt een DEBUG-startargument dat een barcode aanlevert. Echt scannen is "gebouwd, niet bewezen" tot TestFlight.
 - **Tests:** ViewModel: `scanOfAKnownProductOpensTheLogSheet`, `scanOfAnUnknownProductOffersToAddIt`, `misreadIsIgnored`.
 
-### 2.6 Loggen
+### 2.6 Loggen — gebouwd
 
 - **Doel:** zoeken op naam, recent, favorieten, maaltijd kiezen, hoeveelheid in gram/ml of porties, opslaan als `FoodEntry` met momentopname.
 - **Vastgelegd:** zoeken eerst lokaal, online daarna in `products` met `search_name ilike '%' || term || '%'` (de trigram-index maakt dat snel), hoogstens 30 resultaten. "Recent" is de laatste 20 verschillende producten uit `FoodEntry`. Een product zonder kcal kan pas gelogd worden na aanvullen (§5.2).
 - **Tests:** `loggingStoresASnapshotOfNameAndValues`, `editingAProductLaterDoesNotChangeOldEntries`, `productWithoutKcalAsksForIt`, `recentShowsEachProductOnce`.
 
-### 2.7 Dagoverzicht
+### 2.7 Dagoverzicht — gebouwd
 
 - **Doel:** kcal-ring, eiwit/koolhydraten/vet, water, per maaltijd de logs.
 - **Gebruikt:** `FoodMath.DayTotals`, `TargetPeriod` (het doel dat op die dag gold), `NutritionEngine.dayTargets`.
 - **Vastgelegd:** de ring en de macro-linten vullen zich in de kleuren uit het design system, zonder verloop. Onbekende macro's worden gemeld (§5.2).
 - **Tests:** `usesTheTargetsThatAppliedOnThatDay`, `reportsUnknownMacros`, `waterAddsUp`.
 
-### 2.8 Zelf een product toevoegen
+### 2.8 Zelf een product toevoegen — deels gebouwd
+
+Gebouwd: een eigen, privé product met de hand invoeren (naam, merk, kcal en macro's per 100 g, portie, barcode), gecontroleerd tegen `Limits`. Uitgesteld (UNFORGET S14): de foto's, Vision en `submit-product`.
 
 - **Doel:** foto verpakking + etiket, Vision leest het etiket, gebruiker controleert, `submit-product` slaat op.
 - **Bestanden:** `supabase/functions/submit-product/*`; een privé Storage-bucket `product-photos` met policies (alleen eigen map `<user-id>/…`); `delete-account` verwijdert ook de bestanden van de gebruiker.
 - **Tests:** Deno: `rejectsValuesOutsideLimits`, `createsTheSharedRowOnce`, `keepsTheSubmission`; pgTAP of Deno: een gebruiker kan alleen de eigen map lezen en schrijven; `deleteAccountRemovesThePhotos`.
 
-### 2.9 NEVO importeren
+### 2.9 NEVO importeren — wacht op de gebruiker (UNFORGET S15)
 
 - **Vooraf (gebruiker):** RISKS R-03 beantwoord.
 - **Doel:** een script dat de NEVO-tabel inleest en als gedeelde rijen (`source = 'nevo'`, `is_verified = true`) schrijft.
 
-### 2.10 Afbeeldingen
+### 2.10 Afbeeldingen — gebouwd
 
 - **Doel:** productfoto's laden en bewaren (`URLCache`), met een getekende placeholder in de stijl van het design system. Geen AI-foto's.
 
@@ -256,46 +269,66 @@ Gedaan op 2026-11-19: screenshots van alle schermen in licht, donker en grootste
 
 ## Fase 3 – Partner
 
-TestFlight (UNFORGET S1) moet er vóór deze fase zijn: meldingen, widget en Live Activity zijn in de simulator niet te bewijzen.
+TestFlight (UNFORGET S1) zou er vóór deze fase zijn, maar de gebruiker koos ervoor eerst de hele app af te bouwen en het developer account later te regelen. Meldingen zijn daarom alleen met unit tests bewezen; widget en Live Activity wachten op het account.
 
-### 3.1 Partner kiezen
+### 3.1 Partner kiezen — gebouwd
+
+Keuzes: het scherm komt direct na de onboarding en, bij bestaande gebruikers, bij de eerste start zonder partner. Pas als de server bevestigt dat er geen partner is; zonder verbinding opent de app gewoon en biedt het partnertabblad de keuze. De naam telt in Unicode-tekens (zoals Postgres), zodat een emoji uit meerdere tekens de grens van 24 niet stiekem overschrijdt. De soortnaam wordt voorgesteld tot de gebruiker zelf iets typt.
 
 - **Doel:** soort, naam (1–24 tekens), kleur (0–2) en toon kiezen; opslaan als `Creature`. Bestaande gebruikers krijgen de stap bij de eerste start na de update.
 - **Gebruikt:** `CreatureState`, `Creature`, de figuren uit het design system.
 - **Tests:** `setupStoresTheChoices`, `nameIsTrimmedAndLimited`, `existingUserIsAskedOnce`.
 
-### 3.2 Dagen samenstellen en verwerken
+### 3.2 Dagen samenstellen en verwerken — gebouwd
+
+Aangeroepen bij de start, als de app terugkomt, als de dag wisselt en als het partnertabblad verschijnt. Een dag met alleen een training telt ook (XP voor de training).
 
 - **Doel:** uit de lokale data een lijst `DayRecord` maken en de partner bijwerken.
 - **Bestanden:** `Fitling/Data/CreatureHistory.swift`.
 - **Vastgelegd:** per dag: som van de logs (kcal, eiwit, aantal), het doel uit `TargetPeriod` met `NutritionEngine.dayTargets` als trainingen meetellen, en "training voltooid" als er die dag een `WorkoutSession` met `endedAt` is of HealthKit een training meldt. Aanroepen bij app-start en als de dag wisselt: `CreatureEngine.advance`, daarna `creature.apply(_:at:)` en opslaan. Lever de records vanaf zes dagen vóór de laatst verwerkte dag.
 - **Tests:** `buildsOneRecordPerDayWithLogs`, `usesTheTargetOfThatDay`, `workoutFromHealthKitCounts`, `advanceIsAppliedAndSavedOnce`.
 
-### 3.3 De partner tekenen
+### 3.3 De partner tekenen — gebouwd, wacht op goedkeuring
+
+**Nieuwe richting (2026-11-19):** de gebruiker koos zestien nieuwe partners als zachte 3D-figuurtjes, elk in zes vormen (`design/partners/nieuw/`, generator `partners_3d.py`, borden `vormen-bord-1..4.png`). Hommel, mol, kikker, uil, egel, slak, axolotl, zeehond, pinguïn, schildpad, konijn, wasbeer, lieveheersbeestje, octopus, eekhoorn en lammetje vervangen Sprout, Ember, Pip en Pebble. **Ingebouwd (2026-11-20, plan `docs/superpowers/plans/2026-11-20-partners-3d-inbouwen.md`):**
+
+- `Species` heeft 16 soorten en er zijn 6 vormen (`growthLevels` 1, 3, 6, 10, 15, 22).
+- De partner is een stapel 3D-lagen: lijf, gezicht per stemming en accessoires, in `Partners.xcassets` via `scripts/partner-assets.py`.
+- De kleurvarianten zijn een tintverschuiving van het lijf.
+- De Z's bij slapen staan op `PartnerAnchors.json`.
+- Tests: `PartnerLayersTests`, `sixteenSpeciesWithTheirDatabaseValues` en `supabase/tests/creatures_test.sql`.
+
+De galerij (`--ui-testing-partner-gallery`, UI-test `PartnerGalleryTests`) toont elke soort in elke toestand; de schermafbeeldingen gaan naar de gebruiker. DESIGN.md beschrijft gezichten, vorm, groei, accessoires, kleuren en beweging.
 
 - **Vastgelegd:** SwiftUI (`Canvas` + `TimelineView`), geen SpriteKit of Rive. Reden: de figuren zijn al vector, er komt geen library bij, en een widget kan dezelfde tekening gebruiken (SpriteKit en Rive kunnen dat niet).
 - **Doel:** een View die een `CreatureSnapshot` tekent: vorm (0–1 als breedte van het lijf), stemming (ogen en mond), energie (tempo van de beweging), groeistadium per soort, accessoires, trainingsbonus. Met "Verminder beweging" aan staat het stil.
 - **Acceptatie:** screenshots van elke soort in elke toestand naar de gebruiker; die keurt de tekeningen.
 
-### 3.4 Level, XP en vrijspelen
+### 3.4 Level, XP en vrijspelen — gebouwd
+
+Keuzes: vijf kleuren per soort (drie vanaf het begin, twee vanaf level 5 en 12). Een pet en een kroon kunnen niet samen op. Wat er gebeurde (level, accessoire, kleur, herstelbonus) verschijnt één keer als melding in de app. Naam en toon zijn later aan te passen; de soort niet.
 
 - **Doel:** voortgang naar het volgende level, wat `CreatureEvent` meldt (level, accessoire, kleur, herstelbonus), accessoires aan- en uitdoen (`equippedItems`).
 
-### 3.5 Meldingen
+### 3.5 Meldingen — gebouwd
+
+Keuzes: de instellingen staan op het toestel (`UserDefaults`), standaard uit, tijden 12:30 en 18:30. Bij aanzetten vraagt de app toestemming; bij weigeren blijft het uit en wijst de app naar Instellingen. Gepland worden vandaag en morgen, met de tekst die past bij de toestand van die dag; elke start en elke dagwissel plant opnieuw. Bij uitloggen worden ze gewist. Op een toestel nog niet bewezen (UNFORGET S1).
 
 - **Vastgelegd:** lokale meldingen (`UNUserNotificationCenter`), geen server. Hoogstens twee per dag, niet tussen 21:00 en 08:00, tijden instelbaar, alles uit te zetten. Onderwerp via `CreatureEngine.topic(for:)`, tekst via `messageKey(topic:tone:on:)`.
 - **Tests:** `schedulesAtMostTwoPerDay`, `neverSchedulesAtNight`, `nothingIsScheduledWhenTurnedOff`.
 
-### 3.6 Teksten van de meldingen
+### 3.6 Teksten van de meldingen — geschreven, wacht op de gebruiker
+
+6 × 3 × 3 = 54 teksten per taal (de 162 hieronder is het totaal over drie talen). De Engelse en Duitse staan er al, zodat de app compleet is; past de gebruiker de Nederlandse aan, dan volgen de vertalingen.
 
 - **Doel:** 6 onderwerpen × 3 tonen × 3 varianten in nl, en en de (162 teksten per taal). Vriendelijk, nooit beschamend, kort. De gebruiker leest de Nederlandse set na vóór de vertaling.
 - **Voorbeelden van de gebruiker** voor `hungry`: lief "Ik heb honger 🥺", grappig "Mijn maag knort harder dan jouw wekker", coach "Tijd voor eiwit. Wat eet je?".
 
-### 3.7 Widget
+### 3.7 Widget — wacht op het developer account
 
 - **Doel:** de partner op het beginscherm. Vraagt een App Group om de snapshot te delen (UNFORGET S1).
 
-### 3.8 Live Activity
+### 3.8 Live Activity — wacht op het developer account
 
 - **Doel:** de partner tijdens een maaltijdmoment of training (PROMPT.md §2). Bepaal met de gebruiker wanneer hij start en stopt vóór je bouwt.
 
@@ -307,40 +340,52 @@ Na twee tot vier weken echt gebruik: kloppen de drempels, de snelheid van de vor
 
 ## Fase 4 – Sport
 
-### 4.1 Oefeningen en schema's vullen
+### 4.1 Oefeningen en schema's vullen — gebouwd
+
+Keuzes: één bronbestand, `Fitling/Resources/SportCatalog.json` (33 oefeningen, de drie schema's), met vaste id's (UUID v5 uit de naam). De app zet de gedeelde rijen daaruit op het toestel; `scripts/sport-seed.mjs` maakt er `supabase/seed/sport.sql` van voor de server, en CI controleert dat beide gelijk zijn en dat de seed op het schema past. Afbeeldingen: nog geen; elke oefening toont een SF Symbol voor het materiaal (rechtenvrije of eigen tekeningen later, UNFORGET S19).
 
 - **Doel:** de gedeelde oefeningen en de drie schema's (Full body 3×, Upper/Lower 4×, PPL 6×) als databestand en een script dat ze schrijft.
 - **Vastgelegd:** per oefening `kind`, `load_type`, `equipment`, spieren en `default_step_kg` (barbell 2,5 · dumbbell 2 · machine en cable 5 · kettlebell 4 · lichaamsgewicht 2,5). Namen en instructies in nl, en en de. Afbeeldingen alleen rechtenvrij of zelf getekend.
 
-### 4.2 Sync voor sport
+### 4.2 Sync voor sport — gebouwd
 
 - `exercises`, `programs`, `program_days`, `program_exercises` (alleen eigen rijen pushen), `exercise_settings`, `workout_sessions`, `workout_sets`, `body_measurements`.
 
-### 4.3 Schema's kiezen en zelf maken
+### 4.3 Schema's kiezen en zelf maken — gebouwd
 
-### 4.4 Training loggen
+Keuzes: geen "actief schema"; de app biedt de dag na de laatst afgeronde training aan. Een kant-en-klaar schema pas je aan door het te kopiëren; het origineel blijft ongewijzigd.
+
+### 4.4 Training loggen — gebouwd
+
+De rusttimer staat in de app; als Live Activity wacht hij op het developer account (UNFORGET S18). Een training kan later verder of worden weggegooid; nieuwe records verschijnen bij afronden.
 
 - **Doel:** sets, herhalingen, gewicht, RPE, warming-up-vinkje, rusttimer met Live Activity.
 - **Tests:** `finishingSetsEndedAt`, `restTimerStartsAfterASet`, `weightIsStoredInKilograms` (invoer in lb wordt omgerekend).
 
-### 4.5 Progressie-advies
+### 4.5 Progressie-advies — gebouwd
 
 - **Gebruikt:** `ProgressionEngine.advise`, `personalRecords`, `ExerciseSetting`.
 - **Vastgelegd:** de geschiedenis is per oefening de lijst trainingen met alleen werksets (`WorkoutSet.workingSet`). De regels komen uit `ExerciseSetting` als die er is, anders uit het schema en de oefening. Elk advies heeft één zin tekst en één knop om het over te nemen.
 - **Tests:** `adviceUsesTheUsersOwnStep`, `warmUpSetsAreIgnored`, `acceptingAdvicePrefillsTheNextSet`.
 
-### 4.6 Grafieken
+### 4.6 Grafieken — gebouwd
+
+Per oefening de geschatte 1RM per training, records en de eigen gewichtsstap; volume per spiergroep voor deze en vorige week.
 
 - **Gebruikt:** `estimatedOneRepMax`, `weeklyVolume`, Swift Charts.
 
-### 4.7 HealthKit
+### 4.7 HealthKit — gebouwd, niet bewezen op een toestel
 
 - **Vastgelegd:** alleen lezen: trainingen, stappen, actieve energie. Trainingsenergie per dag naar `DayActivity`. De schakelaar `countsWorkoutEnergy` staat standaard uit. Niets hiervan gaat naar Supabase (D-19).
 - **Tests:** met een nep-`HealthReading`: `storesWorkoutEnergyPerDay`, `budgetGrowsOnlyWhenTheSwitchIsOn`.
 
-### 4.8 Lichaamsgewicht en omtrekken
+### 4.8 Lichaamsgewicht en omtrekken — gebouwd
 
-### 4.9 Voortgangsfoto's
+Invoer in kg en cm, of in lb en inch als het toestel imperiaal meet; opgeslagen in kg en cm.
+
+### 4.9 Voortgangsfoto's — gebouwd
+
+Bij uitloggen worden de bestanden ook verwijderd.
 
 - **Vastgelegd:** alleen lokaal, in de eigen map van de app, met `isExcludedFromBackup`. Nooit naar de server.
 
@@ -348,23 +393,30 @@ Na twee tot vier weken echt gebruik: kloppen de drempels, de snelheid van de vor
 
 ## Fase 5 – Recepten en weekmenu
 
-### 5.1 Recepten vullen en syncen
+### 5.1 Recepten vullen en syncen — gebouwd
 
 - **Vooraf (gebruiker):** waar komen de recepten en hun foto's vandaan? Het moeten echte foto's zijn die bij het recept horen.
+- **Antwoord (2026-11-19):** de gebruiker levert geen afbeeldingen; neem ze van internet. Keuzes: 24 eigen geschreven recepten in nl, en en de (`supabase/seed/recipes.json`), elk met een echte foto van het gerecht van Wikimedia Commons onder een vrije licentie (CC0, CC BY, CC BY-SA), met maker en licentie in de app en in `docs/BRONNEN.md`. Energie en macro's per portie rekent `scripts/recipe-seed.mjs` uit de ingrediënten met de USDA-tabel (SR Legacy, publiek domein); de gebruiker gaf toestemming om die te downloaden. Het script maakt de catalogus van de app en de seed voor de server; CI controleert beide.
 
-### 5.2 Recepten bekijken en zelf maken
+### 5.2 Recepten bekijken en zelf maken — gebouwd
 
-### 5.3 Voorkeuren
+Een eigen recept krijgt de waarden per portie die de gebruiker invult (van de verpakking of eigen berekening).
+
+### 5.3 Voorkeuren — gebouwd
+
+Uitsluiten gaat per soort (vlees, vis, zuivel, ei, gluten, noten, soja, sesam): de gedeelde recepten hebben geen producten als ingrediënt, dus `ExcludedIngredient` werkt alleen bij eigen recepten met een product.
 
 - `MenuPreferences` en `ExcludedIngredient`.
 
-### 5.4 Weekmenu maken
+### 5.4 Weekmenu maken — gebouwd
+
+Het menu loopt van vandaag tot zes dagen later. Gelogde maaltijden blijven bij een nieuw menu staan, net als vastgezette.
 
 - **Gebruikt:** `WeekMenuPlanner.plan`, `Recipe.plannerRecipe(ingredientIDs:)`, `MealPlanEntry`.
 - **Vastgelegd:** "Nieuw menu" is hetzelfde verzoek met een ander `seed`. Vastzetten zet `isPinned`; wisselen en verslepen passen `MealPlanEntry` aan en zetten hem vast. Elk `MenuIssue` wordt in gewone taal getoond.
 - **Tests:** `generatingStoresOneEntryPerPlannedMeal`, `pinnedMealsSurviveANewMenu`, `issuesAreShown`.
 
-### 5.5 Loggen met één tik
+### 5.5 Loggen met één tik — gebouwd
 
 - **Vastgelegd:** maakt een `FoodEntry` uit het recept en de porties en zet `loggedEntryID`; een tweede tik doet niets.
 
@@ -378,17 +430,19 @@ Na twee tot vier weken echt gebruik: kloppen de drempels, de snelheid van de vor
 
 `ShoppingListBuilder.lines(for:)` maakt uit het weekmenu één lijst: per product en eenheid opgeteld, naar boven afgerond op wat je kunt kopen, in de volgorde van de winkel. Geef per `MealPlanEntry` één `PlannedRecipeUse` mee, ook voor restjes: een restje is een portie uit dezelfde pan en hoort dus bij wat er gekocht wordt.
 
-### 6.2 Lijst en items
+### 6.2 Lijst en items — gebouwd
 
 - **Vastgelegd:** de eerste lijst wordt lokaal aangemaakt, ook offline: `ShoppingList` + `ShoppingListMember` als eigenaar. Items van het menu hebben `source = "menu"` en worden vervangen als het menu verandert; handmatige items blijven.
 
-### 6.3 Delen
+### 6.3 Delen — gebouwd
 
 - **Gebruikt:** `create_shopping_list_invite`, `join_shopping_list`, Realtime als seintje om te pullen (D-18).
 
-### 6.4 `sync-offers`
+### 6.4 `sync-offers` — gebouwd, met alleen testdata
 
 - **Vooraf (gebruiker):** RISKS R-13 beantwoord. Zonder bron: alleen de provider met testdata.
+- **Gebouwd:** `supabase/functions/sync-offers` met `OfferProvider`, `TestDataProvider` (winkel `testwinkel`, tien producten van maandag tot en met zondag van deze week) en 17 Deno-tests. De functie draait alleen met de geheime sleutel in `Authorization`. Een echte bron is één bestand naast `testdata.ts` en één regel in `index.ts`.
+- **Nog te doen bij het productieproject (UNFORGET S20):** de functie deployen en dagelijks laten aanroepen met Supabase Cron (pg_cron + pg_net), met de geheime sleutel uit Vault.
 
 ### 6.5 OfferMatcher (FitlingCore) — al gebouwd
 
@@ -396,7 +450,7 @@ Na twee tot vier weken echt gebruik: kloppen de drempels, de snelheid van de vor
 
 ### 6.6 Kwaliteit van de matches — **→ Fable** als er te veel verkeerde of gemiste matches zijn.
 
-### 6.7 Aanbiedingen tonen
+### 6.7 Aanbiedingen tonen — gebouwd
 
 - Favoriete supermarkten, postcode, per item de goedkoopste winkel, totaal per winkel met "+ n items zonder prijs".
 
@@ -406,11 +460,11 @@ Na twee tot vier weken echt gebruik: kloppen de drempels, de snelheid van de vor
 
 | Nr | Wat |
 |---|---|
-| 7.1 | Alle teksten nalopen in nl, en en de; eenheden via `Measurement` (kg/lb, kcal/kJ) |
+| 7.1 | Alle teksten nalopen in nl, en en de; eenheden via `Measurement` (kg/lb, kcal/kJ). **Gedaan (2026-11-20):** elke sleutel heeft nl, en en de (`check-strings`); de 49 teksten die in twee talen gelijk zijn, zijn nagelopen en kloppen (Gewicht, Datum, XP, RPE, merknamen). Gewicht en lengte volgen de regio (kg/lb, cm/in). **Besluit:** energie is overal kcal (`usage: .asProvided`), ook in de VS, omdat alle teksten over kcal spreken ("kcal-doel"); kJ zou elke tekst met kcal raken |
 | 7.2 | Toegankelijkheid: VoiceOver op elk bedieningselement, grootste tekst, contrast |
-| 7.3 | Data-export (JSON en CSV) van alle eigen data |
-| 7.4 | Opruimen van verwijdermarkeringen ouder dan 90 dagen (geplande job). De 90 dagen tellen vanaf `synced_at` (klok van de server), niet vanaf `deleted_at` (klok van een toestel): een toestel leegt zijn tabel pas na 90 dagen zonder pull, en een markering die eerder verdwijnt bereikt dat toestel nooit. Laat de job 's nachts draaien: een pull van meer dan één blok kan een rij missen als er tijdens het lezen rijen echt verdwijnen (ARCHITECTURE §3.4). |
+| 7.3 | Data-export (JSON en CSV) van alle eigen data. **Gebouwd:** `DataExport` (Account → Gegevens exporteren), met `DataExportTests`. Alle tabellen die syncen, zonder verwijderde en gedeelde rijen; voortgangsfoto's staan alleen op het toestel en zitten er niet in |
+| 7.4 | **Gebouwd:** `private.purge_deletion_markers()` met pg_cron om 03:30 UTC, getest in `supabase/tests/purge_test.sql`. Opruimen van verwijdermarkeringen ouder dan 90 dagen (geplande job). De 90 dagen tellen vanaf `synced_at` (klok van de server), niet vanaf `deleted_at` (klok van een toestel): een toestel leegt zijn tabel pas na 90 dagen zonder pull, en een markering die eerder verdwijnt bereikt dat toestel nooit. Laat de job 's nachts draaien: een pull van meer dan één blok kan een rij missen als er tijdens het lezen rijen echt verdwijnen (ARCHITECTURE §3.4). |
 | 7.5 | `schema.sql` wordt de eerste migratie; productieproject in de EU (UNFORGET S4) |
-| 7.6 | Privacyverklaring gelinkt; scherm "Over" met bronvermelding (Open Food Facts, NEVO) |
+| 7.6 | Privacyverklaring gelinkt; scherm "Over" met bronvermelding (Open Food Facts, NEVO). **Gebouwd:** scherm "Over Fitling" (Account) met Open Food Facts, USDA, Everkinetic en Wikimedia Commons. NEVO volgt als de import er is (S15); de privacyverklaring wacht op een tekst en een adres van de gebruiker (S21) |
 | 7.7 | TestFlight, app-icoon, eigen SMTP (UNFORGET S1 en S2) |
-| 7.8 | Laatste ronde vormgeving met `impeccable` |
+| 7.8 | Laatste ronde vormgeving met `impeccable`. **Gedaan (2026-11-20):** critique 29/40 (`.impeccable/critique/2026-11-20T13-16-10Z__fitling-features.md`). Alle vijf punten opgelost: partnerkeuze in drie kolommen met het figuur over de hele tegel; workout met gelabelde velden voor gewicht en herhalingen, gestapeld bij grote tekst, de uitleg voor de eerste keer één keer per training, en "Set opslaan" boven het toetsenbord; level en XP en "Gegeten" breken niet meer af; partnertinten gedempt in donkere modus |

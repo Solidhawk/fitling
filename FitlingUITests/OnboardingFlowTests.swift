@@ -124,8 +124,43 @@ final class OnboardingFlowTests: XCTestCase {
         keepScreenshot(app, named: "\(prefix)-8-resultaat")
         tapContinue("result", app)
 
+        choosePartner(app, prefix: prefix)
+
+        // Then the app opens on today; the partner and the daily target are the other tabs.
+        XCTAssertTrue(app.navigationBars["Vandaag"].waitForExistence(timeout: 5))
+        keepScreenshot(app, named: "\(prefix)-11-vandaag")
+        app.tabBars.buttons["Partner"].tap()
+        XCTAssertTrue(app.descendants(matching: .any)["partner.hero"].waitForExistence(timeout: 5))
+        keepScreenshot(app, named: "\(prefix)-12-partner")
+        app.tabBars.buttons["Dagdoel"].tap()
         XCTAssertTrue(app.navigationBars["Dagdoel"].waitForExistence(timeout: 5))
-        keepScreenshot(app, named: "\(prefix)-9-dagdoel")
+        keepScreenshot(app, named: "\(prefix)-13-dagdoel")
+    }
+
+    /// The owl, with its name Uil filled in and "tje" typed after it.
+    @MainActor
+    private func choosePartner(_ app: XCUIApplication, prefix: String) {
+        // The card carries the identifier; the button inside it does not.
+        let owl = app.descendants(matching: .any)["partner.setup.species.owl"]
+        XCTAssertTrue(owl.waitForExistence(timeout: 10))
+        keepScreenshot(app, named: "\(prefix)-9-partner-kiezen")
+        owl.tap()
+
+        let list = app.collectionViews["partner.setup.list"]
+        let done = app.buttons["partner.setup.done"]
+        let name = app.textFields["partner.setup.name"]
+        var swipes = 0
+        while !isClear(name, of: done) && swipes < 10 {
+            list.swipeUp(velocity: .slow)
+            swipes += 1
+        }
+        XCTAssertTrue(name.waitForExistence(timeout: 5))
+        name.tap()
+        name.typeText("tje")
+        XCTAssertEqual(name.value as? String, "Uiltje")
+        keepScreenshot(app, named: "\(prefix)-10-partner-naam")
+        XCTAssertTrue(done.isEnabled)
+        done.tap()
     }
 
     @MainActor

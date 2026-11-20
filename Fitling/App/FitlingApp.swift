@@ -7,30 +7,46 @@ struct FitlingApp: App {
 
     init() {
         NavigationBarStyle.apply()
+        ImageCache.configure()
     }
 
     var body: some Scene {
         WindowGroup {
-            switch environment {
-            case let .success(environment):
-                RootView(viewModel: environment.root)
-                    .modelContainer(environment.container)
+            #if DEBUG
+            if ProcessInfo.processInfo.arguments.contains("--ui-testing-partner-gallery") {
+                PartnerGallery()
                     .fontDesign(.rounded)
-                    // Checkmarks, links, the caret and toolbar buttons in ink instead of system blue.
-                    .tint(Color.ink)
-                    #if DEBUG
                     .preferredColorScheme(UITestEnvironment.colorScheme)
-                    #endif
-            case .failure:
-                ContentUnavailableView {
-                    Label("error.configuration.title", systemImage: "exclamationmark.triangle")
-                } description: {
-                    Text("error.configuration.body")
-                }
-                .fontDesign(.rounded)
-                .tint(Color.ink)
-                .accessibilityIdentifier("error.configuration")
+            } else {
+                app
             }
+            #else
+            app
+            #endif
+        }
+    }
+
+    @ViewBuilder
+    private var app: some View {
+        switch environment {
+        case let .success(environment):
+            RootView(viewModel: environment.root)
+                .modelContainer(environment.container)
+                .fontDesign(.rounded)
+                // Checkmarks, links, the caret and toolbar buttons in ink instead of system blue.
+                .tint(Color.ink)
+                #if DEBUG
+                .preferredColorScheme(UITestEnvironment.colorScheme)
+                #endif
+        case .failure:
+            ContentUnavailableView {
+                Label("error.configuration.title", systemImage: "exclamationmark.triangle")
+            } description: {
+                Text("error.configuration.body")
+            }
+            .fontDesign(.rounded)
+            .tint(Color.ink)
+            .accessibilityIdentifier("error.configuration")
         }
     }
 }
@@ -49,7 +65,10 @@ struct AppEnvironment {
             let client = makeSupabaseClient(config)
             let container = try makeModelContainer(inMemory: false)
             let sync = SyncEngine(container: container, remote: SupabaseRemoteStore(client: client), tables: SyncTables.all)
-            return .success(AppEnvironment(container: container, root: RootViewModel(auth: AuthService(client: client), sync: sync)))
+            let food = FoodServices(source: SupabaseProductSource(client: client), search: SupabaseProductSearch(client: client))
+            return .success(AppEnvironment(container: container, root: RootViewModel(auth: AuthService(client: client), sync: sync, food: food, reminders: SystemReminderDelivery(), health: HealthKitReader(),
+                shopping: ShoppingServices(sharing: SupabaseListSharing(client: client), offers: SupabaseOfferSource(client: client))
+            )))
         } catch {
             return .failure(error)
         }

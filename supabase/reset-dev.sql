@@ -43,13 +43,25 @@ drop table if exists
   cascade;
 
 drop function if exists
+  public.consume_rate_limit(text, integer),
+  public.store_shared_product(jsonb),
   public.create_shopping_list_invite(uuid),
   public.join_shopping_list(text, text),
   private.apply_sync_rules(),
   private.is_list_member(uuid),
   private.is_list_owner(uuid),
-  private.after_member_left()
+  private.after_member_left(),
+  private.purge_deletion_markers()
   cascade;
+
+-- De nachtelijke opruimjob (fase 7), als pg_cron er is.
+do $$
+begin
+  if to_regclass('cron.job') is not null then
+    execute 'select cron.unschedule(jobid) from cron.job where jobname = ''purge-deletion-markers''';
+  end if;
+end;
+$$;
 
 -- De eerdere fase 1 kan met `supabase db push` zijn gezet; dan staat die migratie hier nog genoteerd.
 do $$

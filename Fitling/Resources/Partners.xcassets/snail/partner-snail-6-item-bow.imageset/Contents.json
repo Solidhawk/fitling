@@ -1,0 +1,15 @@
+{
+  "images": [
+    {
+      "filename": "partner-snail-6-item-bow.png",
+      "idiom": "universal"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  },
+  "properties": {
+    "compression-type": "lossy"
+  }
+}

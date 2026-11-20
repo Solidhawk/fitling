@@ -106,6 +106,6 @@ struct ProfileView: View {
 
     private func energy(_ kcal: Double) -> String {
         Measurement(value: kcal.rounded(), unit: UnitEnergy.kilocalories)
-            .formatted(.measurement(width: .abbreviated, usage: .food))
+            .formatted(.measurement(width: .abbreviated, usage: .asProvided))
     }
 }

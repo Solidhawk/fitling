@@ -13,3 +13,7 @@ enable_confirmations = true
 # The function checks the user's token itself; the gateway check does not work with the new API keys.
 [functions.delete-account]
 verify_jwt = false
+
+# Checks the token itself, like delete-account.
+[functions.lookup-product]
+verify_jwt = false

@@ -146,17 +146,17 @@ Values are iOS points (1 px in the tokens = 1 pt). Type sizes are the Dynamic Ty
 
 **Creative North Star: "The Character Catalog"**
 
-Fitling looks like a collector's catalog of four partners. Each partner (Sprout, Ember, Pip, Pebble) has its own pastel card, a name plate in its ribbon colour, and one line of character. The rest of the app is built from the same few materials: a soft lilac ground (deep plum in dark mode), white rounded cards, saturated ribbons with dark ink lettering, and heavy rounded type for names and numbers. The tone is warm and toy-like, but the numbers stay strict. Figures are tabular, heavy and in ink, and every calculation sits next to its explanation.
+Fitling looks like a collector's catalog of sixteen partners: soft 3D toy animals that grow from a round baby into a muscular champion. Each partner has its own pastel tint, a name plate in its ribbon colour, and one line of character. The rest of the app is built from the same few materials: a soft lilac ground (deep plum in dark mode), white rounded cards, saturated ribbons with dark ink lettering, and heavy rounded type for names and numbers. The tone is warm and toy-like, but the numbers stay strict. Figures are tabular, heavy and in ink, and every calculation sits next to its explanation.
 
 Density is calm. A screen holds one main idea, either a catalog grid, a single targets card, or one list section on the ground. Primary actions sit at the bottom within thumb reach. System navigation, lists, pickers and the Sign in with Apple button are kept and restyled rather than replaced, so the app reads as native iOS in its own colours.
 
-There are no gradients anywhere. Light and shadow on the partners are flat tones. Navigation bars are opaque and part of the page, never frosted.
+There are no gradients in the interface. The partners are soft 3D renders with their own light and shadow. Navigation bars are opaque and part of the page, never frosted.
 
 **Key Characteristics:**
 - Pastel ground, white cards with continuous 24 pt corners, saturated ribbons.
 - SF Rounded throughout; Heavy for names and numbers, Bold for actions.
 - Ink (never system blue) for tint, text, checkmarks and the primary action.
-- Partners are vector drawings in flat tones that look the same in light and dark mode.
+- Partners are 3D toy figures, stacked from rendered layers, that look the same in light and dark mode.
 - Every layout has an accessibility-size variant that stacks instead of squeezing.
 
 ## Colors
@@ -167,8 +167,9 @@ A muted lilac-and-ink base carries a small set of saturated ribbon colours. Each
 - **Plum Ink** (`ink`): text, the primary capsule button, the app tint (checkmarks, links, caret, toolbar buttons, back button) and the done steps of the onboarding progress. In dark mode it becomes near-white lilac (`ink-dark`). `AccentColor` carries the same pair.
 
 ### Secondary
-- **Sprout Green** (`sprout`), **Ember Orange** (`ember`), **Pip Yellow** (`pip`), **Pebble Blue-Grey** (`pebble`): a partner's body colour and the fill of its name plate. Phase 3 will also use them as each partner's own ribbon. Sprout green is also the tint of the consent toggle. These colours have no dark variant.
-- **Species tints** (`sprout-tint`, `ember-tint`, `pip-tint`, `pebble-tint` and their `-dark` pairs): the pastel ground of each species' catalog card. In dark mode they become deep, desaturated versions of the same hue.
+- **Species ribbons** (`PartnerRibbon/<species>`): each partner's own colour, for its name plate. Light enough for `on-ribbon` lettering. No dark variant.
+- **Species tints** (`PartnerTint/<species>`): the pastel ground behind each partner. In dark mode each is dimmed to 80 % so sixteen pastel tiles do not glare on the plum ground; the lettering on a tint is always `on-ribbon`, which keeps at least 7:1 on the dimmed tints.
+- **Sprout Green** (`sprout`), **Pip Yellow** (`pip`), **Pebble Blue-Grey** (`pebble`): accent tints for toggles and badges. Their names date from the first partners.
 
 ### Tertiary
 - **Coral** (`protein`), **Sunflower** (`carbs`), **Sky** (`fat`): one ribbon per macro in the targets card. They have no dark variant and always carry ink lettering.
@@ -186,7 +187,7 @@ A muted lilac-and-ink base carries a small set of saturated ribbon colours. Each
 
 **The Ink-On-Ribbon Rule.** Text on a ribbon colour is always `on-ribbon` dark plum, in light and dark mode. Ribbons never carry white text.
 
-**The No-Gradient Rule.** Every fill is one flat colour. Depth on the partners comes from separate flat shading shapes, never a gradient.
+**The No-Gradient Rule.** Every interface fill is one flat colour. Only the partner renders carry 3D light and shadow.
 
 ## Typography
 
@@ -216,7 +217,7 @@ A muted lilac-and-ink base carries a small set of saturated ribbon colours. Each
 
 The page margin is 16 pt (`spacing.l`) on all scrolling content and bottom bars. Spacing uses a 4 pt scale (4, 8, 12, 16, 24, 32). Inside cards, groups use 12 pt and the lines within a group use 8 pt. Catalog cards sit 12 pt apart. The welcome sections are 24 pt apart.
 
-- **Welcome:** title and tagline, then the catalog as a 2 × 2 grid (Sprout, Ember / Pip, Pebble). The sign-in actions (Apple, Google, e-mail) are pinned at the bottom in a ground-coloured safe-area inset, 12 pt apart. Catalog cards are top-aligned and fill their row height, so the partners in a row stand on one line.
+- **Welcome:** title and tagline, then the catalog of sixteen partners as a grid of tiles, four in a row (two at accessibility sizes). The sign-in actions (Apple, Google, e-mail) are pinned at the bottom in a ground-coloured safe-area inset, 12 pt apart.
 - **Onboarding:** one inline-titled list step per screen on the ground. A bottom bar holds the progress pills (one 8 pt capsule per step, 4 pt apart) above the full-width primary button. Steps after consent are pushed, so the back button and edge swipe work.
 - **Profile (daily target):** large title, the targets card in the first section header, extended outward by 16 pt so it lines up with the list rows, then calculation rows and an Account row. "Adjust" sits in the toolbar as a menu.
 - Forms and lists hide the system grouped background and use the ground. Rows sit on `card`.
@@ -261,7 +262,8 @@ A heavy label on a capsule of ribbon colour.
 - **Inside a card:** no edge (`edge: nil`). A white edge cannot be seen on a white card in light mode and glares in dark mode. The "per day" plate on the targets card uses `track` fill with `ink` text.
 
 ### Cards / Containers
-- **Figure card (catalog):** the species tint as background, 24 pt corners, 12 pt padding, no shadow. Contents, centred and 8 pt apart: the partner at 96 × 96 pt, the name plate with its white edge, and one footnote line of character in `ink`. VoiceOver reads it as one element; the drawing itself is hidden.
+- **Partner hero (partner tab):** the species tint, 24 pt corners, 16 pt padding: the moving partner at 200 × 200 pt, the name plate, one line on how it is doing and why, and the level ribbon (level in Heavy, XP towards the next level as an `ink` bar on a `card` track).
+- **Figure tile (welcome catalog):** the partner, square, on its species tint with 14 pt corners and 4 pt padding. VoiceOver reads its name, with its line of character as the hint.
 - **Targets card:** `card` fill, 24 pt corners, 16 pt padding, card lift shadow. From top to bottom: an in-card name plate, the kcal target in Numeral Large, then three macro ribbons 12 pt apart.
 - **Macro ribbon:** full-width, 44 pt minimum height, 22 pt corners, 16 × 8 pt padding. Macro fill with `on-ribbon` lettering: the name in Label Small and the grams in Numeral, on one baseline. They stack at accessibility sizes. In phase 2 the ribbons will fill up as the day is logged.
 - **List rows:** `card` on the ground, the system inset-grouped shape.
@@ -272,13 +274,16 @@ A heavy label on a capsule of ribbon colour.
 ### Navigation
 - System `NavigationStack`, opaque `ground` bar, no shadow line. Titles are SF Rounded in `ink`: inline Bold headline (max 22 pt), large Heavy large title (max 40 pt). Toolbar items and the back button are `ink`.
 
-### Partner Drawing
-The signature component. Each partner is drawn in a SwiftUI `Canvas` from flat `FigurePart`s in a 100 × 100 space, scaled to fit the frame.
-- **Parts by role:** `silhouette` (feet, arms, leaves, flame, crest), exactly one `body`, `shading` (one shadow band at the bottom and one gloss ellipse at the upper left, so light comes from the upper left), and `detail` (eyes, glints, mouth, beak, speckles).
-- **One body:** every partner has a single body shape. Shading is clipped to that body, so light and shadow never spill outside the outline.
-- **Shared baseline:** every partner's feet end at y = 92, standing on the shared ground-shadow ellipse. That way the four partners in the catalog stand on one line.
-- **Faces:** the eyes are `on-ribbon` ovals (6.6 × 8.6) with a 2.2 white glint at the upper right; the mouth is a 2.2 rounded stroke (Pip has a beak instead).
-- **Colours:** the species ribbon colour for the body, plus fixed artwork tones for shadow, gloss and accessories (`Artwork` in `Figures.swift`). A partner looks identical in light and dark mode. The edge is not stroked.
+### Partner Figure
+The signature component. The sixteen partners are soft 3D vinyl-toy figures, rendered in Blender from code (`design/partners/nieuw/partners_3d.py`) and stacked in SwiftUI (`Figures.swift`).
+- **Layers:** per species and form, a `body` with its contact shadow, a `face` per mood, and one layer per accessory. All come from one camera and one scale, so they line up pixel-exactly. Order from back to front: body, face, then backpack, scarf, glasses, bow, cap, crown, and the sweatband.
+- **Six forms, a strength ladder:** 1 a round baby that is nearly all head; 2 small limbs; 3 its own head and torso and the first signature feature; 4 upright on real legs with adult markings and a brow; 5 muscular, with a V-shaped chest and a wide stance; 6 the champion, flexing one arm. Each species adds its own feature: horns for the lamb, a crest for the penguin, a spike mane for the hedgehog, and so on. The catalog and the partner choice show form 1; a later form only appears on the user's own partner once its level reaches it, so every evolution is a surprise.
+- **Faces per mood:** content is the catalog face; happy has slightly larger eyes and an open smile with a tongue; sluggish has the lids half down and a flat mouth; tired has droopy lids and a small frown; hungry has big eyes with an extra highlight and an open mouth; asleep has closed eyes as arcs and a small round mouth, with two Z's in `ink` above the head (`PartnerAnchors.json`).
+- **Shape:** `bodyShape` (0 lean, 1 round) widens the whole stack: 92 % of the catalog width when lean, 120 % when round.
+- **Colours:** colour 0 is the species' own render. The other four turn the hue of the body layer (40°, 150°, 210°, 300°); the face and what is worn keep their colours. 1 and 2 can be chosen at once; 3 and 4 unlock at level 5 and 12.
+- **Workout bonus:** a white sweatband with a red stripe.
+- **Movement:** the partner bobs and squashes a little as it lands, faster and higher with more energy; asleep it only breathes. With Reduce Motion on it stands still, and the catalog never moves.
+- **Light and dark:** the renders are the same in both modes; the species tint behind them is dimmed in dark mode.
 
 ### Progress Pills
 - One capsule per onboarding step, 8 pt high, filling the width. Done and current steps are `ink`; the rest are `track`. VoiceOver reads them as one "step n of m" label.
@@ -291,14 +296,14 @@ The signature component. Each partner is drawn in a SwiftUI `Canvas` from flat `
 - **Do** set result numbers in Heavy with `.monospacedDigit()`.
 - **Do** use `ink-soft` (`footerStyle()`) for footers and secondary lines, never the system secondary grey.
 - **Do** give every new layout an accessibility-size variant that stacks or scrolls instead of truncating.
-- **Do** build new partners and accessories from flat `FigurePart`s: one body, shading clipped to it, feet on the y = 92 baseline.
+- **Do** make new partners, faces and accessories in the generator and render every layer from the same camera and fit, then run `scripts/partner-assets.py`.
 - **Do** use the 4 pt spacing tokens and the `Radius` tokens; use continuous corners for rounded rectangles.
 
 ### Don't:
 - **Don't** use gradients, glassmorphism or frosted bars.
 - **Don't** use emoji as icons; icons are SF Symbols.
 - **Don't** put a white edge on a name plate that sits inside a card.
-- **Don't** let a partner's colours change with the appearance, or outline a partner with a stroke.
+- **Don't** let a partner's colours change with the appearance.
 - **Don't** let navigation titles grow past 22 pt (inline) or 40 pt (large).
 - **Don't** put AI-generated imagery or food photos into the partner world.
 
@@ -309,5 +314,4 @@ Gaps between the direction contract (`.impeccable/surfaces/fitling.md`) and the 
 1. **Active state colour.** The contract says "the active cell takes its ribbon colour". In the build, selected and done states are `ink` (picker checkmarks, progress pills, primary button). Only the consent toggle uses a ribbon colour (`sprout`). The rule is not implemented and is not canonized above.
 2. **White edge on name plates.** The contract's variant B removes the sticker edge from the partners, and the drawing has none. The catalog name plates still carry a 2 pt white edge, which `NamePlate.swift` itself describes as "like a sticker". Confirm whether the plate edge belongs to the world. The verify-email badge also uses a one-off 3 pt white edge around a `pip` circle; it is not recorded as a rule.
 3. **Apple button on Delete Account.** `DeleteAccountView` fixes the Apple button at 54 pt. Unlike the welcome screen, it does not grow with the text up to 80 pt.
-4. **Fixed figure size.** The partner drawing on the catalog card is 96 × 96 pt at every text size, while the name plate and note grow. At the largest size the partner is small relative to its own name.
-5. **System fallback screens.** The configuration-error screen (`FitlingApp.swift`) uses the system background instead of `ground`. The connection screen uses `ground`.
+4. **System fallback screens.** The configuration-error screen (`FitlingApp.swift`) uses the system background instead of `ground`. The connection screen uses `ground`.

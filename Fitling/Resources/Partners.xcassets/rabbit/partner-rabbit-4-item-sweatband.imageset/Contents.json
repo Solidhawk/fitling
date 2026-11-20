@@ -1,0 +1,15 @@
+{
+  "images": [
+    {
+      "filename": "partner-rabbit-4-item-sweatband.png",
+      "idiom": "universal"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  },
+  "properties": {
+    "compression-type": "lossy"
+  }
+}

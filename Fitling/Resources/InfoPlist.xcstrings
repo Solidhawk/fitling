@@ -1,0 +1,50 @@
+{
+  "sourceLanguage": "nl",
+  "strings": {
+    "NSCameraUsageDescription": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fitling gebruikt de camera om de barcode van een product te scannen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fitling uses the camera to scan the barcode of a product."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fitling nutzt die Kamera, um den Barcode eines Produkts zu scannen."
+          }
+        }
+      }
+    },
+    "NSHealthShareUsageDescription": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fitling leest je trainingen uit Apple Health, zodat ze meetellen in je dagdoel. Er gaat niets naar onze server."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fitling reads your workouts from Apple Health so they count towards your daily target. Nothing is sent to our server."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fitling liest deine Trainings aus Apple Health, damit sie in dein Tagesziel einfließen. Nichts geht an unseren Server."
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

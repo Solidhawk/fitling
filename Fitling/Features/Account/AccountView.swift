@@ -1,12 +1,27 @@
 import AuthenticationServices
+import SwiftData
 import SwiftUI
 
 struct AccountView: View {
     let viewModel: AccountViewModel
     @State private var showsUnsyncedWarning = false
+    @State private var exported: ExportedFiles?
+    @State private var exportFailed = false
+    @Environment(\.modelContext) private var modelContext
 
     var body: some View {
         List {
+            Section {
+                Button("account.export", action: export)
+            } footer: {
+                Text(exportFailed ? LocalizedStringKey("account.export.failed") : LocalizedStringKey("account.export.footer"))
+                    .foregroundStyle(Color.ink)
+            }
+            .listRowBackground(Color.card)
+            Section {
+                NavigationLink("account.about") { AboutView() }
+            }
+            .listRowBackground(Color.card)
             Section {
                 Button("account.signOut") {
                     Task {
@@ -37,7 +52,37 @@ struct AccountView: View {
         } message: {
             Text("account.unsynced.body")
         }
+        .sheet(item: $exported) { files in
+            ShareSheet(items: files.urls)
+        }
     }
+
+    /// Writes the export to a new folder in the temporary directory and offers it to share or save.
+    private func export() {
+        let folder = FileManager.default.temporaryDirectory.appending(path: "Fitling-\(UUID().uuidString)")
+        do {
+            exported = ExportedFiles(urls: try DataExport.write(DataExport.tables(in: modelContext), to: folder, exportedAt: .now))
+            exportFailed = false
+        } catch {
+            exportFailed = true
+        }
+    }
+}
+
+private struct ExportedFiles: Identifiable {
+    let id = UUID()
+    let urls: [URL]
+}
+
+/// The system share sheet: save to Files, AirDrop, mail.
+private struct ShareSheet: UIViewControllerRepresentable {
+    let items: [URL]
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: items, applicationActivities: nil)
+    }
+
+    func updateUIViewController(_ controller: UIActivityViewController, context: Context) {}
 }
 
 /// Deleting is final, so it asks once more: Apple accounts confirm with Apple (which also supplies
