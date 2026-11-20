@@ -92,7 +92,7 @@ struct ShoppingListView: View {
         .groundBackground()
         .accessibilityIdentifier("shopping.list")
         .navigationTitle(Text(verbatim: viewModel.list?.name ?? ""))
-        .refreshable { await viewModel.refresh() }
+        .refreshable { await viewModel.refresh(force: true) }
         .onAppear { viewModel.reload() }
         .task { await viewModel.refresh() }
         .sheet(isPresented: $joining) {
@@ -150,12 +150,23 @@ struct ShoppingListView: View {
                         Text(verbatim: viewModel.supermarketName(match.supermarketID))
                             .font(.caption)
                             .foregroundStyle(Color.inkSoft)
+                        if let until = validUntil(match.offerID) {
+                            until.font(.caption).foregroundStyle(Color.inkSoft)
+                        }
                     }
                 }
             }
         }
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(item.isChecked ? .isSelected : [])
+    }
+
+    /// Until when an offer runs: a price is only shown with its validity.
+    private func validUntil(_ offerID: UUID) -> Text? {
+        guard let offer = viewModel.store.offer(offerID), let day = Day(isoString: offer.validTo) else { return nil }
+        let parts = day.components
+        guard let date = Calendar.current.date(from: DateComponents(year: parts.year, month: parts.month, day: parts.day)) else { return nil }
+        return Text("shopping.offer.until \(date.formatted(.dateTime.day().month(.abbreviated)))")
     }
 
     @ViewBuilder
@@ -195,7 +206,16 @@ struct ShoppingListView: View {
         } header: {
             Text("shopping.offers")
         } footer: {
-            Text("shopping.offers.footer").footerStyle()
+            // PrijsProfeet's terms ask for a visible credit with a link on every screen with their data.
+            VStack(alignment: .leading, spacing: Spacing.xs) {
+                Text("shopping.offers.footer").footerStyle()
+                if let source = URL(string: "https://www.prijsprofeet.nl") {
+                    Link(destination: source) {
+                        Text("shopping.offers.source").font(.footnote.weight(.semibold))
+                    }
+                    .tint(Color.ink)
+                }
+            }
         }
         .listRowBackground(Color.card)
     }

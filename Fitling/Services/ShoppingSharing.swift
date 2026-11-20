@@ -116,8 +116,9 @@ struct SupermarketRecord: Codable, Equatable, Sendable {
 
 protocol OfferSource: Sendable {
     func supermarkets() async throws -> [SupermarketRecord]
-    /// Offers still valid on `day` or later, of the given supermarkets.
-    func offers(validFrom day: Day, supermarketIDs: [String]) async throws -> [OfferRecord]
+    /// One page of the offers still valid on `day` or later, of the given supermarkets, in a fixed order.
+    /// The server may send fewer than `limit` rows; only an empty page means there are no more.
+    func offers(validFrom day: Day, supermarketIDs: [String], offset: Int, limit: Int) async throws -> [OfferRecord]
 }
 
 struct SupabaseOfferSource: OfferSource {
@@ -131,13 +132,18 @@ struct SupabaseOfferSource: OfferSource {
         }
     }
 
-    func offers(validFrom day: Day, supermarketIDs: [String]) async throws -> [OfferRecord] {
+    func offers(validFrom day: Day, supermarketIDs: [String], offset: Int, limit: Int) async throws -> [OfferRecord] {
         guard !supermarketIDs.isEmpty else { return [] }
         do {
             return try await client.from("offers").select()
                 .in("supermarket_id", values: supermarketIDs)
                 .gte("valid_to", value: day.isoString)
-                .limit(2000)
+                // PrijsProfeet's terms: a price shown as current is at most a day old. The job runs
+                // nightly; an offer it did not refresh stays out of sight.
+                .gte("fetched_at", value: Date.now.addingTimeInterval(-26 * 3600).ISO8601Format())
+                // A fixed order, so pages neither skip nor repeat an offer.
+                .order("id")
+                .range(from: offset, to: offset + limit - 1)
                 .execute()
                 .value
         } catch is URLError {

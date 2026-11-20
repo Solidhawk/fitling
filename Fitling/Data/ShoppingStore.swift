@@ -223,6 +223,13 @@ struct ShoppingStore {
         try? context.save()
     }
 
+    /// When the offers on the device were fetched; nil when there are none.
+    func offersFetchedAt() -> Date? {
+        var descriptor = FetchDescriptor<Offer>(sortBy: [SortDescriptor(\.fetchedAt, order: .reverse)])
+        descriptor.fetchLimit = 1
+        return (try? context.fetch(descriptor))?.first?.fetchedAt
+    }
+
     /// The cheapest offer per unchecked item in the favourite supermarkets, and the total per
     /// supermarket. Uncertain matches count only after the user confirmed them.
     func offerSummary(for list: ShoppingList, confirmed: Set<UUID>) -> (perItem: [UUID: OfferMatch], totals: [StoreTotal], matches: [OfferMatch]) {
