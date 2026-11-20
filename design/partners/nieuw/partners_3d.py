@@ -67,17 +67,17 @@ COLORS = {
     # schildpad
     'turtle': '#B9D27F', 'tShell': '#2F8C7E', 'tPlate': '#5DB8A5', 'tRim': '#257265', 'tBelly': '#DCE8B8',
     # konijn
-    'bunny': '#BBA392', 'bunnyBelly': '#F4EBE2', 'bunnyEar': '#EE8E9E', 'tail': '#FFFFFF', 'bunnyTip': '#6B5648',
+    'bunny': '#C8946A', 'bunnyBelly': '#FBF3EA', 'bunnyEar': '#EE8E9E', 'tail': '#FFFFFF', 'bunnyTip': '#6B5648',
     # wasbeer
     'racc': '#8F929C', 'raccMask': '#45434C', 'raccLight': '#EEEBE6', 'raccInner': '#5C5A66',
     # lieveheersbeestje
-    'bug': '#E2483D', 'bugDark': '#2E2629',
+    'bug': '#E2483D', 'bugDark': '#2E2629', 'bugFoot': '#7A6A6C',
     # octopus
     'octo': '#B48AD8', 'octoSpot': '#9A6CC4', 'octoLight': '#E3D0F2',
     # eekhoorn
     'squirrel': '#E58A3E', 'squirrelTail': '#D2742E', 'tailTip': '#F6DFC0', 'cream': '#F6DFC0', 'acorn': '#B07A45', 'acornCap': '#6E4B2E',
     # lammetje
-    'wool': '#E4D4B9', 'lambFace': '#D5AE8E', 'hoof': '#5A4842', 'horn': '#A87E55',
+    'wool': '#E4D4B9', 'lambFace': '#CFA67F', 'lambLimb': '#A58B78', 'hoof': '#5A4842', 'horn': '#A87E55',
 }
 
 # Set per form before an animal is built.
@@ -89,7 +89,7 @@ def grow(a, b):
     return a + (b - a) * F
 
 
-NEUTRAL = {'eye', 'white', 'blush', 'mouth', 'nose', 'sclera', 'claw', 'wing'}
+NEUTRAL = {'eye', 'white', 'blush', 'mouth', 'nose', 'sclera', 'claw', 'wing', 'crest'}
 
 
 def shade(key, hexcode):
@@ -138,6 +138,21 @@ def mat(key, rough=0.55, sheen=0.0, coat=0.0, sss=0.12, alpha=1.0, emit=False):
                 bsdf.inputs[k].default_value = v
     MATS[name] = m
     return m
+
+
+def matte(material):
+    """A copy of a material without gloss or sheen: feet and hooves stay soft instead of catching the key light."""
+    name = material.name + '/matte'
+    if name not in MATS:
+        m = material.copy()
+        m.name = name
+        bsdf = m.node_tree.nodes.get('Principled BSDF')
+        if bsdf:
+            bsdf.inputs['Coat Weight'].default_value = 0.0
+            bsdf.inputs['Sheen Weight'].default_value = 0.0
+            bsdf.inputs['Roughness'].default_value = max(0.65, bsdf.inputs['Roughness'].default_value)
+        MATS[name] = m
+    return MATS[name]
 
 
 def banded(key, band, stops, sheen=0.5):
@@ -253,7 +268,7 @@ def tube(points, radii, material):
     curve.dimensions = '3D'
     curve.bevel_depth = 1.0
     curve.bevel_resolution = 10
-    curve.resolution_u = 16
+    curve.resolution_u = 24
     curve.use_fill_caps = True
     spline = curve.splines.new('BEZIER')
     spline.bezier_points.add(len(points) - 1)
@@ -367,7 +382,7 @@ def pose_of(side):
 
 def athlete(skin, *, torso=None, head=None, limb=None, hand=None, leg=None, foot=None, belly=None, arms=True,
             head_w=1.0, head_d=0.92, torso_d=0.8, torso_w=1.0, thigh=1.0, bicep=1.0, hand_size=1.0, leg_scale=1.0, toes=0,
-            poses=None, head_ball=True):
+            poses=None, head_ball=True, sink=0.36, head_scale=1.0, head_fwd=0.0):
     """The shared body of the upright partners: head, torso, arms with biceps, legs with thighs and feet.
     What changes per form: the head shrinks from 88% to 42% of the height, the torso gets its own shape and
     broadens into a V, limbs appear (nubs, small, real, muscular), the stance widens, and from form 6 one arm flexes.
@@ -377,13 +392,14 @@ def athlete(skin, *, torso=None, head=None, limb=None, hand=None, leg=None, foot
     M = MUSCLE[f]
     torso, head, limb = torso or skin, head or skin, limb or skin
     hand, leg, foot = hand or limb, leg or limb, foot or leg
-    hz = HEAD[f] * T / 2
+    hz = HEAD[f] * T / 2 * head_scale
     P = SimpleNamespace(M=M, hz=hz, u=hz / 0.85, hr=(hz * head_w, hz * head_w * head_d, hz), hc=(0, 0, T - hz))
-    top = T - HEAD[f] * T * 0.36
+    top = T - hz * 2 * sink
     L = LEG[f] * T * leg_scale
     base = L * 0.85
     rx = SHOULDER[f] * (1 - 0.1 * (1 - M)) * torso_w
     ry = rx * torso_d
+    P.hc = (0, -head_fwd * ry, T - hz)
     half = (top - base) / 2
     P.tc, P.rx, P.ry, P.half, P.top, P.base = (0, 0, base + half), rx, ry, half, top, base
     lathe(P.tc, rx, ry, half, lambda t: 1 + 0.3 * M * t, torso, square=2 + 0.8 * M)
@@ -427,27 +443,31 @@ def athlete(skin, *, torso=None, head=None, limb=None, hand=None, leg=None, foot
                 E = S + Vector((side * 0.62 * LA, 0.1 * LA, -0.4 * LA))
                 H = Vector((side * rx * 0.6, -ry * 0.8, base + 0.45 * (zs - base)))
             P.hand[side] = H
-            ball(tuple(S), ra * (1.1 + 0.25 * M), limb)
-            tube([tuple(S), tuple((S + E) / 2 + Vector((0, 0, ra * 0.15 * M))), tuple(E)], [ra * 1.1, ra * (1 + 0.45 * M) * bicep, ra], limb)
-            tube([tuple(E), tuple((E + H) / 2), tuple(H)], [ra * 0.95, ra * (0.9 + 0.2 * M), ra * 0.8], limb)
+            ball(tuple(S), ra * (1.1 + 0.2 * M), limb)
+            M1, M2 = S + (E - S) * 0.5 + Vector((0, 0, ra * 0.15 * M)), E + (H - E) * 0.5
+            tube([tuple(p) for p in (S, M1, E, M2, H)],
+                 [ra * 1.1, ra * (1 + 0.5 * M) * bicep, ra * (1 + 0.1 * M), ra * (0.9 + 0.25 * M), ra * 0.8], limb)
             ball(tuple(H), ra * 1.2 * hand_size, hand)
         rl = ra * 1.25 * thigh
+        fr = min(ra * 1.45, 0.34)
+        fh = fr * 0.7
         ax = side * (rx * 0.5 + 0.1 + 0.14 * M)
         if L > 0.05:
-            hip = Vector((side * rx * 0.5, 0, base + 0.2 * L))
+            hip = Vector((side * rx * 0.36, 0, base + half * 0.6))
             knee = Vector((side * (rx * 0.5 + 0.08 + 0.08 * M), -0.1, L * 0.5))
-            ankle = Vector((ax, 0, 0.1))
-            tube([tuple(hip), tuple((hip + knee) / 2), tuple(knee)], [rl * 1.1, rl * (1.1 + 0.4 * M), rl], leg)
-            tube([tuple(knee), tuple((knee + ankle) / 2), tuple(ankle)], [rl, rl * (1 + 0.2 * M), rl * 0.8], leg)
-            fc = Vector((ax, -rl * 0.9, 0.1))
+            ankle = Vector((ax, 0, fh * 1.3))
+            tube([tuple(p) for p in (hip, hip.lerp(knee, 0.5), knee, knee.lerp(ankle, 0.45), ankle)],
+                 [rl * 0.85, rl * (1.1 + 0.4 * M), rl, rl * (1 + 0.2 * M), rl * 0.8], leg)
+            fc = Vector((ax, -fr * 0.7, fh))
+            fs = Vector((fr * 1.05, fr * 1.5, fh))
         else:
-            fc = Vector((side * rx * 0.55, -ry * 0.55, 0.12))
-        fs = Vector((rl * 1.15, rl * 1.9, 0.11 + 0.02 * M)) if L > 0.05 else Vector((0.22, 0.3, 0.13))
-        ball(tuple(fc), tuple(fs), foot)
+            fc = Vector((side * rx * 0.55, -ry * 0.55, 0.13))
+            fs = Vector((0.22, 0.3, 0.13))
+        ball(tuple(fc), tuple(fs), matte(foot))
         P.foot[side] = fc
         for j in range(toes):
-            q = fc + Vector(((j - (toes - 1) / 2) * fs.x * 0.7, -fs.y * 0.85, 0.0))
-            ball(tuple(q), fs.x * 0.26, foot)
+            q = fc + Vector(((j - (toes - 1) / 2) * fs.x * 0.7, -fs.y * 0.85, fs.z * 0.05))
+            ball(tuple(q), fs.x * 0.34, matte(foot))
     return P
 
 
@@ -567,7 +587,7 @@ def uil():
     body = mat('owl', rough=0.7, sheen=0.5)
     wing = mat('owlWing', rough=0.7, sheen=0.5)
     orange = mat('beak', rough=0.4)
-    P = athlete(body, belly=mat('owlBelly', rough=0.7, sheen=0.4), arms=False, leg=orange, foot=orange, toes=3, head_w=1.12, torso_w=0.9, leg_scale=0.9)
+    P = athlete(body, belly=mat('owlBelly', rough=0.7, sheen=0.4), arms=False, leg=orange, foot=orange, toes=3, head_w=1.12, torso_w=0.9, thigh=0.75, leg_scale=0.9)
     u = P.u
     for side in (1, -1):
         p, n = on(P.hc, P.hr, side * 20, 20, out=-0.08 * u)
@@ -665,12 +685,12 @@ def slak():
             for k in range(FORM + 1):
                 a = math.radians(30 + 60 * k)
                 r = Sr * 0.62
-                ball((side * rx * 0.88, sc.y + r * math.sin(a), sc.z + r * math.cos(a)), 0.055 * Sr / 0.9, line)
+                ball((side * rx * 0.88, sc.y + r * math.sin(a), sc.z + r * math.cos(a)), 0.11 * Sr, line)
 
 
 def axolotl():
     """An axolotl. Grows: from a pink ball with tiny gills to an upright athlete with a big gill mane (more and longer
-    stalks every form), a dorsal fin (4+) and a long tail fin; at form 6 it flexes."""
+    stalks every form), and a long tail that curls round beside its legs; at form 6 it flexes."""
     body = mat('axo', rough=0.3, coat=0.5)
     gill = mat('gill', rough=0.4, coat=0.3)
     P = athlete(body, foot=mat('axo', rough=0.5, coat=0.1), belly=mat('axoBelly', rough=0.4, coat=0.3), head_w=1.32, head_d=0.82, toes=3, leg_scale=0.85)
@@ -685,19 +705,10 @@ def axolotl():
             drop(tuple(base), 0.075 * u, length * G, gill, direction=tuple(d))
             for j in ((0.45, 0.7, 0.92) if FORM < 4 else (0.35, 0.52, 0.68, 0.84, 0.98)):
                 ball(tuple(base + d * length * G * j + Vector((0, 0, 0.05 * u))), 0.065 * u, gill)
-    Tl = grow(0.5, 1.5)
-    t0 = Vector((0, P.ry * 0.8, P.base + 0.3))
-    pts = [t0, t0 + Vector((0.12, 0.5 * Tl, -0.05)), t0 + Vector((0.34 * Tl, 1.0 * Tl, 0.0))]
-    tube([tuple(q) for q in pts], [P.rx * 0.45, P.rx * 0.28, 0.05], body)
-    if FORM >= 3:
-        for t_ in (0.35, 0.6, 0.85):
-            q = pts[0].lerp(pts[1], t_ * 1.2) if t_ < 0.8 else pts[1].lerp(pts[2], 0.7)
-            ball(tuple(q + Vector((0, 0, 0.12 * Tl))), (0.03, 0.3 * Tl, 0.16 * Tl), gill)
-    if FORM >= 4:
-        for k in range(4):
-            y = P.hc[1] + hy * 0.75 + k * 0.2
-            z = P.top - 0.05 - k * 0.22 + 0.15
-            ball((0, y, z + hz * (0.35 if k == 0 else 0.0) * 0.5), (0.04, 0.22, 0.12 + 0.05 * (FORM - 4)), gill)
+    Tl = grow(0.6, 1.5)
+    t0 = Vector((P.rx * 0.3, P.ry * 0.8, P.base + 0.3))
+    pts = [t0, Vector((P.rx + 0.5 * Tl, P.ry + 0.5 * Tl, 0.3)), Vector((P.rx + 1.0 * Tl, P.ry * 0.2, 0.22)), Vector((P.rx + 1.1 * Tl, -P.ry * 0.4, 0.15))]
+    tube([tuple(q) for q in pts], [P.rx * 0.45, P.rx * 0.3, 0.1, 0.04], body)
 
 
 def on_tilted(center, radii, rot, direction, out=0.0):
@@ -747,7 +758,7 @@ def zeehond():
         dirs = [(0.9, -0.3, 0.4), (-0.9, -0.3, 0.4), (0.7, 0.2, 0.7), (-0.7, 0.2, 0.7), (0.95, 0.3, 0.1), (-0.95, 0.3, 0.1), (0.5, -0.7, 0.5), (-0.5, -0.7, 0.5)]
         for d in dirs[:2 * (FORM - 3)]:
             q, m = on_tilted(C, (W, Lb, Hb), rot, d, out=-0.02)
-            ball(tuple(q), (0.11, 0.03, 0.09), spotm, normal=m)
+            ball(tuple(q), (0.2, 0.04, 0.16), spotm, normal=m)
     Pw = grow(0.85, 1.4)
     for side in (1, -1):
         S = C + fdir * Lb * 0.55 + Vector((side * W * 0.85, 0, -Hb * 0.2))
@@ -779,7 +790,7 @@ def pinguin():
     white = mat('pengWhite', rough=0.6, sheen=0.3)
     orange = mat('beak', rough=0.4)
     crest = mat('crest', rough=0.6, sheen=0.5)
-    P = athlete(body, belly=white, arms=False, leg=orange, foot=orange, toes=3, head_w=1.15, torso_d=0.88, torso_w=0.85, leg_scale=0.6)
+    P = athlete(body, belly=white, arms=False, leg=orange, foot=orange, toes=3, head_w=1.12, torso_d=0.88, torso_w=0.85, thigh=0.7, leg_scale=0.6, sink=0.62)
     u = P.u
     for side in (1, -1):
         p, n = on(P.hc, P.hr, side * 20, -14, out=-0.07 * u)
@@ -790,7 +801,7 @@ def pinguin():
         flipper(P, side, pose, body, width=0.7)
         if FORM >= 4:
             q, m = on(P.hc, P.hr, side * 46, 14, out=-0.04 * u)
-            ball(tuple(q), (0.12 * u, 0.05 * u, 0.2 * u), crest, normal=m)
+            ball(tuple(q), (0.2 * u, 0.07 * u, 0.32 * u), crest, normal=m)
             for j in range(FORM - 2):
                 q, m = on(P.hc, P.hr, side * 40, 36, out=-0.03 * u)
                 drop(tuple(q + Vector((side * 0.04 * j, 0.03 * j, 0.02 * j)) * u), 0.05 * u, (0.25 + 0.08 * (FORM - 4) + 0.04 * j) * u, crest,
@@ -798,8 +809,8 @@ def pinguin():
     p, n = on(P.hc, P.hr, 0, 6)
     drop(tuple(p), 0.09 * u, 0.22 * u, mat('beak', rough=0.35, coat=0.3), direction=(0, -1, -0.25))
     if FORM >= 4:
-        p, n = on(P.tc, (P.rx, P.ry, P.half), 0, 52, out=-0.05)
-        ball(p, (P.rx * 0.45, P.ry * 0.14, P.half * 0.14), crest, normal=n)
+        p, n = on(P.tc, (P.rx, P.ry, P.half), 0, 58, out=0.0)
+        ball(p, (P.rx * 0.6, P.ry * 0.16, P.half * 0.2), crest, normal=n)
 
 
 def schildpad():
@@ -856,7 +867,7 @@ def konijn():
 
 def wasbeer():
     """A raccoon. Grows: from a grey ball with a dark mask to an upright, muscular raccoon with a wider mask, round ears, pale
-    brow patches and a dark nose stripe (4+) and a huge ringed tail (more rings, much bigger); at form 6 it flexes."""
+    brow patches and a dark nose stripe (4+) and a huge ringed tail that sweeps out in a visible S-curve beside it; at form 6 it flexes."""
     body = mat('racc', rough=0.75, sheen=0.6)
     mask = mat('raccMask', rough=0.6, sheen=0.4)
     light = mat('raccLight', rough=0.7, sheen=0.5)
@@ -883,24 +894,23 @@ def wasbeer():
     if FORM >= 4:
         q, m = on(P.hc, P.hr, 0, 48, out=-0.02 * u)
         ball(q, (0.07 * u, 0.04 * u, 0.26 * u), mask, normal=m)
-    Tl = grow(0.8, 1.8)
+    Tl = grow(0.8, 1.7)
     H0 = P.top - P.base
-    a = Vector((P.rx * 0.3, P.ry + 0.1, P.base + 0.2))
-    b = Vector((P.rx * 0.6 + 0.7 * Tl, P.ry + 0.7, P.base + 0.5 * H0))
-    d = Vector((P.rx * 0.9 + 0.9 * Tl, P.ry + 0.6, P.base + H0 * 0.4 + 0.9 * Tl))
-    rings = 6 + 2 * FORM
+    c = [Vector(q) for q in ((P.rx * 0.4, P.ry * 0.9, P.base + 0.3), (P.rx + 1.3 * Tl, P.ry + 0.3, 0.4 * Tl + 0.1),
+                             (P.rx + 0.1 * Tl, P.ry + 0.6, P.base + H0 * 0.7), (P.rx + 1.0 * Tl, P.ry + 0.4, P.base + H0 * 0.75 + 0.6 * Tl))]
+    rings = 8 + 2 * FORM
     for i in range(rings):
         t = i / (rings - 1)
-        pos = (1 - t) ** 2 * a + 2 * (1 - t) * t * b + t * t * d
+        pos = sum((w * q for w, q in zip(((1 - t) ** 3, 3 * (1 - t) ** 2 * t, 3 * (1 - t) * t * t, t ** 3), c)), Vector())
         ball(tuple(pos), (0.3 - 0.1 * t) * Tl * (0.8 + 0.2 * F) * P.rx / 0.7, mask if i % 2 else body)
 
 
 def lieveheersbeestje():
-    """A ladybird. Grows: from a red ball with a black face to an upright athlete on two legs with arms, a red shell on its
-    back that gets bigger and gains dots, long antennae, translucent wings (5+) that open wide at form 6; at form 6 it flexes."""
+    """A ladybird. Grows: from a red ball with a black face to an upright athlete on two legs with arms, a red shell that wraps
+    its back and sides, gets bigger and gains dots, long antennae, translucent wings (5+) that open wide at form 6; at form 6 it flexes."""
     red = mat('bug', rough=0.3, coat=0.7)
     dark = mat('bugDark', rough=0.4, coat=0.4)
-    P = athlete(dark, head=red, torso=red, belly=dark, foot=mat('bugDark', rough=0.7), head_w=1.02, toes=2)
+    P = athlete(dark, head=red, torso=red, belly=dark, foot=mat('bugFoot', rough=0.7), head_w=1.02, toes=2)
     u, hx, hy, hz = P.u, *P.hr
     p, n = on(P.hc, P.hr, 0, -6, out=-0.1 * u)
     ball(p, (hx * 0.68, hy * 0.14, hz * 0.52), dark, normal=n)
@@ -919,14 +929,17 @@ def lieveheersbeestje():
             q, m = on(P.hc, P.hr, side * 34, 64, out=-0.02 * u)
             ball(q, (0.11 * u, 0.03 * u, 0.11 * u), dark, normal=m)
     H0 = P.top - P.base
-    sr = (P.rx * 1.08, P.ry * 0.95 + 0.15 + 0.1 * F, H0 * (0.6 + 0.1 * F))
-    sc = (0, P.ry * 0.8 + 0.1, P.base + H0 * 0.55)
+    sr = (P.rx * 1.3, P.ry * 0.95 + 0.25, H0 * (0.62 + 0.08 * F))
+    sc = (0, P.ry * 0.55 + 0.1, P.base + H0 * 0.55)
     ball(sc, sr, red)
     dots = [(75, 35, 0.2), (-75, 35, 0.2), (105, 10, 0.18), (-105, 10, 0.18), (130, 45, 0.16), (-130, 45, 0.16),
             (88, 62, 0.14), (-88, 62, 0.14), (58, 6, 0.12), (-58, 6, 0.12), (150, 25, 0.13), (-150, 25, 0.13)]
     for az, el, s in dots[:min(12, 2 * FORM)]:
         q, m = on(sc, sr, az, el, out=-0.02)
         ball(q, (s * H0 * 0.55, 0.03, s * H0 * 0.55), dark, normal=m)
+        if abs(az) < 100 and el > 5:
+            q, m = on(P.tc, (P.rx, P.ry, P.half), az * 0.75, el * 0.8 - 10, out=-0.02)
+            ball(q, (s * P.rx * 0.5, 0.03, s * P.rx * 0.5), dark, normal=m)
     if FORM >= 5:
         wing = mat('wing', rough=0.15, sss=0, alpha=0.6)
         Lw = 0.9 if FORM == 5 else 1.45
@@ -949,33 +962,52 @@ def octopus():
     ra, Lr = [0.14, 0.15, 0.18, 0.21, 0.24, 0.27][f], [0.3, 0.5, 0.75, 1.0, 1.15, 1.3][f]
     ball((0, 0, z0 + 0.25), (hx * 0.85, hx * 0.8, 0.35), body)
     skip = {5: (7,), 6: (7, 0)}.get(FORM, ())
+    reach = 0.6 * hx + 1.2 * Lr + 0.3
     for k in range(8):
-        a = math.radians(k * 45 + 22.5)
-        cs, sn = math.sin(a), -math.cos(a)
         if k in skip:
             continue
-        r1, r2, r3 = 0.55 * hx + 0.85 * Lr + 0.2, 0.6 * hx + 1.2 * Lr + 0.4, 0.6 * hx + 1.45 * Lr + 0.45
-        rz = [(0.5 * hx, z0 + 0.25), (r1, z0 * 0.55 + 0.1), (r2, 0.12), (r3, 0.3 + 0.1 * Lr)]
-        radii = [ra * 1.15, ra, ra * 0.7, ra * 0.3]
-        if FORM >= 4:
-            rz += [(r3 + 0.08 * Lr, 0.5 + 0.25 * Lr), (r3 - 0.1 * Lr, 0.7 + 0.35 * Lr)]
-            radii = [ra * 1.15, ra, ra * 0.75, ra * 0.45, ra * 0.25, ra * 0.1]
-        tube([(r * cs, r * sn, z) for r, z in rz], radii, body)
-        if FORM >= 3:
-            for j in range(FORM - 1):
-                t = 0.45 + 0.1 * j
-                q = Vector((r2 * cs, r2 * sn, 0.12)).lerp(Vector((r3 * cs, r3 * sn, 0.3)), t)
-                ball(tuple(q + Vector((0, 0, ra * 0.55))), ra * 0.3, light)
+        a = math.radians(k * 45 + 22.5)
+        cs, sn = math.sin(a), -math.cos(a)
+        wig = 0.3 * Lr * (1 if k % 2 else -1)
+        pts, radii = [], []
+        for i in range(10):
+            t = i / 9
+            r = 0.5 * hx + (reach - 0.5 * hx) * t ** 0.85
+            rad = ra * (1.2 - 1.05 * t ** 0.8)
+            curl = max(0.0, (t - 0.75) / 0.25) ** 2
+            z = max(rad * 0.9, (z0 + 0.25) * (1 - t) ** 1.5) + curl * (0.35 + 0.5 * Lr if FORM >= 4 else 0.15)
+            r -= curl * 0.15 * Lr
+            lat = wig * math.sin(t * math.pi * 1.4)
+            pts.append((r * cs - lat * sn, (r * sn + lat * cs) * 0.7, z))
+            radii.append(rad)
+        tube(pts, radii, body)
+        for i in range(4, min(9, 3 + FORM)) if FORM >= 3 else ():
+            ball((pts[i][0], pts[i][1], pts[i][2] + radii[i] * 0.85), radii[i] * 0.35, light)
     for side in (-1, 1):
         if (side < 0 and FORM >= 5) or (side > 0 and FORM >= 6):
-            S = Vector((side * hx * 0.7, -hx * 0.35, z0 + 0.3))
-            E = S + Vector((side * (0.5 * Lr + 0.25), -0.05, 0.05))
-            W = E + Vector((side * 0.08, -0.1, 0.45 * Lr + 0.25))
-            tip = W + Vector((-side * 0.12 * Lr, -0.2, 0.25 * Lr))
-            tube([tuple(S), tuple(E), tuple(W), tuple(tip)], [ra * 1.2, ra * 1.4, ra * 1.0, ra * 0.45], body)
-            for j in range(5):
-                q = E.lerp(W, 0.15 + 0.17 * j)
-                ball(tuple(q + Vector((0, -ra * 0.95, 0))), ra * 0.3, light)
+            # A tentacle that arcs out and up from the side of the mantle, tapers and ends in a spiral that curls outward and down.
+            big = side < 0 and FORM == 6
+            H = (0.3 + 0.5 * Lr) * (1.15 if big else 0.85 if FORM == 6 else 1.0)
+            rs = (0.38 + 0.14 * Lr) * (1.0 if big else 0.85)
+            turns = 1.5 if big or FORM == 5 else 1.3
+            S = Vector((side * hx * 0.7, 0.0, z0 + 0.35))
+            pts, radii = [], []
+            for i in range(9):
+                t = i / 8
+                pts.append(Vector((side * (0.7 * hx + 0.9 * H * t), 0.0, z0 + 0.35 + H * t ** 2.0 * 1.3)))
+                radii.append(ra * (1.6 * (1 - 0.75 * t) ** 1.2 + 0.1))
+            E = pts[-1]
+            C = E + Vector((side * rs, 0, 0))
+            for j in range(1, 14):
+                u = j / 13
+                phi = turns * 2 * math.pi * u
+                r = rs * (1 - 0.75 * u)
+                pts.append(Vector((C.x - side * r * math.cos(phi), 0.0, C.z + r * math.sin(phi))))
+                radii.append(max(0.02, ra * 0.5 * (1 - u) + 0.02))
+            tube([tuple(q) for q in pts], radii, body)
+            for j in range(15, len(pts) - 1, 2):
+                inner = (C - pts[j]).normalized()
+                ball(tuple(pts[j] + inner * radii[j] * 0.9), max(0.025, radii[j] * 0.4), light)
     face(P, (24, -6, 0.15), (10, -26, 4), blush_at=(42, -20, 0.1))
     spots = [(60, 40, 0.09), (-70, 50, 0.11), (110, 20, 0.08), (0, 70, 0.1), (-30, 30, 0.07), (150, 50, 0.09), (-130, 30, 0.08),
              (40, 62, 0.1), (-45, 64, 0.1)]
@@ -1018,32 +1050,25 @@ def eekhoorn():
 
 
 def lammetje():
-    """A lamb. Grows: from a woolly ball to an upright ram with a fleece torso, a fluffy chest ruff and neck ruff (4+) and
+    """A lamb. Grows: from a woolly ball to an upright ram with a fleece torso, a short neck with the face clear of the fleece (4+) and
     curled horns from form 3 that grow into big ram horns; at form 6 it flexes."""
     wool = mat('wool', rough=0.9, sheen=0.8, sss=0.2)
     face_m = mat('lambFace', rough=0.6, sheen=0.3)
     hoof = mat('hoof', rough=0.5)
-    P = athlete(face_m, torso=wool, hand=hoof, foot=hoof, leg=hoof, head_w=0.9, head_d=0.92)
+    P = athlete(face_m, torso=wool, limb=mat('lambLimb', rough=0.7, sheen=0.3), hand=hoof, foot=hoof, head_w=0.9, head_d=0.92,
+                sink=0.62 if FORM >= 4 else 0.36, head_scale=1.0 + 0.08 * max(0, FORM - 3), head_fwd=0.35 if FORM >= 4 else 0.0)
     u, hx, hy, hz = P.u, *P.hr
     face(P, (26, 10, 0.12), (9, -22, 3), blush_at=(46, -8, 0.09))
     p, n = on(P.hc, P.hr, 0, -12, out=0.01 * u)
     ball(p, (0.06 * u, 0.04 * u, 0.04 * u), mat('bunnyEar', rough=0.4, coat=0.4), normal=n)
     R = (P.rx, P.ry, P.half)
-    for az, el in spread(int(grow(30, 70))):
-        if el > -50:
+    for az, el in spread(int(grow(24, 50))):
+        if -50 < el < 38 and not (abs(az) < 65 and el > (-40 if FORM >= 4 else -15)):
             q, m = on(P.tc, R, az, el, out=0.0)
-            ball(tuple(q), P.rx * 0.4, wool)
+            ball(tuple(q), P.rx * 0.55, wool)
     top = P.hc[2] + hz
     for x, z, s in ((-0.15, -0.12, 0.17), (0.15, -0.12, 0.17), (0.0, -0.04, 0.19)):
         ball((x * u, -0.1 * u, top + z * u), s * u, wool)
-    if FORM >= 4:
-        for az in range(-110, 111, 30):
-            q, m = on(P.hc, P.hr, az, -55, out=0.0)
-            ball(tuple(q), 0.2 * u * (1 + 0.15 * (FORM - 4)), wool)
-        for az in (-30, 0, 30):
-            for el in (24, 42):
-                q, m = on(P.tc, R, az, el, out=0.05)
-                ball(tuple(q), P.rx * 0.28, wool)
     for side in (1, -1):
         drop((side * hx * 0.95, hy * 0.0, P.hc[2] + hz * 0.1), 0.11 * u, 0.4 * u, face_m, direction=(side, 0.1, -0.35), flat=0.4)
         if FORM >= 3:
@@ -1128,7 +1153,8 @@ cam.location = target + Vector((-2.65, -7.6, 1.95))
 cam.rotation_euler = (target - cam.location).to_track_quat('-Z', 'Y').to_euler()
 
 def fit(root, height, max_width=3.7):
-    """Scale the figure so it is `height` tall on screen (or `max_width` wide if the pose is wider), centred, feet on z = 0."""
+    """Scale the figure so it is `height` tall on screen (or `max_width` wide if the pose is wider), centred, feet on z = 0,
+    and small enough that nothing, including the nearest foot or arm, is cropped by the frame."""
     bpy.context.view_layer.update()
     pts = []
     for obj in root.children_recursive:
@@ -1140,8 +1166,18 @@ def fit(root, height, max_width=3.7):
     pts = np.concatenate(pts)
     lo, hi = pts.min(axis=0), pts.max(axis=0)
     s = min(height / (hi[2] - lo[2]), max_width / (hi[0] - lo[0]))
+    cx, inv = -(lo[0] + hi[0]) / 2, np.array(cam.matrix_world.inverted())
+    sample = pts[::7]
+    for _ in range(20):
+        w = sample * s + np.array([cx * s, 0, -lo[2] * s])
+        pc = w @ inv[:3, :3].T + inv[:3, 3]
+        k = cam_data.lens / cam_data.sensor_width / -pc[:, 2]
+        u, v = 0.5 + pc[:, 0] * k, 0.5 + pc[:, 1] * k
+        if v.min() > 0.06 and v.max() < 0.96 and u.min() > 0.03 and u.max() < 0.97:
+            break
+        s *= 0.97
     root.scale = (s, s, s)
-    root.location = (-(lo[0] + hi[0]) / 2 * s, 0, -lo[2] * s)
+    root.location = (cx * s, 0, -lo[2] * s)
 
 
 for name in ONLY:
@@ -1153,7 +1189,7 @@ for name in ONLY:
         ROOT = bpy.data.objects.new(f'{name}-{form}', None)
         scene.collection.objects.link(ROOT)
         BUILDERS[name]()
-        fit(ROOT, HEIGHTS[form - 1] * (0.9 if name == 'octopus' else 1.0))
+        fit(ROOT, HEIGHTS[form - 1])
         scene.render.filepath = os.path.join(OUT, f'{name}-{form}.png')
         bpy.ops.render.render(write_still=True)
         print('wrote', scene.render.filepath, flush=True)
