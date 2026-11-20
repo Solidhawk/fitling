@@ -31,6 +31,10 @@ enum AuthFailure: Error, Equatable, Sendable {
 @MainActor
 protocol AuthProviding: AnyObject {
     var state: AuthState { get }
+    /// True when the session ended because the app asked: signing out or deleting the account.
+    /// False when it ended by itself, such as a refresh token that expired after a long time
+    /// offline (UNFORGET S12).
+    var signedOutOnRequest: Bool { get }
     func signInWithApple(idToken: String, nonce: String) async throws(AuthFailure)
     func signInWithGoogle() async throws(AuthFailure)
     func signUp(email: String, password: String) async throws(AuthFailure)

@@ -22,6 +22,7 @@ final class AuthService: AuthProviding {
     nonisolated static let resetPasswordURL = URL(string: "fitling://reset-password")!
 
     private(set) var state: AuthState = .loading
+    private(set) var signedOutOnRequest = false
     private let client: SupabaseClient
 
     init(client: SupabaseClient) {
@@ -30,6 +31,7 @@ final class AuthService: AuthProviding {
             for await (_, session) in client.auth.authStateChanges {
                 guard let self else { return }
                 let providers = session?.user.identities?.map(\.provider) ?? []
+                if session != nil { self.signedOutOnRequest = false }
                 self.state = Self.state(userID: session?.user.id, providers: providers, current: self.state)
             }
         }
@@ -149,11 +151,13 @@ final class AuthService: AuthProviding {
             )
         }
         // The server session no longer exists; only the local one is left to clear.
+        signedOutOnRequest = true
         try? await client.auth.signOut(scope: .local)
         state = .signedOut
     }
 
     func signOut() async throws(AuthFailure) {
+        signedOutOnRequest = true
         do throws(AuthFailure) {
             try await perform { try await client.auth.signOut(scope: .local) }
         } catch .network {

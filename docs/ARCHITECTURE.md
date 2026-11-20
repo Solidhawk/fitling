@@ -96,6 +96,8 @@ Een rij die de server blijft weigeren (grenswaarde, onbekende verwijzing) mag de
 
 Uitloggen: eerst pushen. Lukt dat niet en staat er nog iets klaar, dan waarschuwen. Daarna alle lokale data wissen, ook als het uitloggen zelf offline mislukt. Account verwijderen: Edge Function `delete-account`, daarna lokaal wissen. Alle tabellen hangen met `on delete cascade` aan `auth.users`.
 
+Een sessie die vanzelf afloopt (bijvoorbeeld een refresh-token dat na lang offline zijn verlopen) is geen bewust uitloggen (UNFORGET S12). Staat er dan nog iets klaar, dan blijven de lokale data achter het welkomstscherm op het toestel. Logt dezelfde gebruiker weer in, dan gaat alles alsnog naar de server; logt een andere gebruiker in, dan wordt eerst alles gewist. `AuthProviding.signedOutOnRequest` maakt het onderscheid.
+
 ### 3.8 Gedeelde boodschappenlijst
 
 - Dezelfde sync en dezelfde regel "laatste wijziging wint", per item. Twee huisgenoten die hetzelfde item afvinken geeft hetzelfde resultaat; twee die het verschillend bewerken: de laatste wint.

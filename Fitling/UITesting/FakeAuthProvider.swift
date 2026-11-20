@@ -6,7 +6,9 @@ import Observation
 @Observable
 @MainActor
 final class FakeAuthProvider: AuthProviding {
+    /// Tests end a session by itself by setting this to `.signedOut` directly.
     var state: AuthState
+    private(set) var signedOutOnRequest = false
     /// The error the next call to a method (by name, e.g. "signUp") throws.
     var nextError: [String: AuthFailure] = [:]
     var nextLink: AuthLink = .signedIn
@@ -82,10 +84,12 @@ final class FakeAuthProvider: AuthProviding {
     func deleteAccount(appleAuthorizationCode: String?) async throws(AuthFailure) {
         lastAppleAuthorizationCode = .some(appleAuthorizationCode)
         try await record("deleteAccount")
+        signedOutOnRequest = true
         state = .signedOut
     }
 
     func signOut() async throws(AuthFailure) {
+        signedOutOnRequest = true
         if signOutFailsAfterClearingSession {
             calls["signOut", default: 0] += 1
             state = .signedOut
