@@ -81,7 +81,7 @@ struct PartnerFixture {
         try #require(setup.save() != nil)
 
         let stored = try #require(fixture.context.creature(of: fixture.userID))
-        #expect(stored.species == "ember")
+        #expect(stored.species == "mole")
         #expect(stored.name == "Vonk")
         #expect(stored.colorIndex == 2)
         #expect(stored.tone == "funny")
