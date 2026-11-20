@@ -16,7 +16,7 @@ import Testing
 
     func state(shape: Double = CreatureEngine.startShape, xp: Int = 0, processed: Int? = nil, offTarget: Int = 0) -> CreatureState {
         CreatureState(
-            species: .sprout, colorIndex: 0, tone: .sweet, createdOn: created,
+            species: .bumblebee, colorIndex: 0, tone: .sweet, createdOn: created,
             bodyShape: shape, xp: xp, lastProcessedDay: processed.map { day(2026, 11, $0) }, offTargetDays: offTarget
         )
     }
@@ -240,7 +240,15 @@ import Testing
     }
 
     @Test func growthStageFollowsLevel() {
-        #expect([1, 2, 3, 5, 6, 10, 14, 15, 40].map(CreatureEngine.growthStage(forLevel:)) == [0, 0, 1, 1, 2, 3, 3, 4, 4])
+        #expect([1, 2, 3, 5, 6, 10, 14, 15, 21, 22, 40].map(CreatureEngine.growthStage(forLevel:)) == [0, 0, 1, 1, 2, 3, 3, 4, 4, 5, 5])
+    }
+
+    @Test func sixteenSpeciesWithTheirDatabaseValues() {
+        #expect(Species.allCases.map(\.rawValue) == [
+            "bumblebee", "mole", "frog", "owl", "hedgehog", "snail", "axolotl", "seal",
+            "penguin", "turtle", "rabbit", "raccoon", "ladybird", "octopus", "squirrel", "lamb",
+        ])
+        #expect(CreatureEngine.growthLevels.count == 6)
     }
 
     @Test func itemsAndColorsUnlockPerLevel() {
@@ -254,7 +262,7 @@ import Testing
 
     @Test func snapshotCarriesLevelProgressAndUnlocks() {
         let result = snapshot(state(xp: 450, processed: 7), records(1, 7, kcal: 2000), today: 8)
-        #expect(result.species == .sprout)
+        #expect(result.species == .bumblebee)
         #expect(result.level == 3)
         #expect(result.xp == 450)
         #expect(result.xpIntoLevel == 150)

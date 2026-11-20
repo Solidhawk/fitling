@@ -1,108 +1,72 @@
-import CoreGraphics
 import SwiftUI
 import Testing
+import UIKit
 import FitlingCore
 @testable import Fitling
 
-/// The partners are drawn from flat parts. The catalog shows them side by side, so they share one
-/// drawing space and stand on one baseline; light and shadow only ever fall on the body.
-struct FigureTests {
-    @Test(arguments: Species.allCases)
-    func everyPartnerHasExactlyOneBody(_ species: Species) {
-        #expect(species.parts.filter { $0.role == .body }.count == 1)
+/// The partners are stacks of 3D renders: a body, a face per mood, and what they wear. All layers of
+/// one species and form come from one camera, so they only line up if every one of them exists.
+struct PartnerLayersTests {
+    @Test func theStackStartsWithTheBodyAndTheFaceOfTheMood() {
+        let layers = PartnerLayers.layers(.owl, look: PartnerLook(mood: .hungry, growthStage: 3))
+        #expect(layers.map(\.name) == ["partner-owl-4-body", "partner-owl-4-face-hungry"])
+    }
+
+    @Test func itemsGoOnInAFixedOrderAndTheSweatbandLast() {
+        let look = PartnerLook(trainedRecently: true, items: [.crown, .backpack, .glasses])
+        let names = PartnerLayers.layers(.frog, look: look).dropFirst(2).map(\.name)
+        #expect(names == ["partner-frog-3-item-backpack", "partner-frog-3-item-glasses", "partner-frog-3-item-crown", "partner-frog-3-item-sweatband"])
+    }
+
+    @Test func onlyTheBodyTakesTheColour() {
+        let layers = PartnerLayers.layers(.lamb, look: PartnerLook(colorIndex: 3, items: [.scarf]))
+        #expect(layers.map(\.takesColor) == [true, false, false])
+    }
+
+    @Test func everyGrowthStageHasItsOwnForm() {
+        #expect((0..<CreatureEngine.growthLevels.count).map(PartnerLayers.form(for:)) == [1, 2, 3, 4, 5, 6])
+        #expect(PartnerLayers.form(for: -1) == 1)
+        #expect(PartnerLayers.form(for: 9) == 6)
+    }
+
+    @Test func everyColourTurnsTheHueByItsOwnAmount() {
+        #expect(PartnerLayers.hues.count == CreatureEngine.baseColorCount + CreatureEngine.colorUnlockLevels.count)
+        #expect(Set(PartnerLayers.hues).count == PartnerLayers.hues.count)
+        #expect(PartnerLayers.hue(for: 0) == .zero)
+    }
+
+    @Test func aRoundPartnerIsWiderThanALeanOne() {
+        #expect(PartnerLook(bodyShape: 0).width < PartnerLook(bodyShape: CreatureEngine.startShape).width)
+        #expect(PartnerLook(bodyShape: CreatureEngine.startShape).width == 1)
+        #expect(PartnerLook(bodyShape: 1).width > 1.15)
     }
 
     @Test(arguments: Species.allCases)
-    func shadingIsDrawnAfterTheBodyItFallsOn(_ species: Species) {
-        let parts = species.parts
-        let body = parts.firstIndex { $0.role == .body }
-        let shading = parts.indices.filter { parts[$0].role == .shading }
-        #expect(!shading.isEmpty)
-        #expect(shading.allSatisfy { index in body.map { index > $0 } ?? false })
+    func everyLayerOfEverySpeciesIsInTheApp(_ species: Species) {
+        var missing: [String] = []
+        for form in 1...PartnerLayers.formCount {
+            let base = PartnerLayers.prefix(species, form: form)
+            let names = ["\(base)-body", "\(base)-item-sweatband"]
+                + CreatureMood.allCases.map { "\(base)-face-\($0.rawValue)" }
+                + CreatureItem.allCases.map { "\(base)-item-\($0.rawValue)" }
+            missing += names.filter { UIImage(named: $0) == nil }
+        }
+        #expect(missing.isEmpty, "\(missing.prefix(5))")
     }
 
     @Test(arguments: Species.allCases)
-    func partnersStayInsideTheirDrawingSpace(_ species: Species) {
-        let parts = species.parts
-        let body = parts.first { $0.role == .body }?.path.boundingRect ?? .null
-        // Shading is clipped to the body, so only the part inside the body is drawn.
-        let bounds = parts
-            .map { $0.role == .shading ? $0.path.boundingRect.intersection(body) : $0.path.boundingRect }
-            .reduce(CGRect.null) { $0.union($1) }
-        #expect(!bounds.isNull)
-        #expect(bounds.minX >= 0 && bounds.minY >= 0 && bounds.maxX <= 100 && bounds.maxY <= 100)
-        #expect(FigurePart.groundShadow.maxY <= 100)
-    }
-
-    @Test(arguments: Species.allCases)
-    func partnersStandOnTheSameBaseline(_ species: Species) {
-        let outline = species.parts
-            .filter { $0.role == .silhouette || $0.role == .body }
-            .map(\.path.boundingRect)
-            .reduce(CGRect.null) { $0.union($1) }
-        #expect(abs(outline.maxY - FigurePart.baseline) < 0.5)
-    }
-}
-
-/// Every look the partner can have: its moods, shapes, growth, colours and what it wears.
-struct PartnerLookTests {
-    static let extremes: [PartnerLook] = CreatureMood.allCases.flatMap { mood in
-        [0.0, 1.0].flatMap { shape in
-            [0, 4].map { stage in
-                PartnerLook(colorIndex: 4, mood: mood, bodyShape: shape, growthStage: stage, trainedRecently: true, items: CreatureItem.allCases)
-            }
+    func everyFormKnowsWhereTheHeadIs(_ species: Species) throws {
+        for form in 1...PartnerLayers.formCount {
+            let anchor = try #require(PartnerAnchor.of(species, form: form), "\(species) \(form)")
+            #expect((0...1).contains(anchor.headTop[1]) && anchor.headTop[1] < anchor.headCenter[1])
+            #expect(anchor.headRadius > 0 && anchor.headRadius < 0.5)
         }
     }
 
     @Test(arguments: Species.allCases)
-    func everyLookStaysInsideTheDrawingSpace(_ species: Species) {
-        for look in Self.extremes {
-            let parts = species.parts(for: look)
-            let body = parts.first { $0.role == .body }?.path.boundingRect ?? .null
-            let bounds = parts
-                .map { $0.role == .shading ? $0.path.boundingRect.intersection(body) : $0.path.boundingRect }
-                .filter { !$0.isNull }
-                .reduce(CGRect.null) { $0.union($1) }
-            #expect(bounds.minX >= 0 && bounds.minY >= 0 && bounds.maxX <= 100 && bounds.maxY <= 100, "\(species) \(look)")
-            #expect(parts.filter { $0.role == .body }.count == 1)
-        }
-    }
-
-    @Test(arguments: Species.allCases)
-    func aRoundPartnerIsWiderThanALeanOne(_ species: Species) {
-        func bodyWidth(_ shape: Double) -> CGFloat {
-            species.parts(for: PartnerLook(bodyShape: shape)).first { $0.role == .body }?.path.boundingRect.width ?? 0
-        }
-        #expect(bodyWidth(0) < bodyWidth(CreatureEngine.startShape))
-        #expect(bodyWidth(CreatureEngine.startShape) < bodyWidth(1))
-    }
-
-    @Test(arguments: Species.allCases)
-    func everyMoodHasItsOwnFace(_ species: Species) {
-        let faces = CreatureMood.allCases.map { mood in
-            species.parts(for: PartnerLook(mood: mood)).filter { $0.role == .detail }.map { "\($0.path.boundingRect)" }
-        }
-        #expect(Set(faces).count == CreatureMood.allCases.count)
-    }
-
-    @Test(arguments: Species.allCases)
-    func everyAccessoryIsDrawn(_ species: Species) {
-        let bare = species.parts(for: PartnerLook()).count
-        for item in CreatureItem.allCases {
-            #expect(species.parts(for: PartnerLook(items: [item])).count > bare, "\(item)")
-        }
-    }
-
-    @Test(arguments: Species.allCases)
-    func theOldestPartnersHaveTheMostToShow(_ species: Species) {
-        let counts = (0...4).map { species.parts(for: PartnerLook(growthStage: $0)).count }
-        #expect(counts.first! < counts.last!)
-    }
-
-    @Test(arguments: Species.allCases)
-    func everyColourHasItsOwnBody(_ species: Species) {
-        #expect(species.palettes.count == CreatureEngine.baseColorCount + CreatureEngine.colorUnlockLevels.count)
-        #expect(Set(species.palettes.map { "\($0.body)" }).count == species.palettes.count)
+    func everySpeciesHasItsOwnColours(_ species: Species) {
+        #expect(UIColor(named: "PartnerRibbon/\(species.rawValue)") != nil)
+        #expect(UIColor(named: "PartnerTint/\(species.rawValue)") != nil)
     }
 
     @Test func aPartnerAtRestDoesNotMove() {

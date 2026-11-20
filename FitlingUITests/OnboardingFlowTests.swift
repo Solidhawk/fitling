@@ -137,14 +137,14 @@ final class OnboardingFlowTests: XCTestCase {
         keepScreenshot(app, named: "\(prefix)-13-dagdoel")
     }
 
-    /// Pip, with the name Pip filled in and "pa" typed after it.
+    /// The owl, with its name Uil filled in and "tje" typed after it.
     @MainActor
     private func choosePartner(_ app: XCUIApplication, prefix: String) {
         // The card carries the identifier; the button inside it does not.
-        let pip = app.descendants(matching: .any)["partner.setup.species.pip"]
-        XCTAssertTrue(pip.waitForExistence(timeout: 10))
+        let owl = app.descendants(matching: .any)["partner.setup.species.owl"]
+        XCTAssertTrue(owl.waitForExistence(timeout: 10))
         keepScreenshot(app, named: "\(prefix)-9-partner-kiezen")
-        pip.tap()
+        owl.tap()
 
         let list = app.collectionViews["partner.setup.list"]
         let done = app.buttons["partner.setup.done"]
@@ -156,8 +156,8 @@ final class OnboardingFlowTests: XCTestCase {
         }
         XCTAssertTrue(name.waitForExistence(timeout: 5))
         name.tap()
-        name.typeText("pa")
-        XCTAssertEqual(name.value as? String, "Pippa")
+        name.typeText("tje")
+        XCTAssertEqual(name.value as? String, "Uiltje")
         keepScreenshot(app, named: "\(prefix)-10-partner-naam")
         XCTAssertTrue(done.isEnabled)
         done.tap()

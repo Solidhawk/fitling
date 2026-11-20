@@ -1,7 +1,7 @@
 import SwiftUI
 import FitlingCore
 
-/// The partner choice: the four species, then name, colour and voice with a preview of how the
+/// The partner choice: the sixteen species, then name, colour and voice with a preview of how the
 /// partner starts out.
 struct PartnerSetupView: View {
     @State private var viewModel: PartnerSetupViewModel
@@ -33,7 +33,7 @@ struct PartnerSetupView: View {
 
                 if let species = viewModel.species {
                     Section {
-                        TextField(text: $viewModel.name, prompt: Text(species.nameKey)) {
+                        TextField(text: $viewModel.name, prompt: Text(species.name)) {
                             Text("partner.setup.name")
                         }
                         .font(.title3.weight(.semibold))
@@ -106,7 +106,7 @@ struct PartnerSetupView: View {
             VStack(spacing: Spacing.s) {
                 FigureView(species: species)
                     .frame(width: 72, height: 72)
-                NamePlate(species.nameKey, fill: species.ribbon)
+                NamePlate(species.name, fill: species.ribbon)
             }
             .padding(Spacing.m)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -118,8 +118,8 @@ struct PartnerSetupView: View {
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text(species.nameKey))
-        .accessibilityHint(Text(species.noteKey))
+        .accessibilityLabel(Text(species.name))
+        .accessibilityHint(Text(species.note))
         .accessibilityAddTraits(selected ? .isSelected : [])
         .accessibilityIdentifier("partner.setup.species.\(species.rawValue)")
     }
@@ -165,7 +165,7 @@ struct ColorSwatches: View {
                     selection = index
                 } label: {
                     ZStack {
-                        Circle().fill(species.palette(index).body)
+                        Circle().fill(species.ribbon).hueRotation(PartnerLayers.hue(for: index))
                         if locked {
                             Image(systemName: "lock.fill")
                                 .font(.footnote.weight(.bold))
@@ -188,18 +188,6 @@ struct ColorSwatches: View {
             Spacer(minLength: 0)
         }
         .padding(.vertical, Spacing.xs)
-    }
-}
-
-extension Species {
-    /// The species name in the user's language, as a starting name for the partner.
-    var displayName: String {
-        switch self {
-        case .sprout: String(localized: "creature.sprout.name")
-        case .ember: String(localized: "creature.ember.name")
-        case .pip: String(localized: "creature.pip.name")
-        case .pebble: String(localized: "creature.pebble.name")
-        }
     }
 }
 

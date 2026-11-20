@@ -1,98 +1,166 @@
 import SwiftUI
 import FitlingCore
 
-/// How the four species from PRODUCT.md look: the catalog on the welcome screen, the choice in
-/// partner setup and the partner itself.
+/// How the sixteen species look: their colours and names in the catalog, the partner setup and
+/// the partner itself. The figures are 3D renders (design/partners/nieuw/partners_3d.py).
 extension Species {
-    /// The main colour of the species: its name plate and its own ribbon.
-    var ribbon: Color {
+    /// The species' own colour: its name plate and its own ribbon.
+    var ribbon: Color { Color("PartnerRibbon/\(rawValue)") }
+
+    /// The pastel ground behind the species' figure.
+    var tint: Color { Color("PartnerTint/\(rawValue)") }
+
+    var name: LocalizedStringResource {
         switch self {
-        case .sprout: Color.sprout
-        case .ember: Color.ember
-        case .pip: Color.pip
-        case .pebble: Color.pebble
+        case .bumblebee: "creature.bumblebee.name"
+        case .mole: "creature.mole.name"
+        case .frog: "creature.frog.name"
+        case .owl: "creature.owl.name"
+        case .hedgehog: "creature.hedgehog.name"
+        case .snail: "creature.snail.name"
+        case .axolotl: "creature.axolotl.name"
+        case .seal: "creature.seal.name"
+        case .penguin: "creature.penguin.name"
+        case .turtle: "creature.turtle.name"
+        case .rabbit: "creature.rabbit.name"
+        case .raccoon: "creature.raccoon.name"
+        case .ladybird: "creature.ladybird.name"
+        case .octopus: "creature.octopus.name"
+        case .squirrel: "creature.squirrel.name"
+        case .lamb: "creature.lamb.name"
         }
     }
 
-    /// The pastel ground of the species' catalog card.
-    var tint: Color {
+    /// One line of character.
+    var note: LocalizedStringResource {
         switch self {
-        case .sprout: Color.sproutTint
-        case .ember: Color.emberTint
-        case .pip: Color.pipTint
-        case .pebble: Color.pebbleTint
+        case .bumblebee: "creature.bumblebee.note"
+        case .mole: "creature.mole.note"
+        case .frog: "creature.frog.note"
+        case .owl: "creature.owl.note"
+        case .hedgehog: "creature.hedgehog.note"
+        case .snail: "creature.snail.note"
+        case .axolotl: "creature.axolotl.note"
+        case .seal: "creature.seal.note"
+        case .penguin: "creature.penguin.note"
+        case .turtle: "creature.turtle.note"
+        case .rabbit: "creature.rabbit.note"
+        case .raccoon: "creature.raccoon.note"
+        case .ladybird: "creature.ladybird.note"
+        case .octopus: "creature.octopus.note"
+        case .squirrel: "creature.squirrel.note"
+        case .lamb: "creature.lamb.note"
         }
     }
 
-    var nameKey: LocalizedStringKey {
-        switch self {
-        case .sprout: "creature.sprout.name"
-        case .ember: "creature.ember.name"
-        case .pip: "creature.pip.name"
-        case .pebble: "creature.pebble.name"
-        }
+    /// The species name in the user's language, as a starting name for the partner.
+    var displayName: String { String(localized: name) }
+}
+
+/// Everything that changes how a partner looks. The values come from `CreatureSnapshot` and the
+/// accessories the user put on; the catalog uses one fixed look.
+struct PartnerLook: Equatable {
+    var colorIndex = 0
+    var mood: CreatureMood = .content
+    /// 0 is lean, 1 is round (`CreatureSnapshot.bodyShape`).
+    var bodyShape = CreatureEngine.startShape
+    /// 0...5 (`CreatureSnapshot.growthStage`), one per form.
+    var growthStage = 2
+    var trainedRecently = false
+    var items: [CreatureItem] = []
+
+    /// The catalog: the partners as they look once they have grown a little.
+    static let catalog = PartnerLook()
+
+    init(
+        colorIndex: Int = 0, mood: CreatureMood = .content, bodyShape: Double = CreatureEngine.startShape,
+        growthStage: Int = 2, trainedRecently: Bool = false, items: [CreatureItem] = []
+    ) {
+        self.colorIndex = colorIndex
+        self.mood = mood
+        self.bodyShape = bodyShape
+        self.growthStage = growthStage
+        self.trainedRecently = trainedRecently
+        self.items = items
     }
 
-    /// One line of character for the catalog card.
-    var noteKey: LocalizedStringKey {
-        switch self {
-        case .sprout: "creature.sprout.note"
-        case .ember: "creature.ember.note"
-        case .pip: "creature.pip.note"
-        case .pebble: "creature.pebble.note"
-        }
+    init(snapshot: CreatureSnapshot, items: [CreatureItem]) {
+        self.init(
+            colorIndex: snapshot.colorIndex, mood: snapshot.mood, bodyShape: snapshot.bodyShape,
+            growthStage: snapshot.growthStage, trainedRecently: snapshot.trainedRecently, items: items
+        )
     }
 
-    /// The partner as the catalog shows it.
-    var parts: [FigurePart] {
-        parts(for: .catalog)
+    /// Width against the start shape: about 92 % when lean, 120 % when round.
+    var width: CGFloat {
+        1 + (CGFloat(min(max(bodyShape, 0), 1)) - CGFloat(CreatureEngine.startShape)) * 0.28
     }
 }
 
-/// One flat part of a partner, drawn in a 100 × 100 space.
-struct FigurePart {
-    enum Paint: Equatable {
-        case fill
-        case stroke(CGFloat)
-        case fillAndStroke(CGFloat)
+/// One image in a partner's stack. All layers of one species and form come from the same camera
+/// and scale, so they lie exactly on top of each other.
+struct PartnerLayer: Equatable {
+    let name: String
+    /// Only the body takes the colour variant; the face and what the partner wears keep their colours.
+    let takesColor: Bool
+}
+
+/// Which images make up a partner in one look, from back to front.
+enum PartnerLayers {
+    static let formCount = 6
+    /// What the partner wears, from back to front. The sweatband after a workout goes on last.
+    static let itemOrder: [CreatureItem] = [.backpack, .scarf, .glasses, .bow, .cap, .crown]
+    /// The colour variants as a turn of the body's hue: the species' own colour first, then four others.
+    static let hues: [Double] = [0, 40, 150, 210, 300]
+
+    /// The rendered form (1...6) for a growth stage.
+    static func form(for growthStage: Int) -> Int {
+        min(max(growthStage, 0), formCount - 1) + 1
     }
 
-    enum Role: Equatable {
-        /// Feet, arms, leaves, crest: the outline next to the body.
-        case silhouette
-        /// The one body shape. Shading is clipped to it.
-        case body
-        /// Light on top, shadow underneath, and bands such as a scarf: flat tones instead of a
-        /// gradient, only inside the body.
-        case shading
-        /// Eyes, mouth, beak, speckles, accessories.
-        case detail
+    static func hue(for colorIndex: Int) -> Angle {
+        .degrees(hues[min(max(colorIndex, 0), hues.count - 1)])
     }
 
-    /// Every partner's feet end here, so the figures in the catalog stand on one line.
-    static let baseline: CGFloat = 92
-    /// The soft shadow the partner stands on.
-    static let groundShadow = CGRect(x: 20, y: 89.3, width: 60, height: 6.4)
-
-    let path: Path
-    let color: Color
-    var paint: Paint = .fill
-    var role: Role = .detail
-
-    func draw(in context: inout GraphicsContext) {
-        switch paint {
-        case .fill:
-            context.fill(path, with: .color(color))
-        case let .stroke(width):
-            context.stroke(path, with: .color(color), style: StrokeStyle(lineWidth: width, lineCap: .round, lineJoin: .round))
-        case let .fillAndStroke(width):
-            context.fill(path, with: .color(color))
-            context.stroke(path, with: .color(color), style: StrokeStyle(lineWidth: width, lineJoin: .round))
+    static func layers(_ species: Species, look: PartnerLook) -> [PartnerLayer] {
+        let base = prefix(species, form: form(for: look.growthStage))
+        var layers = [
+            PartnerLayer(name: "\(base)-body", takesColor: true),
+            PartnerLayer(name: "\(base)-face-\(look.mood.rawValue)", takesColor: false),
+        ]
+        for item in itemOrder where look.items.contains(item) {
+            layers.append(PartnerLayer(name: "\(base)-item-\(item.rawValue)", takesColor: false))
         }
+        if look.trainedRecently {
+            layers.append(PartnerLayer(name: "\(base)-item-sweatband", takesColor: false))
+        }
+        return layers
+    }
+
+    static func prefix(_ species: Species, form: Int) -> String {
+        "partner-\(species.rawValue)-\(form)"
     }
 }
 
-/// A catalog partner: still, as it looks once it has grown a little.
+/// Where the head is in each render, in image fractions (origin top left). Written by the renderer
+/// next to the layers; the sleeping Z's float above the head.
+struct PartnerAnchor: Decodable, Equatable {
+    let headTop: [Double]
+    let headCenter: [Double]
+    let headRadius: Double
+
+    static let all: [String: PartnerAnchor] = {
+        guard let url = Bundle.main.url(forResource: "PartnerAnchors", withExtension: "json"),
+              let data = try? Data(contentsOf: url) else { return [:] }
+        return (try? JSONDecoder().decode([String: PartnerAnchor].self, from: data)) ?? [:]
+    }()
+
+    static func of(_ species: Species, form: Int) -> PartnerAnchor? {
+        all["\(species.rawValue)/\(form)"]
+    }
+}
+
+/// The partner as the catalog shows it: standing still.
 struct FigureView: View {
     let species: Species
 
@@ -101,38 +169,63 @@ struct FigureView: View {
     }
 }
 
-/// Draws a partner in one look and one moment of its movement.
+/// A partner in one look and one moment of its movement: the layers stacked in a square.
 struct PartnerCanvas: View {
     let species: Species
     let look: PartnerLook
     let motion: PartnerMotion
 
     var body: some View {
-        Canvas { context, size in
-            let side = min(size.width, size.height)
-            context.translateBy(x: (size.width - side) / 2, y: (size.height - side) / 2)
-            context.scaleBy(x: side / 100, y: side / 100)
-            context.fill(Path(ellipseIn: FigurePart.groundShadow).applying(look.widening), with: .color(Color.cardShadow))
-
-            // Squashed and lifted around the point under the feet, so the partner stays on its shadow.
-            context.translateBy(x: 50, y: FigurePart.baseline - motion.lift)
-            context.scaleBy(x: 2 - motion.squash, y: motion.squash)
-            context.translateBy(x: -50, y: -FigurePart.baseline)
-
-            let parts = species.parts(for: look)
-            let bodyShape = parts.first { $0.role == .body }?.path
-            for part in parts {
-                if part.role == .shading, let bodyShape {
-                    context.drawLayer { layer in
-                        layer.clip(to: bodyShape)
-                        part.draw(in: &layer)
-                    }
-                } else {
-                    part.draw(in: &context)
+        GeometryReader { proxy in
+            let side = min(proxy.size.width, proxy.size.height)
+            ZStack {
+                ForEach(PartnerLayers.layers(species, look: look), id: \.name) { layer in
+                    Image(layer.name)
+                        .resizable()
+                        .interpolation(.high)
+                        .scaledToFit()
+                        .hueRotation(layer.takesColor ? PartnerLayers.hue(for: look.colorIndex) : .zero)
                 }
             }
+            // Wider when round, and squashed and lifted around the feet so the partner keeps its volume.
+            .scaleEffect(x: look.width * (2 - motion.squash), y: motion.squash, anchor: .bottom)
+            .offset(y: -motion.lift / 100 * side)
+            .overlay {
+                if look.mood == .asleep, let anchor = PartnerAnchor.of(species, form: PartnerLayers.form(for: look.growthStage)) {
+                    SleepingZs(anchor: anchor, side: side)
+                }
+            }
+            .frame(width: side, height: side)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .accessibilityHidden(true)
+    }
+}
+
+/// Two Z's rising from the head of a sleeping partner.
+private struct SleepingZs: View {
+    let anchor: PartnerAnchor
+    let side: CGFloat
+
+    var body: some View {
+        let x = (anchor.headCenter[0] + anchor.headRadius * 0.9) * side
+        let y = anchor.headTop[1] * side
+        ZStack(alignment: .topLeading) {
+            letter(size: side * 0.09).position(x: x, y: y)
+            letter(size: side * 0.06).position(x: x + side * 0.09, y: y - side * 0.09)
+        }
+        .frame(width: side, height: side, alignment: .topLeading)
+    }
+
+    private func letter(size: CGFloat) -> some View {
+        Path { p in
+            p.move(to: .zero)
+            p.addLine(to: CGPoint(x: size, y: 0))
+            p.addLine(to: CGPoint(x: 0, y: size))
+            p.addLine(to: CGPoint(x: size, y: size))
+        }
+        .stroke(Color.ink, style: StrokeStyle(lineWidth: max(1.5, size * 0.16), lineCap: .round, lineJoin: .round))
+        .frame(width: size, height: size)
     }
 }
 
@@ -165,7 +258,7 @@ struct PartnerFigure: View {
     }
 }
 
-/// One moment of the partner's movement, in drawing units.
+/// One moment of the partner's movement, in hundredths of the figure's size.
 struct PartnerMotion: Equatable {
     /// How far the partner is off the ground.
     var lift: CGFloat = 0

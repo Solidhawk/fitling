@@ -17,7 +17,8 @@ public enum CreatureEngine {
     public static let messageVariants = 3
     public static let baseColorCount = 3
     public static let colorUnlockLevels = [5, 12]
-    public static let growthLevels = [1, 3, 6, 10, 15]
+    /// The level at which each of the six forms starts.
+    public static let growthLevels = [1, 3, 6, 10, 15, 22]
     public static let maxLevel = 50
 
     private static let loggingXP = 10

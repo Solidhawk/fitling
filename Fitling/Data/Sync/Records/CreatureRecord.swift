@@ -72,7 +72,7 @@ extension Creature: SyncableModel {
         // The typed state only gets the row started; `apply` then stores the server's own text,
         // including a species or tone a newer app version may have written.
         let state = CreatureState(
-            species: Species(rawValue: record.species) ?? .sprout, colorIndex: record.colorIndex,
+            species: Species(rawValue: record.species) ?? .bumblebee, colorIndex: record.colorIndex,
             tone: MessageTone(rawValue: record.tone) ?? .sweet, createdOn: record.createdOn
         )
         let creature = Creature(userID: record.userID, name: record.name, state: state, updatedAt: record.updatedAt)

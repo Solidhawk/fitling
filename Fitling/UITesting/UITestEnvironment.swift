@@ -54,7 +54,7 @@ enum UITestEnvironment {
         let targets = NutritionTargets(kcal: 2760, proteinG: 128, carbsG: 389, fatG: 77)
         sync.context.insert(UserProfile(id: userID, healthConsentAt: .now, healthConsentVersion: 1, body: body, targets: targets, targetsAreManual: false, updatedAt: .now))
         sync.context.recordTargets(targets, for: userID, from: Day(.now, timeZone: .current), at: .now)
-        let partner = CreatureState(species: .pip, colorIndex: 0, tone: .sweet, createdOn: Day(.now, timeZone: .current))
+        let partner = CreatureState(species: .owl, colorIndex: 0, tone: .sweet, createdOn: Day(.now, timeZone: .current))
         sync.context.insert(Creature(userID: userID, name: "Pip", state: partner, updatedAt: .now))
         try? sync.context.save()
     }

@@ -44,7 +44,7 @@ struct FlowFixture {
     func makePartner() -> Creature {
         let creature = Creature(
             userID: userID, name: "Pip",
-            state: CreatureState(species: .pip, colorIndex: 0, tone: .sweet, createdOn: today.adding(-1)),
+            state: CreatureState(species: .owl, colorIndex: 0, tone: .sweet, createdOn: today.adding(-1)),
             updatedAt: now.addingTimeInterval(-3_600)
         )
         creature.needsPush = false
@@ -192,11 +192,11 @@ struct FlowFixture {
         #expect(root.screen == .partnerSetup(fixture.userID))
 
         let setup = PartnerSetupViewModel(userID: fixture.userID, context: fixture.context, timeZone: .gmt, now: { [now = fixture.now] in now })
-        setup.choose(.sprout, defaultName: "Sprout")
+        setup.choose(.bumblebee, defaultName: "Hommel")
         let creature = try #require(setup.save())
         await root.partnerChosen(creature)
         #expect(root.screen == .home(fixture.userID))
-        #expect(fixture.remote.row(fixture.userID, in: "creatures")?["species"] as? String == "sprout")
+        #expect(fixture.remote.row(fixture.userID, in: "creatures")?["species"] as? String == "bumblebee")
         #expect(!creature.needsPush)
 
         await root.refresh()

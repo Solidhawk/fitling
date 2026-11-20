@@ -35,7 +35,7 @@ struct PartnerFixture {
     }
 
     @discardableResult
-    func creature(createdDaysAgo: Int = 3, xp: Int = 0, species: Species = .pip) -> Creature {
+    func creature(createdDaysAgo: Int = 3, xp: Int = 0, species: Species = .owl) -> Creature {
         let state = CreatureState(species: species, colorIndex: 0, tone: .sweet, createdOn: today.adding(-createdDaysAgo), xp: xp)
         let creature = Creature(userID: userID, name: "Pip", state: state, updatedAt: now.addingTimeInterval(-86_400))
         creature.needsPush = false
@@ -74,7 +74,7 @@ struct PartnerFixture {
     @Test func setupStoresTheChoices() throws {
         let setup = fixture.setup()
         #expect(!setup.canSave)
-        setup.choose(.ember, defaultName: "Ember")
+        setup.choose(.mole, defaultName: "Mol")
         setup.name = "Vonk"
         setup.colorIndex = 2
         setup.tone = .funny
@@ -93,7 +93,7 @@ struct PartnerFixture {
 
     @Test func nameIsTrimmedAndLimited() throws {
         let setup = fixture.setup()
-        setup.choose(.pip, defaultName: "Pip")
+        setup.choose(.owl, defaultName: "Pip")
         setup.name = "   Pip de Grote Ontdekkingsreiziger   "
         #expect(setup.cleanedName == "Pip de Grote Ontdekkings")
 
@@ -112,19 +112,19 @@ struct PartnerFixture {
 
     @Test func choosingAnotherSpeciesOnlyReplacesTheSuggestedName() {
         let setup = fixture.setup()
-        setup.choose(.sprout, defaultName: "Sprout")
-        #expect(setup.name == "Sprout")
-        setup.choose(.pebble, defaultName: "Pebble")
-        #expect(setup.name == "Pebble")
+        setup.choose(.bumblebee, defaultName: "Hommel")
+        #expect(setup.name == "Hommel")
+        setup.choose(.frog, defaultName: "Kikker")
+        #expect(setup.name == "Kikker")
         setup.name = "Keitje"
-        setup.choose(.pip, defaultName: "Pip")
+        setup.choose(.owl, defaultName: "Pip")
         #expect(setup.name == "Keitje")
     }
 
     @Test func aPartnerFromAnotherDeviceIsKept() throws {
         let existing = fixture.creature()
         let setup = fixture.setup()
-        setup.choose(.sprout, defaultName: "Sprout")
+        setup.choose(.bumblebee, defaultName: "Hommel")
         let saved = try #require(setup.save())
         #expect(saved === existing)
         #expect(try fixture.context.fetch(FetchDescriptor<Creature>()).count == 1)

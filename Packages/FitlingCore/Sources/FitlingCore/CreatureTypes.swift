@@ -2,7 +2,8 @@ import Foundation
 
 // Raw values are the exact `check` values of the `creatures` table in Supabase.
 public enum Species: String, Sendable, CaseIterable, Codable {
-    case sprout, ember, pip, pebble
+    case bumblebee, mole, frog, owl, hedgehog, snail, axolotl, seal
+    case penguin, turtle, rabbit, raccoon, ladybird, octopus, squirrel, lamb
 }
 
 /// The voice of the creature's notifications: lief, grappig or coach.
@@ -141,10 +142,9 @@ public struct CreatureSnapshot: Sendable, Equatable {
     public let xp: Int
     public let xpIntoLevel: Int
     public let xpForNextLevel: Int
-    /// 0...4. Sprout grows leaves and flowers, Ember's flame grows, Pip gets feathers and a
-    /// crest, Pebble gets moss and crystals.
+    /// 0...5, one per form: from a round baby to a muscular champion.
     public let growthStage: Int
-    /// A workout today or yesterday: Ember's flame burns brighter, Sprout carries a flower.
+    /// A workout today or yesterday: the partner wears a sweatband.
     public let trainedRecently: Bool
     public let unlockedItems: [CreatureItem]
     public let unlockedColorCount: Int

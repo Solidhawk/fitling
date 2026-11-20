@@ -263,7 +263,10 @@ create table public.favorite_products (
 -- op het toestel uit de logs.
 create table public.creatures (
   user_id           uuid primary key references auth.users (id) on delete cascade,
-  species           text not null check (species in ('sprout', 'ember', 'pip', 'pebble')),
+  species           text not null check (species in (
+                      'bumblebee', 'mole', 'frog', 'owl', 'hedgehog', 'snail', 'axolotl', 'seal',
+                      'penguin', 'turtle', 'rabbit', 'raccoon', 'ladybird', 'octopus', 'squirrel', 'lamb'
+                    )),
   name              text not null check (char_length(name) between 1 and 24),
   color_index       integer not null check (color_index between 0 and 9),
   tone              text not null check (tone in ('sweet', 'funny', 'coach')),

@@ -13,7 +13,10 @@ final class PartnerGalleryTests: XCTestCase {
         app.launchArguments = ["--ui-testing-partner-gallery", "-AppleLanguages", "(nl)", "-AppleLocale", "nl_NL"]
         app.launch()
         XCTAssertTrue(app.descendants(matching: .any)["gallery"].waitForExistence(timeout: 10))
-        for species in ["sprout", "ember", "pip", "pebble"] {
+        for species in [
+            "bumblebee", "mole", "frog", "owl", "hedgehog", "snail", "axolotl", "seal",
+            "penguin", "turtle", "rabbit", "raccoon", "ladybird", "octopus", "squirrel", "lamb",
+        ] {
             let button = app.buttons["gallery.\(species)"]
             XCTAssertTrue(button.waitForExistence(timeout: 5))
             button.tap()
