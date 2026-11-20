@@ -7,6 +7,10 @@ Alles hieronder mag in de app worden gebruikt onder de genoemde licentie. De app
 - **USDA FoodData Central, SR Legacy (april 2018)**, publiek domein. https://fdc.nal.usda.gov — de energie en macro's van de gedeelde recepten zijn hieruit berekend (`supabase/seed/usda-sr-legacy.json`, `scripts/recipe-seed.mjs`).
 - **Open Food Facts**, ODbL, voor gescande producten (Edge Function `lookup-product`).
 
+## Aanbiedingen
+
+- **PrijsProfeet** (https://www.prijsprofeet.nl), API-voorwaarden versie 1.15 van 4 november 2026 (https://www.prijsprofeet.nl/api-voorwaarden). Gebruik is toegestaan, ook commercieel op het gratis plan, met een zichtbare bronvermelding en een link naar prijsprofeet.nl op elk scherm met hun data (in de app: onder de aanbiedingen op de boodschappenlijst, en in "Over Fitling"). Productnamen en -afbeeldingen zijn van de supermarkten; de verzameling valt onder het databankrecht van PrijsProfeet. De data wordt niet doorgegeven, en wordt binnen 14 dagen gewist als het gebruik stopt.
+
 ## Tekeningen van oefeningen
 
 - **Everkinetic** (https://github.com/everkinetic/data), CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0/). Bewerkt: witte achtergrond verwijderd en de lijnen in de inktkleur van de app. De bewerkte tekeningen in `Fitling/Resources/Assets.xcassets/Exercises` vallen onder dezelfde licentie.

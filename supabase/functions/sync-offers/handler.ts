@@ -55,7 +55,11 @@ export async function syncOffers(providers: OfferProvider[], deps: Deps): Promis
   return { providers: results, removed };
 }
 
-/** The job runs only when called with the project's secret key: by the scheduler, never by the app. */
+/**
+ * The job runs only when called with the project's secret key: by the scheduler, never by the app.
+ * `?retailer=jumbo,lidl` limits a run to those chains, so one call stays within the time limit of an
+ * Edge Function; the scheduler calls once per chain.
+ */
 export async function handle(
   req: Request,
   secretKey: string,
@@ -65,5 +69,11 @@ export async function handle(
   if (req.headers.get('Authorization') !== `Bearer ${secretKey}`) {
     return Response.json({ error: 'unauthorized' }, { status: 401 });
   }
-  return Response.json(await syncOffers(providers, deps));
+  const named = new URL(req.url).searchParams.get('retailer')?.split(',').map((id) => id.trim()).filter(Boolean);
+  if (!named) return Response.json(await syncOffers(providers, deps));
+  const chosen = providers.filter((provider) => named.includes(provider.supermarketId));
+  if (chosen.length !== named.length) {
+    return Response.json({ error: 'unknown_retailer' }, { status: 400 });
+  }
+  return Response.json(await syncOffers(chosen, deps));
 }

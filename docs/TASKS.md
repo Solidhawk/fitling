@@ -438,10 +438,10 @@ Het menu loopt van vandaag tot zes dagen later. Gelogde maaltijden blijven bij e
 
 - **Gebruikt:** `create_shopping_list_invite`, `join_shopping_list`, Realtime als seintje om te pullen (D-18).
 
-### 6.4 `sync-offers` — gebouwd, met alleen testdata
+### 6.4 `sync-offers` — gebouwd, met PrijsProfeet als bron
 
-- **Vooraf (gebruiker):** RISKS R-13 beantwoord. Zonder bron: alleen de provider met testdata.
-- **Gebouwd:** `supabase/functions/sync-offers` met `OfferProvider`, `TestDataProvider` (winkel `testwinkel`, tien producten van maandag tot en met zondag van deze week) en 17 Deno-tests. De functie draait alleen met de geheime sleutel in `Authorization`. Een echte bron is één bestand naast `testdata.ts` en één regel in `index.ts`.
+- **Vooraf (gebruiker):** RISKS R-13 beantwoord op 2026-11-20: PrijsProfeet.
+- **Gebouwd:** `supabase/functions/sync-offers` met `OfferProvider` en `prijsprofeet.ts` (20 ketens, per keten aan te roepen met `?retailer=`). Er zijn 27 Deno-tests, en de omzetting is op 2026-11-20 nagekeken met echte acties van Jumbo en Aldi. De functie draait alleen met de geheime sleutel in `Authorization`. In de app: bronvermelding met link, voorbehoud, en bij elke prijs tot wanneer hij geldt.
 - **Nog te doen bij het productieproject (UNFORGET S20):** de functie deployen en dagelijks laten aanroepen met Supabase Cron (pg_cron + pg_net), met de geheime sleutel uit Vault.
 
 ### 6.5 OfferMatcher (FitlingCore) — al gebouwd

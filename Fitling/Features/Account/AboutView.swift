@@ -13,6 +13,7 @@ struct AboutView: View {
             Section {
                 source("account.about.off", url: "https://world.openfoodfacts.org")
                 source("account.about.usda", url: "https://fdc.nal.usda.gov")
+                source("account.about.prijsprofeet", url: "https://www.prijsprofeet.nl")
                 source("account.about.everkinetic", url: "https://github.com/everkinetic/data")
                 Text("account.about.photos")
             } header: {

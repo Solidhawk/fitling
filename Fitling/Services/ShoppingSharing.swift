@@ -137,6 +137,9 @@ struct SupabaseOfferSource: OfferSource {
             return try await client.from("offers").select()
                 .in("supermarket_id", values: supermarketIDs)
                 .gte("valid_to", value: day.isoString)
+                // PrijsProfeet's terms: a price shown as current is at most a day old. The job runs
+                // nightly; an offer it did not refresh stays out of sight.
+                .gte("fetched_at", value: Date.now.addingTimeInterval(-26 * 3600).ISO8601Format())
                 .limit(2000)
                 .execute()
                 .value

@@ -114,3 +114,31 @@ Deno.test('only a call with the secret key runs the job', async () => {
   assertEquals(ok.status, 200);
   assertEquals((await ok.json()).removed, 3);
 });
+
+Deno.test('a call can name the chains to fetch, so one run stays within the time limit', async () => {
+  const d = deps();
+  const response = await handle(
+    new Request('http://localhost/sync-offers?retailer=b', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${secret}` },
+    }),
+    secret,
+    [provider('a', [offer('1')]), provider('b', [offer('2')])],
+    d,
+  );
+  assertEquals((await response.json()).providers.map((p: { supermarketId: string }) => p.supermarketId), ['b']);
+  assertEquals(d.supermarkets, ['b']);
+});
+
+Deno.test('a chain that is not known is refused', async () => {
+  const response = await handle(
+    new Request('http://localhost/sync-offers?retailer=nope', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${secret}` },
+    }),
+    secret,
+    [provider('a', [offer('1')])],
+    deps(),
+  );
+  assertEquals(response.status, 400);
+});

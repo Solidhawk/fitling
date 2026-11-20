@@ -9184,19 +9184,19 @@
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Per item de goedkoopste aanbieding in je supermarkten, en wat de lijst per winkel kost."
+            "value": "Per item de goedkoopste aanbieding in je supermarkten, en wat de lijst per winkel kost. Prijzen zijn indicatief: controleer ze in de winkel."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Per item the cheapest offer in your supermarkets, and what the list costs per shop."
+            "value": "For each item the cheapest offer in your supermarkets, and what the list costs per shop. Prices are indicative: check them in the shop."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pro Eintrag das günstigste Angebot in deinen Supermärkten und was die Liste pro Geschäft kostet."
+            "value": "Pro Artikel das günstigste Angebot in deinen Supermärkten und was die Liste pro Laden kostet. Preise sind unverbindlich: prüfe sie im Laden."
           }
         }
       }
@@ -12663,6 +12663,72 @@
           "stringUnit": {
             "state": "translated",
             "value": "Erstes Mal: Wähle ein Startgewicht, wie bei der ersten Übung."
+          }
+        }
+      }
+    },
+    "shopping.offers.source": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aanbiedingen via PrijsProfeet"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Offers via PrijsProfeet"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Angebote über PrijsProfeet"
+          }
+        }
+      }
+    },
+    "shopping.offer.until %@": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "t/m %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "until %@"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "bis %@"
+          }
+        }
+      }
+    },
+    "account.about.prijsprofeet": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Supermarktaanbiedingen van PrijsProfeet. Prijzen zijn indicatief; geen enkele supermarkt is hierbij betrokken."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Supermarket offers from PrijsProfeet. Prices are indicative; no supermarket is involved."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Supermarktangebote von PrijsProfeet. Preise sind unverbindlich; kein Supermarkt ist daran beteiligt."
           }
         }
       }
