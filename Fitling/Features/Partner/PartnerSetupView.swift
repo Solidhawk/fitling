@@ -5,6 +5,7 @@ import FitlingCore
 /// partner starts out.
 struct PartnerSetupView: View {
     @State private var viewModel: PartnerSetupViewModel
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     private let onFinished: @MainActor (Creature) async -> Void
 
     init(viewModel: PartnerSetupViewModel, onFinished: @escaping @MainActor (Creature) async -> Void) {
@@ -16,7 +17,9 @@ struct PartnerSetupView: View {
         NavigationStack {
             List {
                 Section {
-                    LazyVGrid(columns: [GridItem(.flexible(), spacing: Spacing.m), GridItem(.flexible(), spacing: Spacing.m)], spacing: Spacing.m) {
+                    // Three in a row, so nearly all sixteen fit on one screen and can be compared; two at the
+                    // accessibility sizes, where the names need the room.
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: Spacing.s), count: dynamicTypeSize.isAccessibilitySize ? 2 : 3), spacing: Spacing.s) {
                         ForEach(Species.allCases, id: \.self) { species in
                             speciesButton(species)
                         }
@@ -103,16 +106,24 @@ struct PartnerSetupView: View {
         return Button {
             viewModel.choose(species, defaultName: species.displayName)
         } label: {
-            VStack(spacing: Spacing.s) {
+            // The figure fills the tile; the name sits under it in the species' own colour.
+            VStack(spacing: Spacing.xs) {
                 FigureView(species: species)
-                    .frame(width: 72, height: 72)
-                NamePlate(resource: species.name, fill: species.ribbon)
+                    .aspectRatio(1, contentMode: .fit)
+                Text(species.name)
+                    .font(.footnote.weight(.heavy))
+                    .foregroundStyle(Color.onRibbon)
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
+                    .minimumScaleFactor(0.75)
+                    .padding(.horizontal, Spacing.s)
+                    .padding(.vertical, 2)
+                    .background(species.ribbon, in: Capsule())
             }
-            .padding(Spacing.m)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(species.tint, in: RoundedRectangle(cornerRadius: Radius.card, style: .continuous))
+            .padding(Spacing.s)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .background(species.tint, in: RoundedRectangle(cornerRadius: Radius.card * 0.6, style: .continuous))
             .overlay {
-                RoundedRectangle(cornerRadius: Radius.card, style: .continuous)
+                RoundedRectangle(cornerRadius: Radius.card * 0.6, style: .continuous)
                     .strokeBorder(Color.ink, lineWidth: selected ? 3 : 0)
             }
         }

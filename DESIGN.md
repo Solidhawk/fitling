@@ -168,7 +168,7 @@ A muted lilac-and-ink base carries a small set of saturated ribbon colours. Each
 
 ### Secondary
 - **Species ribbons** (`PartnerRibbon/<species>`): each partner's own colour, for its name plate. Light enough for `on-ribbon` lettering. No dark variant.
-- **Species tints** (`PartnerTint/<species>`): the pastel ground behind each partner. No dark variant: the figure keeps its own ground.
+- **Species tints** (`PartnerTint/<species>`): the pastel ground behind each partner. In dark mode each is dimmed to 80 % so sixteen pastel tiles do not glare on the plum ground; the lettering on a tint is always `on-ribbon`, which keeps at least 7:1 on the dimmed tints.
 - **Sprout Green** (`sprout`), **Pip Yellow** (`pip`), **Pebble Blue-Grey** (`pebble`): accent tints for toggles and badges. Their names date from the first partners.
 
 ### Tertiary
@@ -283,7 +283,7 @@ The signature component. The sixteen partners are soft 3D vinyl-toy figures, ren
 - **Colours:** colour 0 is the species' own render. The other four turn the hue of the body layer (40°, 150°, 210°, 300°); the face and what is worn keep their colours. 1 and 2 can be chosen at once; 3 and 4 unlock at level 5 and 12.
 - **Workout bonus:** a white sweatband with a red stripe.
 - **Movement:** the partner bobs and squashes a little as it lands, faster and higher with more energy; asleep it only breathes. With Reduce Motion on it stands still, and the catalog never moves.
-- **Light and dark:** the renders are the same in both modes; the species tint behind them carries the card.
+- **Light and dark:** the renders are the same in both modes; the species tint behind them is dimmed in dark mode.
 
 ### Progress Pills
 - One capsule per onboarding step, 8 pt high, filling the width. Done and current steps are `ink`; the rest are `track`. VoiceOver reads them as one "step n of m" label.

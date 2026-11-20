@@ -8,7 +8,20 @@ struct WorkoutView: View {
     @State private var addingExercise = false
     @State private var confirmingDiscard = false
     @State private var records: [String] = []
+    @FocusState private var focus: SetField?
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    /// The field being typed in, so the keyboard's own button can save that exercise's set.
+    private enum SetField: Hashable {
+        case weight(UUID), reps(UUID)
+
+        var entryID: UUID {
+            switch self {
+            case let .weight(id), let .reps(id): id
+            }
+        }
+    }
 
     init(viewModel: WorkoutViewModel) {
         _viewModel = State(initialValue: viewModel)
@@ -21,7 +34,7 @@ struct WorkoutView: View {
             List {
                 ForEach(viewModel.entries) { entry in
                     Section {
-                        Text(viewModel.advice(for: entry).text(unit: viewModel.unit))
+                        adviceText(for: entry)
                             .font(.subheadline)
                             .foregroundStyle(Color.inkSoft)
                         ForEach(Array(viewModel.sets(of: entry).enumerated()), id: \.element.id) { index, set in
@@ -77,6 +90,13 @@ struct WorkoutView: View {
                         Label("training.workout.options", systemImage: "ellipsis.circle")
                     }
                 }
+                // Saving from above the keyboard: with the largest text the row's own button is under it.
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("training.set.log") { logFocusedSet() }
+                        .fontWeight(.bold)
+                        .disabled(focusedEntry.map { !viewModel.canLog($0) } ?? true)
+                }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("training.workout.finish") {
                         records = viewModel.records().map { exercise, record in
@@ -129,25 +149,72 @@ struct WorkoutView: View {
         .accessibilityElement(children: .combine)
     }
 
+    /// The advice for the exercise. The long first-time advice is shown once, at the first exercise
+    /// it applies to; later ones point back to it.
+    private func adviceText(for entry: WorkoutViewModel.Entry) -> Text {
+        let advice = viewModel.advice(for: entry)
+        let firstNew = viewModel.entries.first { viewModel.advice(for: $0) == .findStartingWeight }?.id
+        if advice == .findStartingWeight, entry.id != firstNew {
+            return Text("training.advice.startAgain")
+        }
+        return Text(advice.text(unit: viewModel.unit))
+    }
+
+    private var focusedEntry: WorkoutViewModel.Entry? {
+        focus.flatMap { field in viewModel.entries.first { $0.id == field.entryID } }
+    }
+
+    private func logFocusedSet() {
+        guard let entry = focusedEntry, viewModel.canLog(entry) else { return }
+        viewModel.log(entry)
+        focus = nil
+    }
+
+    /// A number with its label above it and its unit beside it, on a field background, so weight
+    /// and reps never read as one value.
+    private func numberField<Field: View>(_ label: LocalizedStringKey, unit: Text, @ViewBuilder field: () -> Field) -> some View {
+        VStack(alignment: .leading, spacing: Spacing.xs) {
+            Text(label)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(Color.inkSoft)
+            HStack(spacing: Spacing.xs) {
+                field()
+                    .font(.title3.weight(.semibold))
+                    .monospacedDigit()
+                unit.foregroundStyle(Color.inkSoft)
+            }
+            .padding(.horizontal, Spacing.m)
+            .padding(.vertical, Spacing.s)
+            .background(Color.ground, in: RoundedRectangle(cornerRadius: Radius.card / 2, style: .continuous))
+        }
+    }
+
     private func draftRow(_ entry: WorkoutViewModel.Entry) -> some View {
-        VStack(alignment: .leading, spacing: Spacing.s) {
-            HStack(spacing: Spacing.m) {
-                HStack(spacing: Spacing.xs) {
+        // Side by side normally; under each other at the accessibility sizes, where one field
+        // already fills the width.
+        let stacked = dynamicTypeSize.isAccessibilitySize
+        let fields = stacked
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: Spacing.s))
+            : AnyLayout(HStackLayout(alignment: .bottom, spacing: Spacing.m))
+        let options = stacked
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: Spacing.s))
+            : AnyLayout(HStackLayout(spacing: Spacing.s))
+        return VStack(alignment: .leading, spacing: Spacing.s) {
+            fields {
+                numberField("training.set.weight", unit: Text(verbatim: viewModel.unit.symbol)) {
                     TextField("training.set.weight", value: draftBinding(entry, \.weight), format: .number)
                         .keyboardType(.decimalPad)
+                        .focused($focus, equals: .weight(entry.id))
                         .accessibilityIdentifier("workout.weight.\(entry.exercise.id.uuidString)")
-                    Text(verbatim: viewModel.unit.symbol).foregroundStyle(Color.inkSoft)
                 }
-                HStack(spacing: Spacing.xs) {
+                numberField("training.set.reps", unit: Text("training.set.repsUnit")) {
                     TextField("training.set.reps", value: draftBinding(entry, \.reps), format: .number)
                         .keyboardType(.numberPad)
+                        .focused($focus, equals: .reps(entry.id))
                         .accessibilityIdentifier("workout.reps.\(entry.exercise.id.uuidString)")
-                    Text("training.set.repsUnit").foregroundStyle(Color.inkSoft)
                 }
             }
-            .font(.title3.weight(.semibold))
-            .monospacedDigit()
-            HStack {
+            options {
                 Picker("training.set.rpeLabel", selection: draftBinding(entry, \.rpe)) {
                     Text("training.set.rpeNone").tag(Double?.none)
                     ForEach(Array(stride(from: 6.0, through: 10.0, by: 0.5)), id: \.self) { value in
@@ -156,12 +223,12 @@ struct WorkoutView: View {
                 }
                 .pickerStyle(.menu)
                 .tint(Color.ink)
-                Spacer()
+                if !stacked { Spacer() }
                 Toggle("training.set.warmup", isOn: Binding(
                     get: { viewModel.drafts[entry.id]?.isWarmup ?? false },
                     set: { viewModel.drafts[entry.id, default: .init()].isWarmup = $0 }
                 ))
-                .fixedSize()
+                .fixedSize(horizontal: !stacked, vertical: false)
                 .tint(Color.sprout)
             }
             Button {

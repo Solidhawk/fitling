@@ -12644,6 +12644,28 @@
           }
         }
       }
+    },
+    "training.advice.startAgain": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eerste keer: kies een startgewicht, zoals bij de eerste oefening."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "First time: pick a starting weight, as with the first exercise."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erstes Mal: Wähle ein Startgewicht, wie bei der ersten Übung."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

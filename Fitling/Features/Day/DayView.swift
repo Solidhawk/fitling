@@ -177,14 +177,20 @@ private struct EntryRow: View {
 struct DayProgressCard: View {
     let totals: DayTotals
     let targets: NutritionTargets
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     private var remaining: Double {
         Double(targets.kcal) - totals.kcal
     }
 
     var body: some View {
+        // At the accessibility sizes the ring goes above the numbers, so "Eaten" and the kcal keep the
+        // full width instead of breaking mid-word next to it.
+        let header = dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: Spacing.m))
+            : AnyLayout(HStackLayout(alignment: .center, spacing: Spacing.l))
         VStack(alignment: .leading, spacing: Spacing.m) {
-            HStack(alignment: .center, spacing: Spacing.l) {
+            header {
                 KcalRing(fraction: totals.kcal / Double(max(targets.kcal, 1)))
                     .frame(width: 88, height: 88)
                 VStack(alignment: .leading, spacing: Spacing.xs) {

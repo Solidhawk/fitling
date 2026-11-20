@@ -216,13 +216,18 @@ struct PartnerTabView: View {
 /// Level and the way to the next one, as a ribbon that fills up.
 private struct LevelRibbon: View {
     let snapshot: CreatureSnapshot
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
+        // Level and XP side by side; under each other at the accessibility sizes, so neither breaks.
+        let row = dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: Spacing.xs))
+            : AnyLayout(HStackLayout(alignment: .firstTextBaseline))
         VStack(alignment: .leading, spacing: Spacing.xs) {
-            HStack(alignment: .firstTextBaseline) {
+            row {
                 Text("partner.level \(snapshot.level)")
                     .font(.title3.weight(.heavy))
-                Spacer()
+                if !dynamicTypeSize.isAccessibilitySize { Spacer() }
                 if snapshot.xpForNextLevel > 0 {
                     Text("partner.xp.progress \(snapshot.xpIntoLevel) \(snapshot.xpForNextLevel)")
                         .font(.subheadline.weight(.bold))
