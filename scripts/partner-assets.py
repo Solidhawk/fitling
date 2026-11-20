@@ -76,6 +76,16 @@ for species in SPECIES:
                 'properties': {'compression-type': 'lossy'},
             })
 
+# Where the figure itself stands in each render (opaque body pixels, so without the soft contact
+# shadow), as image fractions: the app zooms in on it, because the forms share one camera and a
+# young form is small in its frame.
+for species in SPECIES:
+    for form in FORMS:
+        body = Image.open(source / species / str(form) / 'body.png').convert('RGBA')
+        x0, y0, x1, y1 = body.getchannel('A').point(lambda a: 255 if a >= 128 else 0).getbbox()
+        w, h = body.size
+        anchors[f'{species}/{form}']['figure'] = [round(x0 / w, 4), round(y0 / h, 4), round(x1 / w, 4), round(y1 / h, 4)]
+
 write_json(root / 'Fitling' / 'Resources' / 'PartnerAnchors.json',
            {key: anchors[key] for key in sorted(anchors) if key.split('/')[0] in SPECIES})
 print(f'{len(SPECIES) * len(FORMS) * len(layers)} layers in {catalog.relative_to(root)}')

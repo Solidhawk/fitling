@@ -148,6 +148,8 @@ struct PartnerAnchor: Decodable, Equatable {
     let headTop: [Double]
     let headCenter: [Double]
     let headRadius: Double
+    /// The figure's bounds without its contact shadow: left, top, right, bottom.
+    let figure: [Double]
 
     static let all: [String: PartnerAnchor] = {
         guard let url = Bundle.main.url(forResource: "PartnerAnchors", withExtension: "json"),
@@ -157,6 +159,42 @@ struct PartnerAnchor: Decodable, Equatable {
 
     static func of(_ species: Species, form: Int) -> PartnerAnchor? {
         all["\(species.rawValue)/\(form)"]
+    }
+}
+
+/// How far to zoom into a render. The six forms share one camera, so a young form is small in its
+/// render; on screen every form fills its frame, a young one less than a grown one, with the feet
+/// on one ground line.
+struct PartnerFraming: Equatable {
+    /// The figure's height as a share of the frame, per form.
+    static let heights: [Double] = [0.55, 0.6, 0.66, 0.72, 0.78, 0.84]
+    static let maxWidth = 0.94
+    /// Where the feet stand, as a share of the frame height.
+    static let ground = 0.93
+
+    let scale: Double
+    let dx: Double
+    let dy: Double
+
+    static let identity = PartnerFraming(scale: 1, dx: 0, dy: 0)
+
+    init(scale: Double, dx: Double, dy: Double) {
+        self.scale = scale
+        self.dx = dx
+        self.dy = dy
+    }
+
+    init(figure: [Double], form: Int) {
+        let width = max(figure[2] - figure[0], 0.01)
+        let height = max(figure[3] - figure[1], 0.01)
+        let target = Self.heights[min(max(form, 1), Self.heights.count) - 1]
+        let scale = min(target / height, Self.maxWidth / width)
+        self.init(scale: scale, dx: 0.5 - scale * (figure[0] + figure[2]) / 2, dy: Self.ground - scale * figure[3])
+    }
+
+    /// Where a point of the render (in image fractions) lands in the frame.
+    func point(_ x: Double, _ y: Double) -> CGPoint {
+        CGPoint(x: dx + scale * x, y: dy + scale * y)
     }
 }
 
@@ -178,24 +216,29 @@ struct PartnerCanvas: View {
     var body: some View {
         GeometryReader { proxy in
             let side = min(proxy.size.width, proxy.size.height)
-            ZStack {
-                ForEach(PartnerLayers.layers(species, look: look), id: \.name) { layer in
-                    Image(layer.name)
-                        .resizable()
-                        .interpolation(.high)
-                        .scaledToFit()
-                        .hueRotation(layer.takesColor ? PartnerLayers.hue(for: look.colorIndex) : .zero)
+            let form = PartnerLayers.form(for: look.growthStage)
+            let anchor = PartnerAnchor.of(species, form: form)
+            let framing = anchor.map { PartnerFraming(figure: $0.figure, form: form) } ?? .identity
+            ZStack(alignment: .topLeading) {
+                ZStack {
+                    ForEach(PartnerLayers.layers(species, look: look), id: \.name) { layer in
+                        Image(layer.name)
+                            .resizable()
+                            .interpolation(.high)
+                            .scaledToFit()
+                            .hueRotation(layer.takesColor ? PartnerLayers.hue(for: look.colorIndex) : .zero)
+                    }
+                }
+                .frame(width: side * framing.scale, height: side * framing.scale)
+                .offset(x: side * framing.dx, y: side * framing.dy)
+                if look.mood == .asleep, let anchor {
+                    SleepingZs(anchor: anchor, framing: framing, side: side)
                 }
             }
+            .frame(width: side, height: side, alignment: .topLeading)
             // Wider when round, and squashed and lifted around the feet so the partner keeps its volume.
-            .scaleEffect(x: look.width * (2 - motion.squash), y: motion.squash, anchor: .bottom)
+            .scaleEffect(x: look.width * (2 - motion.squash), y: motion.squash, anchor: UnitPoint(x: 0.5, y: PartnerFraming.ground))
             .offset(y: -motion.lift / 100 * side)
-            .overlay {
-                if look.mood == .asleep, let anchor = PartnerAnchor.of(species, form: PartnerLayers.form(for: look.growthStage)) {
-                    SleepingZs(anchor: anchor, side: side)
-                }
-            }
-            .frame(width: side, height: side)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .accessibilityHidden(true)
@@ -205,11 +248,13 @@ struct PartnerCanvas: View {
 /// Two Z's rising from the head of a sleeping partner.
 private struct SleepingZs: View {
     let anchor: PartnerAnchor
+    let framing: PartnerFraming
     let side: CGFloat
 
     var body: some View {
-        let x = (anchor.headCenter[0] + anchor.headRadius * 0.9) * side
-        let y = anchor.headTop[1] * side
+        let top = framing.point(anchor.headCenter[0] + anchor.headRadius * 0.9, anchor.headTop[1])
+        let x = top.x * side
+        let y = top.y * side
         ZStack(alignment: .topLeading) {
             letter(size: side * 0.09).position(x: x, y: y)
             letter(size: side * 0.06).position(x: x + side * 0.09, y: y - side * 0.09)

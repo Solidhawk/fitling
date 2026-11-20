@@ -60,6 +60,7 @@ struct PartnerLayersTests {
             let anchor = try #require(PartnerAnchor.of(species, form: form), "\(species) \(form)")
             #expect((0...1).contains(anchor.headTop[1]) && anchor.headTop[1] < anchor.headCenter[1])
             #expect(anchor.headRadius > 0 && anchor.headRadius < 0.5)
+            #expect(anchor.figure.count == 4 && anchor.figure[0] < anchor.figure[2] && anchor.figure[1] < anchor.figure[3])
         }
     }
 
@@ -67,6 +68,24 @@ struct PartnerLayersTests {
     func everySpeciesHasItsOwnColours(_ species: Species) {
         #expect(UIColor(named: "PartnerRibbon/\(species.rawValue)") != nil)
         #expect(UIColor(named: "PartnerTint/\(species.rawValue)") != nil)
+    }
+
+    @Test func aSmallFigureIsZoomedToItsFormsHeightWithItsFeetOnTheGround() {
+        // A form-1 figure: 0.24 of the render high, 0.2 wide, centred a little to the right.
+        let framing = PartnerFraming(figure: [0.42, 0.6, 0.62, 0.84], form: 1)
+        #expect(abs(framing.scale * 0.24 - PartnerFraming.heights[0]) < 0.001)
+        #expect(abs(framing.point(0.52, 0.84).x - 0.5) < 0.001)
+        #expect(abs(framing.point(0.52, 0.84).y - PartnerFraming.ground) < 0.001)
+    }
+
+    @Test func aWideFigureIsZoomedOnlyAsFarAsItFits() {
+        let framing = PartnerFraming(figure: [0.05, 0.1, 0.95, 0.9], form: 6)
+        #expect(framing.scale * 0.9 <= PartnerFraming.maxWidth + 0.001)
+    }
+
+    @Test func laterFormsFillMoreOfTheFrame() {
+        #expect(PartnerFraming.heights.count == PartnerLayers.formCount)
+        #expect(zip(PartnerFraming.heights, PartnerFraming.heights.dropFirst()).allSatisfy { $0 < $1 })
     }
 
     @Test func aPartnerAtRestDoesNotMove() {
