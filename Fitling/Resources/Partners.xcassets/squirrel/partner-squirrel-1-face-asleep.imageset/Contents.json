@@ -1,0 +1,15 @@
+{
+  "images": [
+    {
+      "filename": "partner-squirrel-1-face-asleep.png",
+      "idiom": "universal"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  },
+  "properties": {
+    "compression-type": "lossy"
+  }
+}

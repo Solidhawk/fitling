@@ -1,0 +1,15 @@
+{
+  "images": [
+    {
+      "filename": "partner-turtle-2-item-glasses.png",
+      "idiom": "universal"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  },
+  "properties": {
+    "compression-type": "lossy"
+  }
+}

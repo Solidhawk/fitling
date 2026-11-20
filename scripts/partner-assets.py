@@ -7,13 +7,17 @@ Reads   design/partners/lagen/<species>/<form>/{body,face-<mood>,item-<item>}.pn
 Writes  Fitling/Resources/Partners.xcassets/<species>/partner-<species>-<form>-<layer>.imageset
         Fitling/Resources/PartnerAnchors.json
 The asset catalog is rebuilt from scratch, so a layer that is no longer rendered also leaves the app.
-The images are stored with lossy compression: the figures are soft renders, and 1344 layers would
-otherwise make the app large.
+Cycles leaves faint noise in pixels that are meant to be transparent; those are cleared, which makes a
+face or accessory layer about ten times smaller. Reducing the body to 256 colours bands its soft
+shading, so the colours stay as rendered. In the app the images are stored with lossy compression.
+Needs Pillow.
 """
 import json
 import shutil
 import sys
 from pathlib import Path
+
+from PIL import Image
 
 SPECIES = ['bumblebee', 'mole', 'frog', 'owl', 'hedgehog', 'snail', 'axolotl', 'seal',
            'penguin', 'turtle', 'rabbit', 'raccoon', 'ladybird', 'octopus', 'squirrel', 'lamb']
@@ -25,6 +29,16 @@ root = Path(__file__).resolve().parent.parent
 source = root / 'design' / 'partners' / 'lagen'
 catalog = root / 'Fitling' / 'Resources' / 'Partners.xcassets'
 info = {'author': 'xcode', 'version': 1}
+# Below this opacity a pixel is render noise, not part of the figure or its shadow.
+NOISE_ALPHA = 4
+
+
+def clean_copy(src, dst):
+    image = Image.open(src).convert('RGBA')
+    visible = image.getchannel('A').point(lambda a: 255 if a >= NOISE_ALPHA else 0)
+    cleaned = Image.new('RGBA', image.size, (0, 0, 0, 0))
+    cleaned.paste(image, (0, 0), visible)
+    cleaned.save(dst, optimize=True)
 
 
 def write_json(path, value):
@@ -55,7 +69,7 @@ for species in SPECIES:
             name = f'partner-{species}-{form}-{layer}'
             imageset = folder / f'{name}.imageset'
             imageset.mkdir()
-            shutil.copyfile(source / species / str(form) / f'{layer}.png', imageset / f'{name}.png')
+            clean_copy(source / species / str(form) / f'{layer}.png', imageset / f'{name}.png')
             write_json(imageset / 'Contents.json', {
                 'images': [{'filename': f'{name}.png', 'idiom': 'universal'}],
                 'info': info,

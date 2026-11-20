@@ -1,7 +1,9 @@
 """Sixteen partners as soft 3D toy figures in six forms each, built from code in Blender and rendered with Cycles.
 
-Run: blender -b --factory-startup -P partners_3d.py -- <output folder> [samples] [names, e.g. hommel,uil] [forms, e.g. 1,6]
+Run: blender -b --factory-startup -P partners_3d.py -- <output folder> [samples] [names, e.g. hommel,uil] [forms, e.g. 1,6] [layers]
 Writes <name>-<form>.png (transparent, with the contact shadow in the alpha) and partners.blend.
+With `layers` it writes the app's stackable 600 px layers instead: <species>/<form>/body.png, face-<mood>.png and
+item-<item>.png (every pass is holdout-masked against the layers beneath it) and _anchors_<species>.json.
 Every figure stands on z = 0 and faces -Y. One camera for all, so the growth from form 1 to 6 shows.
 
 The six forms change the body plan, not just the size (the figure is fitted to the frame per form, see HEIGHTS):
@@ -11,6 +13,7 @@ wide stance, big signature feature. 6 champion: heroic flex pose, the fullest si
 Eyes shrink relative to the head as it matures; from form 4 a friendly brow line appears.
 """
 import colorsys
+import json
 import math
 import os
 import sys
@@ -27,6 +30,7 @@ ALL = ['hommel', 'mol', 'kikker', 'uil', 'egel', 'slak', 'axolotl', 'zeehond',
        'pinguin', 'schildpad', 'konijn', 'wasbeer', 'lieveheersbeestje', 'octopus', 'eekhoorn', 'lammetje']
 ONLY = args[2].split(',') if len(args) > 2 and args[2] != 'all' else ALL
 FORMS = [int(x) for x in args[3].split(',')] if len(args) > 3 else [1, 2, 3, 4, 5, 6]
+LAYERS = len(args) > 4 and args[4] == 'layers'
 
 # The athletic anatomy per form (index = form - 1). Lengths are in design units; every figure is about T tall
 # before it is fitted to the frame, and then scaled to HEIGHTS (frame fractions of the 4.0 tall picture).
@@ -43,6 +47,8 @@ EYES = [1.3, 1.2, 1.08, 0.96, 0.88, 0.82]         # eye size relative to the hea
 
 COLORS = {
     # shared
+    'tongue': '#F27C8E', 'itemBlue': '#4F7BE8', 'gold': '#F2B807', 'gem': '#D81E3C', 'itemPink': '#FF7EB0', 'ink': '#1B1B2E',
+    'scarfRed': '#E5484D', 'packTan': '#C98A4B', 'strap': '#9C6532', 'bandWhite': '#FFFFFF',
     'eye': '#241915', 'white': '#FFFFFF', 'blush': '#F48C86', 'mouth': '#4A2A22', 'nose': '#2E2422',
     'sclera': '#FFFDF8',
     # hommel
@@ -82,6 +88,27 @@ COLORS = {
 
 # Set per form before an animal is built.
 FORM, F, EYE, BROW = 1, 0.0, 1.0, False
+# Layer bookkeeping: every object is stamped with the layer being built; MOOD selects the face; the rest feed the items.
+LAYER, MOOD, LID, HEAD_AT, BODY, EYE_LOG = 'body', 'content', None, None, None, []
+MOODS = ['happy', 'content', 'sluggish', 'tired', 'hungry', 'asleep']
+
+
+def set_head(P):
+    """Remember the head ellipsoid (centre, radii) for the items."""
+    global HEAD_AT
+    HEAD_AT = (tuple(P.hc), tuple(P.hr))
+
+
+def set_body(pack_c, pack_r, strap_r=0.05, straps=()):
+    """Where a backpack sits on species that are not built by athlete()."""
+    global BODY
+    BODY = SimpleNamespace(pack_c=tuple(pack_c), pack_r=tuple(pack_r), strap_r=strap_r, straps=list(straps))
+
+
+def use_lid(material):
+    """The skin around the eyes: the colour the lids are made of."""
+    global LID
+    LID = material
 
 
 def grow(a, b):
@@ -89,7 +116,8 @@ def grow(a, b):
     return a + (b - a) * F
 
 
-NEUTRAL = {'eye', 'white', 'blush', 'mouth', 'nose', 'sclera', 'claw', 'wing', 'crest'}
+NEUTRAL = {'eye', 'white', 'blush', 'mouth', 'nose', 'sclera', 'claw', 'wing', 'crest', 'tongue', 'itemBlue', 'gold', 'gem',
+           'itemPink', 'ink', 'scarfRed', 'packTan', 'strap', 'bandWhite'}
 
 
 def shade(key, hexcode):
@@ -197,6 +225,7 @@ def finish(obj, material):
     for poly in obj.data.polygons:
         poly.use_smooth = True
     obj.parent = ROOT
+    obj['layer'] = LAYER
     return obj
 
 
@@ -263,7 +292,7 @@ def paddle(loc, direction, length, width, thickness, material):
     return obj
 
 
-def tube(points, radii, material):
+def tube(points, radii, material, cyclic=False):
     curve = bpy.data.curves.new('tube', 'CURVE')
     curve.dimensions = '3D'
     curve.bevel_depth = 1.0
@@ -272,6 +301,7 @@ def tube(points, radii, material):
     curve.use_fill_caps = True
     spline = curve.splines.new('BEZIER')
     spline.bezier_points.add(len(points) - 1)
+    spline.use_cyclic_u = cyclic
     for p, co, r in zip(spline.bezier_points, points, radii):
         p.co = co
         p.handle_left_type = p.handle_right_type = 'AUTO'
@@ -307,9 +337,22 @@ def spread(n):
 
 def eye(center, radii, az, el, r, iris=None, out=0.0, brow=True):
     """A glossy toy eye set into the surface, with two highlights; iris gives a coloured ring.
-    Bigger on young forms; from form 4 a soft, slightly arched brow above it (brow=False where the face has its own markings)."""
-    r *= EYE
+    Bigger on young forms; from form 4 a soft, slightly arched brow above it (brow=False where the face has its own markings).
+    The mood changes it: bigger when happy, half-lidded when sluggish, drooping lids when tired, bigger with a third highlight
+    when hungry, a closed dark arc when asleep."""
+    global LAYER
+    outer, LAYER = LAYER, 'face'
+    r *= EYE * {'happy': 1.05, 'hungry': 1.12}.get(MOOD, 1.0)
     p, n = on(center, radii, az, el, out=out)
+    EYE_LOG.append((p, n, r))
+    side = 1 if az >= 0 else -1
+    rr = Vector(radii)
+    if MOOD == 'asleep':
+        w, d = math.degrees(1.0 * r / rr.x), math.degrees(0.5 * r / rr.z)
+        pts = [tuple(on(center, radii, az + side * u * w, el + 0.5 * d * u * u - 0.25 * d, out=out + 0.01)[0]) for u in (-1, 0, 1)]
+        tube(pts, [r * 0.14, r * 0.17, r * 0.14], mat('eye', rough=0.4, sss=0))
+        LAYER = outer
+        return
     left = Vector((-1, 0, 0))
     up = Vector((0, 0, 1))
     front = p + n * r * 0.3
@@ -323,10 +366,20 @@ def eye(center, radii, az, el, r, iris=None, out=0.0, brow=True):
         hl = r
     ball(front + up * hl * 0.36 + left * hl * 0.28, hl * 0.26, mat('white', emit=True))
     ball(front - up * hl * 0.32 - left * hl * 0.3, hl * 0.11, mat('white', emit=True))
+    if MOOD == 'hungry':
+        ball(front + up * hl * 0.05 - left * hl * 0.38, hl * 0.14, mat('white', emit=True))
+    if MOOD in ('sluggish', 'tired') and LID is not None:
+        vr = r * 1.12
+        cover = 0.45 if MOOD == 'sluggish' else 0.38
+        hz = vr * 0.75
+        m = facing(n).to_matrix()
+        if MOOD == 'tired':
+            m = m @ Euler((0, side * math.radians(20), 0)).to_matrix()
+        zc = vr - 2 * vr * cover + hz
+        lid = ball(tuple(p + m @ Vector((0, -0.12 * r, zc))), (r * 1.18, r * 0.5, hz), LID)
+        lid.rotation_euler = m.to_euler()
     if BROW and brow:
         # Level and gently arched, the outer end a touch lower: determined, but friendly.
-        side = 1 if az >= 0 else -1
-        rr = Vector(radii)
         d = math.degrees(1.55 * r / rr.z)
         w = math.degrees(0.85 * r / rr.x)
         pts = []
@@ -334,23 +387,57 @@ def eye(center, radii, az, el, r, iris=None, out=0.0, brow=True):
             q, _ = on(center, radii, az + side * u * w, el + d * (1 + lift), out=out + 0.012)
             pts.append(tuple(q))
         tube(pts, [r * 0.12, r * 0.16, r * 0.12], mat('mouth', rough=0.4, sss=0))
+    LAYER = outer
 
 
 def smile(center, radii, width, el, dip, thick=0.022, out=0.0, key='mouth'):
+    """The mouth: a smile (content), an open smile with tongue (happy), a flat wavy line (sluggish), a small frown (tired),
+    a small open o with tongue (hungry) or a tiny round mouth (asleep)."""
+    global LAYER
+    outer, LAYER = LAYER, 'face'
     dip *= grow(1.0, 1.4)
     width *= grow(1.0, 1.2)
-    pts = []
-    for i in range(5):
-        u = -1 + i / 2
-        p, _ = on(center, radii, u * width, el - dip * (1 - u * u), out=out)
-        pts.append(tuple(p))
-    tube(pts, [thick * 0.8, thick, thick, thick, thick * 0.8], mat(key, rough=0.4, sss=0))
+    m = mat(key, rough=0.4, sss=0)
+
+    def line(offset, w, count=5):
+        pts = []
+        for i in range(count):
+            u = -1 + 2 * i / (count - 1)
+            p, _ = on(center, radii, u * w, el + offset(u, i), out=out)
+            pts.append(tuple(p))
+        tube(pts, [thick * 0.8] + [thick] * (count - 2) + [thick * 0.8], m)
+
+    def open_mouth(w, tall, tongue):
+        p0, n = on(center, radii, 0, el - dip * 0.4, out=out)
+        p1, _ = on(center, radii, w, el - dip * 0.4, out=out)
+        hw = max(abs(p1.x - p0.x), thick * 2)
+        ball(p0 - n * hw * 0.1, (hw, hw * 0.3, hw * tall), m, normal=n)
+        if tongue:
+            ball(p0 + Vector((0, 0, -hw * tall * 0.45)) + n * hw * 0.02, (hw * 0.6, hw * 0.3, hw * tall * 0.45), mat('tongue', rough=0.4), normal=n)
+
+    if MOOD == 'happy':
+        open_mouth(width * 0.75, 0.6, True)
+    elif MOOD == 'hungry':
+        open_mouth(width * 0.3, 1.0, True)
+    elif MOOD == 'asleep':
+        open_mouth(width * 0.14, 1.0, False)
+    elif MOOD == 'sluggish':
+        line(lambda u, i: dip * 0.2 * (1 if i % 2 == 0 else -1) - dip * 0.3, width * 0.7)
+    elif MOOD == 'tired':
+        line(lambda u, i: -dip * 0.7 - 0.5 * dip * u * u, width * 0.6)
+    else:
+        line(lambda u, i: -dip * (1 - u * u), width)
+    LAYER = outer
 
 
 def blush(center, radii, az, el, r):
+    global LAYER
+    if MOOD == 'tired':
+        return
+    outer, LAYER = LAYER, 'face'
     p, n = on(center, radii, az, el, out=-r * 0.12)
     ball(p, (r * 1.15, r * 0.25, r * 0.8), mat('blush', rough=0.7), normal=n)
-
+    LAYER = outer
 
 
 def bulge(a, b, r, material, shift=(0, 0, 0)):
@@ -364,6 +451,7 @@ def bulge(a, b, r, material, shift=(0, 0, 0)):
 def face(P, eyes, mouth, blush_at=(40, -2, 0.11), iris=None, out=0.0, brow=True, thick=0.022):
     """Eyes, blush and smile on the head ellipsoid of plan P. Sizes are for a head of radius 0.85 and scale with it.
     eyes = (az, el, r); mouth = (width, el, dip)."""
+    set_head(P)
     az, el, r = eyes
     for side in (1, -1):
         eye(P.hc, P.hr, side * az, el, r * P.u, iris=iris, out=out, brow=brow)
@@ -391,6 +479,7 @@ def athlete(skin, *, torso=None, head=None, limb=None, hand=None, leg=None, foot
     f = FORM - 1
     M = MUSCLE[f]
     torso, head, limb = torso or skin, head or skin, limb or skin
+    use_lid(head)
     hand, leg, foot = hand or limb, leg or limb, foot or leg
     hz = HEAD[f] * T / 2 * head_scale
     P = SimpleNamespace(M=M, hz=hz, u=hz / 0.85, hr=(hz * head_w, hz * head_w * head_d, hz), hc=(0, 0, T - hz))
@@ -402,6 +491,7 @@ def athlete(skin, *, torso=None, head=None, limb=None, hand=None, leg=None, foot
     P.hc = (0, -head_fwd * ry, T - hz)
     half = (top - base) / 2
     P.tc, P.rx, P.ry, P.half, P.top, P.base = (0, 0, base + half), rx, ry, half, top, base
+    set_head(P)
     lathe(P.tc, rx, ry, half, lambda t: 1 + 0.3 * M * t, torso, square=2 + 0.8 * M)
     if head_ball:
         ball(P.hc, P.hr, head)
@@ -468,7 +558,91 @@ def athlete(skin, *, torso=None, head=None, limb=None, hand=None, leg=None, foot
         for j in range(toes):
             q = fc + Vector(((j - (toes - 1) / 2) * fs.x * 0.7, -fs.y * 0.85, fs.z * 0.05))
             ball(tuple(q), fs.x * 0.34, matte(foot))
+    global BODY
+    R = (rx, ry, half)
+    pack, _ = on(P.tc, R, 180, 8, out=0.12 * rx)
+    BODY = SimpleNamespace(pack_c=tuple(pack), pack_r=(rx * 0.62, 0.3 * rx + 0.08, half * 0.55), strap_r=0.06 * rx + 0.02,
+                           straps=[[tuple(on(P.tc, R, side * az, el, out=0.04)[0]) for az, el in ((165, 25), (120, 55), (75, 58), (35, 32), (22, -4))]
+                                   for side in (1, -1)])
     return P
+
+
+ITEMS = ['scarf', 'cap', 'bow', 'glasses', 'backpack', 'crown', 'sweatband']
+
+
+def ring_points(center, rx, ry, count=28):
+    return [(center[0] + rx * math.cos(2 * math.pi * k / count), center[1] + ry * math.sin(2 * math.pi * k / count), center[2]) for k in range(count)]
+
+
+def head_ring(el, scale, tube_r, material, shift=0.0):
+    """A closed band around the head at latitude `el`, standing `scale` outside the surface."""
+    (hc, hr), e = HEAD_AT, math.radians(el)
+    f = math.cos(e) * scale
+    centre = (hc[0], hc[1], hc[2] + hr[2] * math.sin(e))
+    pts = ring_points(centre, hr[0] * f + shift, hr[1] * f + shift)
+    tube(pts, [tube_r] * len(pts), material, cyclic=True)
+    return centre, hr[0] * f, hr[1] * f
+
+
+def build_items():
+    """The seven accessories, fitted to the head (and body) of the current species and form. Each has its own layer."""
+    global LAYER
+    (hc, hr) = HEAD_AT
+    hx, hy, hz = hr
+    vinyl = dict(rough=0.55, sheen=0.3)
+
+    LAYER = 'item:scarf'
+    centre, rx, ry = head_ring(-50, 1.1, 0.17 * hz, mat('scarfRed', rough=0.8, sheen=0.6))
+    ball((centre[0] + 0.25 * hx, centre[1] - ry * 0.95, centre[2] - 0.28 * hz), (0.15 * hx, 0.06 * hz, 0.36 * hz), mat('scarfRed', rough=0.8, sheen=0.6), rot=(0, 8, 0))
+
+    LAYER = 'item:cap'
+    blue = mat('itemBlue', **vinyl)
+    ball((hc[0], hc[1], hc[2] + 0.7 * hz), (0.86 * hx, 0.86 * hy, 0.55 * hz), blue)
+    ball((hc[0], hc[1] - 0.85 * hy, hc[2] + 0.66 * hz), (0.55 * hx, 0.5 * hy, 0.07 * hz), blue)
+    ball((hc[0], hc[1], hc[2] + 1.22 * hz), 0.08 * hz, blue)
+
+    LAYER = 'item:crown'
+    gold = mat('gold', rough=0.3, coat=0.5)
+    centre, rx, ry = head_ring(55, 1.04, 0.1 * hz, gold)
+    for k in range(5):
+        t = math.radians(-90 + 72 * k)
+        drop((centre[0] + rx * math.cos(t), centre[1] + ry * math.sin(t), centre[2]), 0.11 * hz, 0.36 * hz, gold)
+    ball((centre[0], centre[1] - ry, centre[2]), 0.1 * hz, mat('gem', rough=0.15, coat=1.0, sss=0))
+
+    LAYER = 'item:bow'
+    pink = mat('itemPink', **vinyl)
+    p, n = on(hc, hr, 55, 48, out=0.02 * hz)
+    m = facing(n).to_matrix()
+    for s in (1, -1):
+        loop = ball(tuple(p + m @ Vector((s * 0.3 * hz, 0, 0)) + n * 0.06 * hz), (0.3 * hz, 0.1 * hz, 0.2 * hz), pink)
+        loop.rotation_euler = (m @ Euler((0, s * 0.45, 0)).to_matrix()).to_euler()
+    ball(tuple(p + n * 0.06 * hz), 0.1 * hz, pink)
+
+    LAYER = 'item:glasses'
+    ink = mat('ink', rough=0.35, coat=0.4, sss=0)
+    centres = []
+    for p, n, r in EYE_LOG[:2]:
+        u = n.cross(Vector((0, 0, 1))).normalized()
+        v = n.cross(u)
+        c = p + n * r * 0.5
+        centres.append((c, u, r))
+        ring = [tuple(c + 1.45 * r * (math.cos(2 * math.pi * k / 24) * u + math.sin(2 * math.pi * k / 24) * v)) for k in range(24)]
+        tube(ring, [0.13 * r] * 24, ink, cyclic=True)
+    (c1, _, r1), (c2, _, r2) = sorted(centres, key=lambda t: t[0].x)
+    d = (c2 - c1).normalized()
+    a, b = c1 + d * 1.45 * r1, c2 - d * 1.45 * r2
+    tube([tuple(a), tuple((a + b) / 2 + Vector((0, 0, 0.18 * r1))), tuple(b)], [0.1 * r1] * 3, ink)
+
+    LAYER = 'item:backpack'
+    ball(BODY.pack_c, BODY.pack_r, mat('packTan', rough=0.6, sheen=0.3))
+    for pts in BODY.straps:
+        tube(pts, [BODY.strap_r] * len(pts), mat('strap', rough=0.6, sheen=0.3))
+
+    LAYER = 'item:sweatband'
+    white = mat('bandWhite', rough=0.7, sheen=0.4)
+    centre, rx, ry = head_ring(40, 1.04, 0.08 * hz, white)
+    tube(ring_points(centre, rx + 0.05 * hz, ry + 0.05 * hz), [0.03 * hz] * 28, mat('scarfRed', rough=0.7, sheen=0.3), cyclic=True)
+    LAYER = 'body'
 
 
 # --- The sixteen partners -------------------------------------------------------------------------
@@ -589,6 +763,7 @@ def uil():
     orange = mat('beak', rough=0.4)
     P = athlete(body, belly=mat('owlBelly', rough=0.7, sheen=0.4), arms=False, leg=orange, foot=orange, toes=3, head_w=1.12, torso_w=0.9, thigh=0.75, leg_scale=0.9)
     u = P.u
+    use_lid(mat('owlFace', rough=0.7, sheen=0.4))
     for side in (1, -1):
         p, n = on(P.hc, P.hr, side * 20, 20, out=-0.08 * u)
         ball(p, (0.37 * u, 0.13 * u, 0.35 * u), mat('owlFace', rough=0.7, sheen=0.4), normal=n)
@@ -648,6 +823,8 @@ def slak():
     tube([(0, -0.2, 0.3), (0, yh - 0.05, (Hh - hr) * 0.5 + 0.2), (0, yh, Hh - hr * 0.4)], [rc * 1.05, rc, rc * 0.85], body)
     P = SimpleNamespace(hc=(0, yh, Hh), hr=(hr, hr * 0.92, hr), u=hr / 0.85)
     ball(P.hc, P.hr, body)
+    set_head(P)
+    use_lid(mat('sclera', rough=0.3, coat=0.5, sss=0))
     if FORM >= 4:
         ball((0, yh - 0.25, Hh * 0.5), (rc * 1.15, rc * 0.85, 0.5 * Hh * 0.45), body)
     if FORM >= 5:
@@ -666,6 +843,7 @@ def slak():
     rx, ry = 0.52 * Sr, Sr
     sc = Vector((0, 0.35 + 0.35 * Sr, 0.28 + Sr * 0.9))
     ball(tuple(sc), (rx, ry, ry), mat('shell', rough=0.4, coat=0.5))
+    set_body((0, sc.y + 0.1 * ry, sc.z + 0.85 * ry), (0.3 * Sr, 0.3 * Sr, 0.25 * Sr))
     line = mat('shellLine', rough=0.4, coat=0.5)
     turns = grow(0.32, 0.45)
     for side in (1, -1):
@@ -737,6 +915,8 @@ def zeehond():
     hc = C + fdir * Lb * 0.85 + Vector((0, 0, hz * 0.6))
     P = SimpleNamespace(hc=tuple(hc), hr=(hz * 0.95, hz * 0.9, hz), u=hz / 0.85)
     ball(P.hc, P.hr, body)
+    use_lid(body)
+    set_body(C + Vector((0, 0.2 * Lb, 0.8 * Hb)), (W * 0.5, 0.3, Hb * 0.5))
     if FORM >= 4:
         ball(tuple(C + fdir * Lb * 0.95 - Vector((0, 0, 0.1))), (W * 0.85, W * 0.8, hz * 0.8), body)
         p, n = on_tilted(C, (W, Lb, Hb), rot, (0, -1, 0.1), out=-0.1)
@@ -873,6 +1053,7 @@ def wasbeer():
     light = mat('raccLight', rough=0.7, sheen=0.5)
     P = athlete(body, belly=light, hand=mask, foot=mask, bicep=1.1, head_w=1.05)
     u = P.u
+    use_lid(mask)
     M = grow(1.0, 1.25)
     for side in (1, -1):
         p, n = on(P.hc, P.hr, side * 24, 22, out=-0.06 * u)
@@ -912,6 +1093,7 @@ def lieveheersbeestje():
     dark = mat('bugDark', rough=0.4, coat=0.4)
     P = athlete(dark, head=red, torso=red, belly=dark, foot=mat('bugFoot', rough=0.7), head_w=1.02, toes=2)
     u, hx, hy, hz = P.u, *P.hr
+    use_lid(dark)
     p, n = on(P.hc, P.hr, 0, -6, out=-0.1 * u)
     ball(p, (hx * 0.68, hy * 0.14, hz * 0.52), dark, normal=n)
     for side in (1, -1):
@@ -958,6 +1140,8 @@ def octopus():
     hx = hz * [1.0, 0.98, 0.92, 0.82, 0.78, 0.76][f]
     P = SimpleNamespace(hc=(0, 0, T - hz), hr=(hx, hx * 0.95, hz), u=hz / 0.85)
     ball(P.hc, P.hr, body)
+    use_lid(body)
+    set_body((0, hx * 0.95 + 0.1, T - hz), (hx * 0.55, 0.3 * hx, hz * 0.45))
     z0 = T - 2 * hz
     ra, Lr = [0.14, 0.15, 0.18, 0.21, 0.24, 0.27][f], [0.3, 0.5, 0.75, 1.0, 1.15, 1.3][f]
     ball((0, 0, z0 + 0.25), (hx * 0.85, hx * 0.8, 0.35), body)
@@ -1034,23 +1218,15 @@ def eekhoorn():
     for side in (1, -1):
         drop((side * 0.38 * u, 0.05 * u, top - 0.2 * u), 0.16 * u, 0.4 * u, body, direction=(side * 0.3, 0, 1), flat=0.55)
         drop((side * 0.45 * u, 0.05 * u, top + 0.1 * u), 0.06 * u, tuft, tail, direction=(side * 0.3, 0, 1))
-    # The tail is a bushy plume, not a tube: it starts thin at the lower back, swells as it rises behind the
-    # body (a little to one side, so it shows beside the head), and curls forward over the head with a cream tip.
-    # Lumps along both edges keep it fluffy; an even, round tube beside the body reads as an arm.
     H0 = P.top - P.base
-    TL = grow(0.8, 1.6)
-    ctrl = [Vector(q) for q in ((0.3 * P.rx, P.ry * 0.8, P.base + 0.2 * H0), (P.rx + 0.75 * TL, P.ry + 0.6 * TL, P.base + 0.45 * H0),
-                                (P.rx + 0.65 * TL, P.ry + 0.3 * TL, P.top + 0.8 * TL), (0.55 * P.rx, P.ry * 0.5, P.top + 0.45 * TL))]
-    for i in range(61):
-        t = i / 60
+    TL = grow(0.8, 1.9)
+    ctrl = [Vector(q) for q in ((0.15 * P.rx, P.ry, P.base + 0.2 * H0), (P.rx * 0.9 + 0.9 * TL, P.ry + 0.5, P.base + 0.5 * H0),
+                                (P.rx * 0.9 + 0.7 * TL, P.ry + 0.4, P.base + H0 + 0.6 * TL), (0.25 * P.rx, P.ry * 0.9, P.base + H0 + 0.9 * TL))]
+    for i in range(33):
+        t = i / 32
         pos = sum((w * q for w, q in zip(((1 - t) ** 3, 3 * (1 - t) ** 2 * t, 3 * (1 - t) * t * t, t ** 3), ctrl)), Vector())
-        r = (0.1 + 0.5 * math.sin(math.pi * min(1.0, 0.12 + 0.88 * t)) ** 0.55) * TL * 0.7
-        m = mat('tailTip' if t > 0.86 else 'squirrelTail', rough=0.8, sheen=0.8)
-        ball(tuple(pos), r, m)
-        if 0.12 < t < 0.95 and i % 2 == 0:
-            # Fluff on the outer and inner edge, a little out of step, so the edge is soft and uneven.
-            for side, k in ((1, 0.68), (-1, 0.55)):
-                ball(tuple(pos + Vector((side * r * k, 0.1 * r, r * 0.1 * side))), r * (0.55 + 0.1 * math.sin(i)), m)
+        r = (0.26 + 0.2 * math.sin(math.pi * min(1.0, t ** 0.8 * 1.05)) ** 0.7) * TL * 0.8
+        ball(tuple(pos), r, mat('tailTip' if t > 0.82 else 'squirrelTail', rough=0.75, sheen=0.7))
     centre = P.hand[1] if FORM == 6 else (P.hand[1] + P.hand[-1]) / 2
     a = P.rx * grow(0.22, 0.4)
     ball(tuple(centre + Vector((0, -0.02, 0.0))), (a, a * 0.95, a * 1.1), mat('acorn', rough=0.35, coat=0.5))
@@ -1117,8 +1293,7 @@ scene.render.engine = 'CYCLES'
 scene.cycles.device = 'CPU'
 scene.cycles.samples = SAMPLES
 scene.cycles.use_denoising = True
-scene.render.resolution_x = 900
-scene.render.resolution_y = 900
+scene.render.resolution_x = scene.render.resolution_y = 600 if LAYERS else 900
 scene.render.film_transparent = True
 scene.view_settings.view_transform = 'Standard'
 scene.view_settings.exposure = -0.35
@@ -1160,13 +1335,22 @@ target = Vector((0, 0, 1.45))
 cam.location = target + Vector((-2.65, -7.6, 1.95))
 cam.rotation_euler = (target - cam.location).to_track_quat('-Z', 'Y').to_euler()
 
+def project(world_points):
+    """Camera projection of world points to normalised image coordinates (u right, v up) and the pixel scale k at each point."""
+    inv = np.array(cam.matrix_world.inverted())
+    pc = np.atleast_2d(world_points) @ inv[:3, :3].T + inv[:3, 3]
+    k = cam_data.lens / cam_data.sensor_width / -pc[:, 2]
+    return 0.5 + pc[:, 0] * k, 0.5 + pc[:, 1] * k, k
+
+
 def fit(root, height, max_width=3.7):
     """Scale the figure so it is `height` tall on screen (or `max_width` wide if the pose is wider), centred, feet on z = 0,
-    and small enough that nothing, including the nearest foot or arm, is cropped by the frame."""
+    and small enough that nothing, including the nearest foot or arm and a crown above the head, is cropped by the frame.
+    Only the body layer counts, so every layer of one figure shares the same fit."""
     bpy.context.view_layer.update()
     pts = []
     for obj in root.children_recursive:
-        if obj.type == 'MESH':
+        if obj.type == 'MESH' and obj.get('layer', 'body') == 'body':
             co = np.empty(len(obj.data.vertices) * 3)
             obj.data.vertices.foreach_get('co', co)
             m = np.array(obj.matrix_world)
@@ -1174,31 +1358,94 @@ def fit(root, height, max_width=3.7):
     pts = np.concatenate(pts)
     lo, hi = pts.min(axis=0), pts.max(axis=0)
     s = min(height / (hi[2] - lo[2]), max_width / (hi[0] - lo[0]))
-    cx, inv = -(lo[0] + hi[0]) / 2, np.array(cam.matrix_world.inverted())
+    cx = -(lo[0] + hi[0]) / 2
     sample = pts[::7]
-    for _ in range(20):
-        w = sample * s + np.array([cx * s, 0, -lo[2] * s])
-        pc = w @ inv[:3, :3].T + inv[:3, 3]
-        k = cam_data.lens / cam_data.sensor_width / -pc[:, 2]
-        u, v = 0.5 + pc[:, 0] * k, 0.5 + pc[:, 1] * k
-        if v.min() > 0.06 and v.max() < 0.96 and u.min() > 0.03 and u.max() < 0.97:
+    for _ in range(25):
+        u, v, _k = project(sample * s + np.array([cx * s, 0, -lo[2] * s]))
+        if v.min() > 0.06 and v.max() < 0.90 and u.min() > 0.03 and u.max() < 0.97:
             break
         s *= 0.97
-    root.scale = (s, s, s)
-    root.location = (cx * s, 0, -lo[2] * s)
+    return s, (cx * s, 0, -lo[2] * s)
 
+
+def build(name, form, mood, with_items):
+    """Rebuild the figure for one form with the given face mood; items only when asked. Returns the root."""
+    global FORM, F, EYE, BROW, MOOD, ROOT, LAYER
+    for obj in list(bpy.data.objects):
+        if obj.type in ('MESH', 'EMPTY') and obj is not ground:
+            bpy.data.objects.remove(obj, do_unlink=True)
+    FORM, F, EYE, BROW, MOOD, LAYER = form, (form - 1) / 5, EYES[form - 1], form >= 4, mood, 'body'
+    EYE_LOG.clear()
+    ROOT = bpy.data.objects.new(f'{name}-{form}', None)
+    scene.collection.objects.link(ROOT)
+    BUILDERS[name]()
+    if with_items:
+        build_items()
+    return ROOT
+
+
+def set_pass(kind, item=None):
+    """Which objects show and which are holdouts: body alone with its shadow; the face over a body holdout; one item over
+    body and face holdouts. Only the body pass has the ground shadow."""
+    ground.hide_render = kind != 'body'
+    for obj in ROOT.children_recursive:
+        layer = obj.get('layer', 'body')
+        obj.is_holdout = kind != 'body' and (layer == 'body' or (kind == 'item' and layer == 'face'))
+        if kind == 'body':
+            obj.hide_render = layer != 'body'
+        elif kind == 'face':
+            obj.hide_render = layer.startswith('item')
+        else:
+            obj.hide_render = layer.startswith('item') and layer != f'item:{item}'
+
+
+def render_to(path):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    scene.render.filepath = path
+    bpy.ops.render.render(write_still=True)
+    print('wrote', path, flush=True)
+
+
+SPECIES = {'hommel': 'bumblebee', 'mol': 'mole', 'kikker': 'frog', 'uil': 'owl', 'egel': 'hedgehog', 'slak': 'snail',
+           'axolotl': 'axolotl', 'zeehond': 'seal', 'pinguin': 'penguin', 'schildpad': 'turtle', 'konijn': 'rabbit',
+           'wasbeer': 'raccoon', 'lieveheersbeestje': 'ladybird', 'octopus': 'octopus', 'eekhoorn': 'squirrel', 'lammetje': 'lamb'}
+anchors = {}
 
 for name in ONLY:
     for form in FORMS:
-        for obj in list(bpy.data.objects):
-            if obj.type in ('MESH', 'EMPTY') and obj is not ground:
-                bpy.data.objects.remove(obj, do_unlink=True)
-        FORM, F, EYE, BROW = form, (form - 1) / 5, EYES[form - 1], form >= 4
-        ROOT = bpy.data.objects.new(f'{name}-{form}', None)
-        scene.collection.objects.link(ROOT)
-        BUILDERS[name]()
-        fit(ROOT, HEIGHTS[form - 1])
-        scene.render.filepath = os.path.join(OUT, f'{name}-{form}.png')
-        bpy.ops.render.render(write_still=True)
-        print('wrote', scene.render.filepath, flush=True)
-bpy.ops.wm.save_as_mainfile(filepath=os.path.join(OUT, 'partners.blend'))
+        root = build(name, form, 'content', LAYERS)
+        scale, loc = fit(root, HEIGHTS[form - 1])
+        root.scale, root.location = (scale,) * 3, loc
+        if not LAYERS:
+            scene.render.filepath = os.path.join(OUT, f'{name}-{form}.png')
+            bpy.ops.render.render(write_still=True)
+            print('wrote', scene.render.filepath, flush=True)
+            continue
+        folder = os.path.join(OUT, SPECIES[name], str(form))
+        bpy.context.view_layer.update()
+        (hc, hr) = HEAD_AT
+        centre = root.matrix_world @ Vector(hc)
+        top = root.matrix_world @ Vector((hc[0], hc[1], hc[2] + hr[2]))
+        u, v, k = project(np.array([tuple(centre), tuple(top)]))
+        anchors[f'{SPECIES[name]}/{form}'] = {'headTop': [round(float(u[1]), 4), round(1 - float(v[1]), 4)],
+                                              'headCenter': [round(float(u[0]), 4), round(1 - float(v[0]), 4)],
+                                              'headRadius': round(float(hr[0] * scale * k[0]), 4)}
+        set_pass('body')
+        render_to(os.path.join(folder, 'body.png'))
+        set_pass('face')
+        render_to(os.path.join(folder, 'face-content.png'))
+        for item in ITEMS:
+            set_pass('item', item)
+            render_to(os.path.join(folder, f'item-{item}.png'))
+        for mood in MOODS:
+            if mood == 'content':
+                continue
+            root = build(name, form, mood, False)
+            root.scale, root.location = (scale,) * 3, loc
+            set_pass('face')
+            render_to(os.path.join(folder, f'face-{mood}.png'))
+    if LAYERS:
+        with open(os.path.join(OUT, f'_anchors_{SPECIES[name]}.json'), 'w') as fh:
+            json.dump(anchors, fh)
+if not LAYERS:
+    bpy.ops.wm.save_as_mainfile(filepath=os.path.join(OUT, 'partners.blend'))

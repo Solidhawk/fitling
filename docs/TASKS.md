@@ -290,7 +290,13 @@ Aangeroepen bij de start, als de app terugkomt, als de dag wisselt en als het pa
 
 ### 3.3 De partner tekenen — gebouwd, wacht op goedkeuring
 
-**Nieuwe richting (2026-11-19):** de gebruiker koos zestien nieuwe partners als zachte 3D-figuurtjes, elk in zes vormen (`design/partners/nieuw/`, generator `partners_3d.py`, borden `vormen-bord-1..4.png`). Hommel, mol, kikker, uil, egel, slak, axolotl, zeehond, pinguïn, schildpad, konijn, wasbeer, lieveheersbeestje, octopus, eekhoorn en lammetje vervangen Sprout, Ember, Pip en Pebble. Inbouwen is een grote verbouwing (UNFORGET S16) en wacht op akkoord over: `Species` van 4 naar 16 (ook de check in `schema.sql`), afbeeldingen per vorm in plaats van `PartnerDrawing`, en hoe stemming en vorm (slank tot rond) zichtbaar worden op een vaste 3D-render.
+**Nieuwe richting (2026-11-19):** de gebruiker koos zestien nieuwe partners als zachte 3D-figuurtjes, elk in zes vormen (`design/partners/nieuw/`, generator `partners_3d.py`, borden `vormen-bord-1..4.png`). Hommel, mol, kikker, uil, egel, slak, axolotl, zeehond, pinguïn, schildpad, konijn, wasbeer, lieveheersbeestje, octopus, eekhoorn en lammetje vervangen Sprout, Ember, Pip en Pebble. **Ingebouwd (2026-11-20, plan `docs/superpowers/plans/2026-11-20-partners-3d-inbouwen.md`):**
+
+- `Species` heeft 16 soorten en er zijn 6 vormen (`growthLevels` 1, 3, 6, 10, 15, 22).
+- De partner is een stapel 3D-lagen: lijf, gezicht per stemming en accessoires, in `Partners.xcassets` via `scripts/partner-assets.py`.
+- De kleurvarianten zijn een tintverschuiving van het lijf.
+- De Z's bij slapen staan op `PartnerAnchors.json`.
+- Tests: `PartnerLayersTests`, `sixteenSpeciesWithTheirDatabaseValues` en `supabase/tests/creatures_test.sql`.
 
 De galerij (`--ui-testing-partner-gallery`, UI-test `PartnerGalleryTests`) toont elke soort in elke toestand; de schermafbeeldingen gaan naar de gebruiker. DESIGN.md beschrijft gezichten, vorm, groei, accessoires, kleuren en beweging.
 
