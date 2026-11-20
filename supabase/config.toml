@@ -17,3 +17,6 @@ verify_jwt = false
 # Checks the token itself, like delete-account.
 [functions.lookup-product]
 verify_jwt = false
+[functions.sync-offers]
+# Called by pg_cron with the secret key, which is no JWT; the function checks the key itself.
+verify_jwt = false
