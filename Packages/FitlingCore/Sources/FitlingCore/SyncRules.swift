@@ -43,6 +43,8 @@ public enum PullStart: Sendable, Equatable {
 /// The decisions of offline-first sync, apart from storage and network (ARCHITECTURE §3).
 public enum SyncRules {
     public static let pushBatchSize = 200
+    /// At most the Data API's `max_rows` (1,000 on Supabase unless changed): the pull stops at the first page
+    /// that comes back shorter, so a larger page would end it after one capped page and miss rows.
     public static let pullPageSize = 500
     /// Pull again from this long before the cursor, to catch transactions that committed late.
     public static let pullOverlap: TimeInterval = 5 * 60
