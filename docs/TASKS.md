@@ -467,4 +467,4 @@ Het menu loopt van vandaag tot zes dagen later. Gelogde maaltijden blijven bij e
 | 7.5 | `schema.sql` wordt de eerste migratie; productieproject in de EU (UNFORGET S4) |
 | 7.6 | Privacyverklaring gelinkt; scherm "Over" met bronvermelding (Open Food Facts, NEVO). **Gebouwd:** scherm "Over Fitling" (Account) met Open Food Facts, USDA, Everkinetic en Wikimedia Commons. NEVO volgt als de import er is (S15); de privacyverklaring wacht op een tekst en een adres van de gebruiker (S21) |
 | 7.7 | TestFlight, app-icoon, eigen SMTP (UNFORGET S1 en S2) |
-| 7.8 | Laatste ronde vormgeving met `impeccable` |
+| 7.8 | Laatste ronde vormgeving met `impeccable`. **Gedaan (2026-11-20):** critique 29/40 (`.impeccable/critique/2026-11-20T13-16-10Z__fitling-features.md`). Alle vijf punten opgelost: partnerkeuze in drie kolommen met het figuur over de hele tegel; workout met gelabelde velden voor gewicht en herhalingen, gestapeld bij grote tekst, de uitleg voor de eerste keer één keer per training, en "Set opslaan" boven het toetsenbord; level en XP en "Gegeten" breken niet meer af; partnertinten gedempt in donkere modus |

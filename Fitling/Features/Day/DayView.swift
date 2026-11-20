@@ -207,6 +207,8 @@ struct DayProgressCard: View {
                     }
                     .font(.subheadline)
                     .foregroundStyle(Color.inkSoft)
+                    // Wraps instead of ending in "…" at the largest text sizes.
+                    .fixedSize(horizontal: false, vertical: true)
                 }
             }
             .accessibilityElement(children: .combine)
