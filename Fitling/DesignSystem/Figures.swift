@@ -239,6 +239,9 @@ struct PartnerCanvas: View {
             // Wider when round, and squashed and lifted around the feet so the partner keeps its volume.
             .scaleEffect(x: look.width * (2 - motion.squash), y: motion.squash, anchor: UnitPoint(x: 0.5, y: PartnerFraming.ground))
             .offset(y: -motion.lift / 100 * side)
+            // The long contact shadow of a zoomed-in young form would otherwise spill past its tile.
+            .frame(width: side, height: side)
+            .clipped()
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .accessibilityHidden(true)
