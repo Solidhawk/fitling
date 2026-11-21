@@ -18,6 +18,9 @@ struct TrainingTabView: View {
     @State private var path: [TrainingRoute] = []
     @State private var workout: WorkoutSession?
     @State private var creatingProgram = false
+    @State private var composing = false
+    /// A composed workout waits until its sheet is gone before it opens full screen.
+    @State private var composed: WorkoutSession?
     private let sync: SyncEngine
 
     init(profile: UserProfile, sync: SyncEngine, health: any HealthReading) {
@@ -52,6 +55,27 @@ struct TrainingTabView: View {
                     }
                     .listRowBackground(Color.card)
                 }
+
+                Section {
+                    if viewModel.activeSession == nil {
+                        Button {
+                            composing = true
+                        } label: {
+                            Label("training.compose.title", systemImage: "list.bullet.rectangle")
+                        }
+                        .accessibilityIdentifier("training.compose")
+                    }
+                    ForEach(viewModel.coachNotes) { note in
+                        coachRow(note)
+                    }
+                } header: {
+                    Text("training.coach.title")
+                } footer: {
+                    if viewModel.coachNotes.isEmpty {
+                        Text("training.coach.empty").footerStyle()
+                    }
+                }
+                .listRowBackground(Color.card)
 
                 Section {
                     ForEach(viewModel.programs) { program in
@@ -121,6 +145,14 @@ struct TrainingTabView: View {
                     path.append(.program(program.id))
                 }
             }
+            .sheet(isPresented: $composing, onDismiss: {
+                if let composed {
+                    workout = composed
+                    self.composed = nil
+                }
+            }) {
+                ComposeWorkoutView(viewModel: viewModel) { composed = $0 }
+            }
             .fullScreenCover(item: $workout, onDismiss: {
                 viewModel.reload()
                 Task { await sync.sync() }
@@ -158,6 +190,35 @@ struct TrainingTabView: View {
         case .photos:
             ProgressPhotosView(store: ProgressPhotoStore(context: viewModel.store.context))
         }
+    }
+
+    /// One exercise the coach has a word about: go heavier, or try another exercise for the same muscle.
+    private func coachRow(_ note: CoachNote) -> some View {
+        let languages = Locale.preferredLanguages
+        return HStack(alignment: .top, spacing: Spacing.m) {
+            Image(systemName: isHeavier(note) ? "arrow.up.circle.fill" : "arrow.triangle.swap")
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: Spacing.xs) {
+                Text(verbatim: note.exercise.name.text(preferring: languages)).font(.headline)
+                Group {
+                    switch note.kind {
+                    case let .heavier(advice):
+                        Text(advice.text(unit: WeightUnit(locale: .current)))
+                    case let .switchTo(other):
+                        Text("training.coach.switch \(other.name.text(preferring: languages))")
+                    }
+                }
+                .font(.footnote)
+                .foregroundStyle(Color.inkSoft)
+                .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    private func isHeavier(_ note: CoachNote) -> Bool {
+        if case .heavier = note.kind { return true }
+        return false
     }
 
     private func sessionLabel(_ session: WorkoutSession, systemImage: String) -> some View {
