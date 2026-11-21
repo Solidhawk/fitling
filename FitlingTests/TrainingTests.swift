@@ -446,4 +446,14 @@ struct TrainingFixture {
         }
         #expect(other.id != squat.id)
     }
+
+    /// The made-up workouts the UI test starts with must give the coach a note of each kind, or
+    /// the screenshot of the coach shows nothing.
+    @Test func theUITestWorkoutsGiveTheCoachANoteOfEachKind() {
+        UITestEnvironment.insertWorkoutHistory(userID: fixture.userID, into: fixture.context, defaults: fixture.defaults, now: fixture.now, timeZone: .gmt)
+        let notes = fixture.store.coachNotes()
+        #expect(notes.contains { if case .heavier = $0.kind { true } else { false } })
+        #expect(notes.contains { if case .switchTo = $0.kind { true } else { false } })
+        #expect(fixture.store.finishedSessions(limit: 10).allSatisfy { $0.userID == fixture.userID && $0.endedAt != nil })
+    }
 }
