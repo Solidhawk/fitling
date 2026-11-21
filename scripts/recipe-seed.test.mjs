@@ -42,6 +42,14 @@ test('grammen en milliliters moeten overeenkomen met het gewicht', () => {
   assert.match(validate(broken, usda, photos).join('\n'), /is niet/);
 });
 
+// Grammen en stuks tellen op de boodschappenlijst niet op, dus dan staat het er twee keer (UNFORGET S24).
+test('een ingrediënt in grammen in het ene recept en in stuks in het andere valt op', () => {
+  const broken = copy();
+  const grams = broken[0].ingredients.find((i) => i.unit === 'g');
+  broken[1].ingredients.push({ ...structuredClone(grams), id: '00000000-0000-0000-0000-000000000001', unit: 'piece', quantity: 1 });
+  assert.match(validate(broken, usda, photos).join('\n'), /verschillende eenheden/);
+});
+
 test('elke regel van de seed heeft een even aantal aanhalingstekens', () => {
   const sql = seedSQL(catalog(source, usda, photos));
   for (const line of sql.split('\n').filter((l) => !l.startsWith('--'))) {

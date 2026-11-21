@@ -145,6 +145,15 @@ import Testing
         #expect(lines == [ShoppingLine(productID: nil, name: "Zout", quantity: 1.5, unit: "tsp", aisle: "pantry")])
     }
 
+    /// Lemon juice in teaspoons in one recipe and in tablespoons in another is one line (UNFORGET S24).
+    @Test func teaspoonsAndTablespoonsOfTheSameProductAddUp() {
+        let teaspoon = MenuIngredient(productID: nil, name: "Citroensap", quantity: 1, unit: "tsp", aisle: "produce")
+        let tablespoons = MenuIngredient(productID: nil, name: "Citroensap", quantity: 2, unit: "tbsp", aisle: "produce")
+        let lines = ShoppingListBuilder.lines(for: [PlannedRecipeUse(recipeServings: 1, plannedServings: 1, ingredients: [teaspoon, tablespoons])])
+        // A teaspoon is a third of a tablespoon: 2⅓ tablespoons, rounded up to half a spoon.
+        #expect(lines == [ShoppingLine(productID: nil, name: "Citroensap", quantity: 2.5, unit: "tbsp", aisle: "produce")])
+    }
+
     @Test func roundsUpToWhatCanBeBought() {
         let ingredients = [
             MenuIngredient(productID: Self.id(1), name: "Ui", quantity: 1, unit: "piece", aisle: "produce"),
