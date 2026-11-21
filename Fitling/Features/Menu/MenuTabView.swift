@@ -54,18 +54,11 @@ struct MenuTabView: View {
                             entryRow(entry)
                         }
                     } header: {
-                        HStack(alignment: .firstTextBaseline) {
-                            Text(group.day.startDate, format: .dateTime.weekday(.wide).day().month(.wide))
-                                .font(.headline.weight(.heavy))
-                            Spacer(minLength: Spacing.s)
-                            // Other meals for this day only; pinned and logged meals stay.
-                            Button {
-                                viewModel.renew(group.day)
-                            } label: {
-                                Label("menu.day.renew", systemImage: "arrow.triangle.2.circlepath")
-                                    .font(.footnote.weight(.bold))
-                            }
-                            .accessibilityIdentifier("menu.day.renew.\(group.day.isoString)")
+                        // The date keeps one line: when the button's text does not fit beside it,
+                        // only its icon is shown (VoiceOver still reads the label).
+                        ViewThatFits(in: .horizontal) {
+                            dayHeader(group.day, label: .titleAndIcon)
+                            dayHeader(group.day, label: .iconOnly)
                         }
                         .foregroundStyle(Color.ink)
                         .textCase(nil)
@@ -129,6 +122,25 @@ struct MenuTabView: View {
             .sheet(isPresented: $editingPreferences, onDismiss: { Task { await sync.sync() } }) {
                 MenuPreferencesView(store: viewModel.store)
             }
+        }
+    }
+
+    /// A day's date and the button for other meals on that day only; pinned and logged meals stay.
+    private func dayHeader<Style: LabelStyle>(_ day: Day, label style: Style) -> some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text(day.startDate, format: .dateTime.weekday(.wide).day().month(.wide))
+                .font(.headline.weight(.heavy))
+                .fixedSize()
+            Spacer(minLength: Spacing.s)
+            Button {
+                viewModel.renew(day)
+            } label: {
+                Label("menu.day.renew", systemImage: "arrow.triangle.2.circlepath")
+                    .font(.footnote.weight(.bold))
+                    .labelStyle(style)
+                    .fixedSize()
+            }
+            .accessibilityIdentifier("menu.day.renew.\(day.isoString)")
         }
     }
 
