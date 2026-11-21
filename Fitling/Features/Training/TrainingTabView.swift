@@ -214,6 +214,7 @@ struct TrainingTabView: View {
             }
         }
         .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("training.coach.\(isHeavier(note) ? "heavier" : "switch").\(note.exercise.id.uuidString)")
     }
 
     private func isHeavier(_ note: CoachNote) -> Bool {

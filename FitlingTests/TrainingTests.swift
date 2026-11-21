@@ -446,4 +446,26 @@ struct TrainingFixture {
         }
         #expect(other.id != squat.id)
     }
+
+    /// Exercises done on the same day come in alphabetical order, so the list does not reshuffle
+    /// every time the screen loads (it did: the order came from a dictionary).
+    @Test func notesFromTheSameDayComeInAlphabeticalOrder() throws {
+        let names = ["Bench press", "Overhead press", "Barbell row", "Lateral raise", "Dumbbell curl", "Leg extension"]
+        for name in names {
+            fixture.workout(try fixture.exercise(name), daysAgo: 2, sets: [(20, 12, false), (20, 12, false), (20, 12, false)])
+        }
+        let shown = fixture.store.coachNotes(limit: names.count).map { $0.exercise.name.text(preferring: ["nl"]) }
+        #expect(shown.count == names.count)
+        #expect(shown == shown.sorted { $0.localizedStandardCompare($1) == .orderedAscending })
+    }
+
+    /// The made-up workouts the UI test starts with must give the coach a note of each kind, or
+    /// the screenshot of the coach shows nothing.
+    @Test func theUITestWorkoutsGiveTheCoachANoteOfEachKind() {
+        UITestEnvironment.insertWorkoutHistory(userID: fixture.userID, into: fixture.context, defaults: fixture.defaults, now: fixture.now, timeZone: .gmt)
+        let notes = fixture.store.coachNotes()
+        #expect(notes.contains { if case .heavier = $0.kind { true } else { false } })
+        #expect(notes.contains { if case .switchTo = $0.kind { true } else { false } })
+        #expect(fixture.store.finishedSessions(limit: 10).allSatisfy { $0.userID == fixture.userID && $0.endedAt != nil })
+    }
 }
