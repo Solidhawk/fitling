@@ -83,6 +83,9 @@ final class TrainingFlowTests: XCTestCase {
         XCTAssertTrue(app.collectionViews["workout.list"].waitForNonExistence(timeout: 10))
         app.navigationBars.buttons.element(boundBy: 0).tap()
         XCTAssertTrue(app.navigationBars["Training"].waitForExistence(timeout: 5))
+        // The list is still scrolled to the programme; at the largest text sizes the top row is off
+        // screen, and the list only makes rows near the screen.
+        for _ in 0..<3 { app.collectionViews["training.list"].swipeDown(velocity: .fast) }
         // After a finished workout the next day of the programme is offered.
         XCTAssertTrue(app.buttons["training.next"].waitForExistence(timeout: 5))
         keepScreenshot(app, named: "\(prefix)-5-volgende")
