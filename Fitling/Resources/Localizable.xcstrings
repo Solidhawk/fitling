@@ -3277,28 +3277,6 @@
         }
       }
     },
-    "menu.entry.detail %@ %lld": {
-      "localizations": {
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ portie · %2$lld kcal"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ serving · %2$lld kcal"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ Portion · %2$lld kcal"
-          }
-        }
-      }
-    },
     "menu.generate": {
       "localizations": {
         "nl": {
@@ -13021,6 +12999,50 @@
           "stringUnit": {
             "state": "translated",
             "value": "Andere Mahlzeiten"
+          }
+        }
+      }
+    },
+    "menu.entry.detail.one %@ %lld": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ portie · %2$lld kcal"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ serving · %2$lld kcal"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ Portion · %2$lld kcal"
+          }
+        }
+      }
+    },
+    "menu.entry.detail.other %@ %lld": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ porties · %2$lld kcal"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ servings · %2$lld kcal"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ Portionen · %2$lld kcal"
           }
         }
       }

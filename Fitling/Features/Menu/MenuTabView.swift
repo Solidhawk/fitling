@@ -144,6 +144,12 @@ struct MenuTabView: View {
         }
     }
 
+    /// "1 portie" but "1,5 porties": the servings come as formatted text, so the plural is chosen here.
+    private func detail(servings: Double, kcal: Int) -> Text {
+        let amount = servings.formatted(.number.precision(.fractionLength(0...2)))
+        return servings <= 1 ? Text("menu.entry.detail.one \(amount) \(kcal)") : Text("menu.entry.detail.other \(amount) \(kcal)")
+    }
+
     private func entryRow(_ entry: MealPlanEntry) -> some View {
         let recipe = viewModel.recipe(of: entry)
         return Button {
@@ -157,7 +163,7 @@ struct MenuTabView: View {
                         .foregroundStyle(Color.inkSoft)
                     Text(verbatim: recipe?.title.text(preferring: languages) ?? "")
                         .foregroundStyle(Color.ink)
-                    Text("menu.entry.detail \(entry.servings.formatted(.number.precision(.fractionLength(0...2)))) \(Int(((recipe?.kcalPerServing ?? 0) * entry.servings).rounded()))")
+                    detail(servings: entry.servings, kcal: Int(((recipe?.kcalPerServing ?? 0) * entry.servings).rounded()))
                         .font(.footnote)
                         .monospacedDigit()
                         .foregroundStyle(Color.inkSoft)
