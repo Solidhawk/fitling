@@ -137,12 +137,20 @@ private struct TargetBuildUp: View {
     /// A step as wide as its share of the largest number, so the steps rise towards the target.
     /// At the accessibility sizes every step takes the full width.
     private func step(_ key: LocalizedStringKey, kcal: Double, share: Double) -> some View {
-        StepWidth(fraction: dynamicTypeSize.isAccessibilitySize ? 1 : max(share, 0.62)) {
-            labelled(Text(key), value: Text(energy(kcal)), valueFont: .title3.weight(.heavy))
-                .padding(.horizontal, Spacing.l)
-                .padding(.vertical, Spacing.s)
-                .frame(maxWidth: .infinity, minHeight: Radius.ribbon * 2, alignment: .leading)
-                .background(Color.track, in: RoundedRectangle(cornerRadius: Radius.ribbon, style: .continuous))
+        // The name above the number: a narrow step has room for both that way.
+        StepWidth(fraction: dynamicTypeSize.isAccessibilitySize ? 1 : max(share, 0.5)) {
+            VStack(alignment: .leading, spacing: Spacing.xs) {
+                Text(key)
+                    .font(.footnote.weight(.bold))
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(energy(kcal))
+                    .font(.title3.weight(.heavy))
+                    .monospacedDigit()
+            }
+            .padding(.horizontal, Spacing.l)
+            .padding(.vertical, Spacing.s)
+            .frame(maxWidth: .infinity, minHeight: Radius.ribbon * 2, alignment: .leading)
+            .background(Color.track, in: RoundedRectangle(cornerRadius: Radius.ribbon, style: .continuous))
         }
         .accessibilityElement(children: .combine)
     }

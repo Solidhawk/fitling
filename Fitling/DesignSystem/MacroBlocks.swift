@@ -15,6 +15,7 @@ struct MacroBlock: View {
     let titleKey: LocalizedStringKey
     let content: Content
     let fill: Color
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     private var fraction: Double {
         switch content {
@@ -25,8 +26,12 @@ struct MacroBlock: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.xs) {
+            // In a third of the width "Koolhydraten" shrinks a little rather than break mid-word;
+            // stacked at the accessibility sizes it has the full width.
             Text(titleKey)
                 .font(.subheadline.weight(.bold))
+                .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
+                .minimumScaleFactor(0.75)
             Spacer(minLength: Spacing.s)
             switch content {
             case let .progress(eaten, target):
@@ -44,10 +49,8 @@ struct MacroBlock: View {
             }
         }
         .foregroundStyle(Color.onRibbon)
-        .lineLimit(nil)
-        .fixedSize(horizontal: false, vertical: true)
         .padding(Spacing.m)
-        .frame(maxWidth: .infinity, minHeight: 112, alignment: .topLeading)
+        .frame(maxWidth: .infinity, minHeight: 112, maxHeight: .infinity, alignment: .topLeading)
         .background {
             GeometryReader { proxy in
                 ZStack(alignment: .bottom) {
@@ -83,6 +86,8 @@ struct MacroBlocks: View {
             MacroBlock(titleKey: "targets.carbs", content: carbs, fill: Color.carbs)
             MacroBlock(titleKey: "targets.fat", content: fat, fill: Color.fat)
         }
+        // Side by side the three blocks take the height of the tallest one.
+        .fixedSize(horizontal: false, vertical: true)
     }
 }
 
