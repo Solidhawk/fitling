@@ -13096,19 +13096,19 @@
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Al vier trainingen geen vooruitgang. Probeer eens %@."
+            "value": "Al vier trainingen geen vooruitgang. Een andere oefening om te proberen: %@."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "No progress for four workouts. Try %@ for a change."
+            "value": "No progress for four workouts. Another exercise to try: %@."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Seit vier Trainings kein Fortschritt. Probier mal %@."
+            "value": "Seit vier Trainings kein Fortschritt. Eine andere Übung zum Ausprobieren: %@."
           }
         }
       }

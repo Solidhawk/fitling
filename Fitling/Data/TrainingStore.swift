@@ -366,8 +366,15 @@ struct TrainingStore {
         let since = today.adding(-Self.coachDays)
         let candidates = workoutCandidates()
         var notes: [CoachNote] = []
-        for (exerciseID, _) in lastDoneDays().filter({ $0.value >= since }).sorted(by: { $0.value > $1.value }) {
-            guard notes.count < limit, let exercise = exercise(exerciseID) else { continue }
+        // Most recent first; exercises of the same day by name, so the list keeps its order.
+        let recent = lastDoneDays().filter { $0.value >= since }.compactMap { id, day in exercise(id).map { (exercise: $0, day: day) } }
+        let ordered = recent.sorted { first, second in
+            if first.day != second.day { return first.day > second.day }
+            return first.exercise.name.text(preferring: [language]).localizedStandardCompare(second.exercise.name.text(preferring: [language])) == .orderedAscending
+        }
+        for (exercise, _) in ordered {
+            guard notes.count < limit else { break }
+            let exerciseID = exercise.id
             let history = history(of: exerciseID)
             if ProgressionEngine.isStalled(history: history),
                let candidate = candidates.first(where: { $0.id == exerciseID }),
