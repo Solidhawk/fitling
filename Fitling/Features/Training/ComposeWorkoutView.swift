@@ -17,7 +17,7 @@ struct ComposeWorkoutView: View {
                         ForEach(TrainingFocus.allCases, id: \.self) { focus in
                             VStack(alignment: .leading, spacing: Spacing.xs) {
                                 Text(focus.titleResource)
-                                Text(verbatim: focus.muscles.map(\.displayName).formatted(.list(type: .and)))
+                                Text(verbatim: focus.muscleList)
                                     .font(.footnote)
                                     .foregroundStyle(Color.inkSoft)
                             }
@@ -79,6 +79,13 @@ struct ComposeWorkoutView: View {
 }
 
 extension TrainingFocus {
+    /// "Borst, rug, schouders, biceps en triceps": the muscle names are titles on their own, so in a
+    /// sentence only the first keeps its capital.
+    var muscleList: String {
+        let list = muscles.map { $0.displayName.lowercased(with: .current) }.formatted(.list(type: .and))
+        return list.prefix(1).uppercased(with: .current) + list.dropFirst()
+    }
+
     var titleResource: LocalizedStringResource {
         switch self {
         case .fullBody: "training.focus.fullBody"
