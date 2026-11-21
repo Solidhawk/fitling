@@ -145,6 +145,45 @@ struct MenuFixture {
         #expect(try fixture.context.fetchCount(FetchDescriptor<FoodEntry>()) == 1)
     }
 
+    // MARK: Menu generator (feedback 2026-11-21: days, goal, what not to eat, adjust per day)
+
+    @Test func aMenuCanCoverFewerDays() {
+        fixture.store.generate(seed: 1, options: MenuOptions(days: 5))
+        let days = Set(fixture.store.entries().map(\.plannedOn))
+        #expect(days == Set((0..<5).map { fixture.today.adding($0).isoString }))
+    }
+
+    @Test func aMenuForAnotherGoalUsesThatGoalsTarget() throws {
+        var losing = try #require(fixture.profile.bodyProfile)
+        losing.goal = .lose
+        #expect(fixture.store.targets(for: .lose) == NutritionEngine.plan(for: losing, on: fixture.today).targets)
+        #expect(fixture.store.targets(for: nil) == fixture.context.targets(on: fixture.today, for: fixture.profile))
+        #expect(fixture.store.targets(for: .lose).kcal < fixture.store.targets(for: .buildMuscle).kcal)
+    }
+
+    @Test func renewingOneDayKeepsTheOtherDays() {
+        fixture.store.generate(seed: 1)
+        let before = fixture.store.entries()
+        let day = fixture.today.isoString
+        let others = Set(before.filter { $0.plannedOn != day }.map(\.id))
+
+        fixture.store.renew(fixture.today, seed: 99, goal: nil)
+        let after = fixture.store.entries()
+        #expect(Set(after.filter { $0.plannedOn != day }.map(\.id)) == others)
+        let renewed = after.filter { $0.plannedOn == day }
+        #expect(renewed.count == fixture.store.preferences().mealSlots.count)
+        #expect(renewed.allSatisfy { entry in !before.contains { $0.id == entry.id } })
+    }
+
+    @Test func theLastMenuChoicesAreRemembered() {
+        let first = MenuViewModel(profile: fixture.profile, context: fixture.context, defaults: fixture.defaults, timeZone: .gmt, now: { [now = fixture.now] in now }, seed: { 1 })
+        #expect(first.options == MenuOptions())
+        first.generate(MenuOptions(days: 4, goal: .lose))
+        let again = MenuViewModel(profile: fixture.profile, context: fixture.context, defaults: fixture.defaults, timeZone: .gmt, now: { [now = fixture.now] in now }, seed: { 1 })
+        #expect(again.options == MenuOptions(days: 4, goal: .lose))
+        #expect(Set(again.entries.map(\.plannedOn)).count == 4)
+    }
+
     @Test func loggedMealsStayInANewMenu() throws {
         fixture.store.generate(seed: 1)
         let entry = try #require(fixture.store.entries().first)
