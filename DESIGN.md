@@ -118,7 +118,7 @@ components:
     textColor: "{colors.ink}"
     rounded: "{rounded.card}"
     padding: "16px"
-  macro-ribbon:
+  macro-block:
     textColor: "{colors.on-ribbon}"
     rounded: "{rounded.ribbon}"
     padding: "8px 16px"
@@ -219,13 +219,15 @@ The page margin is 16 pt (`spacing.l`) on all scrolling content and bottom bars.
 
 - **Welcome:** title and tagline, then the catalog of sixteen partners as a grid of tiles, four in a row (two at accessibility sizes). The sign-in actions (Apple, Google, e-mail) are pinned at the bottom in a ground-coloured safe-area inset, 12 pt apart.
 - **Onboarding:** one inline-titled list step per screen on the ground. A bottom bar holds the progress pills (one 8 pt capsule per step, 4 pt apart) above the full-width primary button. Steps after consent are pushed, so the back button and edge swipe work.
-- **Profile (daily target):** large title, the targets card in the first section header, extended outward by 16 pt so it lines up with the list rows, then calculation rows and an Account row. "Adjust" sits in the toolbar as a menu.
+- **Today:** large title with day arrows, the day card in the first section, then water and one section per meal.
+- **Profile (daily target):** large title, the build-up card in the first section header, extended outward by 16 pt so it lines up with the list rows, then the protein-per-kg row and an Account row. "Adjust" sits in the toolbar as a menu.
 - Forms and lists hide the system grouped background and use the ground. Rows sit on `card`.
 
 ### Accessibility sizes
 At accessibility text sizes (`dynamicTypeSize.isAccessibilitySize`):
 - The welcome catalog becomes a single column, and the sign-in actions move from the pinned bottom inset into the scroll view below the catalog. Pinned, they would cover most of the screen.
-- Macro ribbons stack: the grams move under the macro name instead of being squeezed beside it.
+- Macro blocks stack into one column, and the steps of the build-up card take the full width.
+- On the day card the partner goes above the number instead of beside it.
 - The Sign in with Apple button scales with the text (`@ScaledMetric` relative to `.headline`, from 54 pt) and stops at 80 pt (`ButtonMetrics.largestHeight`). Its label is drawn by the system.
 
 ## Elevation & Depth
@@ -264,8 +266,10 @@ A heavy label on a capsule of ribbon colour.
 ### Cards / Containers
 - **Partner hero (partner tab):** the species tint, 24 pt corners, 16 pt padding: the moving partner at 200 × 200 pt, the name plate, one line on how it is doing and why, and the level ribbon (level in Heavy, XP towards the next level as an `ink` bar on a `card` track).
 - **Figure tile (welcome catalog):** the partner, square, on its species tint with 14 pt corners and 4 pt padding. VoiceOver reads its name, with its line of character as the hint.
-- **Targets card:** `card` fill, 24 pt corners, 16 pt padding, card lift shadow. From top to bottom: an in-card name plate, the kcal target in Numeral Large, then three macro ribbons 12 pt apart.
-- **Macro ribbon:** full-width, 44 pt minimum height, 22 pt corners, 16 × 8 pt padding. Macro fill with `on-ribbon` lettering: the name in Label Small and the grams in Numeral, on one baseline. They stack at accessibility sizes. In phase 2 the ribbons will fill up as the day is logged.
+- **Day card (Today):** the partner's species tint (`card` without a partner), 24 pt corners, 16 pt padding, card lift shadow. The moving partner at 112 × 112 pt beside its name plate (no edge), the kcal still to go in Heavy rounded at 52 pt (scaled with the text) with "kcal to go" or "kcal over your target" under it and "x of y eaten" in footnote, then the partner's line on how it is doing, then the three macro blocks. It replaced a ring with three bars, which looked like every food app (user, 2026-11-21).
+- **Build-up card (Daily target):** `card` fill, 24 pt corners, card lift shadow. The calculation as steps that rise towards the target: resting metabolism and total expenditure as `track` steps (name in footnote Bold above the kcal in Numeral), each as wide as its share of the largest number (at least half), with the factor between them as an `ink-soft` line with a turn-down arrow; then the target as a full `ink` step with `card` lettering and the kcal in `.title` Heavy. Below it the three macro blocks with grams and share of the kcal.
+- **Targets card (onboarding result):** `card` fill, 24 pt corners, 16 pt padding, card lift shadow: an in-card name plate, the kcal target in Numeral Large, then the three macro blocks.
+- **Macro block:** a third of the width, at least 112 pt high, 22 pt corners, 12 pt padding; the three in a row take the height of the tallest. Macro fill with `on-ribbon` lettering: the name in Label Small on one line (shrinks to 75 % before it breaks), then the number in `.title2` Heavy and a footnote line. On the day the block fills from the bottom over a pale tint of its colour on white ("0" / "of 128 g"); as a target it is full ("128 g" / "19% of your kcal", from `NutritionEngine.kcalShares`).
 - **List rows:** `card` on the ground, the system inset-grouped shape.
 
 ### Inputs / Fields
