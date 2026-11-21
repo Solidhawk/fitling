@@ -124,12 +124,13 @@ public enum OfferMatcher {
     }
 
     /// What the list costs per shop, counting only usable matches, and how many items each shop
-    /// has no price for. Fewest missing items first, then cheapest.
+    /// has no price for. A shop without a single price has no total. Fewest missing items first, then cheapest.
     public static func storeTotals(itemIDs: [UUID], matches: [OfferMatch], confirmedOfferIDs: Set<UUID>) -> [StoreTotal] {
         Set(matches.map(\.supermarketID))
-            .map { store in
+            .compactMap { store -> StoreTotal? in
                 let cheapest = cheapestPerItem(matches.filter { $0.supermarketID == store }, confirmedOfferIDs: confirmedOfferIDs)
                 let priced = itemIDs.compactMap { cheapest[$0]?.priceCents }
+                guard !priced.isEmpty else { return nil }
                 return StoreTotal(supermarketID: store, totalCents: priced.reduce(0, +), itemsWithoutPrice: itemIDs.count - priced.count)
             }
             .sorted { ($0.itemsWithoutPrice, $0.totalCents, $0.supermarketID) < ($1.itemsWithoutPrice, $1.totalCents, $1.supermarketID) }

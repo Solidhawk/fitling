@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "recipes": [
     {
       "id": "d27119e1-3945-5219-9748-6e9b40746f99",
@@ -1503,8 +1503,8 @@
             "en": "Tomato",
             "de": "Tomate"
           },
-          "quantity": 1,
-          "unit": "piece",
+          "quantity": 120,
+          "unit": "g",
           "grams": 120,
           "aisle": "produce",
           "fdcId": 170457
@@ -1646,8 +1646,8 @@
             "en": "Cucumber",
             "de": "Gurke"
           },
-          "quantity": 1,
-          "unit": "piece",
+          "quantity": 300,
+          "unit": "g",
           "grams": 300,
           "aisle": "produce",
           "fdcId": 168409

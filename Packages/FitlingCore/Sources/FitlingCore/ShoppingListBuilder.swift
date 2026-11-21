@@ -51,34 +51,43 @@ public struct ShoppingLine: Sendable, Equatable {
 public enum ShoppingListBuilder {
     /// The order of a walk through the shop; the values of `shopping_items.aisle`.
     public static let aisleOrder = ["produce", "bakery", "meat_fish", "dairy", "frozen", "pantry", "drinks", "household", "other"]
+    public static let teaspoonsPerTablespoon = 3.0
 
-    /// One line per product and unit, with the quantities of the whole menu added up, in the
-    /// order of the shop.
+    /// One line per product and kind of unit (weight, volume, pieces, spoons), with the quantities of
+    /// the whole menu added up, in the order of the shop.
     public static func lines(for uses: [PlannedRecipeUse]) -> [ShoppingLine] {
         var order: [String] = []
         var lines: [String: ShoppingLine] = [:]
+        var inTablespoons: Set<String> = []
         for use in uses where use.recipeServings > 0 && use.plannedServings > 0 {
             let factor = use.plannedServings / Double(use.recipeServings)
             for ingredient in use.ingredients where ingredient.quantity > 0 {
-                // The same product in another unit is another line: grams and pieces do not add up.
+                // The same product in another unit is another line: grams and pieces do not add up. Spoons do,
+                // counted in teaspoons and shown in tablespoons when a recipe asks for those.
+                let isSpoon = ingredient.unit == "tbsp" || ingredient.unit == "tsp"
                 let identity = ingredient.productID?.uuidString ?? normalized(ingredient.name)
-                let key = identity + "|" + ingredient.unit
+                let key = identity + "|" + (isSpoon ? "spoon" : ingredient.unit)
                 if lines[key] == nil {
                     order.append(key)
                     lines[key] = ShoppingLine(
                         productID: ingredient.productID, name: ingredient.name.trimmingCharacters(in: .whitespaces),
-                        quantity: 0, unit: ingredient.unit, aisle: ingredient.aisle
+                        quantity: 0, unit: isSpoon ? "tsp" : ingredient.unit, aisle: ingredient.aisle
                     )
                 }
-                lines[key]?.quantity += ingredient.quantity * factor
+                let perUnit = ingredient.unit == "tbsp" ? teaspoonsPerTablespoon : 1
+                lines[key]?.quantity += ingredient.quantity * factor * perUnit
+                if ingredient.unit == "tbsp" { inTablespoons.insert(key) }
             }
         }
         return order
-            .compactMap { lines[$0] }
-            .map { line in
-                var rounded = line
-                rounded.quantity = roundedUp(line.quantity, unit: line.unit)
-                return rounded
+            .compactMap { key -> ShoppingLine? in
+                guard var line = lines[key] else { return nil }
+                if inTablespoons.contains(key) {
+                    line.quantity /= teaspoonsPerTablespoon
+                    line.unit = "tbsp"
+                }
+                line.quantity = roundedUp(line.quantity, unit: line.unit)
+                return line
             }
             .sorted { sortKey($0) < sortKey($1) }
     }

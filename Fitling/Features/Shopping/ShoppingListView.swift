@@ -185,17 +185,17 @@ struct ShoppingListView: View {
                 }
                 .accessibilityElement(children: .combine)
             }
-            ForEach(Array(viewModel.uncertain.prefix(5).enumerated()), id: \.offset) { pair in
-                let match = pair.element
-                if let offer = viewModel.store.offer(match.offerID), let item = viewModel.items.first(where: { $0.id == match.itemID }) {
-                    HStack {
-                        VStack(alignment: .leading, spacing: Spacing.xs) {
-                            Text("shopping.uncertain \(offer.title) \(item.name)").font(.footnote)
-                        }
-                        Spacer()
-                        Button("shopping.confirm") { viewModel.confirm(match) }
-                            .buttonStyle(.borderless)
+            ForEach(viewModel.questions.prefix(5)) { question in
+                HStack {
+                    VStack(alignment: .leading, spacing: Spacing.xs) {
+                        Text("shopping.uncertain \(question.offerTitle) \(question.itemName)").font(.footnote)
+                        Text("shopping.uncertain.shops \(question.supermarketIDs.map(viewModel.supermarketName).formatted(.list(type: .and)))")
+                            .font(.caption)
+                            .foregroundStyle(Color.inkSoft)
                     }
+                    Spacer()
+                    Button("shopping.confirm") { viewModel.confirm(question) }
+                        .buttonStyle(.borderless)
                 }
             }
             Button {

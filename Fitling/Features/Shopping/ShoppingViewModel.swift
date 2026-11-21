@@ -9,6 +9,18 @@ struct ShoppingServices {
     let offers: any OfferSource
 }
 
+/// A possible offer the user can say is right: asked once per item name and offer title, with the shops
+/// that have that offer. Saying yes confirms the offer in each of them.
+struct OfferQuestion: Identifiable, Equatable {
+    let itemName: String
+    let offerTitle: String
+    /// By shop name.
+    let supermarketIDs: [String]
+    let offerIDs: Set<UUID>
+
+    var id: String { itemName.lowercased() + "|" + offerTitle }
+}
+
 /// The shopping list: items in the order of the shop, what the menu needs, sharing with an
 /// invitation code, and the offers of the favourite supermarkets.
 @Observable
@@ -19,7 +31,7 @@ final class ShoppingViewModel {
     private(set) var members: [ShoppingListMember] = []
     private(set) var cheapest: [UUID: OfferMatch] = [:]
     private(set) var totals: [StoreTotal] = []
-    private(set) var uncertain: [OfferMatch] = []
+    private(set) var questions: [OfferQuestion] = []
     private(set) var inviteCode: String?
     private(set) var sharingProblem: SharingError?
 
@@ -69,9 +81,32 @@ final class ShoppingViewModel {
         let summary = store.offerSummary(for: list, confirmed: confirmed)
         cheapest = summary.perItem
         totals = summary.totals
-        let accepted = summary.perItem
-        let alreadyConfirmed = self.confirmed
-        uncertain = summary.matches.filter { $0.confidence == .uncertain && !alreadyConfirmed.contains($0.offerID) && accepted[$0.itemID] == nil }
+        questions = questions(from: summary.matches, titles: summary.titles, accepted: summary.perItem)
+    }
+
+    /// Uncertain matches for items without a price yet, grouped by item name and offer title in the order the
+    /// matcher ranked them.
+    private func questions(from matches: [OfferMatch], titles: [UUID: String], accepted: [UUID: OfferMatch]) -> [OfferQuestion] {
+        let alreadyConfirmed = confirmed
+        let names = Dictionary(uniqueKeysWithValues: items.map { ($0.id, $0.name) })
+        let shopNames = Dictionary(uniqueKeysWithValues: store.supermarkets().map { ($0.id, $0.name) })
+        var order: [String] = []
+        var groups: [String: (itemName: String, title: String, shops: Set<String>, offers: Set<UUID>)] = [:]
+        for match in matches where match.confidence == .uncertain && !alreadyConfirmed.contains(match.offerID) && accepted[match.itemID] == nil {
+            guard let itemName = names[match.itemID], let title = titles[match.offerID] else { continue }
+            let key = itemName.lowercased() + "|" + title
+            if groups[key] == nil {
+                order.append(key)
+                groups[key] = (itemName, title, [], [])
+            }
+            groups[key]?.shops.insert(match.supermarketID)
+            groups[key]?.offers.insert(match.offerID)
+        }
+        return order.compactMap { key in
+            guard let group = groups[key] else { return nil }
+            let shops = group.shops.sorted { (shopNames[$0] ?? $0).localizedStandardCompare(shopNames[$1] ?? $1) == .orderedAscending }
+            return OfferQuestion(itemName: group.itemName, offerTitle: group.title, supermarketIDs: shops, offerIDs: group.offers)
+        }
     }
 
     /// Sends and fetches the list, then the members and the offers.
@@ -148,9 +183,9 @@ final class ShoppingViewModel {
         reload()
     }
 
-    func confirm(_ match: OfferMatch) {
+    func confirm(_ question: OfferQuestion) {
         var ids = confirmed
-        ids.insert(match.offerID)
+        ids.formUnion(question.offerIDs)
         defaults.set(ids.map(\.uuidString).sorted(), forKey: confirmedKey)
         reload()
     }

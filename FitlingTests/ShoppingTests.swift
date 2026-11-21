@@ -178,6 +178,32 @@ func manyOffers(_ count: Int, in shop: String, today: Day) -> [OfferRecord] {
         #expect(totals["proefsuper"]?.itemsWithoutPrice == 2)
     }
 
+    /// Two shops with the same possible offer for an item that is on the list twice: one question, with both
+    /// shops, and one answer for all of it (UNFORGET S24).
+    @Test func aPossibleOfferIsAskedOnceWithTheShopsThatHaveIt() async throws {
+        fixture.offers.offerRecords = FakeOfferSource.sample(today: fixture.menu.today)
+        let viewModel = fixture.viewModel()
+        viewModel.reload()
+        viewModel.add("Tomaat")
+        viewModel.add("Tomaat")
+        await viewModel.setFavorite("testmarkt", true)
+        await viewModel.setFavorite("proefsuper", true)
+
+        let question = try #require(viewModel.questions.first)
+        #expect(viewModel.questions.count == 1)
+        #expect(question.itemName == "Tomaat")
+        #expect(question.offerTitle == "Tomatenblokjes 400 g")
+        #expect(question.supermarketIDs == ["proefsuper", "testmarkt"])
+        #expect(viewModel.totals.isEmpty)
+
+        viewModel.confirm(question)
+        #expect(viewModel.questions.isEmpty)
+        let tomatoes = viewModel.items.filter { $0.name == "Tomaat" }
+        #expect(tomatoes.count == 2)
+        #expect(tomatoes.allSatisfy { viewModel.cheapest[$0.id]?.priceCents == 69 })
+        #expect(viewModel.totals.map(\.supermarketID).sorted() == ["proefsuper", "testmarkt"])
+    }
+
     @Test func offersOfOtherShopsAreIgnored() async {
         fixture.offers.offerRecords = FakeOfferSource.sample(today: fixture.menu.today)
         let viewModel = fixture.viewModel()

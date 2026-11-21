@@ -9135,6 +9135,28 @@
         }
       }
     },
+    "shopping.uncertain.shops %@": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bij %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "At %@"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bei %@"
+          }
+        }
+      }
+    },
     "shopping.withoutPrice %lld": {
       "localizations": {
         "nl": {

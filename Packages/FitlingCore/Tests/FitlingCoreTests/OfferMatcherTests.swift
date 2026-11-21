@@ -158,6 +158,17 @@ import Testing
             StoreTotal(supermarketID: "jumbo", totalCents: 328, itemsWithoutPrice: 0),
         ])
     }
+
+    /// A total of € 0,00 for a shop with only possible offers says nothing (UNFORGET S24).
+    @Test func aShopWithOnlyPossibleOffersGetsNoTotal() {
+        let items = [item(1, "Tomaat"), item(2, "Brood")]
+        let offers = [offer(11, "Tomatenblokjes", cents: 79), offer(12, "Tomatenblokjes", store: "jumbo", cents: 69)]
+        let result = OfferMatcher.matches(items: items, offers: offers, on: today)
+        #expect(OfferMatcher.storeTotals(itemIDs: items.map(\.id), matches: result, confirmedOfferIDs: []).isEmpty)
+        #expect(OfferMatcher.storeTotals(itemIDs: items.map(\.id), matches: result, confirmedOfferIDs: [Self.id(12)]) == [
+            StoreTotal(supermarketID: "jumbo", totalCents: 69, itemsWithoutPrice: 1),
+        ])
+    }
 }
 
 @Suite struct SyncRulesTests {
