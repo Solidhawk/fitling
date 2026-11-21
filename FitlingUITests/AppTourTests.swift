@@ -142,8 +142,12 @@ final class AppTourTests: XCTestCase {
             _ = app.navigationBars["Menu"].waitForExistence(timeout: 5)
             shot("menu-leeg")
             if tap(app.buttons["menu.generate.first"], "weekmenu maken") {
-                sleep(2)
-                shot("weekmenu")
+                sleep(1)
+                shot("menu-maken")
+                if tap(app.buttons["menu.generator.make"], "menu maken") {
+                    sleep(2)
+                    shot("weekmenu")
+                }
             }
             if tap(button(containing: "Voorkeuren"), "voorkeuren") {
                 sleep(1)

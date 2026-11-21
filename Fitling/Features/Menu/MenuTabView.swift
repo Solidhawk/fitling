@@ -14,6 +14,7 @@ struct MenuTabView: View {
     @State private var path: [MenuRoute] = []
     @State private var swapping: MealPlanEntry?
     @State private var editingPreferences = false
+    @State private var generating = false
     private let sync: SyncEngine
     private let profile: UserProfile
     private let shopping: ShoppingServices
@@ -32,7 +33,7 @@ struct MenuTabView: View {
                 if viewModel.entries.isEmpty {
                     Section {
                         Text("menu.empty").footerStyle()
-                        Button("menu.generate") { viewModel.generate() }
+                        Button("menu.generate") { generating = true }
                             .buttonStyle(PrimaryButtonStyle())
                             .buttonRow()
                             .accessibilityIdentifier("menu.generate.first")
@@ -53,10 +54,14 @@ struct MenuTabView: View {
                             entryRow(entry)
                         }
                     } header: {
-                        Text(group.day.startDate, format: .dateTime.weekday(.wide).day().month(.wide))
-                            .font(.headline.weight(.heavy))
-                            .foregroundStyle(Color.ink)
-                            .textCase(nil)
+                        // The date keeps one line: when the button's text does not fit beside it,
+                        // only its icon is shown (VoiceOver still reads the label).
+                        ViewThatFits(in: .horizontal) {
+                            dayHeader(group.day, label: .titleAndIcon)
+                            dayHeader(group.day, label: .iconOnly)
+                        }
+                        .foregroundStyle(Color.ink)
+                        .textCase(nil)
                     }
                     .listRowBackground(Color.card)
                 }
@@ -85,7 +90,7 @@ struct MenuTabView: View {
                 }
                 if !viewModel.entries.isEmpty {
                     ToolbarItem(placement: .topBarTrailing) {
-                        Button("menu.regenerate") { viewModel.generate() }
+                        Button("menu.regenerate") { generating = true }
                             .accessibilityIdentifier("menu.generate")
                     }
                 }
@@ -111,10 +116,38 @@ struct MenuTabView: View {
                     viewModel.swap(entry, to: recipe)
                 }
             }
+            .sheet(isPresented: $generating, onDismiss: { Task { await sync.sync() } }) {
+                MenuGeneratorView(viewModel: viewModel)
+            }
             .sheet(isPresented: $editingPreferences, onDismiss: { Task { await sync.sync() } }) {
                 MenuPreferencesView(store: viewModel.store)
             }
         }
+    }
+
+    /// A day's date and the button for other meals on that day only; pinned and logged meals stay.
+    private func dayHeader<Style: LabelStyle>(_ day: Day, label style: Style) -> some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text(day.startDate, format: .dateTime.weekday(.wide).day().month(.wide))
+                .font(.headline.weight(.heavy))
+                .fixedSize()
+            Spacer(minLength: Spacing.s)
+            Button {
+                viewModel.renew(day)
+            } label: {
+                Label("menu.day.renew", systemImage: "arrow.triangle.2.circlepath")
+                    .font(.footnote.weight(.bold))
+                    .labelStyle(style)
+                    .fixedSize()
+            }
+            .accessibilityIdentifier("menu.day.renew.\(day.isoString)")
+        }
+    }
+
+    /// "1 portie" but "1,5 porties": the servings come as formatted text, so the plural is chosen here.
+    private func detail(servings: Double, kcal: Int) -> Text {
+        let amount = servings.formatted(.number.precision(.fractionLength(0...2)))
+        return servings <= 1 ? Text("menu.entry.detail.one \(amount) \(kcal)") : Text("menu.entry.detail.other \(amount) \(kcal)")
     }
 
     private func entryRow(_ entry: MealPlanEntry) -> some View {
@@ -130,7 +163,7 @@ struct MenuTabView: View {
                         .foregroundStyle(Color.inkSoft)
                     Text(verbatim: recipe?.title.text(preferring: languages) ?? "")
                         .foregroundStyle(Color.ink)
-                    Text("menu.entry.detail \(entry.servings.formatted(.number.precision(.fractionLength(0...2)))) \(Int(((recipe?.kcalPerServing ?? 0) * entry.servings).rounded()))")
+                    detail(servings: entry.servings, kcal: Int(((recipe?.kcalPerServing ?? 0) * entry.servings).rounded()))
                         .font(.footnote)
                         .monospacedDigit()
                         .foregroundStyle(Color.inkSoft)

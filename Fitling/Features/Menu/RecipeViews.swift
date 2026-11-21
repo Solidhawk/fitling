@@ -281,9 +281,6 @@ struct MenuPreferencesView: View {
     @State private var preferences: MenuPreferences?
     @Environment(\.dismiss) private var dismiss
 
-    static let tags = ["meat", "fish", "dairy", "egg", "gluten", "nuts", "soy", "sesame"]
-    static let cookLimits: [Int?] = [nil, 15, 30, 45, 60]
-
     init(store: MenuStore) {
         self.store = store
     }
@@ -292,59 +289,7 @@ struct MenuPreferencesView: View {
         NavigationStack {
             List {
                 if let preferences {
-                    Section("menu.prefs.meals") {
-                        ForEach(MealSlot.allCases, id: \.self) { slot in
-                            Toggle(slot.titleKey, isOn: Binding(
-                                get: { preferences.mealSlots.contains(slot.rawValue) },
-                                set: { isOn in
-                                    var slots = Set(preferences.mealSlots)
-                                    if isOn { slots.insert(slot.rawValue) } else if slots.count > 1 { slots.remove(slot.rawValue) }
-                                    preferences.mealSlots = MealSlot.allCases.map(\.rawValue).filter(slots.contains)
-                                    store.save(preferences)
-                                }
-                            ))
-                            .tint(Color.sprout)
-                        }
-                    }
-                    .listRowBackground(Color.card)
-                    Section {
-                        ForEach(Self.tags, id: \.self) { tag in
-                            Toggle(tagKey(tag), isOn: Binding(
-                                get: { preferences.excludedTags.contains(tag) },
-                                set: { isOn in
-                                    preferences.excludedTags = Self.tags.filter { $0 == tag ? isOn : preferences.excludedTags.contains($0) }
-                                    store.save(preferences)
-                                }
-                            ))
-                            .tint(Color.sprout)
-                        }
-                    } header: {
-                        Text("menu.prefs.without")
-                    }
-                    .listRowBackground(Color.card)
-                    Section {
-                        Picker("menu.prefs.cookTime", selection: Binding(
-                            get: { preferences.maxCookMinutes },
-                            set: { preferences.maxCookMinutes = $0; store.save(preferences) }
-                        )) {
-                            ForEach(Self.cookLimits, id: \.self) { limit in
-                                if let limit {
-                                    Text("menu.prefs.minutes \(limit)").tag(Int?.some(limit))
-                                } else {
-                                    Text("menu.prefs.noLimit").tag(Int?.none)
-                                }
-                            }
-                        }
-                        .tint(Color.ink)
-                        Toggle("menu.prefs.mealPrep", isOn: Binding(
-                            get: { preferences.mealPrep },
-                            set: { preferences.mealPrep = $0; store.save(preferences) }
-                        ))
-                        .tint(Color.sprout)
-                    } footer: {
-                        Text("menu.prefs.mealPrep.footer").footerStyle()
-                    }
-                    .listRowBackground(Color.card)
+                    MenuPreferenceSections(store: store, preferences: preferences)
                 }
             }
             .foregroundStyle(Color.ink)
@@ -358,6 +303,72 @@ struct MenuPreferencesView: View {
             }
             .onAppear { preferences = store.preferences() }
         }
+    }
+}
+
+/// The menu preferences as list sections: which meals, what to leave out, cooking time and meal
+/// prep. Shared by the preferences sheet and the menu generator; every change is saved at once.
+struct MenuPreferenceSections: View {
+    let store: MenuStore
+    let preferences: MenuPreferences
+
+    static let tags = ["meat", "fish", "dairy", "egg", "gluten", "nuts", "soy", "sesame"]
+    static let cookLimits: [Int?] = [nil, 15, 30, 45, 60]
+
+    var body: some View {
+        Section("menu.prefs.meals") {
+            ForEach(MealSlot.allCases, id: \.self) { slot in
+                Toggle(slot.titleKey, isOn: Binding(
+                    get: { preferences.mealSlots.contains(slot.rawValue) },
+                    set: { isOn in
+                        var slots = Set(preferences.mealSlots)
+                        if isOn { slots.insert(slot.rawValue) } else if slots.count > 1 { slots.remove(slot.rawValue) }
+                        preferences.mealSlots = MealSlot.allCases.map(\.rawValue).filter(slots.contains)
+                        store.save(preferences)
+                    }
+                ))
+                .tint(Color.sprout)
+            }
+        }
+        .listRowBackground(Color.card)
+        Section {
+            ForEach(Self.tags, id: \.self) { tag in
+                Toggle(tagKey(tag), isOn: Binding(
+                    get: { preferences.excludedTags.contains(tag) },
+                    set: { isOn in
+                        preferences.excludedTags = Self.tags.filter { $0 == tag ? isOn : preferences.excludedTags.contains($0) }
+                        store.save(preferences)
+                    }
+                ))
+                .tint(Color.sprout)
+            }
+        } header: {
+            Text("menu.prefs.without")
+        }
+        .listRowBackground(Color.card)
+        Section {
+            Picker("menu.prefs.cookTime", selection: Binding(
+                get: { preferences.maxCookMinutes },
+                set: { preferences.maxCookMinutes = $0; store.save(preferences) }
+            )) {
+                ForEach(Self.cookLimits, id: \.self) { limit in
+                    if let limit {
+                        Text("menu.prefs.minutes \(limit)").tag(Int?.some(limit))
+                    } else {
+                        Text("menu.prefs.noLimit").tag(Int?.none)
+                    }
+                }
+            }
+            .tint(Color.ink)
+            Toggle("menu.prefs.mealPrep", isOn: Binding(
+                get: { preferences.mealPrep },
+                set: { preferences.mealPrep = $0; store.save(preferences) }
+            ))
+            .tint(Color.sprout)
+        } footer: {
+            Text("menu.prefs.mealPrep.footer").footerStyle()
+        }
+        .listRowBackground(Color.card)
     }
 
     private func tagKey(_ tag: String) -> LocalizedStringKey {
