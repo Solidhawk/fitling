@@ -13,14 +13,20 @@ final class TrainingViewModel {
     private(set) var next: (program: Program, day: ProgramDay)?
     private(set) var recent: [WorkoutSession] = []
     private(set) var healthRefused = false
+    private(set) var coachNotes: [CoachNote] = []
 
     let profile: UserProfile
     let store: TrainingStore
     private let health: any HealthReading
+    private let defaults: UserDefaults
 
-    init(profile: UserProfile, context: ModelContext, health: any HealthReading, timeZone: TimeZone = .current, now: @escaping () -> Date = Date.init) {
+    init(
+        profile: UserProfile, context: ModelContext, health: any HealthReading, defaults: UserDefaults = .standard,
+        timeZone: TimeZone = .current, now: @escaping () -> Date = Date.init
+    ) {
         self.profile = profile
         self.health = health
+        self.defaults = defaults
         store = TrainingStore(context: context, userID: profile.id, timeZone: timeZone, now: now)
     }
 
@@ -34,6 +40,26 @@ final class TrainingViewModel {
         activeSession = store.activeSession()
         next = store.nextDay()
         recent = store.finishedSessions(limit: 10)
+        coachNotes = store.coachNotes()
+    }
+
+    private static let composedProgramKey = "fitling.composedProgram"
+
+    /// The exercises a workout for `focus` would have, to show before it starts.
+    func plan(for focus: TrainingFocus) -> [PlannedExercise] {
+        WorkoutBuilder.build(focus, from: store.workoutCandidates())
+    }
+
+    /// Puts the workout for `focus` in the user's composed programme and starts it.
+    func startComposed(_ focus: TrainingFocus) -> WorkoutSession {
+        let programID = defaults.string(forKey: Self.composedProgramKey).flatMap(UUID.init(uuidString:))
+        let day = store.compose(
+            plan(for: focus), into: programID,
+            programName: String(localized: "training.compose.program"), dayName: String(localized: focus.titleResource)
+        )
+        defaults.set(day.programID.uuidString, forKey: Self.composedProgramKey)
+        reload()
+        return start(day)
     }
 
     func start(_ day: ProgramDay?) -> WorkoutSession {

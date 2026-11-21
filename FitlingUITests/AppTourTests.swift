@@ -123,6 +123,11 @@ final class AppTourTests: XCTestCase {
                 shot("schema")
                 back()
             }
+            if tap(app.buttons["training.compose"], "training samenstellen") {
+                sleep(1)
+                shot("training-samenstellen")
+                closeSheet()
+            }
             for (label, name) in [("Per oefening", "per-oefening"), ("Volume per spiergroep", "volume"), ("Lichaam", "lichaam"), ("Voortgangsfoto's", "voortgangsfotos")] {
                 if tap(button(containing: label), name) {
                     sleep(1)

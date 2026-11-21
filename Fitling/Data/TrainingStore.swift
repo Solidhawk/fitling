@@ -304,4 +304,100 @@ struct TrainingStore {
         model.needsPush = true
         try? context.save()
     }
+
+    // MARK: Coach
+
+    /// How far back the coach looks for exercises to say something about.
+    static let coachDays = 28
+
+    /// Every exercise the user can do, with the day it was last done.
+    func workoutCandidates() -> [WorkoutCandidate] {
+        let lastDone = lastDoneDays()
+        return exercises().compactMap { exercise in
+            let muscles = exercise.primaryMuscles.compactMap(MuscleGroup.init(rawValue:))
+            guard !muscles.isEmpty, let kind = ExerciseKind(rawValue: exercise.kind) else { return nil }
+            return WorkoutCandidate(id: exercise.id, kind: kind, primaryMuscles: muscles, lastDone: lastDone[exercise.id])
+        }
+    }
+
+    /// Per exercise the day of the last finished workout with a working set of it.
+    private func lastDoneDays() -> [UUID: Day] {
+        var result: [UUID: Day] = [:]
+        for session in finishedSessions(limit: 200) {
+            guard let day = Day(isoString: session.performedOn) else { continue }
+            for set in sets(of: session) where !set.isWarmup {
+                if let known = result[set.exerciseID], known >= day { continue }
+                result[set.exerciseID] = day
+            }
+        }
+        return result
+    }
+
+    /// A composed workout as the one day of the user's own "composed" programme: made the first time,
+    /// refilled after, so the programmes list does not grow with every workout.
+    @discardableResult
+    func compose(_ plan: [PlannedExercise], into programID: UUID?, programName: String, dayName: String) -> ProgramDay {
+        let program: Program
+        if let programID, let existing = self.program(programID), existing.deletedAt == nil, existing.ownerID == userID {
+            program = existing
+        } else {
+            program = createProgram(named: programName, daysPerWeek: 1) { _ in dayName }
+        }
+        let day: ProgramDay
+        if let first = days(of: program).first {
+            day = first
+        } else {
+            day = ProgramDay(id: UUID(), programID: program.id, ownerID: userID, name: LocalizedText([language: dayName]), position: 0, updatedAt: now())
+            context.insert(day)
+        }
+        day.name = LocalizedText([language: dayName])
+        touch(day)
+        for item in items(of: day) { remove(item) }
+        for planned in plan {
+            guard let exercise = exercise(planned.exerciseID) else { continue }
+            add(exercise, to: day, sets: planned.sets, repRange: planned.repRange, restSeconds: planned.restSeconds)
+        }
+        return day
+    }
+
+    /// What the coach has to say about the exercises of the last weeks, most recent first: which
+    /// can go heavier, and which have stalled with another exercise for the same muscle to try.
+    func coachNotes(limit: Int = 5) -> [CoachNote] {
+        let since = today.adding(-Self.coachDays)
+        let candidates = workoutCandidates()
+        var notes: [CoachNote] = []
+        for (exerciseID, _) in lastDoneDays().filter({ $0.value >= since }).sorted(by: { $0.value > $1.value }) {
+            guard notes.count < limit, let exercise = exercise(exerciseID) else { continue }
+            let history = history(of: exerciseID)
+            if ProgressionEngine.isStalled(history: history),
+               let candidate = candidates.first(where: { $0.id == exerciseID }),
+               let other = WorkoutBuilder.alternative(to: candidate, from: candidates),
+               let otherExercise = self.exercise(other.id) {
+                notes.append(CoachNote(exercise: exercise, kind: .switchTo(otherExercise)))
+                continue
+            }
+            let advice = ProgressionEngine.advise(history: history, rules: rules(for: exercise, in: nil), today: today)
+            switch advice {
+            case .increase, .addRepsFirst, .makeHarder:
+                notes.append(CoachNote(exercise: exercise, kind: .heavier(advice)))
+            default:
+                break
+            }
+        }
+        return notes
+    }
+}
+
+/// A note from the coach on one exercise.
+struct CoachNote: Identifiable {
+    enum Kind: Equatable {
+        /// Ready for more: the advice says how.
+        case heavier(ProgressionAdvice)
+        /// No progress for a while: another exercise for the same muscle.
+        case switchTo(Exercise)
+    }
+
+    let exercise: Exercise
+    let kind: Kind
+    var id: UUID { exercise.id }
 }

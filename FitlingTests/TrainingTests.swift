@@ -393,3 +393,57 @@ struct TrainingFixture {
         #expect(!FileManager.default.fileExists(atPath: folder.path()))
     }
 }
+
+// MARK: - Coach (feedback 2026-11-21: compose a workout, go heavier, switch exercises)
+
+@MainActor
+@Suite struct TrainingCoachTests {
+    let fixture: TrainingFixture
+    init() throws {
+        fixture = try TrainingFixture()
+        try fixture.installCatalog()
+    }
+
+    @Test func aComposedWorkoutBecomesTheDayOfOneOwnProgramme() {
+        let store = fixture.store
+        let upper = WorkoutBuilder.build(.upperBody, from: store.workoutCandidates())
+        #expect(!upper.isEmpty)
+        let day = store.compose(upper, into: nil, programName: "Samengesteld", dayName: "Bovenlichaam")
+        #expect(store.items(of: day).map(\.exerciseID) == upper.map(\.exerciseID))
+
+        let lower = WorkoutBuilder.build(.lowerBody, from: store.workoutCandidates())
+        let again = store.compose(lower, into: day.programID, programName: "Samengesteld", dayName: "Onderlichaam")
+        #expect(again.id == day.id)
+        #expect(store.items(of: again).map(\.exerciseID) == lower.map(\.exerciseID))
+        #expect(store.programs().filter { $0.ownerID == fixture.userID }.count == 1)
+        #expect(again.name.values["nl"] == "Onderlichaam")
+    }
+
+    @Test func candidatesKnowWhenEachExerciseWasLastDone() throws {
+        let bench = try fixture.exercise("Bench press")
+        fixture.workout(bench, daysAgo: 9, sets: [(60, 10, false)])
+        fixture.workout(bench, daysAgo: 2, sets: [(60, 10, false)])
+        let candidate = try #require(fixture.store.workoutCandidates().first { $0.id == bench.id })
+        #expect(candidate.lastDone == fixture.today.adding(-2))
+    }
+
+    @Test func theCoachSaysWhatCanGoHeavierAndWhatHasStalled() throws {
+        let bench = try fixture.exercise("Bench press")
+        fixture.workout(bench, daysAgo: 2, sets: [(60, 12, false), (60, 12, false), (60, 12, false)])
+        let squat = try fixture.exercise("Barbell back squat")
+        fixture.workout(squat, daysAgo: 20, sets: [(100, 8, false)])
+        for daysAgo in [16, 12, 8, 4] {
+            fixture.workout(squat, daysAgo: daysAgo, sets: [(100, 7, false)])
+        }
+
+        let notes = fixture.store.coachNotes()
+        let benchNote = try #require(notes.first { $0.exercise.id == bench.id })
+        #expect(benchNote.kind == .heavier(.increase(toKg: 62.5)))
+        let squatNote = try #require(notes.first { $0.exercise.id == squat.id })
+        guard case let .switchTo(other) = squatNote.kind else {
+            Issue.record("expected a switch for the squat")
+            return
+        }
+        #expect(other.id != squat.id)
+    }
+}
