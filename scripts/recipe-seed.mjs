@@ -62,6 +62,24 @@ export function validate(recipes, usda, photos) {
       if (!usda[String(ingredient.fdcId)]) problems.push(`${where}: USDA ${ingredient.fdcId} ontbreekt in de tabel`);
     }
   }
+  // De boodschappenlijst telt hetzelfde ingrediënt op; grammen, milliliters en stuks tellen niet bij elkaar op,
+  // eet- en theelepels wel.
+  const kinds = new Map();
+  for (const recipe of recipes) {
+    for (const ingredient of recipe.ingredients) {
+      const name = ingredient.name?.nl?.trim().toLowerCase();
+      if (!name) continue;
+      const kind = ['tbsp', 'tsp'].includes(ingredient.unit) ? 'lepels' : ingredient.unit;
+      if (!kinds.has(name)) kinds.set(name, new Map());
+      kinds.get(name).set(kind, [...(kinds.get(name).get(kind) ?? []), recipe.slug]);
+    }
+  }
+  for (const [name, byKind] of kinds) {
+    if (byKind.size > 1) {
+      const where = [...byKind].map(([kind, slugs]) => `${kind} in ${slugs.join(', ')}`).join('; ');
+      problems.push(`ingrediënt ${name} staat in verschillende eenheden: ${where}`);
+    }
+  }
   return problems;
 }
 

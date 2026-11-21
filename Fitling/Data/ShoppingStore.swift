@@ -231,8 +231,11 @@ struct ShoppingStore {
     }
 
     /// The cheapest offer per unchecked item in the favourite supermarkets, and the total per
-    /// supermarket. Uncertain matches count only after the user confirmed them.
-    func offerSummary(for list: ShoppingList, confirmed: Set<UUID>) -> (perItem: [UUID: OfferMatch], totals: [StoreTotal], matches: [OfferMatch]) {
+    /// supermarket. Uncertain matches count only after the user confirmed them. `titles` holds the title of
+    /// every matched offer.
+    func offerSummary(
+        for list: ShoppingList, confirmed: Set<UUID>
+    ) -> (perItem: [UUID: OfferMatch], totals: [StoreTotal], matches: [OfferMatch], titles: [UUID: String]) {
         let favorites = Set(favoriteSupermarketIDs())
         let items = self.items(of: list).filter { !$0.isChecked }
         let offers = ((try? context.fetch(FetchDescriptor<Offer>())) ?? []).filter { favorites.contains($0.supermarketID) }
@@ -246,10 +249,12 @@ struct ShoppingStore {
         }
         let names = Set(supermarkets().filter { favorites.contains($0.id) }.map(\.name))
         let matches = OfferMatcher.matches(items: matchingItems, offers: matchingOffers, on: today, ignoredWords: names)
+        let matched = Set(matches.map(\.offerID))
         return (
             OfferMatcher.cheapestPerItem(matches, confirmedOfferIDs: confirmed),
             OfferMatcher.storeTotals(itemIDs: items.map(\.id), matches: matches, confirmedOfferIDs: confirmed),
-            matches
+            matches,
+            Dictionary(uniqueKeysWithValues: offers.filter { matched.contains($0.id) }.map { ($0.id, $0.title) })
         )
     }
 
