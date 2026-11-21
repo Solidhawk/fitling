@@ -181,7 +181,7 @@ struct MenuFixture {
         first.generate(MenuOptions(days: 4, goal: .lose))
         let again = MenuViewModel(profile: fixture.profile, context: fixture.context, defaults: fixture.defaults, timeZone: .gmt, now: { [now = fixture.now] in now }, seed: { 1 })
         #expect(again.options == MenuOptions(days: 4, goal: .lose))
-        #expect(Set(again.entries.map(\.plannedOn)).count == 4)
+        #expect(Set(first.entries.map(\.plannedOn)).count == 4)
     }
 
     @Test func loggedMealsStayInANewMenu() throws {

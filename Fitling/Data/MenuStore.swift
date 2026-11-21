@@ -135,16 +135,33 @@ struct MenuStore {
         ))) ?? []).sorted { ($0.plannedOn, slotOrder[$0.meal] ?? 9) < ($1.plannedOn, slotOrder[$1.meal] ?? 9) }
     }
 
-    /// A new menu for the coming week. Pinned and already logged meals stay; the rest is replaced.
-    /// A different `seed` gives a different menu from the same recipes.
+    /// The targets a menu plans for: the day's own target, or what the formulas give for `goal`.
+    func targets(for goal: Goal?) -> NutritionTargets {
+        guard let goal, var body = profile.bodyProfile else { return context.targets(on: today, for: profile) }
+        body.goal = goal
+        return NutritionEngine.plan(for: body, on: today).targets
+    }
+
+    /// A new menu from today for `options.days` days. Pinned and already logged meals stay; the rest
+    /// is replaced. A different `seed` gives a different menu from the same recipes.
     @discardableResult
-    func generate(seed: UInt64) -> [MenuIssue] {
+    func generate(seed: UInt64, options: MenuOptions = MenuOptions()) -> [MenuIssue] {
+        let count = min(max(options.days, 1), Self.menuDays)
+        return plan(days: (0..<count).map { today.adding($0) }, replacing: entries(), seed: seed, goal: options.goal)
+    }
+
+    /// New meals for one day; the other days stay as they are.
+    @discardableResult
+    func renew(_ day: Day, seed: UInt64, goal: Goal?) -> [MenuIssue] {
+        plan(days: [day], replacing: entries().filter { $0.plannedOn == day.isoString }, seed: seed, goal: goal)
+    }
+
+    private func plan(days: [Day], replacing existing: [MealPlanEntry], seed: UInt64, goal: Goal?) -> [MenuIssue] {
         let preferences = preferences()
-        let existing = entries()
         let kept = existing.filter { $0.isPinned || $0.loggedEntryID != nil }
-        let targets = context.targets(on: today, for: profile)
+        let targets = targets(for: goal)
         let request = MenuRequest(
-            days: menuDays, kcalTarget: targets.kcal, proteinTargetG: targets.proteinG,
+            days: days, kcalTarget: targets.kcal, proteinTargetG: targets.proteinG,
             slots: preferences.mealSlots.compactMap(MealSlot.init(rawValue:)),
             excludedIngredientIDs: excludedProductIDs(), excludedTags: Set(preferences.excludedTags),
             maxCookMinutes: preferences.maxCookMinutes, budgetCents: preferences.budgetCents, mealPrep: preferences.mealPrep,
@@ -230,4 +247,10 @@ struct MenuStore {
         entry.needsPush = true
         try? context.save()
     }
+}
+
+/// What the user chose for a menu: how many days from today, and a goal other than the daily target.
+struct MenuOptions: Equatable, Codable {
+    var days = MenuStore.menuDays
+    var goal: Goal?
 }

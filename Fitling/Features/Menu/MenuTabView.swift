@@ -14,6 +14,7 @@ struct MenuTabView: View {
     @State private var path: [MenuRoute] = []
     @State private var swapping: MealPlanEntry?
     @State private var editingPreferences = false
+    @State private var generating = false
     private let sync: SyncEngine
     private let profile: UserProfile
     private let shopping: ShoppingServices
@@ -32,7 +33,7 @@ struct MenuTabView: View {
                 if viewModel.entries.isEmpty {
                     Section {
                         Text("menu.empty").footerStyle()
-                        Button("menu.generate") { viewModel.generate() }
+                        Button("menu.generate") { generating = true }
                             .buttonStyle(PrimaryButtonStyle())
                             .buttonRow()
                             .accessibilityIdentifier("menu.generate.first")
@@ -53,10 +54,21 @@ struct MenuTabView: View {
                             entryRow(entry)
                         }
                     } header: {
-                        Text(group.day.startDate, format: .dateTime.weekday(.wide).day().month(.wide))
-                            .font(.headline.weight(.heavy))
-                            .foregroundStyle(Color.ink)
-                            .textCase(nil)
+                        HStack(alignment: .firstTextBaseline) {
+                            Text(group.day.startDate, format: .dateTime.weekday(.wide).day().month(.wide))
+                                .font(.headline.weight(.heavy))
+                            Spacer(minLength: Spacing.s)
+                            // Other meals for this day only; pinned and logged meals stay.
+                            Button {
+                                viewModel.renew(group.day)
+                            } label: {
+                                Label("menu.day.renew", systemImage: "arrow.triangle.2.circlepath")
+                                    .font(.footnote.weight(.bold))
+                            }
+                            .accessibilityIdentifier("menu.day.renew.\(group.day.isoString)")
+                        }
+                        .foregroundStyle(Color.ink)
+                        .textCase(nil)
                     }
                     .listRowBackground(Color.card)
                 }
@@ -85,7 +97,7 @@ struct MenuTabView: View {
                 }
                 if !viewModel.entries.isEmpty {
                     ToolbarItem(placement: .topBarTrailing) {
-                        Button("menu.regenerate") { viewModel.generate() }
+                        Button("menu.regenerate") { generating = true }
                             .accessibilityIdentifier("menu.generate")
                     }
                 }
@@ -110,6 +122,9 @@ struct MenuTabView: View {
                 RecipePicker(recipes: viewModel.recipes(for: entry)) { recipe in
                     viewModel.swap(entry, to: recipe)
                 }
+            }
+            .sheet(isPresented: $generating, onDismiss: { Task { await sync.sync() } }) {
+                MenuGeneratorView(viewModel: viewModel)
             }
             .sheet(isPresented: $editingPreferences, onDismiss: { Task { await sync.sync() } }) {
                 MenuPreferencesView(store: viewModel.store)
