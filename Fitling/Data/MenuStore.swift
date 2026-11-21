@@ -5,7 +5,8 @@ import FitlingCore
 /// Recipes, menu preferences and the week menu of one user (TASKS 5.2–5.5).
 @MainActor
 struct MenuStore {
-    static let menuDays = 7
+    /// Read off the main actor too, as the default of `MenuOptions.days`.
+    nonisolated static let menuDays = 7
 
     let context: ModelContext
     let profile: UserProfile
