@@ -30,7 +30,7 @@ struct HomeView: View {
 
     var body: some View {
         TabView {
-            DayView(profile: profile, sync: sync, food: food)
+            DayView(profile: profile, sync: sync, food: food, partner: partner)
                 .tabItem { Label("tab.today", systemImage: "fork.knife") }
             TrainingTabView(profile: profile, sync: sync, health: health)
                 .tabItem { Label("training.title", systemImage: "dumbbell") }
