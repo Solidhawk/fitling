@@ -12,18 +12,20 @@ struct DayView: View {
     @State private var logging: MealChoice?
     private let food: FoodServices
     private let sync: SyncEngine
+    private let partner: PartnerViewModel
 
-    init(profile: UserProfile, sync: SyncEngine, food: FoodServices) {
+    init(profile: UserProfile, sync: SyncEngine, food: FoodServices, partner: PartnerViewModel) {
         _viewModel = State(initialValue: DayViewModel(profile: profile, context: sync.context))
         self.food = food
         self.sync = sync
+        self.partner = partner
     }
 
     var body: some View {
         NavigationStack {
             List {
                 Section {
-                    DayProgressCard(totals: viewModel.totals, targets: viewModel.targets)
+                    DayCard(totals: viewModel.totals, targets: viewModel.targets, partner: partner)
                         .listRowInsets(EdgeInsets())
                         .listRowBackground(Color.clear)
                 } footer: {
@@ -74,7 +76,11 @@ struct DayView: View {
                 await sync.sync()
                 viewModel.reload()
             }
-            .sheet(item: $logging, onDismiss: { viewModel.reload() }) { choice in
+            .sheet(item: $logging, onDismiss: {
+                viewModel.reload()
+                // The partner's mood follows what is logged.
+                partner.refresh()
+            }) { choice in
                 LogFoodView(
                     viewModel: LogFoodViewModel(
                         meal: choice.meal, day: viewModel.day,
@@ -173,125 +179,75 @@ private struct EntryRow: View {
     }
 }
 
-/// The day's progress: kcal eaten against the target, and a ribbon per macro that fills up.
-struct DayProgressCard: View {
+/// The day as a card in the partner's colour: the partner, the kcal still to go, and the macros as
+/// blocks that fill up. Without a partner the card is plain white.
+struct DayCard: View {
     let totals: DayTotals
     let targets: NutritionTargets
+    let partner: PartnerViewModel
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @ScaledMetric(relativeTo: .largeTitle) private var numberSize = 52.0
 
     private var remaining: Double {
         Double(targets.kcal) - totals.kcal
     }
 
     var body: some View {
-        // At the accessibility sizes the ring goes above the numbers, so "Eaten" and the kcal keep the
-        // full width instead of breaking mid-word next to it.
-        let header = dynamicTypeSize.isAccessibilitySize
-            ? AnyLayout(VStackLayout(alignment: .leading, spacing: Spacing.m))
-            : AnyLayout(HStackLayout(alignment: .center, spacing: Spacing.l))
+        // The species tint is light in both modes, so the lettering on it is the dark ribbon ink.
+        let species = partner.species
         VStack(alignment: .leading, spacing: Spacing.m) {
-            header {
-                KcalRing(fraction: totals.kcal / Double(max(targets.kcal, 1)))
-                    .frame(width: 88, height: 88)
-                VStack(alignment: .leading, spacing: Spacing.xs) {
-                    NamePlate("day.eaten", fill: Color.track, foreground: Color.ink, edge: nil)
-                    Text(kcal(totals.kcal))
-                        .font(.largeTitle.weight(.heavy))
-                        .monospacedDigit()
-                    Group {
-                        if remaining >= 0 {
-                            Text("day.kcal.remaining \(kcal(remaining))")
-                        } else {
-                            Text("day.kcal.over \(kcal(-remaining))")
-                        }
-                    }
+            header(species: species)
+            if let creature = partner.creature, let snapshot = partner.snapshot {
+                Text(snapshot.mood.descriptionKey(name: creature.name))
                     .font(.subheadline)
-                    .foregroundStyle(Color.inkSoft)
-                    // Wraps instead of ending in "…" at the largest text sizes.
                     .fixedSize(horizontal: false, vertical: true)
-                }
             }
-            .accessibilityElement(children: .combine)
-            MacroRibbon(titleKey: "targets.protein", grams: totals.proteinG, target: targets.proteinG, fill: Color.protein)
-            MacroRibbon(titleKey: "targets.carbs", grams: totals.carbsG, target: targets.carbsG, fill: Color.carbs)
-            MacroRibbon(titleKey: "targets.fat", grams: totals.fatG, target: targets.fatG, fill: Color.fat)
+            MacroBlocks(eaten: totals, targets: targets)
         }
-        .foregroundStyle(Color.ink)
+        .foregroundStyle(species == nil ? Color.ink : Color.onRibbon)
         .padding(Spacing.l)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background {
             RoundedRectangle(cornerRadius: Radius.card, style: .continuous)
-                .fill(Color.card)
+                .fill(species?.tint ?? Color.card)
                 .shadow(color: Color.cardShadow, radius: 12, y: 4)
         }
         .accessibilityIdentifier("day.progress")
     }
 
+    /// The partner beside the number; at the accessibility sizes the partner goes above it, so the
+    /// number keeps the full width.
+    private func header(species: Species?) -> some View {
+        let layout = dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: Spacing.m))
+            : AnyLayout(HStackLayout(alignment: .center, spacing: Spacing.l))
+        return layout {
+            if let species, let look = partner.look, let snapshot = partner.snapshot {
+                PartnerFigure(species: species, look: look, energy: snapshot.energy)
+                    .frame(width: 112, height: 112)
+                    .accessibilityHidden(true)
+            }
+            VStack(alignment: .leading, spacing: Spacing.xs) {
+                if let species, let creature = partner.creature {
+                    NamePlate(verbatim: creature.name, fill: species.ribbon, edge: nil)
+                }
+                Text(abs(remaining).rounded(), format: .number)
+                    .font(.system(size: numberSize, weight: .heavy, design: .rounded))
+                    .monospacedDigit()
+                    .minimumScaleFactor(0.7)
+                    .lineLimit(1)
+                Text(remaining >= 0 ? LocalizedStringKey("day.kcal.toGo") : "day.kcal.overTarget")
+                    .font(.headline.weight(.heavy))
+                Text("day.kcal.eatenOf \(kcal(totals.kcal)) \(kcal(Double(targets.kcal)))")
+                    .font(.footnote.weight(.semibold))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .accessibilityElement(children: .combine)
+        }
+    }
+
     private func kcal(_ value: Double) -> String {
         Measurement(value: value.rounded(), unit: UnitEnergy.kilocalories).formatted(.measurement(width: .abbreviated, usage: .asProvided))
-    }
-}
-
-/// Eaten against the target as one ring in ink on the track colour. Past the target the ring
-/// stays full; the text says how much over.
-private struct KcalRing: View {
-    let fraction: Double
-
-    var body: some View {
-        ZStack {
-            Circle().stroke(Color.track, lineWidth: 12)
-            Circle()
-                .trim(from: 0, to: min(max(fraction, 0), 1))
-                .stroke(Color.ink, style: StrokeStyle(lineWidth: 12, lineCap: .round))
-                .rotationEffect(.degrees(-90))
-        }
-        .accessibilityHidden(true)
-    }
-}
-
-/// A macro ribbon that fills from the left as the day is logged; ink text on the ribbon colour.
-private struct MacroRibbon: View {
-    let titleKey: LocalizedStringKey
-    let grams: Double
-    let target: Int
-    let fill: Color
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-
-    var body: some View {
-        let fraction = min(max(grams / Double(max(target, 1)), 0), 1)
-        let layout = dynamicTypeSize.isAccessibilitySize
-            ? AnyLayout(VStackLayout(alignment: .leading, spacing: Spacing.xs))
-            : AnyLayout(HStackLayout(alignment: .firstTextBaseline, spacing: Spacing.s))
-        layout {
-            Text(titleKey)
-                .font(.subheadline.weight(.bold))
-            if !dynamicTypeSize.isAccessibilitySize {
-                Spacer(minLength: Spacing.s)
-            }
-            Text("day.macro.progress \(grams.rounded().formatted()) \(target.formatted())")
-                .font(.title3.weight(.heavy))
-                .monospacedDigit()
-        }
-        .foregroundStyle(Color.onRibbon)
-        .padding(.horizontal, Spacing.l)
-        .padding(.vertical, Spacing.s)
-        .frame(maxWidth: .infinity, minHeight: Radius.ribbon * 2, alignment: .leading)
-        .background {
-            GeometryReader { proxy in
-                ZStack(alignment: .leading) {
-                    // The empty part is a pale tint of the ribbon colour on white, in dark mode too:
-                    // the ink text needs a light ground (accessibility audit, TASKS 7.2).
-                    RoundedRectangle(cornerRadius: Radius.ribbon, style: .continuous)
-                        .fill(Color.white)
-                    RoundedRectangle(cornerRadius: Radius.ribbon, style: .continuous)
-                        .fill(fill.opacity(0.35))
-                    RoundedRectangle(cornerRadius: Radius.ribbon, style: .continuous)
-                        .fill(fill)
-                        .frame(width: max(proxy.size.width * fraction, fraction > 0 ? Radius.ribbon * 2 : 0))
-                }
-            }
-        }
-        .accessibilityElement(children: .combine)
     }
 }
 

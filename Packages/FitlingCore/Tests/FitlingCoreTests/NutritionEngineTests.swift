@@ -64,6 +64,16 @@ import Testing
         #expect(result.warnings == [.belowCommonMinimum])
     }
 
+    /// The daily target screen shows what part of the kcal each macro brings.
+    @Test func eachMacroHasItsShareOfTheKcal() {
+        let shares = NutritionEngine.kcalShares(of: NutritionTargets(kcal: 2760, proteinG: 128, carbsG: 389, fatG: 77))
+        #expect(abs(shares.protein - 512.0 / 2760) < 0.0001)
+        #expect(abs(shares.carbs - 1556.0 / 2760) < 0.0001)
+        #expect(abs(shares.fat - 693.0 / 2760) < 0.0001)
+        let none = NutritionEngine.kcalShares(of: NutritionTargets(kcal: 0, proteinG: 0, carbsG: 0, fatG: 0))
+        #expect(none.protein == 0 && none.carbs == 0 && none.fat == 0)
+    }
+
     @Test func carbsNeverGoNegative() {
         let result = plan(profile(.female, kg: 30, cm: 100, born: day(1926, 1, 1), .sedentary, .recomp))
         #expect(result.targets == NutritionTargets(kcal: 300, proteinG: 66, carbsG: 0, fatG: 8))

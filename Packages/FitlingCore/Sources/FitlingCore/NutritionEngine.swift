@@ -25,6 +25,17 @@ public enum NutritionEngine {
         }
     }
 
+    /// What part of the kcal target each macro brings: protein and carbs at 4 kcal per gram, fat at 9.
+    public static func kcalShares(of targets: NutritionTargets) -> (protein: Double, carbs: Double, fat: Double) {
+        guard targets.kcal > 0 else { return (0, 0, 0) }
+        let kcal = Double(targets.kcal)
+        return (
+            Double(targets.proteinG) * kcalPerGramProtein / kcal,
+            Double(targets.carbsG) * kcalPerGramCarbs / kcal,
+            Double(targets.fatG) * kcalPerGramFat / kcal
+        )
+    }
+
     public static func commonMinimumKcal(for sex: Sex) -> Int {
         sex == .male ? 1500 : 1200
     }

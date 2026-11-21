@@ -2619,94 +2619,6 @@
         }
       }
     },
-    "day.eaten": {
-      "localizations": {
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gegeten"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Eaten"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gegessen"
-          }
-        }
-      }
-    },
-    "day.kcal.over %@": {
-      "localizations": {
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ te veel"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ over"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ zu viel"
-          }
-        }
-      }
-    },
-    "day.kcal.remaining %@": {
-      "localizations": {
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nog %@ over"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ left"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Noch %@ übrig"
-          }
-        }
-      }
-    },
-    "day.macro.progress %@ %@": {
-      "localizations": {
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ / %2$@ g"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ / %2$@ g"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ / %2$@ g"
-          }
-        }
-      }
-    },
     "day.next": {
       "localizations": {
         "nl": {
@@ -7969,28 +7881,6 @@
         }
       }
     },
-    "profile.activityFactor": {
-      "localizations": {
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Activiteitsfactor"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Activity factor"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aktivitätsfaktor"
-          }
-        }
-      }
-    },
     "profile.adjust": {
       "localizations": {
         "nl": {
@@ -8075,50 +7965,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ziele anpassen"
-          }
-        }
-      }
-    },
-    "profile.goalFactor": {
-      "localizations": {
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doelfactor"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Goal factor"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zielfaktor"
-          }
-        }
-      }
-    },
-    "profile.howCalculated": {
-      "localizations": {
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zo is het berekend"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "How it’s calculated"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "So wird es berechnet"
           }
         }
       }
@@ -12729,6 +12575,182 @@
           "stringUnit": {
             "state": "translated",
             "value": "Supermarktangebote von PrijsProfeet. Preise sind unverbindlich; kein Supermarkt ist daran beteiligt."
+          }
+        }
+      }
+    },
+    "day.kcal.toGo": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "kcal te gaan"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "kcal to go"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "kcal übrig"
+          }
+        }
+      }
+    },
+    "day.kcal.overTarget": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "kcal boven je doel"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "kcal over your target"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "kcal über deinem Ziel"
+          }
+        }
+      }
+    },
+    "day.kcal.eatenOf %@ %@": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ van %2$@ gegeten"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ of %2$@ eaten"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ von %2$@ gegessen"
+          }
+        }
+      }
+    },
+    "day.macro.of %@": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "van %@ g"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "of %@ g"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "von %@ g"
+          }
+        }
+      }
+    },
+    "targets.macro.share %@": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ van je kcal"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ of your kcal"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ deiner kcal"
+          }
+        }
+      }
+    },
+    "profile.buildUp.activity %@": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "× %@ voor hoe actief je bent"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "× %@ for how active you are"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "× %@ für deine Aktivität"
+          }
+        }
+      }
+    },
+    "profile.buildUp.goal %@": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "× %@ voor je doel"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "× %@ for your goal"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "× %@ für dein Ziel"
+          }
+        }
+      }
+    },
+    "profile.buildUp.target": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je dagdoel"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your daily target"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dein Tagesziel"
           }
         }
       }
