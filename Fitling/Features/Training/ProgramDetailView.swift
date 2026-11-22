@@ -33,8 +33,8 @@ struct ProgramDetailView: View {
                     ForEach(itemsByDay[day.id] ?? []) { item in
                         itemRow(item)
                     }
-                    .onDelete(perform: isOwn ? deletion(from: day) : nil)
-                    if isOwn {
+                    .onDelete(perform: store.canChange(day) ? deletion(from: day) : nil)
+                    if store.canChange(day) {
                         Button {
                             addingTo = day
                         } label: {
@@ -50,7 +50,7 @@ struct ProgramDetailView: View {
                     .disabled((itemsByDay[day.id] ?? []).isEmpty)
                     .accessibilityIdentifier("training.start.\(day.position)")
                 } header: {
-                    Text(verbatim: day.name.text(preferring: languages))
+                    Text(verbatim: title(of: day))
                         .font(.headline.weight(.heavy))
                         .foregroundStyle(Color.ink)
                         .textCase(nil)
@@ -116,8 +116,16 @@ struct ProgramDetailView: View {
         .accessibilityElement(children: .combine)
     }
 
+    /// A composed day carries its date, or ten times "Bovenlichaam" could not be told apart. It is never changed
+    /// after it is made, so `updatedAt` is when that was.
+    private func title(of day: ProgramDay) -> String {
+        let name = day.name.text(preferring: languages)
+        guard ComposedWorkout.focus(of: day.id) != nil else { return name }
+        return "\(name) · \(day.updatedAt.formatted(.dateTime.day().month()))"
+    }
+
     private func reload() {
-        days = store.days(of: program)
+        days = store.daysToShow(of: program)
         itemsByDay = Dictionary(uniqueKeysWithValues: days.map { ($0.id, store.items(of: $0)) })
     }
 

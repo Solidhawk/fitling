@@ -151,8 +151,10 @@ struct TrainingStore {
         touch(item)
     }
 
+    /// Whether the programme screen may change the day: the user's own, and not a composed one. That is the record
+    /// of one workout; another one is composed instead.
     func canChange(_ day: ProgramDay) -> Bool {
-        day.ownerID == userID
+        day.ownerID == userID && ComposedWorkout.focus(of: day.id) == nil
     }
 
     // MARK: Workouts
@@ -190,7 +192,8 @@ struct TrainingStore {
         touch(session)
     }
 
-    /// Throws a workout away with its sets, for a workout that was started by mistake.
+    /// Throws a workout away with its sets, for a workout that was started by mistake. A composed day was made
+    /// for this one workout, so it goes too, unless another workout was done on it, and with the last day its programme.
     func discard(_ session: WorkoutSession) {
         session.deletedAt = now()
         for set in sets(of: session) {
@@ -199,6 +202,20 @@ struct TrainingStore {
             set.needsPush = true
         }
         touch(session)
+        removeComposedDayIfUnused(session.programDayID)
+    }
+
+    private func removeComposedDayIfUnused(_ id: UUID?) {
+        guard let id, ComposedWorkout.focus(of: id) != nil, let unused = day(id), unused.ownerID == userID else { return }
+        let dayID: UUID? = id
+        let uses = (try? context.fetchCount(FetchDescriptor<WorkoutSession>(
+            predicate: #Predicate<WorkoutSession> { $0.programDayID == dayID && $0.deletedAt == nil }
+        ))) ?? 0
+        guard uses == 0 else { return }
+        for item in items(of: unused) { remove(item) }
+        unused.deletedAt = now()
+        touch(unused)
+        if let program = program(unused.programID), days(of: program).isEmpty { delete(program) }
     }
 
     func sets(of session: WorkoutSession) -> [WorkoutSet] {
@@ -229,24 +246,38 @@ struct TrainingStore {
         touch(set)
     }
 
+    /// How many of the composed workouts their programme shows.
+    static let composedDaysShown = 10
+
+    /// The programme of composed workouts gets a day with every workout: it shows the newest first, and not all.
     func daysToShow(of program: Program) -> [ProgramDay] {
-        days(of: program)
+        let all = days(of: program)
+        guard all.contains(where: { ComposedWorkout.focus(of: $0.id) != nil }) else { return all }
+        return Array(all.reversed().prefix(Self.composedDaysShown))
     }
 
+    /// After a workout from a programme the day after it, round and round. After a composed one the focus whose
+    /// turn it is, for the generator to make a new workout for.
     func nextWorkout() -> NextWorkout? {
-        nextDay().map { NextWorkout.programDay(program: $0.program, day: $0.day) }
-    }
-
-    /// The day after the last finished workout in its programme, round and round.
-    func nextDay() -> (program: Program, day: ProgramDay)? {
         for session in finishedSessions(limit: 10) {
             guard let lastID = session.programDayID, let last = day(lastID), let program = program(last.programID), program.deletedAt == nil else { continue }
+            if ComposedWorkout.focus(of: lastID) != nil {
+                return ComposedWorkout.nextFocus(after: composedWorkoutsDone()).map { NextWorkout.compose($0) }
+            }
             let all = days(of: program)
             guard !all.isEmpty else { continue }
             let index = all.firstIndex { $0.id == last.id } ?? -1
-            return (program, all[(index + 1) % all.count])
+            return .programDay(program: program, day: all[(index + 1) % all.count])
         }
         return nil
+    }
+
+    private func composedWorkoutsDone() -> [(focus: TrainingFocus, day: Day)] {
+        finishedSessions(limit: Self.historyWorkouts).compactMap { session in
+            guard let id = session.programDayID, let focus = ComposedWorkout.focus(of: id),
+                  let performedOn = Day(isoString: session.performedOn) else { return nil }
+            return (focus: focus, day: performedOn)
+        }
     }
 
     // MARK: Progression
@@ -307,25 +338,12 @@ struct TrainingStore {
         )
     }
 
-    /// The rules the last finished workout with the exercise was done by.
-    ///
-    /// A composed workout is one day that is refilled each time, so that day may not have the exercise any more.
-    /// Then they are the generator's reps for this kind of exercise and the sets that were done, up to the usual three.
+    /// The rules the last finished workout with the exercise was done by: those of its programme day, which for a
+    /// composed workout is never refilled.
     func rulesOfLastWorkout(for exercise: Exercise) -> ExerciseRules {
-        guard let last = lastWorkout(with: exercise.id), let dayID = last.session.programDayID, let programDay = day(dayID) else {
-            return rules(for: exercise, in: nil)
-        }
-        if let item = items(of: programDay).first(where: { $0.exerciseID == exercise.id }) {
-            return rules(for: exercise, in: item)
-        }
-        var result = rules(for: exercise, in: nil)
-        guard programDay.ownerID == userID else { return result }
-        let setting = self.setting(for: exercise.id)
-        if setting?.repMin == nil || setting?.repMax == nil {
-            result.repRange = result.kind == .compound ? WorkoutBuilder.compoundReps : WorkoutBuilder.isolationReps
-        }
-        result.targetSets = min(max(last.setCount, WorkoutBuilder.fewestSets), WorkoutBuilder.usualSets)
-        return result
+        let programDay = lastWorkout(with: exercise.id)?.programDayID.flatMap { day($0) }
+        let item = programDay.flatMap { items(of: $0).first { $0.exerciseID == exercise.id } }
+        return rules(for: exercise, in: item)
     }
 
     /// The advice outside a workout: by the rules of the last one.
@@ -333,8 +351,8 @@ struct TrainingStore {
         ProgressionEngine.advise(history: history(of: exercise.id), rules: rulesOfLastWorkout(for: exercise), today: today)
     }
 
-    /// The last finished workout with a working set of the exercise, and how many it had.
-    private func lastWorkout(with exerciseID: UUID) -> (session: WorkoutSession, setCount: Int)? {
+    /// The last finished workout with a working set of the exercise.
+    private func lastWorkout(with exerciseID: UUID) -> WorkoutSession? {
         let userID = userID
         let sets = (try? context.fetch(FetchDescriptor<WorkoutSet>(
             predicate: #Predicate<WorkoutSet> { $0.userID == userID && $0.exerciseID == exerciseID && $0.deletedAt == nil && !$0.isWarmup }
@@ -344,9 +362,7 @@ struct TrainingStore {
             descriptor.fetchLimit = 1
             return try? context.fetch(descriptor).first
         }
-        guard let session = sessions.max(by: { $0.startedAt < $1.startedAt }) else { return nil }
-        let sessionID = session.id
-        return (session, sets.filter { $0.sessionID == sessionID }.count)
+        return sessions.max { $0.startedAt < $1.startedAt }
     }
 
     func advice(for exercise: Exercise, in item: ProgramExercise?, excluding session: WorkoutSession? = nil) -> ProgressionAdvice {
@@ -414,31 +430,39 @@ struct TrainingStore {
         return result
     }
 
-    /// A composed workout as the one day of the user's own "composed" programme: made the first time,
-    /// refilled after, so the programmes list does not grow with every workout.
+    /// A composed workout as a new day in the user's own programme of composed workouts. An earlier day is never
+    /// renamed or refilled: the workout done on it takes its name, sets and reps from it.
     @discardableResult
     func compose(_ plan: [PlannedExercise], for focus: TrainingFocus, programName: String, dayName: String) -> ProgramDay {
         let program: Program
-        if let existing = programs().first(where: { $0.ownerID == userID && $0.name.values[language] == programName }) {
+        if let existing = composedProgram() {
             program = existing
         } else {
-            program = createProgram(named: programName, daysPerWeek: 1) { _ in dayName }
+            program = Program(id: UUID(), ownerID: userID, name: LocalizedText([language: programName]), daysPerWeek: 1, updatedAt: now())
+            context.insert(program)
         }
-        let day: ProgramDay
-        if let first = days(of: program).first {
-            day = first
-        } else {
-            day = ProgramDay(id: UUID(), programID: program.id, ownerID: userID, name: LocalizedText([language: dayName]), position: 0, updatedAt: now())
-            context.insert(day)
-        }
-        day.name = LocalizedText([language: dayName])
-        touch(day)
-        for item in items(of: day) { remove(item) }
+        let newDay = ProgramDay(
+            id: ComposedWorkout.dayID(for: focus), programID: program.id, ownerID: userID, name: LocalizedText([language: dayName]),
+            position: (days(of: program).map(\.position).max() ?? -1) + 1, updatedAt: now()
+        )
+        context.insert(newDay)
+        try? context.save()
         for planned in plan {
             guard let exercise = exercise(planned.exerciseID) else { continue }
-            add(exercise, to: day, sets: planned.sets, repRange: planned.repRange, restSeconds: planned.restSeconds)
+            add(exercise, to: newDay, sets: planned.sets, repRange: planned.repRange, restSeconds: planned.restSeconds)
         }
-        return day
+        return newDay
+    }
+
+    /// The programme of composed workouts, known by its days: so it is the same on every device and after a rename.
+    /// With two, made on two devices that were offline, the one with the newest workout.
+    private func composedProgram() -> Program? {
+        let withNewest = programs().filter { $0.ownerID == userID }.compactMap { program -> (program: Program, newest: Date)? in
+            let composed = days(of: program).filter { ComposedWorkout.focus(of: $0.id) != nil }
+            guard let newest = composed.map(\.updatedAt).max() else { return nil }
+            return (program: program, newest: newest)
+        }
+        return withNewest.max { $0.newest < $1.newest }?.program
     }
 
     /// What the coach has to say about the exercises of the last weeks, most recent first: which

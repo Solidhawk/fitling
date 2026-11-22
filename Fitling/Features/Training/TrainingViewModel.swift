@@ -56,8 +56,13 @@ final class TrainingViewModel {
         WorkoutBuilder.plan(focus, minutes: workoutMinutes, from: store.workoutCandidates(), history: store.workoutHistory())
     }
 
-    /// Puts the workout for `focus` in the user's composed programme and starts it.
+    /// Makes the workout for `focus` a day of its own and starts it.
     func startComposed(_ focus: TrainingFocus) -> WorkoutSession {
+        // Checked first: a day is only made for a workout that starts.
+        if let running = store.activeSession() {
+            activeSession = running
+            return running
+        }
         let day = store.compose(
             plan(for: focus).exercises, for: focus,
             programName: String(localized: "training.compose.program"), dayName: String(localized: focus.titleResource)
