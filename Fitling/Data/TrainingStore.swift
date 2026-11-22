@@ -225,6 +225,14 @@ struct TrainingStore {
         touch(set)
     }
 
+    func daysToShow(of program: Program) -> [ProgramDay] {
+        days(of: program)
+    }
+
+    func nextWorkout() -> NextWorkout? {
+        nextDay().map { NextWorkout.programDay(program: $0.program, day: $0.day) }
+    }
+
     /// The day after the last finished workout in its programme, round and round.
     func nextDay() -> (program: Program, day: ProgramDay)? {
         for session in finishedSessions(limit: 10) {
@@ -405,9 +413,9 @@ struct TrainingStore {
     /// A composed workout as the one day of the user's own "composed" programme: made the first time,
     /// refilled after, so the programmes list does not grow with every workout.
     @discardableResult
-    func compose(_ plan: [PlannedExercise], into programID: UUID?, programName: String, dayName: String) -> ProgramDay {
+    func compose(_ plan: [PlannedExercise], for focus: TrainingFocus, programName: String, dayName: String) -> ProgramDay {
         let program: Program
-        if let programID, let existing = self.program(programID), existing.deletedAt == nil, existing.ownerID == userID {
+        if let existing = programs().first(where: { $0.ownerID == userID && $0.name.values[language] == programName }) {
             program = existing
         } else {
             program = createProgram(named: programName, daysPerWeek: 1) { _ in dayName }
@@ -462,6 +470,12 @@ struct TrainingStore {
         }
         return notes
     }
+}
+
+/// What the training tab offers to do next.
+enum NextWorkout {
+    case programDay(program: Program, day: ProgramDay)
+    case compose(TrainingFocus)
 }
 
 /// A note from the coach on one exercise.

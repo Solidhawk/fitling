@@ -41,14 +41,14 @@ struct TrainingTabView: View {
                         .accessibilityIdentifier("training.resume")
                     }
                     .listRowBackground(Color.card)
-                } else if let next = viewModel.next {
+                } else if case let .programDay(program, day) = viewModel.next {
                     Section("training.next.title") {
                         Button {
-                            workout = viewModel.start(next.day)
+                            workout = viewModel.start(day)
                         } label: {
                             VStack(alignment: .leading, spacing: Spacing.xs) {
-                                Text(verbatim: next.day.name.text(preferring: Locale.preferredLanguages)).font(.headline.weight(.heavy))
-                                Text(verbatim: next.program.name.text(preferring: Locale.preferredLanguages)).font(.footnote).foregroundStyle(Color.inkSoft)
+                                Text(verbatim: day.name.text(preferring: Locale.preferredLanguages)).font(.headline.weight(.heavy))
+                                Text(verbatim: program.name.text(preferring: Locale.preferredLanguages)).font(.footnote).foregroundStyle(Color.inkSoft)
                             }
                         }
                         .accessibilityIdentifier("training.next")
