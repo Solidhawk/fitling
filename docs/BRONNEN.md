@@ -14,9 +14,9 @@ Alles hieronder mag in de app worden gebruikt onder de genoemde licentie. De app
 ## Tekeningen van oefeningen
 
 - **Everkinetic** (https://github.com/everkinetic/data), CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0/). Bewerkt: witte achtergrond verwijderd en de lijnen in de inktkleur van de app. De bewerkte tekeningen in `Fitling/Resources/Assets.xcassets/Exercises` vallen onder dezelfde licentie.
-- **Everkinetic via wger.de**, CC BY-SA 3.0 (https://creativecommons.org/licenses/by-sa/3.0/). Twee oefeningen die niet in de Everkinetic-data staan, op dezelfde manier bewerkt; de bewerkingen vallen onder dezelfde licentie:
-  - Schouderdrukken met dumbbells: [dumbbell-shoulder-press-large-1.png](https://wger.de/media/exercise-images/123/dumbbell-shoulder-press-large-1.png) en [-2.png](https://wger.de/media/exercise-images/123/dumbbell-shoulder-press-large-2.png) (wger-oefening 567).
-  - Kabel crossover: [Cable-crossover-2.png](https://wger.de/media/exercise-images/71/Cable-crossover-2.png) als begin en [Cable-crossover-1.png](https://wger.de/media/exercise-images/71/Cable-crossover-1.png) als eind (wger-oefening 323).
+  - Van de twee laatst toegevoegde oefeningen de precieze bestanden:
+    - Kabel crossover: [0048-relaxation.png](https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/dist/png/0048-relaxation.png) als begin en [0048-tension.png](https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/dist/png/0048-tension.png) als eind.
+    - Schouderdrukken met dumbbells (niet in `dist/png`, wel in `src/images-web`): [dumbbell-shoulder-press-1.png](https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/dumbbell-shoulder-press-1.png) als begin en [dumbbell-shoulder-press-2.png](https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/dumbbell-shoulder-press-2.png) als eind.
 
 ## Foto's van recepten (Wikimedia Commons)
 

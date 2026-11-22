@@ -129,8 +129,8 @@ struct TrainingFixture {
         #expect(shared.deletedAt == nil)
     }
 
-    /// Drawings come as a start and an end. Everkinetic has no drawing of the movements listed here
-    /// (UNFORGET S19); those show a symbol instead.
+    /// Drawings come as a start and an end. For the movements listed here no exact drawing was found in
+    /// Everkinetic's named files (UNFORGET S19); those show a symbol instead.
     @Test func everyExerciseHasBothDrawingsExceptTheKnownOnes() throws {
         let catalog = try fixture.catalog
         func drawing(_ id: UUID, _ phase: String) -> Bool {

@@ -11726,19 +11726,19 @@
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tekeningen van oefeningen gebaseerd op Everkinetic, CC BY-SA 4.0 en 3.0."
+            "value": "Tekeningen van oefeningen gebaseerd op Everkinetic, CC BY-SA 4.0."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Exercise drawings based on Everkinetic, CC BY-SA 4.0 and 3.0."
+            "value": "Exercise drawings based on Everkinetic, CC BY-SA 4.0."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Übungszeichnungen nach Everkinetic, CC BY-SA 4.0 und 3.0."
+            "value": "Übungszeichnungen nach Everkinetic, CC BY-SA 4.0."
           }
         }
       }
