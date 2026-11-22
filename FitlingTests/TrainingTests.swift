@@ -419,12 +419,12 @@ struct TrainingFixture {
 
     @Test func aComposedWorkoutBecomesTheDayOfOneOwnProgramme() {
         let store = fixture.store
-        let upper = WorkoutBuilder.build(.upperBody, from: store.workoutCandidates())
+        let upper = WorkoutBuilder.plan(.upperBody, minutes: 60, from: store.workoutCandidates(), history: []).exercises
         #expect(!upper.isEmpty)
         let day = store.compose(upper, into: nil, programName: "Samengesteld", dayName: "Bovenlichaam")
         #expect(store.items(of: day).map(\.exerciseID) == upper.map(\.exerciseID))
 
-        let lower = WorkoutBuilder.build(.lowerBody, from: store.workoutCandidates())
+        let lower = WorkoutBuilder.plan(.lowerBody, minutes: 60, from: store.workoutCandidates(), history: []).exercises
         let again = store.compose(lower, into: day.programID, programName: "Samengesteld", dayName: "Onderlichaam")
         #expect(again.id == day.id)
         #expect(store.items(of: again).map(\.exerciseID) == lower.map(\.exerciseID))
@@ -458,6 +458,23 @@ struct TrainingFixture {
             return
         }
         #expect(other.id != squat.id)
+    }
+
+    /// A composed workout has 6–10 reps and, when it is short, two sets. The coach judges by those, not by
+    /// three sets of 8–12: otherwise it never says to go heavier.
+    @Test func theCoachJudgesAComposedWorkoutByItsOwnSetsAndReps() throws {
+        let store = fixture.store
+        let bench = try fixture.exercise("Bench press")
+        let day = store.compose(
+            [PlannedExercise(exerciseID: bench.id, sets: 2, repRange: 6...10, restSeconds: 90)],
+            into: nil, programName: "Samengesteld", dayName: "Duwen"
+        )
+        let session = store.start(day)
+        for _ in 0..<2 { store.log(in: session, exercise: bench, weightKg: 60, reps: 10, rpe: 7, isWarmup: false) }
+        store.finish(session)
+        let note = try #require(store.coachNotes().first { $0.exercise.id == bench.id })
+        #expect(note.kind == .heavier(.increase(toKg: 62.5)))
+        #expect(store.advice(for: bench, in: store.latestItem(for: bench.id)) == .increase(toKg: 62.5))
     }
 
     /// Exercises done on the same day come in alphabetical order, so the list does not reshuffle

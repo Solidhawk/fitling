@@ -295,6 +295,10 @@ struct TrainingStore {
         )
     }
 
+    func latestItem(for exerciseID: UUID) -> ProgramExercise? {
+        nil
+    }
+
     func advice(for exercise: Exercise, in item: ProgramExercise?, excluding session: WorkoutSession? = nil) -> ProgressionAdvice {
         ProgressionEngine.advise(history: history(of: exercise.id, excluding: session), rules: rules(for: exercise, in: item), today: today)
     }
@@ -318,6 +322,10 @@ struct TrainingStore {
             guard !muscles.isEmpty, let kind = ExerciseKind(rawValue: exercise.kind) else { return nil }
             return WorkoutCandidate(id: exercise.id, kind: kind, primaryMuscles: muscles, lastDone: lastDone[exercise.id])
         }
+    }
+
+    func workoutHistory() -> [[UUID]] {
+        []
     }
 
     /// Per exercise the day of the last finished workout with a working set of it.

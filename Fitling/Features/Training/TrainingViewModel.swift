@@ -14,6 +14,7 @@ final class TrainingViewModel {
     private(set) var recent: [WorkoutSession] = []
     private(set) var healthRefused = false
     private(set) var coachNotes: [CoachNote] = []
+    var workoutMinutes = WorkoutBuilder.defaultMinutes
 
     let profile: UserProfile
     let store: TrainingStore
@@ -46,15 +47,15 @@ final class TrainingViewModel {
     private static let composedProgramKey = "fitling.composedProgram"
 
     /// The exercises a workout for `focus` would have, to show before it starts.
-    func plan(for focus: TrainingFocus) -> [PlannedExercise] {
-        WorkoutBuilder.build(focus, from: store.workoutCandidates())
+    func plan(for focus: TrainingFocus) -> WorkoutPlan {
+        WorkoutBuilder.plan(focus, minutes: WorkoutBuilder.defaultMinutes, from: store.workoutCandidates(), history: [])
     }
 
     /// Puts the workout for `focus` in the user's composed programme and starts it.
     func startComposed(_ focus: TrainingFocus) -> WorkoutSession {
         let programID = defaults.string(forKey: Self.composedProgramKey).flatMap(UUID.init(uuidString:))
         let day = store.compose(
-            plan(for: focus), into: programID,
+            plan(for: focus).exercises, into: programID,
             programName: String(localized: "training.compose.program"), dayName: String(localized: focus.titleResource)
         )
         defaults.set(day.programID.uuidString, forKey: Self.composedProgramKey)

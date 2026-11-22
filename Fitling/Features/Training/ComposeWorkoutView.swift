@@ -9,7 +9,7 @@ struct ComposeWorkoutView: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        let plan = viewModel.plan(for: focus)
+        let plan = viewModel.plan(for: focus).exercises
         NavigationStack {
             List {
                 Section("training.compose.focus") {
