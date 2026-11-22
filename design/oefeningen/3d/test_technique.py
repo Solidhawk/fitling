@@ -93,8 +93,6 @@ def measured(pose, what, s):
     side = pose.sides[s]
     if what == 'elbow':
         return angle(side.shoulder, side.elbow, side.wrist)
-    if what == 'shoulder':
-        return angle(side.elbow, side.shoulder, side.hip)
     if what == 'knee':
         return angle(side.hip, side.knee, side.ankle)
     if what == 'hip':
@@ -115,6 +113,10 @@ def travel(start, end, what):
     if what == 'twist':
         return between(minus(start.sides[1].shoulder, start.sides[-1].shoulder),
                        minus(end.sides[1].shoulder, end.sides[-1].shoulder))
+    if what == 'shoulder':
+        # The upper arm's own turn: an angle with the trunk does not see a fly open and close.
+        return max(between(minus(start.sides[s].elbow, start.sides[s].shoulder),
+                           minus(end.sides[s].elbow, end.sides[s].shoulder)) for s in (-1, 1))
     if what == 'grip':
         return max(between(start.sides[s].grip, end.sides[s].grip) for s in (-1, 1))
     return max(abs(measured(end, what, s) - measured(start, what, s)) for s in (-1, 1))

@@ -1,148 +1,25 @@
-"""De bewegingen van de geanimeerde oefeningen, als houdingen van 0 (begin) tot 1 (eind).
+"""De bewegingen van alle oefeningen, als houdingen van 0 (begin) tot 1 (eind), met camera en tempo.
 
-Zonder Blender, zodat `test_poses.py` ze overal kan toetsen; `render.py` tekent ze. Maten in meters:
-het figuur kijkt naar -Y, Z is omhoog en de linkerkant van het figuur is +X.
+Zonder Blender, zodat de tests ze overal kunnen toetsen; `render.py` tekent ze. Het figuur staat in `rig.py`,
+de bewegingen per soort in `moves_*.py`. Id en spieren komen uit de catalogus van de app.
 """
+import json
 import math
-from dataclasses import dataclass, field
-from typing import Callable, NamedTuple
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Callable
 
-THIGH, SHIN, UPPER, FORE = 0.43, 0.42, 0.29, 0.27
-HIP_HALF, SHOULDER_HALF = 0.11, 0.185
-TRUNK, HEAD = 0.455, 0.275
-ANKLE = 0.095
+import gear
+import moves_arms as arms
+import moves_core as core
+import moves_legs as legs
+import moves_press as press
+import moves_pull as pull
+from rig import (ANKLE, FORE, HEAD, HIP_HALF, SHIN, SHOULDER_HALF, THIGH, TRUNK, UPPER, Pose, V, body, ease, forward,
+                 lean, mix, standing, swing_ease)
+
 BENCH_THRUST, BENCH_ROW = 0.39, 0.40
-FRAMES, FPS = 40, 25
-
-
-class V(NamedTuple):
-    x: float
-    y: float
-    z: float
-
-    def __add__(self, other):
-        return V(self.x + other[0], self.y + other[1], self.z + other[2])
-
-    def __sub__(self, other):
-        return V(self.x - other[0], self.y - other[1], self.z - other[2])
-
-    def __mul__(self, amount):
-        return V(self.x * amount, self.y * amount, self.z * amount)
-
-    def dot(self, other):
-        return self.x * other[0] + self.y * other[1] + self.z * other[2]
-
-    @property
-    def length(self):
-        return math.sqrt(self.dot(self))
-
-    def unit(self):
-        return self * (1 / self.length)
-
-
-def mix(a, b, t):
-    return a + (b - a) * t
-
-
-def ease(t):
-    return t * t * t * (t * (6 * t - 15) + 10)
-
-
-def swing_ease(t):
-    return (1 - math.cos(math.pi * t)) / 2
-
-
-def lean(degrees):
-    """Straight up, tipped forward by `degrees` (backward when negative)."""
-    return V(0, -math.sin(math.radians(degrees)), math.cos(math.radians(degrees)))
-
-
-def forward(up):
-    """The way the body faces when its spine points along `up`."""
-    return V(0, -up.z, up.y)
-
-
-def reach(start, goal, first, second, pole):
-    """Middle joint, end joint and how far the goal was out of reach, bending towards `pole`."""
-    d = goal - start
-    longest, shortest = first + second - 0.0005, abs(first - second) + 0.0005
-    distance = min(max(d.length, shortest), longest)
-    axis = d.unit()
-    x = (first * first - second * second + distance * distance) / (2 * distance)
-    side = (pole - axis * pole.dot(axis)).unit()
-    middle = start + axis * x + side * math.sqrt(max(first * first - x * x, 0))
-    return middle, start + axis * distance, abs(d.length - distance)
-
-
-@dataclass
-class Side:
-    hip: V
-    knee: V
-    ankle: V
-    toe: V
-    """Where the toes point."""
-    sole: V
-    """Where the sole faces."""
-    shoulder: V
-    elbow: V
-    wrist: V
-
-
-@dataclass
-class Pose:
-    pelvis: V
-    waist: V
-    neck: V
-    head: V
-    head_up: V
-    sides: dict
-    out_of_reach: float
-    loads: list = field(default_factory=list)
-    """(name, centre, radius) of what must stay above the floor."""
-    props: list = field(default_factory=list)
-    """What render.py draws besides the figure."""
-
-
-def body(pelvis, neck, head_up, feet, hands, waist=None):
-    """The whole figure. `feet(s)` gives ankle, knee pole, toes and sole, `hands(s)` gives wrist and elbow pole."""
-    sides, missed = {}, 0.0
-    for s in (-1, 1):
-        hip, shoulder = pelvis + (HIP_HALF * s, 0, 0), neck + (SHOULDER_HALF * s, 0, 0)
-        ankle, knee_pole, toe, sole = feet(s)
-        knee, ankle, foot_miss = reach(hip, ankle, THIGH, SHIN, knee_pole)
-        wrist, elbow_pole = hands(s)
-        elbow, wrist, hand_miss = reach(shoulder, wrist, UPPER, FORE, elbow_pole)
-        sides[s] = Side(hip, knee, ankle, toe, sole, shoulder, elbow, wrist)
-        missed = max(missed, foot_miss, hand_miss)
-    middle = waist or mix(pelvis, neck, 0.5)
-    return Pose(pelvis, middle, neck, neck + head_up * HEAD, head_up, sides, missed)
-
-
-def standing(width, turn):
-    def feet(s):
-        toes = V(s * math.sin(math.radians(turn)), -math.cos(math.radians(turn)), 0)
-        return V(width * s, 0, ANKLE), toes, toes, V(0, 0, -1)
-    return feet
-
-
-def stack(y, lifted):
-    """A cable column with its weights: part of the stack rises as the cable is pulled."""
-    parts = [('box', V(0.2 * s, y, 0.98), V(0.055, 0.07, 1.96), 'frame') for s in (-1, 1)]
-    parts += [('box', V(0, y, 0.03), V(0.55, 0.3, 0.06), 'frame'), ('box', V(0, y, 1.96), V(0.46, 0.09, 0.07), 'frame')]
-    for i in range(9):
-        rise = lifted if i >= 4 else 0
-        parts.append(('box', V(0, y, 0.11 + 0.06 * i + rise), V(0.31, 0.15, 0.05), 'iron'))
-    parts.append(('rod', V(0, y, 0.62 + lifted), V(0, y, 1.93), 0.006, 'iron'))
-    return parts
-
-
-def bench(centre, size):
-    parts = [('cushion', centre - (0, 0, 0.035), V(size.x, size.y, 0.07), 'cloth')]
-    for a in (-1, 1):
-        for b in (-1, 1):
-            foot = V(centre.x + a * (size.x / 2 - 0.06), centre.y + b * (size.y / 2 - 0.06), 0.02)
-            parts.append(('rod', foot, V(foot.x, foot.y, centre.z - 0.06), 0.025, 'frame'))
-    return parts
+FRAMES, FPS = 24, 25
 
 
 def goblet_squat(k):
@@ -171,7 +48,7 @@ def hip_thrust(k):
         lambda s: (bar + (0.28 * s, 0, 0.02), V(s, 0, -0.3)),
     )
     pose.loads = [('barbell', bar, 0.15)]
-    pose.props = [('barbell', bar)] + bench(V(0, 0.16, BENCH_THRUST), V(0.95, 0.36, 0))
+    pose.props = [('barbell', bar)] + gear.bench(V(0, 0.16, BENCH_THRUST), V(0.95, 0.36, 0))
     return pose
 
 
@@ -195,7 +72,7 @@ def one_arm_row(k):
     pose = body(pelvis, neck, lean(64), feet, hands)
     weight = pose.sides[1].wrist + (0, 0, -0.035)
     pose.loads = [('dumbbell', weight, 0.085)]
-    pose.props = [('dumbbell', weight, V(0, 1, 0))] + bench(V(-0.18, -0.06, BENCH_ROW), V(0.26, 1.18, 0))
+    pose.props = [('dumbbell', weight, V(0, 1, 0))] + gear.bench(V(-0.18, -0.06, BENCH_ROW), V(0.26, 1.18, 0))
     return pose
 
 
@@ -210,7 +87,7 @@ def face_pull(k):
     hands = [pose.sides[s].wrist for s in (-1, 1)]
     knot = mix(V(0, -0.64, 1.60), V(0, -0.36, 1.655), k)
     pulley = V(0, -1.12, 1.68)
-    pose.props = stack(-1.2, 0.28 * k) + [('rod', knot, pulley, 0.006, 'iron'), ('wheel', pulley)]
+    pose.props = gear.stack(-1.2, 0.28 * k) + [('rod', knot, pulley, 0.006, 'iron'), ('wheel', pulley)]
     pose.props += [('rod', hand, knot, 0.014, 'rope') for hand in hands]
     return pose
 
@@ -231,7 +108,7 @@ def cable_crunch(k):
     hands = [pose.sides[s].wrist for s in (-1, 1)]
     pulley = V(0, -0.92, 1.90)
     knot = head + (pulley - head).unit() * 0.27
-    pose.props = stack(-1.0, 0.34 * k) + [('rod', knot, pulley, 0.006, 'iron'), ('wheel', pulley)]
+    pose.props = gear.stack(-1.0, 0.34 * k) + [('rod', knot, pulley, 0.006, 'iron'), ('wheel', pulley)]
     pose.props += [('rod', hand, knot, 0.014, 'rope') for hand in hands]
     return pose
 
@@ -248,10 +125,7 @@ def hanging_leg_raise(k):
         lambda s: (pelvis + (HIP_HALF * s, 0, 0) + legs * 0.846, knees, knees, legs),
         lambda s: (bar + (0.27 * s, 0, -0.025), V(s, -0.2, 0)),
     )
-    pose.props = [('rod', bar - (0.62, 0, 0), bar + (0.62, 0, 0), 0.024, 'steel')]
-    for s in (-1, 1):
-        pose.props += [('rod', V(0.62 * s, 0, 0.03), V(0.62 * s, 0, 2.15), 0.035, 'frame'),
-                       ('cushion', V(0.62 * s, 0, 0.03), V(0.12, 0.6, 0.06), 'frame')]
+    pose.props = gear.high_bar(2.15)
     return pose
 
 
@@ -287,7 +161,7 @@ class Motion:
     pose: Callable[[float], Pose]
     muscles: tuple
     camera: Camera
-    timing: tuple = (30, 10, 34, 11)
+    timing: tuple
     """Frames at 25 per second: to the end, hold, back, rest."""
     curve: Callable[[float], float] = ease
 
@@ -300,19 +174,130 @@ class Motion:
         return [round(value * last) for value in shown]
 
 
+UP_FIRST = (28, 10, 34, 11)
+DOWN_FIRST = (34, 8, 27, 14)
+SMALL = (26, 14, 30, 11)
+SIDE_TO_SIDE = (30, 6, 30, 6)
+
+MOVEMENTS = [
+    ('hip-thrust', hip_thrust, Camera(62, 9), (26, 14, 34, 11)),
+    ('dumbbell-row', one_arm_row, Camera(62, 20), (26, 10, 34, 11)),
+    ('goblet-squat', goblet_squat, Camera(66), (33, 8, 27, 17)),
+    ('face-pull', face_pull, Camera(118), (26, 12, 34, 11)),
+    ('cable-crunch', cable_crunch, Camera(70), (28, 12, 34, 11)),
+    ('hanging-leg-raise', hanging_leg_raise, Camera(56, 6), (30, 10, 38, 11)),
+    ('kettlebell-swing', kettlebell_swing, Camera(66), (15, 4, 17, 4), swing_ease),
+    ('back-squat', legs.back_squat, Camera(62, 10), DOWN_FIRST),
+    ('bench-press', press.bench_press, Camera(56, 22), DOWN_FIRST),
+    ('deadlift', legs.deadlift, Camera(104, 10), UP_FIRST),
+    ('overhead-press', press.overhead_press, Camera(38, 8), UP_FIRST),
+    ('barbell-row', pull.barbell_row, Camera(112, 14), UP_FIRST),
+    ('romanian-deadlift', legs.romanian_deadlift, Camera(108, 10), DOWN_FIRST),
+    ('incline-dumbbell-press', press.incline_dumbbell_press, Camera(50, 16), DOWN_FIRST),
+    ('lateral-raise', arms.lateral_raise, Camera(24, 10), UP_FIRST),
+    ('dumbbell-curl', arms.dumbbell_curl, Camera(34, 10), UP_FIRST),
+    ('hammer-curl', arms.hammer_curl, Camera(58, 10), UP_FIRST),
+    ('overhead-triceps-extension', arms.overhead_triceps_extension, Camera(112, 8), UP_FIRST),
+    ('walking-lunge', legs.walking_lunge, Camera(68, 10), DOWN_FIRST),
+    ('dumbbell-shoulder-press', press.dumbbell_shoulder_press, Camera(32, 8), UP_FIRST),
+    ('rear-delt-fly', arms.rear_delt_fly, Camera(38, 20), UP_FIRST),
+    ('leg-press', legs.leg_press, Camera(78, 12), DOWN_FIRST),
+    ('leg-extension', legs.leg_extension, Camera(64, 12), UP_FIRST),
+    ('leg-curl', legs.leg_curl, Camera(82, 18), UP_FIRST),
+    ('calf-raise', legs.calf_raise, Camera(118, 10), SMALL),
+    ('chest-press-machine', press.chest_press_machine, Camera(40, 12), UP_FIRST),
+    ('lat-pulldown', pull.lat_pulldown, Camera(132, 8), UP_FIRST),
+    ('seated-cable-row', pull.seated_cable_row, Camera(100, 14), UP_FIRST),
+    ('triceps-pushdown', arms.triceps_pushdown, Camera(100, 10), UP_FIRST),
+    ('cable-fly', press.cable_fly, Camera(16, 10), UP_FIRST),
+    ('pull-up', pull.pull_up, Camera(148, 5), UP_FIRST),
+    ('push-up', press.push_up, Camera(48, 6), DOWN_FIRST),
+    ('dip', press.dip, Camera(52, 10), DOWN_FIRST),
+    ('dumbbell-bench-press', press.dumbbell_bench_press, Camera(48, 26), DOWN_FIRST),
+    ('incline-bench-press', press.incline_bench_press, Camera(58, 16), DOWN_FIRST),
+    ('dumbbell-floor-press', press.dumbbell_floor_press, Camera(54, 28), DOWN_FIRST),
+    ('dumbbell-fly', press.dumbbell_fly, Camera(28, 30), DOWN_FIRST),
+    ('dumbbell-pullover', press.dumbbell_pullover, Camera(70, 18), DOWN_FIRST),
+    ('incline-push-up', press.incline_push_up, Camera(52, 6), DOWN_FIRST),
+    ('decline-push-up', press.decline_push_up, Camera(36, 2), DOWN_FIRST),
+    ('knee-push-up', press.knee_push_up, Camera(46, 6), DOWN_FIRST),
+    ('pec-deck', press.pec_deck, Camera(26, 22), UP_FIRST),
+    ('low-cable-fly', press.low_cable_fly, Camera(16, 12), UP_FIRST),
+    ('close-grip-bench-press', press.close_grip_bench_press, Camera(72, 20), DOWN_FIRST),
+    ('skull-crusher', press.skull_crusher, Camera(78, 16), DOWN_FIRST),
+    ('diamond-push-up', press.diamond_push_up, Camera(48, 22), DOWN_FIRST),
+    ('bench-dip', press.bench_dip, Camera(76, 12), DOWN_FIRST),
+    ('overhead-cable-extension', arms.overhead_cable_extension, Camera(78, 10), UP_FIRST),
+    ('triceps-kickback', arms.triceps_kickback, Camera(100, 14), UP_FIRST),
+    ('pike-push-up', press.pike_push_up, Camera(70, 14), DOWN_FIRST),
+    ('machine-shoulder-press', press.machine_shoulder_press, Camera(36, 8), UP_FIRST),
+    ('arnold-press', press.arnold_press, Camera(22, 8), UP_FIRST),
+    ('reverse-pec-deck', arms.reverse_pec_deck, Camera(136, 24), UP_FIRST),
+    ('front-raise', arms.front_raise, Camera(56, 10), UP_FIRST),
+    ('cable-lateral-raise', arms.cable_lateral_raise, Camera(18, 10), UP_FIRST),
+    ('barbell-curl', arms.barbell_curl, Camera(50, 10), UP_FIRST),
+    ('incline-dumbbell-curl', arms.incline_dumbbell_curl, Camera(66, 12), UP_FIRST),
+    ('concentration-curl', arms.concentration_curl, Camera(20, 12), UP_FIRST),
+    ('cable-curl', arms.cable_curl, Camera(72, 10), UP_FIRST),
+    ('preacher-curl', arms.preacher_curl, Camera(70, 16), UP_FIRST),
+    ('reverse-curl', arms.reverse_curl, Camera(64, 10), UP_FIRST),
+    ('wrist-curl', arms.wrist_curl, Camera(58, 20), SMALL),
+    ('reverse-wrist-curl', arms.reverse_wrist_curl, Camera(62, 22), SMALL),
+    ('machine-row', pull.machine_row, Camera(118, 14), UP_FIRST),
+    ('chin-up', pull.chin_up, Camera(126, 5), UP_FIRST),
+    ('close-grip-pulldown', pull.close_grip_pulldown, Camera(108, 8), UP_FIRST),
+    ('straight-arm-pulldown', pull.straight_arm_pulldown, Camera(104, 10), UP_FIRST),
+    ('t-bar-row', pull.t_bar_row, Camera(80, 16), UP_FIRST),
+    ('chest-supported-row', pull.chest_supported_row, Camera(108, 16), UP_FIRST),
+    ('inverted-row', pull.inverted_row, Camera(74, 12), UP_FIRST),
+    ('bent-over-dumbbell-row', pull.bent_over_dumbbell_row, Camera(96, 16), UP_FIRST),
+    ('back-extension', pull.back_extension, Camera(100, 14), UP_FIRST),
+    ('superman', pull.superman, Camera(74, 22), SMALL),
+    ('barbell-shrug', pull.barbell_shrug, Camera(160, 12), SMALL),
+    ('front-squat', legs.front_squat, Camera(56, 10), DOWN_FIRST),
+    ('bodyweight-squat', legs.bodyweight_squat, Camera(58, 10), DOWN_FIRST),
+    ('hack-squat', legs.hack_squat, Camera(76, 12), DOWN_FIRST),
+    ('sumo-squat', legs.sumo_squat, Camera(24, 10), DOWN_FIRST),
+    ('bulgarian-split-squat', legs.bulgarian_split_squat, Camera(70, 10), DOWN_FIRST),
+    ('split-squat', legs.split_squat, Camera(70, 10), DOWN_FIRST),
+    ('reverse-lunge', legs.reverse_lunge, Camera(64, 10), DOWN_FIRST),
+    ('step-up', legs.step_up, Camera(74, 12), UP_FIRST),
+    ('lateral-lunge', legs.lateral_lunge, Camera(18, 10), DOWN_FIRST),
+    ('sumo-deadlift', legs.sumo_deadlift, Camera(122, 10), UP_FIRST),
+    ('dumbbell-romanian-deadlift', legs.dumbbell_romanian_deadlift, Camera(100, 10), DOWN_FIRST),
+    ('kettlebell-deadlift', legs.kettlebell_deadlift, Camera(52, 10), UP_FIRST),
+    ('single-leg-romanian-deadlift', legs.single_leg_romanian_deadlift, Camera(84, 10), DOWN_FIRST),
+    ('seated-leg-curl', legs.seated_leg_curl, Camera(80, 12), UP_FIRST),
+    ('glute-bridge', legs.glute_bridge, Camera(82, 16), UP_FIRST),
+    ('single-leg-glute-bridge', legs.single_leg_glute_bridge, Camera(84, 16), UP_FIRST),
+    ('cable-kickback', legs.cable_kickback, Camera(104, 10), UP_FIRST),
+    ('cable-pull-through', legs.cable_pull_through, Camera(96, 10), UP_FIRST),
+    ('donkey-kick', legs.donkey_kick, Camera(102, 14), UP_FIRST),
+    ('side-lying-leg-raise', legs.side_lying_leg_raise, Camera(100, 22), UP_FIRST),
+    ('hip-abduction', legs.hip_abduction, Camera(44, 18), UP_FIRST),
+    ('seated-calf-raise', legs.seated_calf_raise, Camera(98, 12), SMALL),
+    ('dumbbell-calf-raise', legs.dumbbell_calf_raise, Camera(120, 10), SMALL),
+    ('bodyweight-calf-raise', legs.bodyweight_calf_raise, Camera(112, 10), SMALL),
+    ('single-leg-calf-raise', legs.single_leg_calf_raise, Camera(116, 10), SMALL),
+    ('leg-press-calf-raise', legs.leg_press_calf_raise, Camera(84, 12), SMALL),
+    ('crunch', core.crunch, Camera(76, 18), UP_FIRST),
+    ('sit-up', core.sit_up, Camera(76, 16), UP_FIRST),
+    ('reverse-crunch', core.reverse_crunch, Camera(80, 16), UP_FIRST),
+    ('lying-leg-raise', core.lying_leg_raise, Camera(78, 14), UP_FIRST),
+    ('bicycle-crunch', core.bicycle_crunch, Camera(60, 30), SIDE_TO_SIDE),
+    ('russian-twist', core.russian_twist, Camera(22, 22), SIDE_TO_SIDE),
+    ('dead-bug', core.dead_bug, Camera(62, 26), SIDE_TO_SIDE),
+    ('bird-dog', core.bird_dog, Camera(78, 14), SIDE_TO_SIDE),
+    ('mountain-climber', core.mountain_climber, Camera(76, 16), SIDE_TO_SIDE),
+    ('ab-wheel', core.ab_wheel, Camera(80, 14), DOWN_FIRST),
+    ('pallof-press', core.pallof_press, Camera(58, 20), UP_FIRST),
+    ('woodchop', core.woodchop, Camera(14, 12), UP_FIRST),
+    ('hanging-knee-raise', core.hanging_knee_raise, Camera(64, 6), UP_FIRST),
+]
+
+CATALOG = Path(__file__).resolve().parents[3] / 'Fitling/Resources/SportCatalog.json'
+LISTED = {entry['slug']: entry for entry in json.loads(CATALOG.read_text('utf-8'))['exercises']}
 EXERCISES = {
-    'hip-thrust': Motion('b8aab0e1-ee00-5090-a682-c687de98b7dd', hip_thrust, ('glutes',),
-                         Camera(62, 9), (26, 14, 34, 11)),
-    'dumbbell-row': Motion('9a053b3c-5162-57d0-b52c-7381c0f09127', one_arm_row, ('back',),
-                                   Camera(62, 20), (26, 10, 34, 11)),
-    'goblet-squat': Motion('3b70d0ec-e441-5831-808c-0c025c473ebf', goblet_squat, ('quads', 'glutes'),
-                           Camera(66), (33, 8, 27, 17)),
-    'face-pull': Motion('35a39c5f-d6d0-55a0-8107-6a62eecab0c8', face_pull, ('shoulders',),
-                        Camera(118), (26, 12, 34, 11)),
-    'cable-crunch': Motion('1eba5fd1-f1c8-5159-9897-460d3f7a108c', cable_crunch, ('core',),
-                           Camera(70), (28, 12, 34, 11)),
-    'hanging-leg-raise': Motion('96db441e-09eb-5089-b615-0cefc1a34bb0', hanging_leg_raise, ('core',),
-                                Camera(56, 6), (30, 10, 38, 11)),
-    'kettlebell-swing': Motion('31fb6913-0785-59a7-83d4-3e50fdf13097', kettlebell_swing, ('glutes', 'hamstrings'),
-                               Camera(66), (15, 4, 17, 4), swing_ease),
+    slug: Motion(LISTED[slug]['id'], pose, tuple(LISTED[slug]['primaryMuscles']), *how)
+    for slug, pose, *how in MOVEMENTS
 }

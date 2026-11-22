@@ -13,8 +13,8 @@ from PIL import Image, ImageChops, ImageFilter
 
 import poses
 
-COLUMNS = 8
-QUALITY = 60
+COLUMNS = 6
+QUALITY = 50
 SHADOW_FADE = 48
 # The floor is near the bottom edge: a wide fade there would eat the shadow under the feet.
 FLOOR_FADE = 14
@@ -44,7 +44,8 @@ def clean(image, fade):
     # The render's grain in the shadow is most of the file; blurred, the shadow takes a fraction of the bytes.
     faded = ImageChops.multiply(alpha.filter(ImageFilter.GaussianBlur(1)), fade)
     faded = ImageChops.darker(faded, alpha.filter(ImageFilter.MaxFilter(3)))
-    alpha = Image.composite(faded, alpha, is_shadow).point(lambda value: 0 if value < 4 else round(value / 3) * 3)
+    alpha = Image.composite(faded, alpha, is_shadow).point(
+        lambda value: 0 if value < 10 else 255 if value > 243 else round(value / 12) * 12)
     return Image.merge('RGBA', (red, green, blue, alpha))
 
 
