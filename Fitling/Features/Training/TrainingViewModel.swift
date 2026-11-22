@@ -14,6 +14,10 @@ final class TrainingViewModel {
     private(set) var recent: [WorkoutSession] = []
     private(set) var healthRefused = false
     private(set) var coachNotes: [CoachNote] = []
+    /// How long the user wants to train, kept for the next time on this device.
+    var workoutMinutes: Int {
+        didSet { defaults.set(workoutMinutes, forKey: Self.workoutMinutesKey) }
+    }
 
     let profile: UserProfile
     let store: TrainingStore
@@ -28,6 +32,8 @@ final class TrainingViewModel {
         self.health = health
         self.defaults = defaults
         store = TrainingStore(context: context, userID: profile.id, timeZone: timeZone, now: now)
+        let remembered = defaults.integer(forKey: Self.workoutMinutesKey)
+        workoutMinutes = WorkoutBuilder.durations.contains(remembered) ? remembered : WorkoutBuilder.defaultMinutes
     }
 
     var countsWorkoutEnergy: Bool {
@@ -44,17 +50,18 @@ final class TrainingViewModel {
     }
 
     private static let composedProgramKey = "fitling.composedProgram"
+    private static let workoutMinutesKey = "fitling.workoutMinutes"
 
-    /// The exercises a workout for `focus` would have, to show before it starts.
-    func plan(for focus: TrainingFocus) -> [PlannedExercise] {
-        WorkoutBuilder.build(focus, from: store.workoutCandidates())
+    /// The workout for `focus` in the chosen time, to show before it starts.
+    func plan(for focus: TrainingFocus) -> WorkoutPlan {
+        WorkoutBuilder.plan(focus, minutes: workoutMinutes, from: store.workoutCandidates(), history: store.workoutHistory())
     }
 
     /// Puts the workout for `focus` in the user's composed programme and starts it.
     func startComposed(_ focus: TrainingFocus) -> WorkoutSession {
         let programID = defaults.string(forKey: Self.composedProgramKey).flatMap(UUID.init(uuidString:))
         let day = store.compose(
-            plan(for: focus), into: programID,
+            plan(for: focus).exercises, into: programID,
             programName: String(localized: "training.compose.program"), dayName: String(localized: focus.titleResource)
         )
         defaults.set(day.programID.uuidString, forKey: Self.composedProgramKey)

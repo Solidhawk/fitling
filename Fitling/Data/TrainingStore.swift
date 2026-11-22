@@ -295,6 +295,48 @@ struct TrainingStore {
         )
     }
 
+    /// The rules the last finished workout with the exercise was done by.
+    ///
+    /// A composed workout is one day that is refilled each time, so that day may not have the exercise any more.
+    /// Then they are the generator's reps for this kind of exercise and the sets that were done, up to the usual three.
+    func rulesOfLastWorkout(for exercise: Exercise) -> ExerciseRules {
+        guard let last = lastWorkout(with: exercise.id), let dayID = last.session.programDayID, let programDay = day(dayID) else {
+            return rules(for: exercise, in: nil)
+        }
+        if let item = items(of: programDay).first(where: { $0.exerciseID == exercise.id }) {
+            return rules(for: exercise, in: item)
+        }
+        var result = rules(for: exercise, in: nil)
+        guard programDay.ownerID == userID else { return result }
+        let setting = self.setting(for: exercise.id)
+        if setting?.repMin == nil || setting?.repMax == nil {
+            result.repRange = result.kind == .compound ? WorkoutBuilder.compoundReps : WorkoutBuilder.isolationReps
+        }
+        result.targetSets = min(max(last.setCount, WorkoutBuilder.fewestSets), WorkoutBuilder.usualSets)
+        return result
+    }
+
+    /// The advice outside a workout: by the rules of the last one.
+    func adviceAfterLastWorkout(for exercise: Exercise) -> ProgressionAdvice {
+        ProgressionEngine.advise(history: history(of: exercise.id), rules: rulesOfLastWorkout(for: exercise), today: today)
+    }
+
+    /// The last finished workout with a working set of the exercise, and how many it had.
+    private func lastWorkout(with exerciseID: UUID) -> (session: WorkoutSession, setCount: Int)? {
+        let userID = userID
+        let sets = (try? context.fetch(FetchDescriptor<WorkoutSet>(
+            predicate: #Predicate<WorkoutSet> { $0.userID == userID && $0.exerciseID == exerciseID && $0.deletedAt == nil && !$0.isWarmup }
+        ))) ?? []
+        let sessions = Set(sets.map(\.sessionID)).compactMap { id -> WorkoutSession? in
+            var descriptor = FetchDescriptor<WorkoutSession>(predicate: #Predicate<WorkoutSession> { $0.id == id && $0.deletedAt == nil && $0.endedAt != nil })
+            descriptor.fetchLimit = 1
+            return try? context.fetch(descriptor).first
+        }
+        guard let session = sessions.max(by: { $0.startedAt < $1.startedAt }) else { return nil }
+        let sessionID = session.id
+        return (session, sets.filter { $0.sessionID == sessionID }.count)
+    }
+
     func advice(for exercise: Exercise, in item: ProgramExercise?, excluding session: WorkoutSession? = nil) -> ProgressionAdvice {
         ProgressionEngine.advise(history: history(of: exercise.id, excluding: session), rules: rules(for: exercise, in: item), today: today)
     }
@@ -313,17 +355,44 @@ struct TrainingStore {
     /// Every exercise the user can do, with the day it was last done.
     func workoutCandidates() -> [WorkoutCandidate] {
         let lastDone = lastDoneDays()
+        let places = placesInReadyMadePrograms()
         return exercises().compactMap { exercise in
             let muscles = exercise.primaryMuscles.compactMap(MuscleGroup.init(rawValue:))
             guard !muscles.isEmpty, let kind = ExerciseKind(rawValue: exercise.kind) else { return nil }
-            return WorkoutCandidate(id: exercise.id, kind: kind, primaryMuscles: muscles, lastDone: lastDone[exercise.id])
+            return WorkoutCandidate(
+                id: exercise.id, kind: kind, primaryMuscles: muscles, preference: places[exercise.id], lastDone: lastDone[exercise.id]
+            )
         }
+    }
+
+    /// How many finished workouts back the generator and the coach look.
+    static let historyWorkouts = 200
+
+    /// The finished workouts, newest first, each with its exercises in the order they were first done.
+    func workoutHistory() -> [[UUID]] {
+        finishedSessions(limit: Self.historyWorkouts).map { session in
+            var seen = Set<UUID>()
+            return sets(of: session).filter { !$0.isWarmup }.map(\.exerciseID).filter { seen.insert($0).inserted }
+        }
+    }
+
+    /// Where each exercise first appears in the ready-made programmes, fewest days first: squat, bench press, row.
+    private func placesInReadyMadePrograms() -> [UUID: Int] {
+        var places: [UUID: Int] = [:]
+        for program in programs() where program.ownerID == nil {
+            for day in days(of: program) {
+                for item in items(of: day) where places[item.exerciseID] == nil {
+                    places[item.exerciseID] = places.count
+                }
+            }
+        }
+        return places
     }
 
     /// Per exercise the day of the last finished workout with a working set of it.
     private func lastDoneDays() -> [UUID: Day] {
         var result: [UUID: Day] = [:]
-        for session in finishedSessions(limit: 200) {
+        for session in finishedSessions(limit: Self.historyWorkouts) {
             guard let day = Day(isoString: session.performedOn) else { continue }
             for set in sets(of: session) where !set.isWarmup {
                 if let known = result[set.exerciseID], known >= day { continue }
@@ -383,7 +452,7 @@ struct TrainingStore {
                 notes.append(CoachNote(exercise: exercise, kind: .switchTo(otherExercise)))
                 continue
             }
-            let advice = ProgressionEngine.advise(history: history, rules: rules(for: exercise, in: nil), today: today)
+            let advice = ProgressionEngine.advise(history: history, rules: rulesOfLastWorkout(for: exercise), today: today)
             switch advice {
             case .increase, .addRepsFirst, .makeHarder:
                 notes.append(CoachNote(exercise: exercise, kind: .heavier(advice)))
