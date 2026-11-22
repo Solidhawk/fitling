@@ -9963,6 +9963,28 @@
         }
       }
     },
+    "training.next.compose %lld": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nieuwe training samenstellen · %lld minuten"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compose a new workout · %lld minutes"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neues Training zusammenstellen · %lld Minuten"
+          }
+        }
+      }
+    },
     "training.next.title": {
       "localizations": {
         "nl": {

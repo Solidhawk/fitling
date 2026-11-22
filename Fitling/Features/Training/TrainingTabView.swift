@@ -11,6 +11,12 @@ enum TrainingRoute: Hashable {
     case photos
 }
 
+/// The composer, opened on a focus.
+private struct ComposeRequest: Identifiable {
+    let id = UUID()
+    let focus: TrainingFocus
+}
+
 /// The training tab: carry on with a workout or start the next one, the programmes, progress
 /// and recent workouts.
 struct TrainingTabView: View {
@@ -18,7 +24,7 @@ struct TrainingTabView: View {
     @State private var path: [TrainingRoute] = []
     @State private var workout: WorkoutSession?
     @State private var creatingProgram = false
-    @State private var composing = false
+    @State private var composing: ComposeRequest?
     /// A composed workout waits until its sheet is gone before it opens full screen.
     @State private var composed: WorkoutSession?
     private let sync: SyncEngine
@@ -43,15 +49,7 @@ struct TrainingTabView: View {
                     .listRowBackground(Color.card)
                 } else if let next = viewModel.next {
                     Section("training.next.title") {
-                        Button {
-                            workout = viewModel.start(next.day)
-                        } label: {
-                            VStack(alignment: .leading, spacing: Spacing.xs) {
-                                Text(verbatim: next.day.name.text(preferring: Locale.preferredLanguages)).font(.headline.weight(.heavy))
-                                Text(verbatim: next.program.name.text(preferring: Locale.preferredLanguages)).font(.footnote).foregroundStyle(Color.inkSoft)
-                            }
-                        }
-                        .accessibilityIdentifier("training.next")
+                        nextButton(next)
                     }
                     .listRowBackground(Color.card)
                 }
@@ -59,7 +57,7 @@ struct TrainingTabView: View {
                 Section {
                     if viewModel.activeSession == nil {
                         Button {
-                            composing = true
+                            composing = ComposeRequest(focus: .upperBody)
                         } label: {
                             Label("training.compose.title", systemImage: "list.bullet.rectangle")
                         }
@@ -124,6 +122,7 @@ struct TrainingTabView: View {
                     Section("training.recent.title") {
                         ForEach(viewModel.recent) { session in
                             sessionLabel(session, systemImage: "checkmark.circle")
+                                .accessibilityIdentifier("training.recent")
                         }
                     }
                     .listRowBackground(Color.card)
@@ -145,13 +144,13 @@ struct TrainingTabView: View {
                     path.append(.program(program.id))
                 }
             }
-            .sheet(isPresented: $composing, onDismiss: {
+            .sheet(item: $composing, onDismiss: {
                 if let composed {
                     workout = composed
                     self.composed = nil
                 }
-            }) {
-                ComposeWorkoutView(viewModel: viewModel) { composed = $0 }
+            }) { request in
+                ComposeWorkoutView(viewModel: viewModel, focus: request.focus) { composed = $0 }
             }
             .fullScreenCover(item: $workout, onDismiss: {
                 viewModel.reload()
@@ -190,6 +189,28 @@ struct TrainingTabView: View {
         case .photos:
             ProgressPhotosView(store: ProgressPhotoStore(context: viewModel.store.context))
         }
+    }
+
+    /// The next day of a programme starts; the next composed workout is composed first, so the time still counts.
+    private func nextButton(_ next: NextWorkout) -> some View {
+        Button {
+            switch next {
+            case let .programDay(_, day): workout = viewModel.start(day)
+            case let .compose(focus): composing = ComposeRequest(focus: focus)
+            }
+        } label: {
+            VStack(alignment: .leading, spacing: Spacing.xs) {
+                switch next {
+                case let .programDay(program, day):
+                    Text(verbatim: day.name.text(preferring: Locale.preferredLanguages)).font(.headline.weight(.heavy))
+                    Text(verbatim: program.name.text(preferring: Locale.preferredLanguages)).font(.footnote).foregroundStyle(Color.inkSoft)
+                case let .compose(focus):
+                    Text(focus.titleResource).font(.headline.weight(.heavy))
+                    Text("training.next.compose \(viewModel.workoutMinutes)").font(.footnote).foregroundStyle(Color.inkSoft)
+                }
+            }
+        }
+        .accessibilityIdentifier("training.next")
     }
 
     /// One exercise the coach has a word about: go heavier, or try another exercise for the same muscle.

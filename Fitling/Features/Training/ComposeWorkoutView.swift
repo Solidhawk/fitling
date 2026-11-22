@@ -5,8 +5,14 @@ import FitlingCore
 struct ComposeWorkoutView: View {
     @Bindable var viewModel: TrainingViewModel
     let onStart: (WorkoutSession) -> Void
-    @State private var focus: TrainingFocus = .upperBody
+    @State private var focus: TrainingFocus
     @Environment(\.dismiss) private var dismiss
+
+    init(viewModel: TrainingViewModel, focus: TrainingFocus, onStart: @escaping (WorkoutSession) -> Void) {
+        self.viewModel = viewModel
+        self.onStart = onStart
+        _focus = State(initialValue: focus)
+    }
 
     var body: some View {
         let plan = viewModel.plan(for: focus)

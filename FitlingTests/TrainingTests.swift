@@ -235,13 +235,20 @@ struct TrainingFixture {
         first.finish()
         // The second workout of the test starts later than the first.
         first.session.startedAt = fixture.now.addingTimeInterval(-86_400)
-        let next = try #require(fixture.store.nextDay())
-        #expect(next.day.position == 1)
+        guard case let .programDay(_, next) = fixture.store.nextWorkout() else {
+            Issue.record("expected the next day of the programme")
+            return
+        }
+        #expect(next.position == 1)
 
         let program = try #require(fixture.store.programs().first)
         let last = WorkoutViewModel(session: fixture.store.start(fixture.store.days(of: program).last), store: fixture.store, unit: .kilograms)
         last.finish()
-        #expect(fixture.store.nextDay()?.day.position == 0)
+        guard case let .programDay(_, first) = fixture.store.nextWorkout() else {
+            Issue.record("expected the programme to start over")
+            return
+        }
+        #expect(first.position == 0)
     }
 }
 
@@ -417,17 +424,22 @@ struct TrainingFixture {
         try fixture.installCatalog()
     }
 
-    @Test func aComposedWorkoutBecomesTheDayOfOneOwnProgramme() {
+    @Test func everyComposedWorkoutIsADayOfItsOwnInOneOwnProgramme() {
         let store = fixture.store
         let upper = WorkoutBuilder.plan(.upperBody, minutes: 60, from: store.workoutCandidates(), history: []).exercises
         #expect(!upper.isEmpty)
-        let day = store.compose(upper, into: nil, programName: "Samengesteld", dayName: "Bovenlichaam")
+        let day = store.compose(upper, for: .upperBody, programName: "Samengesteld", dayName: "Bovenlichaam")
         #expect(store.items(of: day).map(\.exerciseID) == upper.map(\.exerciseID))
 
         let lower = WorkoutBuilder.plan(.lowerBody, minutes: 60, from: store.workoutCandidates(), history: []).exercises
-        let again = store.compose(lower, into: day.programID, programName: "Samengesteld", dayName: "Onderlichaam")
-        #expect(again.id == day.id)
+        let again = store.compose(lower, for: .lowerBody, programName: "Samengesteld", dayName: "Onderlichaam")
+        #expect(again.id != day.id)
+        #expect(again.programID == day.programID)
+        #expect(again.position > day.position)
         #expect(store.items(of: again).map(\.exerciseID) == lower.map(\.exerciseID))
+        // The first one is as it was made.
+        #expect(store.items(of: day).map(\.exerciseID) == upper.map(\.exerciseID))
+        #expect(day.name.values["nl"] == "Bovenlichaam")
         #expect(store.programs().filter { $0.ownerID == fixture.userID }.count == 1)
         #expect(again.name.values["nl"] == "Onderlichaam")
     }
@@ -467,7 +479,7 @@ struct TrainingFixture {
         let bench = try fixture.exercise("Bench press")
         let day = store.compose(
             [PlannedExercise(exerciseID: bench.id, sets: 2, repRange: 6...10, restSeconds: 90)],
-            into: nil, programName: "Samengesteld", dayName: "Duwen"
+            for: .push, programName: "Samengesteld", dayName: "Duwen"
         )
         let session = store.start(day)
         for _ in 0..<2 { store.log(in: session, exercise: bench, weightKg: 60, reps: 10, rpe: 7, isWarmup: false) }
@@ -477,21 +489,20 @@ struct TrainingFixture {
         #expect(store.adviceAfterLastWorkout(for: bench) == .increase(toKg: 62.5))
     }
 
-    /// The composed programme is one day that is refilled, so by the next workout the bench press may be out of it.
-    @Test func theCoachStillKnowsTheSetsAndRepsAfterTheDayIsRefilled() throws {
+    @Test func theCoachStillKnowsTheSetsAndRepsAfterAnotherWorkoutIsComposed() throws {
         let store = fixture.store
         let bench = try fixture.exercise("Bench press")
         let squat = try fixture.exercise("Barbell back squat")
         let day = store.compose(
             [PlannedExercise(exerciseID: bench.id, sets: 2, repRange: 6...10, restSeconds: 90)],
-            into: nil, programName: "Samengesteld", dayName: "Duwen"
+            for: .push, programName: "Samengesteld", dayName: "Duwen"
         )
         let session = store.start(day)
         for _ in 0..<2 { store.log(in: session, exercise: bench, weightKg: 60, reps: 10, rpe: 7, isWarmup: false) }
         store.finish(session)
         _ = store.compose(
             [PlannedExercise(exerciseID: squat.id, sets: 3, repRange: 6...10, restSeconds: 150)],
-            into: day.programID, programName: "Samengesteld", dayName: "Onderlichaam"
+            for: .lowerBody, programName: "Samengesteld", dayName: "Onderlichaam"
         )
         let note = try #require(store.coachNotes().first { $0.exercise.id == bench.id })
         #expect(note.kind == .heavier(.increase(toKg: 62.5)))

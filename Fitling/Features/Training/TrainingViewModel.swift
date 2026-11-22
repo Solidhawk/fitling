@@ -10,7 +10,7 @@ import FitlingCore
 final class TrainingViewModel {
     private(set) var programs: [Program] = []
     private(set) var activeSession: WorkoutSession?
-    private(set) var next: (program: Program, day: ProgramDay)?
+    private(set) var next: NextWorkout?
     private(set) var recent: [WorkoutSession] = []
     private(set) var healthRefused = false
     private(set) var coachNotes: [CoachNote] = []
@@ -44,12 +44,11 @@ final class TrainingViewModel {
         SportCatalog.bundled()?.install(into: store.context)
         programs = store.programs()
         activeSession = store.activeSession()
-        next = store.nextDay()
+        next = store.nextWorkout()
         recent = store.finishedSessions(limit: 10)
         coachNotes = store.coachNotes()
     }
 
-    private static let composedProgramKey = "fitling.composedProgram"
     private static let workoutMinutesKey = "fitling.workoutMinutes"
 
     /// The workout for `focus` in the chosen time, to show before it starts.
@@ -57,14 +56,17 @@ final class TrainingViewModel {
         WorkoutBuilder.plan(focus, minutes: workoutMinutes, from: store.workoutCandidates(), history: store.workoutHistory())
     }
 
-    /// Puts the workout for `focus` in the user's composed programme and starts it.
+    /// Makes the workout for `focus` a day of its own and starts it.
     func startComposed(_ focus: TrainingFocus) -> WorkoutSession {
-        let programID = defaults.string(forKey: Self.composedProgramKey).flatMap(UUID.init(uuidString:))
+        // Checked first: a day is only made for a workout that starts.
+        if let running = store.activeSession() {
+            activeSession = running
+            return running
+        }
         let day = store.compose(
-            plan(for: focus).exercises, into: programID,
+            plan(for: focus).exercises, for: focus,
             programName: String(localized: "training.compose.program"), dayName: String(localized: focus.titleResource)
         )
-        defaults.set(day.programID.uuidString, forKey: Self.composedProgramKey)
         reload()
         return start(day)
     }

@@ -143,6 +143,8 @@ jobs:
             -resultBundlePath TestResults.xcresult \
             CODE_SIGNING_ALLOWED=NO > xcodebuild.log 2>&1
           status=$?
+          # Every failure first: the last 150 lines of a long run leave most of them out.
+          grep -E "✘|Test Case .* failed|\.swift:[0-9]+:.* error:" xcodebuild.log | cut -c1-400
           grep -E "error:|Test Suite|Test Case .*(passed|failed)|✔|✘|\*\* (TEST|BUILD)" xcodebuild.log | tail -150
           exit $status
       - name: Screenshots uit de UI-test
