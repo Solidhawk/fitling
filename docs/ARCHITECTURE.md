@@ -320,6 +320,7 @@ Waarom geen exacte optimalisatie: het probleem is klein (zeven dagen, drie of vi
 | D-19 | Trainingen uit HealthKit en voortgangsfoto's blijven op het toestel | Meesturen naar de server | Privacy, en de regels van Apple voor gezondheidsdata (RISKS R-05) |
 | D-20 | Weekmenu: gretig kiezen met correctie | Geheeltallige optimalisatie | Zie §7 |
 | D-21 | Geanimeerde oefeningen als WebP-vel van 24 beelden per oefening (alle 113, samen onder 16 MB), met de volgorde in `ExerciseAnimations.json`; de timing staat alleen in `design/oefeningen/3d/poses.py` | Video; een 3D-model met SceneKit of RealityKit | Doorzichtig, dus één bestand voor licht en donker, zonder 3D-engine of videospeler. Met "Verminder beweging" staan begin en eind stil naast elkaar |
+| D-22 | De generator houdt per spiergroep één basisoefening acht trainingen vast, wisselt het aanvullende werk af en past in de gekozen tijd; alle regels en de tijdschatting staan in `WorkoutBuilder` | Steeds wat het langst niet gedaan is; een tabel met vaste trainingen per duur | Met 113 oefeningen kwam basiswerk te zelden terug om sterker te worden. De stand volgt uit de trainingsgeschiedenis, dus er komt geen kolom of migratie bij |
 
 ## 9. Bewust nog open
 

@@ -13289,6 +13289,160 @@
         }
       }
     },
+    "training.compose.duration": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hoe lang wil je trainen?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How long do you want to train?"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wie lange willst du trainieren?"
+          }
+        }
+      }
+    },
+    "training.compose.estimate %lld": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ongeveer %lld minuten, met opwarmen en rust."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About %lld minutes, warm-up and rest included."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Etwa %lld Minuten, mit Aufwärmen und Pausen."
+          }
+        }
+      }
+    },
+    "training.compose.leftOut %@": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Past er niet in: %@. Dat gaat de volgende keer voor."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Does not fit: %@. That goes first next time."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Passt nicht hinein: %@. Das hat beim nächsten Mal Vorrang."
+          }
+        }
+      }
+    },
+    "training.compose.minutes %lld": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld minuten"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld minutes"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld Minuten"
+          }
+        }
+      }
+    },
+    "training.compose.short": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bij 30 minuten of korter rust je korter en doe je soms minder sets."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "At 30 minutes or less you rest shorter and sometimes do fewer sets."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bei 30 Minuten oder weniger pausierst du kürzer und machst manchmal weniger Sätze."
+          }
+        }
+      }
+    },
+    "training.compose.time": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tijd"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Time"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zeit"
+          }
+        }
+      }
+    },
+    "training.compose.timeOver": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meer oefeningen zet de app hier niet in één training, dus je bent eerder klaar."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The app does not put more exercises for this in one workout, so you finish earlier."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mehr Übungen dafür plant die App nicht in ein Training, du bist also früher fertig."
+          }
+        }
+      }
+    },
     "training.compose.exercises": {
       "localizations": {
         "nl": {
@@ -13338,19 +13492,19 @@
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Eerst de zware basisoefeningen, dan de kleinere. Oefeningen die je het langst niet hebt gedaan gaan voor, zodat je trainingen afwisselen. De training komt in je schema \"Samengestelde training\"."
+            "value": "Een basisoefening blijft acht trainingen staan, zodat je er sterker in wordt. De aanvullende oefeningen wisselen af. De training komt in je schema \"Samengestelde training\"."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The heavy compound exercises first, then the smaller ones. Exercises you have not done for the longest come first, so your workouts vary. The workout goes into your programme \"Composed workout\"."
+            "value": "A main exercise stays for eight workouts, so you get stronger at it. The extra exercises vary. The workout goes into your programme \"Composed workout\"."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zuerst die schweren Grundübungen, dann die kleineren. Übungen, die du am längsten nicht gemacht hast, kommen zuerst, damit deine Trainings abwechseln. Das Training kommt in dein Programm „Zusammengestelltes Training\"."
+            "value": "Eine Grundübung bleibt acht Trainings lang, damit du darin stärker wirst. Die ergänzenden Übungen wechseln. Das Training kommt in dein Programm „Zusammengestelltes Training\"."
           }
         }
       }

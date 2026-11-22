@@ -477,6 +477,26 @@ struct TrainingFixture {
         #expect(store.advice(for: bench, in: store.latestItem(for: bench.id)) == .increase(toKg: 62.5))
     }
 
+    /// The composed programme is one day that is refilled, so by the next workout the bench press may be out of it.
+    @Test func theCoachStillKnowsTheSetsAndRepsAfterTheDayIsRefilled() throws {
+        let store = fixture.store
+        let bench = try fixture.exercise("Bench press")
+        let squat = try fixture.exercise("Barbell back squat")
+        let day = store.compose(
+            [PlannedExercise(exerciseID: bench.id, sets: 2, repRange: 6...10, restSeconds: 90)],
+            into: nil, programName: "Samengesteld", dayName: "Duwen"
+        )
+        let session = store.start(day)
+        for _ in 0..<2 { store.log(in: session, exercise: bench, weightKg: 60, reps: 10, rpe: 7, isWarmup: false) }
+        store.finish(session)
+        _ = store.compose(
+            [PlannedExercise(exerciseID: squat.id, sets: 3, repRange: 6...10, restSeconds: 150)],
+            into: day.programID, programName: "Samengesteld", dayName: "Onderlichaam"
+        )
+        let note = try #require(store.coachNotes().first { $0.exercise.id == bench.id })
+        #expect(note.kind == .heavier(.increase(toKg: 62.5)))
+    }
+
     /// Exercises done on the same day come in alphabetical order, so the list does not reshuffle
     /// every time the screen loads (it did: the order came from a dictionary).
     @Test func notesFromTheSameDayComeInAlphabeticalOrder() throws {

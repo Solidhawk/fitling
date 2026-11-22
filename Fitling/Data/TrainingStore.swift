@@ -295,8 +295,20 @@ struct TrainingStore {
         )
     }
 
+    /// The exercise's place in the programme day of the last finished workout it was in, for judging that workout
+    /// by its own sets and reps. Nil for a free workout, or when the day no longer has it.
     func latestItem(for exerciseID: UUID) -> ProgramExercise? {
-        nil
+        let userID = userID
+        let sets = (try? context.fetch(FetchDescriptor<WorkoutSet>(
+            predicate: #Predicate<WorkoutSet> { $0.userID == userID && $0.exerciseID == exerciseID && $0.deletedAt == nil && !$0.isWarmup }
+        ))) ?? []
+        let sessions = Set(sets.map(\.sessionID)).compactMap { id -> WorkoutSession? in
+            var descriptor = FetchDescriptor<WorkoutSession>(predicate: #Predicate<WorkoutSession> { $0.id == id && $0.deletedAt == nil && $0.endedAt != nil })
+            descriptor.fetchLimit = 1
+            return try? context.fetch(descriptor).first
+        }
+        guard let dayID = sessions.max(by: { $0.startedAt < $1.startedAt })?.programDayID, let day = day(dayID) else { return nil }
+        return items(of: day).first { $0.exerciseID == exerciseID }
     }
 
     func advice(for exercise: Exercise, in item: ProgramExercise?, excluding session: WorkoutSession? = nil) -> ProgressionAdvice {
@@ -317,21 +329,44 @@ struct TrainingStore {
     /// Every exercise the user can do, with the day it was last done.
     func workoutCandidates() -> [WorkoutCandidate] {
         let lastDone = lastDoneDays()
+        let places = placesInReadyMadePrograms()
         return exercises().compactMap { exercise in
             let muscles = exercise.primaryMuscles.compactMap(MuscleGroup.init(rawValue:))
             guard !muscles.isEmpty, let kind = ExerciseKind(rawValue: exercise.kind) else { return nil }
-            return WorkoutCandidate(id: exercise.id, kind: kind, primaryMuscles: muscles, lastDone: lastDone[exercise.id])
+            return WorkoutCandidate(
+                id: exercise.id, kind: kind, primaryMuscles: muscles, preference: places[exercise.id], lastDone: lastDone[exercise.id]
+            )
         }
     }
 
+    /// How many finished workouts back the generator and the coach look.
+    static let historyWorkouts = 200
+
+    /// The finished workouts, newest first, each with its exercises in the order they were first done.
     func workoutHistory() -> [[UUID]] {
-        []
+        finishedSessions(limit: Self.historyWorkouts).map { session in
+            var seen = Set<UUID>()
+            return sets(of: session).filter { !$0.isWarmup }.map(\.exerciseID).filter { seen.insert($0).inserted }
+        }
+    }
+
+    /// Where each exercise first appears in the ready-made programmes, fewest days first: squat, bench press, row.
+    private func placesInReadyMadePrograms() -> [UUID: Int] {
+        var places: [UUID: Int] = [:]
+        for program in programs() where program.ownerID == nil {
+            for day in days(of: program) {
+                for item in items(of: day) where places[item.exerciseID] == nil {
+                    places[item.exerciseID] = places.count
+                }
+            }
+        }
+        return places
     }
 
     /// Per exercise the day of the last finished workout with a working set of it.
     private func lastDoneDays() -> [UUID: Day] {
         var result: [UUID: Day] = [:]
-        for session in finishedSessions(limit: 200) {
+        for session in finishedSessions(limit: Self.historyWorkouts) {
             guard let day = Day(isoString: session.performedOn) else { continue }
             for set in sets(of: session) where !set.isWarmup {
                 if let known = result[set.exerciseID], known >= day { continue }
@@ -391,7 +426,7 @@ struct TrainingStore {
                 notes.append(CoachNote(exercise: exercise, kind: .switchTo(otherExercise)))
                 continue
             }
-            let advice = ProgressionEngine.advise(history: history, rules: rules(for: exercise, in: nil), today: today)
+            let advice = ProgressionEngine.advise(history: history, rules: rules(for: exercise, in: latestItem(for: exerciseID)), today: today)
             switch advice {
             case .increase, .addRepsFirst, .makeHarder:
                 notes.append(CoachNote(exercise: exercise, kind: .heavier(advice)))
