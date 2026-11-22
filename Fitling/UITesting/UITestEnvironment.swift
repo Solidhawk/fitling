@@ -12,9 +12,15 @@ enum UITestEnvironment {
     /// `--ui-testing-with-profile` starts signed in with a finished onboarding and a partner, on the home screen.
     /// `--ui-testing-partner-gallery` shows every species in every look, for approving the drawings.
     /// `--ui-testing-workout-history` adds four weeks of finished workouts, so the coach has something to say.
+    /// `--ui-testing-animated-exercises` adds one workout of every animated exercise, so each can be opened.
+    /// `--ui-testing-reduce-motion` acts as if Reduce Motion is on; XCUITest cannot switch that setting on.
     /// `--ui-testing-dark` forces dark mode; setting the appearance from XCUITest did not reach the app on the CI simulator.
     static var colorScheme: ColorScheme? {
         ProcessInfo.processInfo.arguments.contains("--ui-testing-dark") ? .dark : nil
+    }
+
+    static var reducesMotion: Bool {
+        ProcessInfo.processInfo.arguments.contains("--ui-testing-reduce-motion")
     }
 
     static func makeIfRequested(arguments: [String] = ProcessInfo.processInfo.arguments) throws -> AppEnvironment? {
@@ -32,6 +38,9 @@ enum UITestEnvironment {
             insertSampleProfile(userID: userID, into: sync)
             if arguments.contains("--ui-testing-workout-history") {
                 insertWorkoutHistory(userID: userID, into: sync.context)
+            }
+            if arguments.contains("--ui-testing-animated-exercises") {
+                insertAnimatedExerciseHistory(userID: userID, into: sync.context)
             }
         }
         let source = FakeProductSource()
@@ -82,6 +91,24 @@ enum UITestEnvironment {
         }
         workout("Bench press", daysAgo: 2, kg: 60, reps: 12)
         workout("Lateral raise", daysAgo: 2, kg: 8, reps: 12)
+        try? context.save()
+    }
+
+    /// One finished workout three days ago with every animated exercise in it: "Per oefening" only lists
+    /// exercises that were done.
+    static func insertAnimatedExerciseHistory(userID: UUID, into context: ModelContext, defaults: UserDefaults = .standard, now: Date = .now, timeZone: TimeZone = .current) {
+        SportCatalog.bundled()?.install(into: context, defaults: defaults, now: now)
+        let shared = (try? context.fetch(FetchDescriptor<Exercise>(predicate: #Predicate<Exercise> { $0.ownerID == nil }))) ?? []
+        let startedAt = now.addingTimeInterval(-3 * 86_400)
+        let session = WorkoutSession(id: UUID(), userID: userID, programDayID: nil, performedOn: Day(now, timeZone: timeZone).adding(-3), startedAt: startedAt, updatedAt: now)
+        session.endedAt = startedAt.addingTimeInterval(3_600)
+        context.insert(session)
+        for (position, exercise) in shared.filter({ ExerciseAnimation.named($0.id) != nil }).enumerated() {
+            context.insert(WorkoutSet(
+                id: UUID(), userID: userID, sessionID: session.id, exerciseID: exercise.id, position: position,
+                weightKg: 20, reps: 10, rpe: 7, isWarmup: false, updatedAt: now
+            ))
+        }
         try? context.save()
     }
 

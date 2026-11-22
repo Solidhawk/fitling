@@ -67,6 +67,13 @@ struct ExerciseProgressView: View {
                     Text("training.drawing.credit").footerStyle()
                 }
                 .listRowBackground(Color.card)
+            } else if let animation = ExerciseAnimation.named(exercise.id) {
+                Section {
+                    ExerciseAnimationView(animation: animation)
+                } footer: {
+                    Text("training.animation.legend").footerStyle()
+                }
+                .listRowBackground(Color.card)
             }
             Section {
                 if points.count >= 2 {

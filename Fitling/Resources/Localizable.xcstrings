@@ -9721,6 +9721,94 @@
         }
       }
     },
+    "training.animation.legend": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Koraal: de spieren die het meeste werk doen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coral: the muscles that do most of the work."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Koralle: die Muskeln, die am meisten arbeiten."
+          }
+        }
+      }
+    },
+    "training.animation.pause": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Animatie pauzeren"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pause animation"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Animation pausieren"
+          }
+        }
+      }
+    },
+    "training.animation.play": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Animatie afspelen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Play animation"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Animation abspielen"
+          }
+        }
+      }
+    },
+    "training.animation.still": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Begin en eind van de beweging"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start and end of the movement"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anfang und Ende der Bewegung"
+          }
+        }
+      }
+    },
     "training.drawing.credit": {
       "localizations": {
         "nl": {
