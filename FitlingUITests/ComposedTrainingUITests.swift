@@ -43,8 +43,21 @@ final class ComposedTrainingUITests: XCTestCase {
         app.buttons["training.compose.start"].tap()
         let finish = app.buttons["workout.finish"]
         XCTAssertTrue(finish.waitForExistence(timeout: 10), "The workout did not start")
-        finish.tap()
-        XCTAssertTrue(finish.waitForNonExistence(timeout: 10))
+        // In run 45063212220 the tap came 0.35 s after the workout had slid up and the screen stayed. A tap lost in
+        // that transition is the likely cause, not a proven one (as in S22): so it is made again, and noted when it was.
+        var taps = 0
+        while finish.exists && taps < 3 {
+            if finish.isHittable { finish.tap() }
+            taps += 1
+            if finish.waitForNonExistence(timeout: 5) { break }
+        }
+        if taps > 1 {
+            let note = XCTAttachment(string: "Klaar needed \(taps) taps")
+            note.name = "klaar-opnieuw-getikt"
+            note.lifetime = .keepAlways
+            add(note)
+        }
+        XCTAssertFalse(finish.exists, "The workout did not close after \(taps) taps")
         XCTAssertTrue(app.navigationBars["Training"].waitForExistence(timeout: 10))
     }
 
