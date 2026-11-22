@@ -10,6 +10,29 @@ test('de catalogus klopt', () => {
   assert.deepEqual(validate(catalog), []);
 });
 
+test('er staan 113 oefeningen in, zonder dubbele naam of slug', () => {
+  assert.equal(catalog.exercises.length, 113);
+  for (const field of [(e) => e.slug, (e) => e.name.nl, (e) => e.name.en, (e) => e.name.de]) {
+    assert.equal(new Set(catalog.exercises.map(field)).size, catalog.exercises.length);
+  }
+});
+
+test('elke spiergroep heeft minstens drie oefeningen als hoofdspier', () => {
+  for (const muscle of ['chest', 'back', 'shoulders', 'biceps', 'triceps', 'forearms', 'core', 'glutes', 'quads', 'hamstrings', 'calves']) {
+    assert.ok(catalog.exercises.filter((e) => e.primaryMuscles[0] === muscle).length >= 3, muscle);
+  }
+});
+
+test('thuis zonder spullen kan elk deel van het lijf', () => {
+  for (const muscle of ['chest', 'shoulders', 'triceps', 'core', 'glutes', 'quads', 'calves']) {
+    assert.ok(catalog.exercises.some((e) => e.equipment === 'bodyweight' && e.primaryMuscles.includes(muscle)), muscle);
+  }
+});
+
+test('een nieuwe lijst heeft een hogere versie, anders werkt de server de rijen niet bij', () => {
+  assert.equal(catalog.version, 2);
+});
+
 test('de drie schema\'s uit PROMPT.md staan erin', () => {
   assert.deepEqual(catalog.programs.map((p) => p.daysPerWeek), [3, 4, 6]);
 });

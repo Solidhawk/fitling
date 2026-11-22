@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 select plan(6);
 
-select is((select count(*)::int from public.exercises where owner_id is null), 33, 'de gedeelde oefeningen staan erin');
+select is((select count(*)::int from public.exercises where owner_id is null), 113, 'de gedeelde oefeningen staan erin');
 select is((select count(*)::int from public.programs where owner_id is null), 3, 'de drie kant-en-klare schema''s staan erin');
 select is(
   (select array_agg(days_per_week order by days_per_week) from public.programs where owner_id is null),

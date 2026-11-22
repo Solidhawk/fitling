@@ -4,16 +4,16 @@ import Testing
 import FitlingCore
 @testable import Fitling
 
-/// The animations of the exercises without a drawing (UNFORGET S19).
+/// The animations of the exercises: every one has its own (UNFORGET S19).
 @MainActor
 @Suite struct ExerciseAnimationTests {
     static let gobletSquat = UUID(uuidString: "3b70d0ec-e441-5831-808c-0c025c473ebf")!
 
-    @Test func everyExerciseHasEitherADrawingOrAnAnimation() throws {
+    @Test func everyExerciseHasAnAnimation() throws {
         let catalog = try #require(SportCatalog.bundled())
+        #expect(catalog.exercises.count == 113)
         for entry in catalog.exercises {
-            let shown = [ExerciseDrawing.exists(for: entry.id), ExerciseAnimation.named(entry.id) != nil].filter { $0 }
-            #expect(shown.count == 1, "\(entry.name.values["en"] ?? "")")
+            #expect(ExerciseAnimation.named(entry.id) != nil, "\(entry.name.values["en"] ?? "")")
         }
     }
 
@@ -24,10 +24,10 @@ import FitlingCore
     @Test func everyAnimationsPictureDecodesIntoItsFrames() async throws {
         let catalog = try #require(SportCatalog.bundled())
         let animations = catalog.exercises.compactMap { ExerciseAnimation.named($0.id) }
-        #expect(animations.count == 7)
+        #expect(animations.count == 113)
         for animation in animations {
             let frames = try #require(await animation.loadFrames(), "\(animation.id)")
-            #expect(frames.images.count == 40)
+            #expect(frames.images.count == 24)
             #expect(frames.images.allSatisfy { $0.width == 440 && $0.height == 330 })
             #expect(animation.sequence.allSatisfy { frames.images.indices.contains($0) })
         }
@@ -64,16 +64,16 @@ import FitlingCore
 
     @Test func stillFramesAreTheStartAndTheEndOfTheMovement() throws {
         let animation = try #require(ExerciseAnimation.named(Self.gobletSquat))
-        #expect(animation.stillFrames == [0, 39])
+        #expect(animation.stillFrames == [0, 23])
     }
 
-    @Test func theUITestHistoryHasEveryAnimatedExercise() throws {
+    @Test func theUITestHistoryHasAShortListOfAnimatedExercises() throws {
         let fixture = try TrainingFixture()
         UITestEnvironment.insertAnimatedExerciseHistory(
             userID: fixture.userID, into: fixture.context, defaults: fixture.defaults, now: fixture.now, timeZone: .gmt
         )
         let done = fixture.store.exercises().filter { !fixture.store.history(of: $0.id).isEmpty }
-        #expect(done.count == 7)
+        #expect(done.count == 12)
         #expect(done.allSatisfy { ExerciseAnimation.named($0.id) != nil })
     }
 }

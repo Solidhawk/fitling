@@ -18,7 +18,11 @@ class Bundle(unittest.TestCase):
     def test_every_animation_has_its_picture_and_stays_small(self):
         for slug, motion in poses.EXERCISES.items():
             size = (FOLDER / f'{motion.id}.webp').stat().st_size
-            self.assertLess(size, 450_000, slug)
+            self.assertLess(size, 220_000, slug)
+
+    def test_all_of_them_together_stay_small(self):
+        self.assertEqual(len(list(FOLDER.glob('*.webp'))), 113)
+        self.assertLess(sum(path.stat().st_size for path in FOLDER.glob('*.webp')), 16_000_000)
 
 
 if __name__ == '__main__':
