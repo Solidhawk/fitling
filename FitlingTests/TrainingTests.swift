@@ -474,7 +474,7 @@ struct TrainingFixture {
         store.finish(session)
         let note = try #require(store.coachNotes().first { $0.exercise.id == bench.id })
         #expect(note.kind == .heavier(.increase(toKg: 62.5)))
-        #expect(store.advice(for: bench, in: store.latestItem(for: bench.id)) == .increase(toKg: 62.5))
+        #expect(store.adviceAfterLastWorkout(for: bench) == .increase(toKg: 62.5))
     }
 
     /// The composed programme is one day that is refilled, so by the next workout the bench press may be out of it.
@@ -495,6 +495,8 @@ struct TrainingFixture {
         )
         let note = try #require(store.coachNotes().first { $0.exercise.id == bench.id })
         #expect(note.kind == .heavier(.increase(toKg: 62.5)))
+        // And on the exercise's own screen.
+        #expect(store.adviceAfterLastWorkout(for: bench) == .increase(toKg: 62.5))
     }
 
     /// Exercises done on the same day come in alphabetical order, so the list does not reshuffle

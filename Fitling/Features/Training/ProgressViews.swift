@@ -108,7 +108,7 @@ struct ExerciseProgressView: View {
             .listRowBackground(Color.card)
 
             Section {
-                Text(store.advice(for: exercise, in: store.latestItem(for: exercise.id)).text(unit: unit))
+                Text(store.adviceAfterLastWorkout(for: exercise).text(unit: unit))
                 Stepper(value: $step, in: 0.25...25, step: 0.25) {
                     Text("training.step.label \(unit.format(kilograms: step))")
                 }
