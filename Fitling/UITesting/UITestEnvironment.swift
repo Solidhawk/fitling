@@ -12,7 +12,7 @@ enum UITestEnvironment {
     /// `--ui-testing-with-profile` starts signed in with a finished onboarding and a partner, on the home screen.
     /// `--ui-testing-partner-gallery` shows every species in every look, for approving the drawings.
     /// `--ui-testing-workout-history` adds four weeks of finished workouts, so the coach has something to say.
-    /// `--ui-testing-animated-exercises` adds one workout of every animated exercise, so each can be opened.
+    /// `--ui-testing-animated-exercises` adds one workout with exercises of each kind, so their animations can be opened.
     /// `--ui-testing-reduce-motion` acts as if Reduce Motion is on; XCUITest cannot switch that setting on.
     /// `--ui-testing-dark` forces dark mode; setting the appearance from XCUITest did not reach the app on the CI simulator.
     static var colorScheme: ColorScheme? {
@@ -94,8 +94,25 @@ enum UITestEnvironment {
         try? context.save()
     }
 
-    /// One finished workout three days ago with every animated exercise in it: "Per oefening" only lists
-    /// exercises that were done.
+    /// One exercise of each kind of picture (standing, seated, lying, on all fours, hanging, at a machine); all
+    /// 113 would make the list too long to swipe through in a test.
+    private static let animationSamples: Set<String> = [
+        "1eba5fd1-f1c8-5159-9897-460d3f7a108c", // cable crunch
+        "9a053b3c-5162-57d0-b52c-7381c0f09127", // one-arm dumbbell row
+        "35a39c5f-d6d0-55a0-8107-6a62eecab0c8", // face pull
+        "3b70d0ec-e441-5831-808c-0c025c473ebf", // goblet squat
+        "96db441e-09eb-5089-b615-0cefc1a34bb0", // hanging leg raise
+        "b8aab0e1-ee00-5090-a682-c687de98b7dd", // hip thrust
+        "31fb6913-0785-59a7-83d4-3e50fdf13097", // kettlebell swing
+        "dc09d77d-9f6a-5f55-8474-2f76413eee5f", // knee push-up
+        "9d515a55-fdd4-5b19-a5a6-792cc4dd880a", // Russian twist
+        "f442b2ea-a4ce-5f40-b594-83f5c99dc2f0", // barbell back squat
+        "fb2140a0-eb3f-5b29-b88b-210d435e8163", // dumbbell fly
+        "fd04401f-f97f-54b8-824e-7252dfc457d5", // side-lying leg raise
+    ]
+
+    /// One finished workout three days ago with those exercises in it: "Per oefening" only lists exercises
+    /// that were done.
     static func insertAnimatedExerciseHistory(userID: UUID, into context: ModelContext, defaults: UserDefaults = .standard, now: Date = .now, timeZone: TimeZone = .current) {
         SportCatalog.bundled()?.install(into: context, defaults: defaults, now: now)
         let shared = (try? context.fetch(FetchDescriptor<Exercise>(predicate: #Predicate<Exercise> { $0.ownerID == nil }))) ?? []
@@ -103,7 +120,7 @@ enum UITestEnvironment {
         let session = WorkoutSession(id: UUID(), userID: userID, programDayID: nil, performedOn: Day(now, timeZone: timeZone).adding(-3), startedAt: startedAt, updatedAt: now)
         session.endedAt = startedAt.addingTimeInterval(3_600)
         context.insert(session)
-        for (position, exercise) in shared.filter({ ExerciseAnimation.named($0.id) != nil }).enumerated() {
+        for (position, exercise) in shared.filter({ animationSamples.contains($0.id.uuidString.lowercased()) }).enumerated() {
             context.insert(WorkoutSet(
                 id: UUID(), userID: userID, sessionID: session.id, exerciseID: exercise.id, position: position,
                 weightKg: 20, reps: 10, rpe: 7, isWarmup: false, updatedAt: now

@@ -40,7 +40,7 @@ struct ExerciseAnimation: Equatable, Sendable {
         return sequence[step % sequence.count]
     }
 
-    /// Decodes the sheet and cuts it into frames. Not on the main actor: it is 3520 × 1650 pixels.
+    /// Decodes the sheet and cuts it into frames. Not on the main actor: it is 2640 × 1320 pixels.
     nonisolated func loadFrames() async -> ExerciseFrames? {
         guard let url = Bundle.main.url(forResource: id.uuidString.lowercased(), withExtension: "webp"),
               let source = CGImageSourceCreateWithURL(url as CFURL, nil),

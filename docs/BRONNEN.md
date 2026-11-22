@@ -23,7 +23,8 @@ Alles hieronder mag in de app worden gebruikt onder de genoemde licentie. De app
 - **Eigen werk**, zonder bestanden van anderen: figuur, toestellen en bewegingen komen uit de code in `design/oefeningen/3d`. Opnieuw maken, vanuit die map:
   1. `blender -b --factory-startup -P render.py -- <map>` tekent de beelden (Blender 5.3).
   2. `python build.py <map>` maakt `Fitling/Resources/ExerciseAnimations` (Pillow nodig).
-  3. `python -m unittest` toetst de houdingen aan de uitleg in `SportCatalog.json`.
+  3. `python -m unittest` toetst van alle 113 oefeningen de houdingen en de techniek, en de bestanden in de app.
+- De namen van de tachtig in november 2026 toegevoegde oefeningen zijn gekozen naast de lijst van [free-exercise-db](https://github.com/yuhonas/free-exercise-db) (Unlicense). Alleen gangbare namen zijn bekeken: uitleg, spieren, houdingen en beelden zijn zelf geschreven en gemaakt.
 
 ## Foto's van recepten (Wikimedia Commons)
 
