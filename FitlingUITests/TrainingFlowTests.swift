@@ -40,6 +40,24 @@ final class TrainingFlowTests: XCTestCase {
         XCTAssertTrue(element.waitForExistence(timeout: 5))
     }
 
+    /// From the programme back to Training. On the CI simulator Training once did not appear after the
+    /// tap (UNFORGET S22). A tap lost while the workout was closing is the likely cause, not a proven
+    /// one, so the tap waits until the button can be tapped and is made again when Training stays away.
+    @MainActor
+    private func backToTraining(_ app: XCUIApplication) {
+        let training = app.navigationBars["Training"]
+        var taps = 0
+        for _ in 0..<3 where !training.exists {
+            let back = app.navigationBars.buttons.element(boundBy: 0)
+            if back.waitForExistence(timeout: 5) && back.isHittable {
+                back.tap()
+                taps += 1
+            }
+            _ = training.waitForExistence(timeout: 10)
+        }
+        XCTAssertTrue(training.exists, "Not back on Training after \(taps) taps")
+    }
+
     @MainActor
     private func firstWorkout(_ app: XCUIApplication, prefix: String) {
         XCTAssertTrue(app.navigationBars["Vandaag"].waitForExistence(timeout: 10))
@@ -81,8 +99,7 @@ final class TrainingFlowTests: XCTestCase {
 
         app.buttons["workout.finish"].tap()
         XCTAssertTrue(app.collectionViews["workout.list"].waitForNonExistence(timeout: 10))
-        app.navigationBars.buttons.element(boundBy: 0).tap()
-        XCTAssertTrue(app.navigationBars["Training"].waitForExistence(timeout: 5))
+        backToTraining(app)
         // The list is still scrolled to the programme; at the largest text sizes the top row is off
         // screen, and the list only makes rows near the screen.
         for _ in 0..<3 { app.collectionViews["training.list"].swipeDown(velocity: .fast) }
