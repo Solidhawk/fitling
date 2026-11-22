@@ -26,6 +26,7 @@ TRUNK_SHAPE = [(0, -0.07), (0.12, -0.03), (0.135, 0.07), (0.122, 0.19), (0.152, 
 SHORTS_SHAPE = [(0, -0.095), (0.105, -0.075), (0.15, 0), (0.147, 0.075), (0.128, 0.115), (0, 0.118)]
 TROUSER_SHAPE = [(0, -0.122), (0.075, -0.1), (0.108, -0.045), (0.112, 0.03), (0.105, 0.12), (0, 0.125)]
 DELTOID_SHAPE = [(0, -0.075), (0.045, -0.06), (0.074, -0.015), (0.075, 0.05), (0.06, 0.11), (0, 0.116)]
+FOREARM_SHAPE = [(0, 0.0), (0.04, 0.012), (0.053, 0.06), (0.052, 0.13), (0.043, 0.19), (0, 0.205)]
 RIGHT = Vector((1, 0, 0))
 
 
@@ -94,9 +95,10 @@ class Straight:
 
 
 class Spine:
-    """The curve from the pelvis through the waist to the neck."""
+    """The curve from the pelvis through the waist to the neck, twisting from the hips to the shoulders."""
 
     def __init__(self, pose):
+        self.hips, self.shoulders = Vector(pose.hip_across), Vector(pose.shoulder_across)
         self.p0, self.p2 = Vector(pose.pelvis), Vector(pose.neck)
         self.p1 = 2 * Vector(pose.waist) - (self.p0 + self.p2) / 2
 
@@ -105,7 +107,9 @@ class Spine:
         centre = self.p0 * (1 - t) ** 2 + self.p1 * 2 * t * (1 - t) + self.p2 * t * t
         along = ((self.p1 - self.p0) * (1 - t) + (self.p2 - self.p1) * t).normalized()
         centre += along * (z - t * poses.TRUNK)
-        return centre, RIGHT, Vector((0, -along.z, along.y))
+        across = self.hips.lerp(self.shoulders, t)
+        across = (across - along * across.dot(along)).normalized()
+        return centre, across, across.cross(along)
 
 
 class Painter:
@@ -142,8 +146,12 @@ class Painter:
                  for j in range(len(profile) - 1) for i in range(n)]
         return self.mesh(verts, faces, colour)
 
-    def muscle(self, line, profile, middle, half_length, around, half_width, wide=1.0, deep=1.0):
-        """An oval lying on the surface of a turned shape; angles in degrees from its front."""
+    def muscle(self, line, profile, middle, half_length, around, half_width, wide=1.0, deep=1.0, squareness=1.0,
+               tilt=0.0):
+        """An oval lying on the surface of a turned shape; angles in degrees from its front.
+
+        Below 1 `squareness` squares it off, `tilt` lifts the side at positive angles.
+        """
         rings, n = 12, 44
         verts = []
         for ring in range(rings + 1):
@@ -151,8 +159,10 @@ class Painter:
             lift = 0.0015 + 0.006 * math.sqrt(max(1 - share * share, 0))
             for i in range(n):
                 a = 2 * math.pi * i / n
-                z = middle + half_length * share * math.cos(a)
-                angle = math.radians(around + half_width * share * math.sin(a))
+                along = math.copysign(abs(math.cos(a)) ** squareness, math.cos(a))
+                beside = math.copysign(abs(math.sin(a)) ** squareness, math.sin(a))
+                z = middle + share * (half_length * along + tilt * beside)
+                angle = math.radians(around + half_width * share * beside)
                 centre, right, front = line.at(z)
                 r = radius_at(profile, z)
                 verts.append(centre + right * ((r * wide + lift) * math.sin(angle))
@@ -190,9 +200,9 @@ class Painter:
                    (0.0001, length)]
         return self.turned(Straight(a, b, (0, -1, 0)), profile, colour, n=32)
 
-    def box(self, centre, size, colour, bevel):
-        half = Vector(size) / 2
-        verts = [Vector(centre) + Vector((x * half.x, y * half.y, z * half.z))
+    def box(self, centre, size, colour, bevel, axes=((1, 0, 0), (0, 1, 0), (0, 0, 1))):
+        half, (a, b, c) = Vector(size) / 2, [Vector(axis) for axis in axes]
+        verts = [Vector(centre) + a * (x * half.x) + b * (y * half.y) + c * (z * half.z)
                  for x in (-1, 1) for y in (-1, 1) for z in (-1, 1)]
         faces = [(0, 1, 3, 2), (4, 6, 7, 5), (0, 4, 5, 1), (2, 3, 7, 6), (0, 2, 6, 4), (1, 5, 7, 3)]
         obj = self.mesh(verts, faces, colour)
@@ -202,14 +212,18 @@ class Painter:
 
 
 def draw_muscles(paint, name, spine, trunk, shorts, thigh, thigh_shape):
-    if name == 'back':
+    if name == 'chest':
+        for side in (-1, 1):
+            # Up to the collarbone and squared off: round and low reads as a bikini top.
+            paint.muscle(spine, trunk, 0.412, 0.076, 39 * side, 35, 1.12, 0.8, 0.5, 0.012 * side)
+    elif name == 'back':
         for side in (-1, 1):
             paint.muscle(spine, trunk, 0.30, 0.135, 180 + 52 * side, 43, 1.12, 0.8)
     elif name == 'core':
         paint.muscle(spine, trunk, 0.215, 0.125, 0, 72, 1.12, 0.8)
     elif name == 'glutes':
         for side in (-1, 1):
-            paint.muscle(spine, shorts, 0.0, 0.075, 180 - 56 * side, 50, 1.13, 0.88)
+            paint.muscle(spine, shorts, 0.0, 0.075, 180 - 62 * side, 56, 1.13, 0.88)
             # The trouser leg too: bent at the hip, it covers the shorts.
             paint.muscle(thigh[side], smooth_profile(TROUSER_SHAPE), 0.0, 0.085, 180 - 28 * side, 72)
     elif name == 'quads':
@@ -227,17 +241,19 @@ def draw_figure(paint, pose, muscles):
     paint.turned(spine, shorts, 'cloth', 1.13, 0.88)
 
     up = Vector(pose.head_up).normalized()
-    face = Vector((0, -up.z, up.y))
+    across = Vector(pose.shoulder_across)
+    across = (across - up * across.dot(up)).normalized()
+    face = across.cross(up)
     head = Vector(pose.head)
     paint.rod(Vector(pose.neck) + up * 0.05, head - up * 0.08, 0.046, 'body')
-    paint.ball(head, (RIGHT * 0.15, face * 0.145, up * 0.155), 'body')
+    paint.ball(head, (across * 0.15, face * 0.145, up * 0.155), 'body')
     for side in (-1, 1):
-        paint.ball(head + RIGHT * (0.056 * side) + face * 0.136 + up * 0.005,
-                   (RIGHT * 0.026, face * 0.014, up * 0.034), 'eye')
-        paint.ball(head + RIGHT * (0.056 * side - 0.006) + face * 0.148 + up * 0.018,
-                   (RIGHT * 0.009, face * 0.006, up * 0.011), 'white')
-        paint.ball(head + RIGHT * (0.093 * side) + face * 0.113 - up * 0.04,
-                   (RIGHT * 0.023, face * 0.01, up * 0.014), 'blush')
+        paint.ball(head + across * (0.056 * side) + face * 0.136 + up * 0.005,
+                   (across * 0.026, face * 0.014, up * 0.034), 'eye')
+        paint.ball(head + across * (0.056 * side - 0.006) + face * 0.148 + up * 0.018,
+                   (across * 0.009, face * 0.006, up * 0.011), 'white')
+        paint.ball(head + across * (0.093 * side) + face * 0.113 - up * 0.04,
+                   (across * 0.023, face * 0.01, up * 0.014), 'blush')
 
     thigh_shape = limb_profile(poses.THIGH, 0.098, 0.062, 0.006)
     thighs = {}
@@ -253,7 +269,10 @@ def draw_figure(paint, pose, muscles):
         thighs[side] = Straight(hip, knee, ahead)
         paint.turned(thighs[side], thigh_shape, 'body')
         paint.turned(thighs[side], smooth_profile(TROUSER_SHAPE), 'cloth')
-        paint.turned(Straight(knee, ankle, ahead), limb_profile(poses.SHIN, 0.062, 0.042, 0.012), 'body')
+        shin, shin_shape = Straight(knee, ankle, ahead), limb_profile(poses.SHIN, 0.062, 0.042, 0.012)
+        paint.turned(shin, shin_shape, 'body')
+        if 'calves' in muscles:
+            paint.muscle(shin, shin_shape, 0.13, 0.105, 180, 78)
         across = sole.cross(toe).normalized()
         shoe = ankle + toe * 0.06 + sole * 0.041
         paint.ball(shoe, (across * 0.07, toe * 0.135, -sole * 0.064), 'shoe', flat_bottom=-0.78)
@@ -261,13 +280,34 @@ def draw_figure(paint, pose, muscles):
         shoulder, elbow, wrist = Vector(part.shoulder), Vector(part.elbow), Vector(part.wrist)
         upper = Straight(shoulder, elbow, spine.at(poses.TRUNK)[2])
         fore = Straight(elbow, wrist, upper.front)
-        paint.turned(upper, limb_profile(poses.UPPER, 0.066, 0.045, 0.006), 'body')
+        upper_shape = limb_profile(poses.UPPER, 0.066, 0.045, 0.006)
+        paint.turned(upper, upper_shape, 'body')
         paint.turned(fore, limb_profile(poses.FORE, 0.045, 0.034, 0.006), 'body')
+        # The biceps is on the side the elbow closes to.
+        closing = (wrist - elbow) - upper.axis * (wrist - elbow).dot(upper.axis)
+        inner = Straight(shoulder, elbow, spine.at(poses.TRUNK)[2].lerp(closing.normalized(),
+                                                                         min(closing.length / 0.06, 1)))
+        if 'biceps' in muscles:
+            paint.muscle(inner, upper_shape, 0.155, 0.1, 0, 78)
+        if 'triceps' in muscles:
+            paint.muscle(inner, upper_shape, 0.14, 0.115, 180, 78)
+        if 'forearms' in muscles:
+            paint.turned(fore, smooth_profile(FOREARM_SHAPE), 'work')
         if 'shoulders' in muscles:
             paint.turned(upper, smooth_profile(DELTOID_SHAPE), 'work')
-        paint.ball(wrist + fore.axis * 0.012, (fore.right * 0.045, fore.front * 0.04, fore.axis * 0.052), 'body')
+        if part.grip:
+            hand = Straight(wrist, wrist + Vector(part.grip), fore.front)
+            paint.ball(wrist + hand.axis * 0.045, (hand.right * 0.045, hand.front * 0.04, hand.axis * 0.062), 'body')
+        else:
+            paint.ball(wrist + fore.axis * 0.012, (fore.right * 0.045, fore.front * 0.04, fore.axis * 0.052), 'body')
     for name in muscles:
-        draw_muscles(paint, name, spine, trunk, shorts, thighs, thigh_shape)
+        if name == 'back' and pose.trapezius:
+            for side in (-1, 1):
+                root, end = spine.at(0.5)[0], Vector(pose.sides[side].shoulder) + Vector((0, 0, 0.022))
+                slope = limb_profile((end - root).length, 0.062, 0.052, 0.008)
+                paint.turned(Straight(root, end, (0, -1, 0)), slope, 'work')
+        else:
+            draw_muscles(paint, name, spine, trunk, shorts, thighs, thigh_shape)
 
 
 def draw_prop(paint, prop):
@@ -276,9 +316,23 @@ def draw_prop(paint, prop):
         paint.rod(*prop[1:])
     elif kind in ('box', 'cushion'):
         paint.box(*prop[1:], bevel=0.03 if kind == 'cushion' else 0.012)
+    elif kind == 'slab':
+        low, high, facing, width, thick, colour = prop[1:]
+        low, high = Vector(low), Vector(high)
+        along = (high - low).normalized()
+        normal = (Vector(facing) - along * Vector(facing).dot(along)).normalized()
+        paint.box((low + high) / 2, (width, (high - low).length, thick), colour,
+                  0.03 if colour == 'cloth' else 0.012, (along.cross(normal), along, normal))
+    elif kind == 'ball':
+        centre, radius, colour = prop[1:]
+        paint.ball(centre, (RIGHT * radius, Vector((0, radius, 0)), Vector((0, 0, radius))), colour)
     elif kind == 'wheel':
-        centre = Vector(prop[1])
-        paint.rod(centre - RIGHT * 0.02, centre + RIGHT * 0.02, 0.06, 'steel')
+        centre, axle = Vector(prop[1]), Vector(prop[2] if len(prop) > 2 else RIGHT)
+        paint.rod(centre - axle * 0.02, centre + axle * 0.02, 0.06, 'steel')
+    elif kind == 'plate':
+        centre, axis = Vector(prop[1]), Vector(prop[2]).normalized()
+        paint.rod(centre - axis * 0.04, centre + axis * 0.04, 0.15, 'iron')
+        paint.rod(centre - axis * 0.055, centre + axis * 0.055, 0.045, 'steel')
     elif kind == 'dumbbell':
         centre, axis = Vector(prop[1]), Vector(prop[2]).normalized()
         paint.rod(centre - axis * 0.09, centre + axis * 0.09, 0.022, 'steel')
@@ -286,11 +340,11 @@ def draw_prop(paint, prop):
             middle = centre + axis * (0.108 * side)
             paint.rod(middle - axis * 0.042, middle + axis * 0.042, 0.084, 'iron')
     elif kind == 'barbell':
-        centre = Vector(prop[1])
+        centre, radius = Vector(prop[1]), prop[2] if len(prop) > 2 else 0.15
         paint.rod(centre - RIGHT * 0.64, centre + RIGHT * 0.64, 0.021, 'steel')
         paint.rod(centre - RIGHT * 0.16, centre + RIGHT * 0.16, 0.04, 'cloth')
         for side in (-1, 1):
-            paint.rod(centre + RIGHT * (0.46 * side), centre + RIGHT * (0.54 * side), 0.15, 'iron')
+            paint.rod(centre + RIGHT * (0.46 * side), centre + RIGHT * (0.54 * side), radius, 'iron')
             paint.rod(centre + RIGHT * (0.54 * side), centre + RIGHT * (0.565 * side), 0.055, 'steel')
     elif kind == 'kettlebell':
         held, along = Vector(prop[1]), Vector(prop[2]).normalized()

@@ -129,9 +129,9 @@ struct TrainingFixture {
         #expect(shared.deletedAt == nil)
     }
 
-    /// Drawings come as a start and an end. For the movements listed here no exact drawing was found in
-    /// Everkinetic's named files (UNFORGET S19); those show an animation instead.
-    @Test func everyExerciseHasBothDrawingsExceptTheKnownOnes() throws {
+    /// Drawings come as a start and an end. The animation goes before them on the exercise screen
+    /// (UNFORGET S19).
+    @Test func everyDrawingHasItsStartAndItsEnd() throws {
         let catalog = try fixture.catalog
         func drawing(_ id: UUID, _ phase: String) -> Bool {
             UIImage(named: "Exercises/\(id.uuidString.lowercased())-\(phase)") != nil
@@ -139,8 +139,6 @@ struct TrainingFixture {
         for entry in catalog.exercises {
             #expect(drawing(entry.id, "start") == drawing(entry.id, "end"), "\(entry.name.values["en"] ?? "")")
         }
-        let without = catalog.exercises.filter { !ExerciseDrawing.exists(for: $0.id) }.compactMap { $0.name.values["en"] }.sorted()
-        #expect(without == ["Cable crunch", "Face pull", "Goblet squat", "Hanging leg raise", "Hip thrust", "Kettlebell swing", "One-arm dumbbell row"])
     }
 
     @Test func sportRecordsKeepEveryColumn() throws {

@@ -49,11 +49,13 @@ final class ExerciseAnimationUITests: XCTestCase {
     }
 
     @MainActor
-    func testEveryAnimatedExercise() {
+    func testOneExerciseOfEachKind() {
         let app = openList()
         let exercises = [
             ("Crunch aan de kabel", "crunch"), ("Eenarmig roeien", "roeien"), ("Face pull", "facepull"), ("Goblet squat", "goblet"),
             ("Hangend benen heffen", "benen-heffen"), ("Hip thrust", "hipthrust"), ("Kettlebell swing", "swing"),
+            ("Opdrukken op de knieën", "opdrukken"), ("Russische twist", "twist"), ("Squat met halter", "squat"),
+            ("Vliegen met dumbbells", "vliegen"), ("Zijliggend been heffen", "zijliggend"),
         ]
         for (name, file) in exercises {
             open(name, app)

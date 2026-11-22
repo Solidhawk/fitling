@@ -11,7 +11,6 @@ import poses
 
 ROOT = Path(__file__).resolve().parents[3]
 CATALOG = {e['id']: e for e in json.loads((ROOT / 'Fitling/Resources/SportCatalog.json').read_text('utf-8'))['exercises']}
-SEVEN = {'hip-thrust', 'dumbbell-row', 'goblet-squat', 'face-pull', 'cable-crunch', 'hanging-leg-raise', 'kettlebell-swing'}
 STEPS = [i / 100 for i in range(101)]
 
 
@@ -36,8 +35,7 @@ def ends(slug):
 
 
 class EveryMotion(unittest.TestCase):
-    def test_the_seven_exercises_are_there_with_their_own_muscles(self):
-        self.assertEqual(set(poses.EXERCISES), SEVEN)
+    def test_every_animation_has_its_own_exercise_and_muscles(self):
         for slug, motion in poses.EXERCISES.items():
             self.assertEqual(CATALOG[motion.id]['slug'], slug)
             self.assertEqual(set(motion.muscles), set(CATALOG[motion.id]['primaryMuscles']), slug)

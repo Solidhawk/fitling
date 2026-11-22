@@ -60,18 +60,18 @@ struct ExerciseProgressView: View {
 
     var body: some View {
         List {
-            if ExerciseDrawing.exists(for: exercise.id) {
-                Section {
-                    ExerciseDrawing(exerciseID: exercise.id)
-                } footer: {
-                    Text("training.drawing.credit").footerStyle()
-                }
-                .listRowBackground(Color.card)
-            } else if let animation = ExerciseAnimation.named(exercise.id) {
+            if let animation = ExerciseAnimation.named(exercise.id) {
                 Section {
                     ExerciseAnimationView(animation: animation)
                 } footer: {
                     Text("training.animation.legend").footerStyle()
+                }
+                .listRowBackground(Color.card)
+            } else if ExerciseDrawing.exists(for: exercise.id) {
+                Section {
+                    ExerciseDrawing(exerciseID: exercise.id)
+                } footer: {
+                    Text("training.drawing.credit").footerStyle()
                 }
                 .listRowBackground(Color.card)
             }

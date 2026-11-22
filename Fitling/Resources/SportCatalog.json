@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "exercises": [
     {
       "id": "f442b2ea-a4ce-5f40-b594-83f5c99dc2f0",
@@ -793,6 +793,1938 @@
         "core"
       ],
       "defaultStepKg": 4
+    },
+    {
+      "id": "65c9e836-52c7-5e57-b92f-8e0ce874d64a",
+      "slug": "dumbbell-bench-press",
+      "name": {
+        "nl": "Bankdrukken met dumbbells",
+        "en": "Dumbbell bench press",
+        "de": "Kurzhantel-Bankdrücken"
+      },
+      "instructions": {
+        "nl": "Lig op de bank met een dumbbell in elke hand. Laat ze naast je borst zakken en druk ze boven je borst omhoog.",
+        "en": "Lie on the bench with a dumbbell in each hand. Lower them beside your chest and press them up over your chest.",
+        "de": "Leg dich mit einer Kurzhantel in jeder Hand auf die Bank. Senke sie neben die Brust und drück sie über der Brust nach oben."
+      },
+      "kind": "compound",
+      "loadType": "external",
+      "equipment": "dumbbell",
+      "primaryMuscles": [
+        "chest"
+      ],
+      "secondaryMuscles": [
+        "triceps",
+        "shoulders"
+      ],
+      "defaultStepKg": 2
+    },
+    {
+      "id": "b8d16b99-c7c6-58ee-bd20-c25b59837064",
+      "slug": "incline-bench-press",
+      "name": {
+        "nl": "Schuin bankdrukken met halter",
+        "en": "Incline bench press",
+        "de": "Schrägbankdrücken mit Langhantel"
+      },
+      "instructions": {
+        "nl": "Zet de bank licht schuin. Laat de halter naar je bovenborst zakken en druk hem recht omhoog.",
+        "en": "Set the bench to a slight incline. Lower the bar to your upper chest and press it straight up.",
+        "de": "Stell die Bank leicht schräg. Senke die Hantel zur oberen Brust und drück sie gerade nach oben."
+      },
+      "kind": "compound",
+      "loadType": "external",
+      "equipment": "barbell",
+      "primaryMuscles": [
+        "chest"
+      ],
+      "secondaryMuscles": [
+        "shoulders",
+        "triceps"
+      ],
+      "defaultStepKg": 2.5
+    },
+    {
+      "id": "85c55141-ae18-5e12-a950-4cb00b8dd986",
+      "slug": "dumbbell-floor-press",
+      "name": {
+        "nl": "Drukken vanaf de vloer",
+        "en": "Dumbbell floor press",
+        "de": "Bodendrücken mit Kurzhanteln"
+      },
+      "instructions": {
+        "nl": "Lig op de grond met je knieën gebogen. Laat je ellebogen zachtjes de grond raken en druk de dumbbells omhoog.",
+        "en": "Lie on the floor with your knees bent. Let your elbows touch the floor gently and press the dumbbells up.",
+        "de": "Leg dich mit gebeugten Knien auf den Boden. Lass die Ellbogen sanft den Boden berühren und drück die Kurzhanteln hoch."
+      },
+      "kind": "compound",
+      "loadType": "external",
+      "equipment": "dumbbell",
+      "primaryMuscles": [
+        "chest"
+      ],
+      "secondaryMuscles": [
+        "triceps"
+      ],
+      "defaultStepKg": 2
+    },
+    {
+      "id": "fb2140a0-eb3f-5b29-b88b-210d435e8163",
+      "slug": "dumbbell-fly",
+      "name": {
+        "nl": "Vliegen met dumbbells",
+        "en": "Dumbbell fly",
+        "de": "Fliegende mit Kurzhanteln"
+      },
+      "instructions": {
+        "nl": "Lig op de bank, armen boven je borst en licht gebogen. Laat ze opzij zakken tot borsthoogte en breng ze weer samen.",
+        "en": "Lie on the bench, arms over your chest and slightly bent. Lower them out to chest height and bring them back together.",
+        "de": "Leg dich auf die Bank, Arme über der Brust und leicht gebeugt. Senke sie seitlich bis auf Brusthöhe und führ sie wieder zusammen."
+      },
+      "kind": "isolation",
+      "loadType": "external",
+      "equipment": "dumbbell",
+      "primaryMuscles": [
+        "chest"
+      ],
+      "secondaryMuscles": [
+        "shoulders"
+      ],
+      "defaultStepKg": 2
+    },
+    {
+      "id": "ed542806-7c26-55f3-9854-a54a84cded91",
+      "slug": "dumbbell-pullover",
+      "name": {
+        "nl": "Pullover met dumbbell",
+        "en": "Dumbbell pullover",
+        "de": "Überzüge mit Kurzhantel"
+      },
+      "instructions": {
+        "nl": "Lig op de bank met één dumbbell in beide handen. Laat hem met bijna gestrekte armen achter je hoofd zakken en trek hem terug boven je borst.",
+        "en": "Lie on the bench holding one dumbbell with both hands. Lower it behind your head with almost straight arms and pull it back over your chest.",
+        "de": "Leg dich mit einer Kurzhantel in beiden Händen auf die Bank. Senke sie mit fast gestreckten Armen hinter den Kopf und zieh sie zurück über die Brust."
+      },
+      "kind": "isolation",
+      "loadType": "external",
+      "equipment": "dumbbell",
+      "primaryMuscles": [
+        "chest"
+      ],
+      "secondaryMuscles": [
+        "back",
+        "triceps"
+      ],
+      "defaultStepKg": 2
+    },
+    {
+      "id": "ad5334fc-5e99-5c41-ba3b-1b249ef8bc0f",
+      "slug": "incline-push-up",
+      "name": {
+        "nl": "Opdrukken tegen een bank",
+        "en": "Incline push-up",
+        "de": "Erhöhte Liegestütze"
+      },
+      "instructions": {
+        "nl": "Zet je handen op een bank en houd je lichaam in een rechte lijn. Breng je borst naar de rand en druk je weer weg.",
+        "en": "Put your hands on a bench and keep your body in a straight line. Bring your chest to the edge and push away again.",
+        "de": "Stütz die Hände auf eine Bank und halte den Körper in einer Linie. Bring die Brust zur Kante und drück dich wieder weg."
+      },
+      "kind": "compound",
+      "loadType": "bodyweight",
+      "equipment": "bodyweight",
+      "primaryMuscles": [
+        "chest"
+      ],
+      "secondaryMuscles": [
+        "triceps",
+        "shoulders",
+        "core"
+      ],
+      "defaultStepKg": 2.5
+    },
+    {
+      "id": "88c84825-4535-5704-9183-e1a80862ebf0",
+      "slug": "decline-push-up",
+      "name": {
+        "nl": "Opdrukken met voeten verhoogd",
+        "en": "Decline push-up",
+        "de": "Negative Liegestütze"
+      },
+      "instructions": {
+        "nl": "Zet je voeten op een bank en je handen op de grond. Zak met een recht lichaam tot vlak boven de grond en druk je op.",
+        "en": "Put your feet on a bench and your hands on the floor. Lower with a straight body to just above the floor and push up.",
+        "de": "Stell die Füße auf eine Bank und die Hände auf den Boden. Geh mit geradem Körper bis knapp über den Boden und drück dich hoch."
+      },
+      "kind": "compound",
+      "loadType": "bodyweight",
+      "equipment": "bodyweight",
+      "primaryMuscles": [
+        "chest"
+      ],
+      "secondaryMuscles": [
+        "shoulders",
+        "triceps",
+        "core"
+      ],
+      "defaultStepKg": 2.5
+    },
+    {
+      "id": "dc09d77d-9f6a-5f55-8474-2f76413eee5f",
+      "slug": "knee-push-up",
+      "name": {
+        "nl": "Opdrukken op de knieën",
+        "en": "Knee push-up",
+        "de": "Liegestütze auf den Knien"
+      },
+      "instructions": {
+        "nl": "Steun op je handen en knieën met je lijf recht van knie tot hoofd. Zak tot vlak boven de grond en druk je op.",
+        "en": "Support yourself on hands and knees, straight from knee to head. Lower to just above the floor and push up.",
+        "de": "Stütz dich auf Hände und Knie, gerade vom Knie bis zum Kopf. Geh bis knapp über den Boden und drück dich hoch."
+      },
+      "kind": "compound",
+      "loadType": "bodyweight",
+      "equipment": "bodyweight",
+      "primaryMuscles": [
+        "chest"
+      ],
+      "secondaryMuscles": [
+        "triceps",
+        "core"
+      ],
+      "defaultStepKg": 2.5
+    },
+    {
+      "id": "41d52a14-905f-5901-bb9e-c990cdce8689",
+      "slug": "pec-deck",
+      "name": {
+        "nl": "Vlinder op de machine",
+        "en": "Pec deck",
+        "de": "Butterfly an der Maschine"
+      },
+      "instructions": {
+        "nl": "Zit met je rug tegen het kussen. Breng de handgrepen met licht gebogen armen voor je borst samen en laat ze langzaam terug.",
+        "en": "Sit with your back against the pad. Bring the handles together in front of your chest with slightly bent arms and let them return slowly.",
+        "de": "Sitz mit dem Rücken am Polster. Führ die Griffe mit leicht gebeugten Armen vor der Brust zusammen und lass sie langsam zurück."
+      },
+      "kind": "isolation",
+      "loadType": "external",
+      "equipment": "machine",
+      "primaryMuscles": [
+        "chest"
+      ],
+      "secondaryMuscles": [
+        "shoulders"
+      ],
+      "defaultStepKg": 5
+    },
+    {
+      "id": "7f1d750c-9acb-5bf1-934e-d7693c5700a5",
+      "slug": "low-cable-fly",
+      "name": {
+        "nl": "Kabel crossover van onderen",
+        "en": "Low cable fly",
+        "de": "Kabelzug-Flys von unten"
+      },
+      "instructions": {
+        "nl": "Sta tussen de lage kabels met licht gebogen armen. Breng je handen omhoog tot voor je borst en laat ze langzaam zakken.",
+        "en": "Stand between the low cables with slightly bent arms. Bring your hands up in front of your chest and lower them slowly.",
+        "de": "Steh zwischen den tiefen Kabeln mit leicht gebeugten Armen. Führ die Hände nach oben vor die Brust und senke sie langsam."
+      },
+      "kind": "isolation",
+      "loadType": "external",
+      "equipment": "cable",
+      "primaryMuscles": [
+        "chest"
+      ],
+      "secondaryMuscles": [
+        "shoulders"
+      ],
+      "defaultStepKg": 5
+    },
+    {
+      "id": "183f32fa-34d0-5281-bd2e-1c37ed5ef93d",
+      "slug": "close-grip-bench-press",
+      "name": {
+        "nl": "Smal bankdrukken",
+        "en": "Close-grip bench press",
+        "de": "Enges Bankdrücken"
+      },
+      "instructions": {
+        "nl": "Pak de halter op schouderbreedte. Laat hem naar je onderborst zakken met je ellebogen langs je lijf en druk hem omhoog.",
+        "en": "Grip the bar at shoulder width. Lower it to your lower chest with your elbows along your body and press it up.",
+        "de": "Greif die Hantel schulterbreit. Senke sie mit den Ellbogen am Körper zur unteren Brust und drück sie hoch."
+      },
+      "kind": "compound",
+      "loadType": "external",
+      "equipment": "barbell",
+      "primaryMuscles": [
+        "triceps"
+      ],
+      "secondaryMuscles": [
+        "chest",
+        "shoulders"
+      ],
+      "defaultStepKg": 2.5
+    },
+    {
+      "id": "e89da854-a8f5-5cdf-b2e2-9817f1142006",
+      "slug": "skull-crusher",
+      "name": {
+        "nl": "Triceps liggend met halter",
+        "en": "Skull crusher",
+        "de": "French Press liegend"
+      },
+      "instructions": {
+        "nl": "Lig met de halter boven je schouders. Buig alleen je ellebogen tot de stang vlak achter je kruin is en strek weer uit.",
+        "en": "Lie with the bar over your shoulders. Bend only your elbows until the bar is just behind the top of your head and extend again.",
+        "de": "Lieg mit der Hantel über den Schultern. Beug nur die Ellbogen, bis die Stange knapp hinter dem Scheitel ist, und streck wieder."
+      },
+      "kind": "isolation",
+      "loadType": "external",
+      "equipment": "barbell",
+      "primaryMuscles": [
+        "triceps"
+      ],
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "defaultStepKg": 2.5
+    },
+    {
+      "id": "1292f064-1fed-5285-ba61-6ae18b316f62",
+      "slug": "diamond-push-up",
+      "name": {
+        "nl": "Smal opdrukken",
+        "en": "Diamond push-up",
+        "de": "Enge Liegestütze"
+      },
+      "instructions": {
+        "nl": "Zet je handen dicht bij elkaar onder je borst. Zak met je ellebogen langs je lijf en druk je in een rechte lijn op.",
+        "en": "Place your hands close together under your chest. Lower with your elbows along your body and push up in a straight line.",
+        "de": "Setz die Hände eng zusammen unter die Brust. Senke dich mit den Ellbogen am Körper und drück dich in einer Linie hoch."
+      },
+      "kind": "compound",
+      "loadType": "bodyweight",
+      "equipment": "bodyweight",
+      "primaryMuscles": [
+        "triceps"
+      ],
+      "secondaryMuscles": [
+        "chest",
+        "shoulders",
+        "core"
+      ],
+      "defaultStepKg": 2.5
+    },
+    {
+      "id": "80a936f7-847b-5fae-899e-fb110338e60b",
+      "slug": "bench-dip",
+      "name": {
+        "nl": "Dippen aan een bank",
+        "en": "Bench dip",
+        "de": "Dips an der Bank"
+      },
+      "instructions": {
+        "nl": "Steun met je handen achter je op de bankrand. Zak tot je ellebogen bijna haaks staan en druk jezelf omhoog.",
+        "en": "Support yourself with your hands behind you on the bench. Lower until your elbows are nearly at a right angle and push up.",
+        "de": "Stütz die Hände hinter dir auf die Bankkante. Senke dich, bis die Ellbogen fast rechtwinklig sind, und drück dich hoch."
+      },
+      "kind": "compound",
+      "loadType": "bodyweight",
+      "equipment": "bodyweight",
+      "primaryMuscles": [
+        "triceps"
+      ],
+      "secondaryMuscles": [
+        "chest",
+        "shoulders"
+      ],
+      "defaultStepKg": 2.5
+    },
+    {
+      "id": "3011f2fa-618d-57b2-a275-1fd0e1bee6ba",
+      "slug": "overhead-cable-extension",
+      "name": {
+        "nl": "Triceps boven het hoofd aan de kabel",
+        "en": "Overhead cable extension",
+        "de": "Trizepsstrecken über Kopf am Kabel"
+      },
+      "instructions": {
+        "nl": "Sta met je rug naar de kabel, touw achter je hoofd. Strek je armen naar voren en omhoog zonder je bovenarmen te laten zakken.",
+        "en": "Stand facing away from the cable, rope behind your head. Extend your arms forwards and up without dropping your upper arms.",
+        "de": "Steh mit dem Rücken zum Kabel, Seil hinter dem Kopf. Streck die Arme nach vorn oben, ohne die Oberarme zu senken."
+      },
+      "kind": "isolation",
+      "loadType": "external",
+      "equipment": "cable",
+      "primaryMuscles": [
+        "triceps"
+      ],
+      "secondaryMuscles": [
+        "core"
+      ],
+      "defaultStepKg": 5
+    },
+    {
+      "id": "0901d012-6ab8-536f-a734-3d434521f35b",
+      "slug": "triceps-kickback",
+      "name": {
+        "nl": "Triceps kickback",
+        "en": "Triceps kickback",
+        "de": "Trizeps-Kickback"
+      },
+      "instructions": {
+        "nl": "Buig voorover met je bovenarmen langs je lijf. Strek je ellebogen naar achteren en laat de dumbbells rustig terugkomen.",
+        "en": "Hinge forward with your upper arms along your body. Straighten your elbows backwards and let the dumbbells return slowly.",
+        "de": "Beug dich vor, Oberarme am Körper. Streck die Ellbogen nach hinten und lass die Kurzhanteln ruhig zurückkommen."
+      },
+      "kind": "isolation",
+      "loadType": "external",
+      "equipment": "dumbbell",
+      "primaryMuscles": [
+        "triceps"
+      ],
+      "secondaryMuscles": [
+        "shoulders"
+      ],
+      "defaultStepKg": 2
+    },
+    {
+      "id": "8ab6dd54-3e71-57e9-a163-c092bdaf1f22",
+      "slug": "pike-push-up",
+      "name": {
+        "nl": "Opdrukken met heupen omhoog",
+        "en": "Pike push-up",
+        "de": "Pike-Liegestütze"
+      },
+      "instructions": {
+        "nl": "Steun op handen en voeten met je heupen hoog. Laat je hoofd schuin naar voren richting de grond zakken en druk je terug.",
+        "en": "Support yourself on hands and feet with your hips high. Lower your head forwards towards the floor and push back.",
+        "de": "Stütz dich auf Hände und Füße, die Hüfte hoch. Senke den Kopf schräg nach vorn zum Boden und drück dich zurück."
+      },
+      "kind": "compound",
+      "loadType": "bodyweight",
+      "equipment": "bodyweight",
+      "primaryMuscles": [
+        "shoulders"
+      ],
+      "secondaryMuscles": [
+        "triceps",
+        "chest"
+      ],
+      "defaultStepKg": 2.5
+    },
+    {
+      "id": "c82fe36b-139b-5fe0-b2f2-ab8b7f207b4a",
+      "slug": "machine-shoulder-press",
+      "name": {
+        "nl": "Schouderpers",
+        "en": "Machine shoulder press",
+        "de": "Schulterpresse"
+      },
+      "instructions": {
+        "nl": "Zit rechtop met de handgrepen op schouderhoogte. Druk ze omhoog tot je armen bijna gestrekt zijn en laat ze langzaam zakken.",
+        "en": "Sit upright with the handles at shoulder height. Press up until your arms are almost straight and lower them slowly.",
+        "de": "Sitz aufrecht, Griffe auf Schulterhöhe. Drück sie hoch, bis die Arme fast gestreckt sind, und senke sie langsam."
+      },
+      "kind": "compound",
+      "loadType": "external",
+      "equipment": "machine",
+      "primaryMuscles": [
+        "shoulders"
+      ],
+      "secondaryMuscles": [
+        "triceps"
+      ],
+      "defaultStepKg": 5
+    },
+    {
+      "id": "556faf6a-35bf-5161-b4e3-b4027cd920bb",
+      "slug": "arnold-press",
+      "name": {
+        "nl": "Arnold press",
+        "en": "Arnold press",
+        "de": "Arnold Press"
+      },
+      "instructions": {
+        "nl": "Begin met de dumbbells voor je schouders, handpalmen naar je toe. Draai je armen naar buiten terwijl je omhoog drukt.",
+        "en": "Start with the dumbbells in front of your shoulders, palms towards you. Rotate your arms outwards as you press up.",
+        "de": "Beginne mit den Kurzhanteln vor den Schultern, Handflächen zu dir. Dreh die Arme beim Drücken nach außen."
+      },
+      "kind": "compound",
+      "loadType": "external",
+      "equipment": "dumbbell",
+      "primaryMuscles": [
+        "shoulders"
+      ],
+      "secondaryMuscles": [
+        "triceps"
+      ],
+      "defaultStepKg": 2
+    },
+    {
+      "id": "3caac774-8cdc-56a6-a906-d934f2786ecf",
+      "slug": "reverse-pec-deck",
+      "name": {
+        "nl": "Omgekeerde vlinder op de machine",
+        "en": "Reverse pec deck",
+        "de": "Reverse Butterfly an der Maschine"
+      },
+      "instructions": {
+        "nl": "Zit met je borst tegen het kussen. Breng de handgrepen met bijna gestrekte armen naar achteren en laat ze langzaam terug.",
+        "en": "Sit with your chest against the pad. Move the handles back with almost straight arms and let them return slowly.",
+        "de": "Sitz mit der Brust am Polster. Führ die Griffe mit fast gestreckten Armen nach hinten und lass sie langsam zurück."
+      },
+      "kind": "isolation",
+      "loadType": "external",
+      "equipment": "machine",
+      "primaryMuscles": [
+        "shoulders"
+      ],
+      "secondaryMuscles": [
+        "back"
+      ],
+      "defaultStepKg": 5
+    },
+    {
+      "id": "4d45945a-c0f7-52e9-8721-9a9c555280e4",
+      "slug": "front-raise",
+      "name": {
+        "nl": "Voorwaarts heffen",
+        "en": "Front raise",
+        "de": "Frontheben"
+      },
+      "instructions": {
+        "nl": "Sta rechtop met de dumbbells voor je bovenbenen. Hef je armen naar voren tot schouderhoogte zonder te zwaaien.",
+        "en": "Stand tall with the dumbbells in front of your thighs. Raise your arms forwards to shoulder height without swinging.",
+        "de": "Steh aufrecht, Kurzhanteln vor den Oberschenkeln. Heb die Arme ohne Schwung nach vorn bis auf Schulterhöhe."
+      },
+      "kind": "isolation",
+      "loadType": "external",
+      "equipment": "dumbbell",
+      "primaryMuscles": [
+        "shoulders"
+      ],
+      "secondaryMuscles": [
+        "chest"
+      ],
+      "defaultStepKg": 2
+    },
+    {
+      "id": "05c7f0b8-babc-5160-894b-71557f5dae97",
+      "slug": "cable-lateral-raise",
+      "name": {
+        "nl": "Zijwaarts heffen aan de kabel",
+        "en": "Cable lateral raise",
+        "de": "Seitheben am Kabel"
+      },
+      "instructions": {
+        "nl": "Sta zijwaarts naast de lage kabel met de greep in je verste hand. Hef je arm opzij tot schouderhoogte en laat hem langzaam zakken.",
+        "en": "Stand side-on to the low cable with the handle in your far hand. Raise your arm sideways to shoulder height and lower it slowly.",
+        "de": "Steh seitlich zum tiefen Kabel, Griff in der äußeren Hand. Heb den Arm seitlich bis auf Schulterhöhe und senke ihn langsam."
+      },
+      "kind": "isolation",
+      "loadType": "external",
+      "equipment": "cable",
+      "primaryMuscles": [
+        "shoulders"
+      ],
+      "secondaryMuscles": [],
+      "defaultStepKg": 5
+    },
+    {
+      "id": "61c58961-5d0f-5a53-85d0-01143d674aa3",
+      "slug": "barbell-curl",
+      "name": {
+        "nl": "Biceps curl met halter",
+        "en": "Barbell curl",
+        "de": "Langhantel-Curl"
+      },
+      "instructions": {
+        "nl": "Sta rechtop, handpalmen naar voren en ellebogen tegen je zij. Krul de halter omhoog en laat hem langzaam zakken.",
+        "en": "Stand tall, palms forward and elbows at your sides. Curl the bar up and lower it slowly.",
+        "de": "Steh aufrecht, Handflächen nach vorn, Ellbogen am Körper. Beug die Hantel nach oben und senke sie langsam."
+      },
+      "kind": "isolation",
+      "loadType": "external",
+      "equipment": "barbell",
+      "primaryMuscles": [
+        "biceps"
+      ],
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "defaultStepKg": 2.5
+    },
+    {
+      "id": "560ac9b8-e837-511b-8fb3-f9f324fc78e5",
+      "slug": "incline-dumbbell-curl",
+      "name": {
+        "nl": "Biceps curl op een schuine bank",
+        "en": "Incline dumbbell curl",
+        "de": "Schrägbank-Curl"
+      },
+      "instructions": {
+        "nl": "Leun achterover op de schuine bank en laat je armen hangen. Krul de dumbbells omhoog zonder je bovenarmen te verplaatsen.",
+        "en": "Lean back on the incline bench and let your arms hang. Curl the dumbbells up without moving your upper arms.",
+        "de": "Lehn dich auf die Schrägbank und lass die Arme hängen. Beug die Kurzhanteln, ohne die Oberarme zu bewegen."
+      },
+      "kind": "isolation",
+      "loadType": "external",
+      "equipment": "dumbbell",
+      "primaryMuscles": [
+        "biceps"
+      ],
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "defaultStepKg": 2
+    },
+    {
+      "id": "08732d11-c1e2-5288-9c62-30f4239db059",
+      "slug": "concentration-curl",
+      "name": {
+        "nl": "Concentratiecurl",
+        "en": "Concentration curl",
+        "de": "Konzentrations-Curl"
+      },
+      "instructions": {
+        "nl": "Zit met je elleboog tegen de binnenkant van je bovenbeen. Krul de dumbbell omhoog en laat hem helemaal zakken.",
+        "en": "Sit with your elbow against the inside of your thigh. Curl the dumbbell up and lower it all the way.",
+        "de": "Sitz mit dem Ellbogen an der Innenseite des Oberschenkels. Beug die Kurzhantel nach oben und senke sie vollständig."
+      },
+      "kind": "isolation",
+      "loadType": "external",
+      "equipment": "dumbbell",
+      "primaryMuscles": [
+        "biceps"
+      ],
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "defaultStepKg": 2
+    },
+    {
+      "id": "18bd08cc-aad6-50eb-8383-9387268ccf80",
+      "slug": "cable-curl",
+      "name": {
+        "nl": "Biceps curl aan de kabel",
+        "en": "Cable curl",
+        "de": "Kabel-Curl"
+      },
+      "instructions": {
+        "nl": "Sta voor de lage kabel met je ellebogen tegen je zij. Krul de stang omhoog en laat hem gecontroleerd zakken.",
+        "en": "Stand facing the low cable with your elbows at your sides. Curl the bar up and lower it under control.",
+        "de": "Steh vor dem tiefen Kabel, Ellbogen am Körper. Beug die Stange nach oben und senke sie kontrolliert."
+      },
+      "kind": "isolation",
+      "loadType": "external",
+      "equipment": "cable",
+      "primaryMuscles": [
+        "biceps"
+      ],
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "defaultStepKg": 5
+    },
+    {
+      "id": "05110eb2-9f4c-565d-9200-cf1c1957a9f0",
+      "slug": "preacher-curl",
+      "name": {
+        "nl": "Preacher curl",
+        "en": "Preacher curl",
+        "de": "Scott-Curl"
+      },
+      "instructions": {
+        "nl": "Leg je bovenarmen op het schuine kussen. Krul de stang omhoog en zak tot je armen bijna gestrekt zijn.",
+        "en": "Rest your upper arms on the angled pad. Curl the bar up and lower until your arms are almost straight.",
+        "de": "Leg die Oberarme auf das schräge Polster. Beug die Stange nach oben und senke sie, bis die Arme fast gestreckt sind."
+      },
+      "kind": "isolation",
+      "loadType": "external",
+      "equipment": "barbell",
+      "primaryMuscles": [
+        "biceps"
+      ],
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "defaultStepKg": 2.5
+    },
+    {
+      "id": "15563dc1-2aaa-5ebf-8d67-b3a357246d76",
+      "slug": "reverse-curl",
+      "name": {
+        "nl": "Omgekeerde curl",
+        "en": "Reverse curl",
+        "de": "Reverse-Curl"
+      },
+      "instructions": {
+        "nl": "Pak de halter met je handruggen naar voren. Krul hem omhoog met rechte polsen en laat hem langzaam zakken.",
+        "en": "Grip the bar with the backs of your hands forward. Curl it up with straight wrists and lower it slowly.",
+        "de": "Greif die Hantel mit den Handrücken nach vorn. Beug sie mit geraden Handgelenken nach oben und senke sie langsam."
+      },
+      "kind": "isolation",
+      "loadType": "external",
+      "equipment": "barbell",
+      "primaryMuscles": [
+        "forearms"
+      ],
+      "secondaryMuscles": [
+        "biceps"
+      ],
+      "defaultStepKg": 2.5
+    },
+    {
+      "id": "f9cd268d-9c9c-5d79-98be-41e44d549286",
+      "slug": "wrist-curl",
+      "name": {
+        "nl": "Polscurl",
+        "en": "Wrist curl",
+        "de": "Handgelenk-Curl"
+      },
+      "instructions": {
+        "nl": "Leg je onderarmen op je bovenbenen, handpalmen omhoog. Buig alleen je polsen omhoog en laat ze langzaam zakken.",
+        "en": "Rest your forearms on your thighs, palms up. Bend only your wrists up and lower them slowly.",
+        "de": "Leg die Unterarme auf die Oberschenkel, Handflächen nach oben. Beug nur die Handgelenke hoch und senke sie langsam."
+      },
+      "kind": "isolation",
+      "loadType": "external",
+      "equipment": "dumbbell",
+      "primaryMuscles": [
+        "forearms"
+      ],
+      "secondaryMuscles": [],
+      "defaultStepKg": 2
+    },
+    {
+      "id": "e665d0e1-c7e8-5fa5-b179-4f32f3f648ef",
+      "slug": "reverse-wrist-curl",
+      "name": {
+        "nl": "Omgekeerde polscurl",
+        "en": "Reverse wrist curl",
+        "de": "Umgekehrter Handgelenk-Curl"
+      },
+      "instructions": {
+        "nl": "Leg je onderarmen op een bank, handruggen omhoog. Til de lichte stang met alleen je polsen op en laat hem zakken.",
+        "en": "Rest your forearms on a bench, backs of your hands up. Lift the light bar with only your wrists and lower it.",
+        "de": "Leg die Unterarme auf eine Bank, Handrücken nach oben. Heb die leichte Stange nur mit den Handgelenken an und senke sie."
+      },
+      "kind": "isolation",
+      "loadType": "external",
+      "equipment": "barbell",
+      "primaryMuscles": [
+        "forearms"
+      ],
+      "secondaryMuscles": [],
+      "defaultStepKg": 2.5
+    },
+    {
+      "id": "7474d80d-68f2-58ea-8ddc-a9691750c11d",
+      "slug": "machine-row",
+      "name": {
+        "nl": "Roeien op de machine",
+        "en": "Machine row",
+        "de": "Rudern an der Maschine"
+      },
+      "instructions": {
+        "nl": "Zit met je borst tegen het kussen. Trek de handgrepen langs je lijf naar achteren en laat ze langzaam terugkomen.",
+        "en": "Sit with your chest against the pad. Pull the handles back along your body and let them return slowly.",
+        "de": "Sitz mit der Brust am Polster. Zieh die Griffe am Körper entlang nach hinten und lass sie langsam zurück."
+      },
+      "kind": "compound",
+      "loadType": "external",
+      "equipment": "machine",
+      "primaryMuscles": [
+        "back"
+      ],
+      "secondaryMuscles": [
+        "biceps"
+      ],
+      "defaultStepKg": 5
+    },
+    {
+      "id": "348556d9-5805-5d13-b741-55966204d7e8",
+      "slug": "chin-up",
+      "name": {
+        "nl": "Optrekken onderhands",
+        "en": "Chin-up",
+        "de": "Klimmzug im Untergriff"
+      },
+      "instructions": {
+        "nl": "Pak de stang smal vast met je handpalmen naar je toe. Trek je kin boven de stang en zak gecontroleerd tot gestrekte armen.",
+        "en": "Grip the bar narrowly with your palms towards you. Pull your chin over the bar and lower under control to straight arms.",
+        "de": "Greif die Stange eng, Handflächen zu dir. Zieh das Kinn über die Stange und senke dich kontrolliert bis zu gestreckten Armen."
+      },
+      "kind": "compound",
+      "loadType": "bodyweight",
+      "equipment": "bodyweight",
+      "primaryMuscles": [
+        "back"
+      ],
+      "secondaryMuscles": [
+        "biceps",
+        "core"
+      ],
+      "defaultStepKg": 2.5
+    },
+    {
+      "id": "82e0db75-6c04-5bee-8657-25475df0894a",
+      "slug": "close-grip-pulldown",
+      "name": {
+        "nl": "Lat pulldown smal",
+        "en": "Close-grip pulldown",
+        "de": "Enges Latziehen"
+      },
+      "instructions": {
+        "nl": "Pak de smalle greep vast. Trek hem naar je bovenborst met je ellebogen voor je lijf en laat hem langzaam omhoog.",
+        "en": "Take the narrow handle. Pull it to your upper chest with your elbows in front of you and let it rise slowly.",
+        "de": "Greif den engen Griff. Zieh ihn mit den Ellbogen vor dem Körper zur oberen Brust und lass ihn langsam hoch."
+      },
+      "kind": "compound",
+      "loadType": "external",
+      "equipment": "cable",
+      "primaryMuscles": [
+        "back"
+      ],
+      "secondaryMuscles": [
+        "biceps"
+      ],
+      "defaultStepKg": 5
+    },
+    {
+      "id": "78e41556-6413-5dd4-b7ff-9ea1f90f7b38",
+      "slug": "straight-arm-pulldown",
+      "name": {
+        "nl": "Pulldown met gestrekte armen",
+        "en": "Straight-arm pulldown",
+        "de": "Überzüge am Kabel"
+      },
+      "instructions": {
+        "nl": "Sta licht voorover voor de hoge kabel. Duw de stang met bijna gestrekte armen in een boog naar je bovenbenen.",
+        "en": "Stand facing the high cable with a slight lean. Sweep the bar down to your thighs with almost straight arms.",
+        "de": "Steh leicht vorgebeugt vor dem hohen Kabel. Führ die Stange mit fast gestreckten Armen im Bogen zu den Oberschenkeln."
+      },
+      "kind": "isolation",
+      "loadType": "external",
+      "equipment": "cable",
+      "primaryMuscles": [
+        "back"
+      ],
+      "secondaryMuscles": [
+        "triceps",
+        "core"
+      ],
+      "defaultStepKg": 5
+    },
+    {
+      "id": "bfd33652-585c-5bcf-95a2-056e66be325d",
+      "slug": "t-bar-row",
+      "name": {
+        "nl": "T-bar roeien",
+        "en": "T-bar row",
+        "de": "T-Bar-Rudern"
+      },
+      "instructions": {
+        "nl": "Sta over de stang en buig voorover met een rechte rug. Trek de schijven naar je borst en laat ze langzaam zakken.",
+        "en": "Straddle the bar and hinge forward with a straight back. Pull the plates to your chest and lower them slowly.",
+        "de": "Steh über der Stange und beug dich mit geradem Rücken vor. Zieh die Scheiben zur Brust und senke sie langsam."
+      },
+      "kind": "compound",
+      "loadType": "external",
+      "equipment": "barbell",
+      "primaryMuscles": [
+        "back"
+      ],
+      "secondaryMuscles": [
+        "biceps",
+        "hamstrings"
+      ],
+      "defaultStepKg": 2.5
+    },
+    {
+      "id": "7d445a15-ae64-5758-9216-72d67a6f2aa3",
+      "slug": "chest-supported-row",
+      "name": {
+        "nl": "Roeien liggend op een schuine bank",
+        "en": "Chest-supported row",
+        "de": "Rudern auf der Schrägbank"
+      },
+      "instructions": {
+        "nl": "Lig met je borst op de schuine bank. Trek de dumbbells naast je ribben en laat je armen weer hangen.",
+        "en": "Lie chest-down on the incline bench. Pull the dumbbells beside your ribs and let your arms hang again.",
+        "de": "Lieg mit der Brust auf der Schrägbank. Zieh die Kurzhanteln neben die Rippen und lass die Arme wieder hängen."
+      },
+      "kind": "compound",
+      "loadType": "external",
+      "equipment": "dumbbell",
+      "primaryMuscles": [
+        "back"
+      ],
+      "secondaryMuscles": [
+        "biceps",
+        "shoulders"
+      ],
+      "defaultStepKg": 2
+    },
+    {
+      "id": "eaf45c39-4867-5b86-88e5-a1fb2c0c2baa",
+      "slug": "inverted-row",
+      "name": {
+        "nl": "Omgekeerd roeien",
+        "en": "Inverted row",
+        "de": "Umgekehrtes Rudern"
+      },
+      "instructions": {
+        "nl": "Hang onder een lage stang met je hielen op de grond. Trek je borst naar de stang met je lichaam in een rechte lijn.",
+        "en": "Hang under a low bar with your heels on the floor. Pull your chest to the bar with your body in a straight line.",
+        "de": "Häng unter einer niedrigen Stange, Fersen am Boden. Zieh die Brust mit geradem Körper zur Stange."
+      },
+      "kind": "compound",
+      "loadType": "bodyweight",
+      "equipment": "bodyweight",
+      "primaryMuscles": [
+        "back"
+      ],
+      "secondaryMuscles": [
+        "biceps",
+        "core"
+      ],
+      "defaultStepKg": 2.5
+    },
+    {
+      "id": "2191cd07-bcf2-55ec-8f03-407ee2f0d5ad",
+      "slug": "bent-over-dumbbell-row",
+      "name": {
+        "nl": "Voorovergebogen roeien met dumbbells",
+        "en": "Bent-over dumbbell row",
+        "de": "Vorgebeugtes Kurzhantelrudern"
+      },
+      "instructions": {
+        "nl": "Buig voorover met een rechte rug en een dumbbell in elke hand. Trek ze naar je heupen en laat ze langzaam zakken.",
+        "en": "Hinge forward with a straight back and a dumbbell in each hand. Pull them to your hips and lower them slowly.",
+        "de": "Beug dich mit geradem Rücken vor, eine Kurzhantel in jeder Hand. Zieh sie zur Hüfte und senke sie langsam."
+      },
+      "kind": "compound",
+      "loadType": "external",
+      "equipment": "dumbbell",
+      "primaryMuscles": [
+        "back"
+      ],
+      "secondaryMuscles": [
+        "biceps",
+        "hamstrings"
+      ],
+      "defaultStepKg": 2
+    },
+    {
+      "id": "06ceea9f-d1e5-528a-be25-156f6030cafc",
+      "slug": "back-extension",
+      "name": {
+        "nl": "Rugstrekken",
+        "en": "Back extension",
+        "de": "Rückenstrecken"
+      },
+      "instructions": {
+        "nl": "Zet je heupen op het kussen en je hielen onder de rol. Zak met een rechte rug voorover en kom omhoog tot één rechte lijn.",
+        "en": "Rest your hips on the pad, heels under the roller. Lower forwards with a straight back and rise to one straight line.",
+        "de": "Leg die Hüfte aufs Polster, Fersen unter die Rolle. Senke dich mit geradem Rücken und komm hoch bis zu einer geraden Linie."
+      },
+      "kind": "isolation",
+      "loadType": "bodyweight",
+      "equipment": "bodyweight",
+      "primaryMuscles": [
+        "back"
+      ],
+      "secondaryMuscles": [
+        "glutes",
+        "hamstrings"
+      ],
+      "defaultStepKg": 2.5
+    },
+    {
+      "id": "80cc57c9-23c0-5cc4-ae71-da0d111ad360",
+      "slug": "superman",
+      "name": {
+        "nl": "Superman",
+        "en": "Superman",
+        "de": "Superman"
+      },
+      "instructions": {
+        "nl": "Lig op je buik met je armen naar voren. Til je armen, borst en benen een stukje op en laat ze rustig zakken.",
+        "en": "Lie on your front with your arms forward. Lift your arms, chest and legs a little and lower them slowly.",
+        "de": "Lieg auf dem Bauch, Arme nach vorn. Heb Arme, Brust und Beine etwas an und senke sie langsam."
+      },
+      "kind": "isolation",
+      "loadType": "bodyweight",
+      "equipment": "bodyweight",
+      "primaryMuscles": [
+        "back"
+      ],
+      "secondaryMuscles": [
+        "glutes",
+        "shoulders"
+      ],
+      "defaultStepKg": 2.5
+    },
+    {
+      "id": "5e5087d0-4e9f-59e4-aae1-edf84d7e7873",
+      "slug": "barbell-shrug",
+      "name": {
+        "nl": "Schouders ophalen met halter",
+        "en": "Barbell shrug",
+        "de": "Shrugs mit Langhantel"
+      },
+      "instructions": {
+        "nl": "Sta rechtop met de halter aan gestrekte armen. Trek je schouders recht omhoog naar je oren en laat ze langzaam zakken.",
+        "en": "Stand tall holding the bar with straight arms. Lift your shoulders straight up towards your ears and lower them slowly.",
+        "de": "Steh aufrecht, Hantel an gestreckten Armen. Zieh die Schultern gerade zu den Ohren und senke sie langsam."
+      },
+      "kind": "isolation",
+      "loadType": "external",
+      "equipment": "barbell",
+      "primaryMuscles": [
+        "back"
+      ],
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "defaultStepKg": 2.5
+    },
+    {
+      "id": "9126c6b8-522d-5dad-a136-7d5cc904c61b",
+      "slug": "front-squat",
+      "name": {
+        "nl": "Front squat",
+        "en": "Front squat",
+        "de": "Frontkniebeuge"
+      },
+      "instructions": {
+        "nl": "Leg de halter voor op je schouders met je ellebogen hoog. Zak met een rechte romp tot kniehoogte en kom omhoog.",
+        "en": "Rest the bar on the front of your shoulders, elbows high. Squat with an upright torso to knee height and stand up.",
+        "de": "Leg die Hantel vorn auf die Schultern, Ellbogen hoch. Geh mit aufrechtem Oberkörper auf Kniehöhe und komm hoch."
+      },
+      "kind": "compound",
+      "loadType": "external",
+      "equipment": "barbell",
+      "primaryMuscles": [
+        "quads"
+      ],
+      "secondaryMuscles": [
+        "glutes",
+        "core"
+      ],
+      "defaultStepKg": 2.5
+    },
+    {
+      "id": "50925788-c719-5c26-8ad0-7c440769155b",
+      "slug": "bodyweight-squat",
+      "name": {
+        "nl": "Squat zonder gewicht",
+        "en": "Bodyweight squat",
+        "de": "Kniebeuge ohne Gewicht"
+      },
+      "instructions": {
+        "nl": "Zet je voeten op schouderbreedte en steek je armen vooruit. Zak tot je heupen op kniehoogte zijn en kom rechtop.",
+        "en": "Stand with feet shoulder-width apart and arms out in front. Lower until your hips are at knee height and stand up.",
+        "de": "Stell die Füße schulterbreit, Arme nach vorn. Senke dich, bis die Hüfte auf Kniehöhe ist, und komm hoch."
+      },
+      "kind": "compound",
+      "loadType": "bodyweight",
+      "equipment": "bodyweight",
+      "primaryMuscles": [
+        "quads",
+        "glutes"
+      ],
+      "secondaryMuscles": [
+        "core"
+      ],
+      "defaultStepKg": 2.5
+    },
+    {
+      "id": "c539be1b-59bf-526a-bef1-b631cfe8cc50",
+      "slug": "hack-squat",
+      "name": {
+        "nl": "Hack squat",
+        "en": "Hack squat",
+        "de": "Hackenschmidt-Kniebeuge"
+      },
+      "instructions": {
+        "nl": "Leun met je rug tegen de slee, voeten voor je op het plateau. Zak diep met je rug tegen het kussen en druk je omhoog.",
+        "en": "Lean back against the sled, feet in front on the platform. Lower deep with your back on the pad and push up.",
+        "de": "Lehn dich an den Schlitten, Füße vorn auf der Platte. Geh mit dem Rücken am Polster tief und drück dich hoch."
+      },
+      "kind": "compound",
+      "loadType": "external",
+      "equipment": "machine",
+      "primaryMuscles": [
+        "quads"
+      ],
+      "secondaryMuscles": [
+        "glutes"
+      ],
+      "defaultStepKg": 5
+    },
+    {
+      "id": "f7d06db9-2d74-59d4-b662-573d5c7fec1f",
+      "slug": "sumo-squat",
+      "name": {
+        "nl": "Sumo squat met dumbbell",
+        "en": "Dumbbell sumo squat",
+        "de": "Sumo-Kniebeuge mit Kurzhantel"
+      },
+      "instructions": {
+        "nl": "Sta breed met je tenen naar buiten en de dumbbell tussen je benen. Zak met een rechte rug en duw je knieën naar buiten.",
+        "en": "Stand wide, toes out, the dumbbell between your legs. Lower with a straight back, pushing your knees out.",
+        "de": "Steh breit, Zehen nach außen, Kurzhantel zwischen den Beinen. Senke dich mit geradem Rücken, die Knie nach außen."
+      },
+      "kind": "compound",
+      "loadType": "external",
+      "equipment": "dumbbell",
+      "primaryMuscles": [
+        "glutes",
+        "quads"
+      ],
+      "secondaryMuscles": [
+        "hamstrings"
+      ],
+      "defaultStepKg": 2
+    },
+    {
+      "id": "02df9923-3f25-56c1-8eb9-5d8f98ed5cef",
+      "slug": "bulgarian-split-squat",
+      "name": {
+        "nl": "Bulgaarse split squat",
+        "en": "Bulgarian split squat",
+        "de": "Bulgarische Kniebeuge"
+      },
+      "instructions": {
+        "nl": "Leg je achterste voet op een bank. Zak recht naar beneden op je voorste been en druk je weer omhoog.",
+        "en": "Rest your back foot on a bench. Lower straight down on your front leg and push back up.",
+        "de": "Leg den hinteren Fuß auf eine Bank. Senke dich gerade auf dem vorderen Bein und drück dich hoch."
+      },
+      "kind": "compound",
+      "loadType": "external",
+      "equipment": "dumbbell",
+      "primaryMuscles": [
+        "quads",
+        "glutes"
+      ],
+      "secondaryMuscles": [
+        "hamstrings"
+      ],
+      "defaultStepKg": 2
+    },
+    {
+      "id": "9f20303e-a293-58c4-a4ed-f8f45bd4a47d",
+      "slug": "split-squat",
+      "name": {
+        "nl": "Split squat",
+        "en": "Split squat",
+        "de": "Ausfallkniebeuge"
+      },
+      "instructions": {
+        "nl": "Sta in een grote schredestand. Zak recht omlaag tot je achterste knie bijna de grond raakt en kom omhoog zonder te stappen.",
+        "en": "Stand in a long split stance. Lower straight down until your back knee almost touches the floor and rise without stepping.",
+        "de": "Steh in weiter Schrittstellung. Senke dich, bis das hintere Knie fast den Boden berührt, und komm ohne Schritt hoch."
+      },
+      "kind": "compound",
+      "loadType": "bodyweight",
+      "equipment": "bodyweight",
+      "primaryMuscles": [
+        "quads",
+        "glutes"
+      ],
+      "secondaryMuscles": [
+        "hamstrings"
+      ],
+      "defaultStepKg": 2.5
+    },
+    {
+      "id": "e841fd41-f9be-5973-9dd0-4bf0a673f846",
+      "slug": "reverse-lunge",
+      "name": {
+        "nl": "Achterwaartse lunge",
+        "en": "Reverse lunge",
+        "de": "Ausfallschritt rückwärts"
+      },
+      "instructions": {
+        "nl": "Stap ver naar achteren en zak tot je knie bijna de grond raakt. Duw je met je voorste been terug en wissel.",
+        "en": "Take a long step back and lower until your knee almost touches the floor. Push back with your front leg and switch.",
+        "de": "Mach einen weiten Schritt zurück, bis das Knie fast den Boden berührt. Drück dich mit dem vorderen Bein zurück und wechsle."
+      },
+      "kind": "compound",
+      "loadType": "bodyweight",
+      "equipment": "bodyweight",
+      "primaryMuscles": [
+        "quads",
+        "glutes"
+      ],
+      "secondaryMuscles": [
+        "hamstrings"
+      ],
+      "defaultStepKg": 2.5
+    },
+    {
+      "id": "124d4286-743d-5ba4-ace2-4e1733b4f8bc",
+      "slug": "step-up",
+      "name": {
+        "nl": "Opstappen met dumbbells",
+        "en": "Dumbbell step-up",
+        "de": "Step-ups mit Kurzhanteln"
+      },
+      "instructions": {
+        "nl": "Zet één voet helemaal op de bank. Druk je met dat been omhoog tot je erop staat en stap rustig terug.",
+        "en": "Put one whole foot on the bench. Push up with that leg until you stand on it and step back down slowly.",
+        "de": "Stell einen Fuß ganz auf die Bank. Drück dich mit diesem Bein hoch, bis du stehst, und steig langsam ab."
+      },
+      "kind": "compound",
+      "loadType": "external",
+      "equipment": "dumbbell",
+      "primaryMuscles": [
+        "quads",
+        "glutes"
+      ],
+      "secondaryMuscles": [
+        "calves"
+      ],
+      "defaultStepKg": 2
+    },
+    {
+      "id": "d3b58284-e33e-5361-9141-dfd46af527fc",
+      "slug": "lateral-lunge",
+      "name": {
+        "nl": "Zijwaartse lunge",
+        "en": "Lateral lunge",
+        "de": "Seitlicher Ausfallschritt"
+      },
+      "instructions": {
+        "nl": "Stap breed opzij en zak op dat been, het andere blijft gestrekt. Duw je terug naar het midden en wissel van kant.",
+        "en": "Step wide to the side and lower on that leg, keeping the other straight. Push back to the middle and switch sides.",
+        "de": "Mach einen weiten Schritt zur Seite und senke dich, das andere Bein bleibt gestreckt. Drück dich zurück und wechsle."
+      },
+      "kind": "compound",
+      "loadType": "bodyweight",
+      "equipment": "bodyweight",
+      "primaryMuscles": [
+        "quads",
+        "glutes"
+      ],
+      "secondaryMuscles": [
+        "hamstrings"
+      ],
+      "defaultStepKg": 2.5
+    },
+    {
+      "id": "16706a53-e9c0-5375-a902-56c53a205f3b",
+      "slug": "sumo-deadlift",
+      "name": {
+        "nl": "Sumo deadlift",
+        "en": "Sumo deadlift",
+        "de": "Sumo-Kreuzheben"
+      },
+      "instructions": {
+        "nl": "Sta breed met je tenen naar buiten en pak de halter tussen je benen. Kom met een rechte rug omhoog tot je rechtop staat.",
+        "en": "Stand wide, toes out, and grip the bar between your legs. Rise with a straight back until you stand tall.",
+        "de": "Steh breit, Zehen nach außen, und greif zwischen den Beinen. Komm mit geradem Rücken hoch, bis du aufrecht stehst."
+      },
+      "kind": "compound",
+      "loadType": "external",
+      "equipment": "barbell",
+      "primaryMuscles": [
+        "glutes",
+        "hamstrings"
+      ],
+      "secondaryMuscles": [
+        "quads",
+        "back"
+      ],
+      "defaultStepKg": 2.5
+    },
+    {
+      "id": "f12df4b1-986c-5d5b-87c6-f5c6398ea632",
+      "slug": "dumbbell-romanian-deadlift",
+      "name": {
+        "nl": "Roemeense deadlift met dumbbells",
+        "en": "Dumbbell Romanian deadlift",
+        "de": "Rumänisches Kreuzheben mit Kurzhanteln"
+      },
+      "instructions": {
+        "nl": "Houd je knieën licht gebogen. Duw je heupen naar achteren met de dumbbells langs je benen tot je rek voelt en kom omhoog.",
+        "en": "Keep your knees slightly bent. Push your hips back, dumbbells along your legs, until you feel a stretch, then stand up.",
+        "de": "Halte die Knie leicht gebeugt. Schieb die Hüfte zurück, Kurzhanteln an den Beinen, bis du Dehnung spürst, und komm hoch."
+      },
+      "kind": "compound",
+      "loadType": "external",
+      "equipment": "dumbbell",
+      "primaryMuscles": [
+        "hamstrings"
+      ],
+      "secondaryMuscles": [
+        "glutes",
+        "back"
+      ],
+      "defaultStepKg": 2
+    },
+    {
+      "id": "9611078e-dadb-5eed-975e-d100a7a93aed",
+      "slug": "kettlebell-deadlift",
+      "name": {
+        "nl": "Deadlift met kettlebell",
+        "en": "Kettlebell deadlift",
+        "de": "Kreuzheben mit Kettlebell"
+      },
+      "instructions": {
+        "nl": "Zet de kettlebell tussen je voeten en pak hem met twee handen. Sta met een rechte rug op en zet hem rustig terug.",
+        "en": "Place the kettlebell between your feet and grip it with both hands. Stand up with a straight back and set it down slowly.",
+        "de": "Stell die Kettlebell zwischen die Füße und greif mit beiden Händen. Steh mit geradem Rücken auf und stell sie langsam ab."
+      },
+      "kind": "compound",
+      "loadType": "external",
+      "equipment": "kettlebell",
+      "primaryMuscles": [
+        "glutes",
+        "hamstrings"
+      ],
+      "secondaryMuscles": [
+        "quads",
+        "back"
+      ],
+      "defaultStepKg": 4
+    },
+    {
+      "id": "6c409517-2328-571d-a156-0043e3c2a3c2",
+      "slug": "single-leg-romanian-deadlift",
+      "name": {
+        "nl": "Roemeense deadlift op één been",
+        "en": "Single-leg Romanian deadlift",
+        "de": "Einbeiniges Kreuzheben"
+      },
+      "instructions": {
+        "nl": "Sta op één been met een licht gebogen knie. Kantel voorover terwijl je vrije been naar achteren gaat en kom weer rechtop.",
+        "en": "Stand on one leg with a slightly bent knee. Tip forwards as your free leg goes back, then stand tall again.",
+        "de": "Steh auf einem Bein, das Knie leicht gebeugt. Kipp nach vorn, das freie Bein nach hinten, und richte dich wieder auf."
+      },
+      "kind": "compound",
+      "loadType": "external",
+      "equipment": "dumbbell",
+      "primaryMuscles": [
+        "hamstrings"
+      ],
+      "secondaryMuscles": [
+        "glutes",
+        "core"
+      ],
+      "defaultStepKg": 2
+    },
+    {
+      "id": "ab41aa27-baf6-5698-8ecf-9e0379b19046",
+      "slug": "seated-leg-curl",
+      "name": {
+        "nl": "Hamstring curl zittend",
+        "en": "Seated leg curl",
+        "de": "Beinbeuger sitzend"
+      },
+      "instructions": {
+        "nl": "Zit met de rol achter je enkels. Trek je hielen onder de stoel en laat ze langzaam terugkomen.",
+        "en": "Sit with the pad behind your ankles. Pull your heels under the seat and let them return slowly.",
+        "de": "Sitz mit dem Polster hinter den Knöcheln. Zieh die Fersen unter den Sitz und lass sie langsam zurück."
+      },
+      "kind": "isolation",
+      "loadType": "external",
+      "equipment": "machine",
+      "primaryMuscles": [
+        "hamstrings"
+      ],
+      "secondaryMuscles": [
+        "calves"
+      ],
+      "defaultStepKg": 5
+    },
+    {
+      "id": "7545ea47-371f-5840-b3fa-5d4913ba74c4",
+      "slug": "glute-bridge",
+      "name": {
+        "nl": "Glute bridge",
+        "en": "Glute bridge",
+        "de": "Beckenheben"
+      },
+      "instructions": {
+        "nl": "Lig op je rug met je knieën gebogen. Duw je heupen omhoog tot een rechte lijn en laat ze langzaam zakken.",
+        "en": "Lie on your back with your knees bent. Push your hips up into a straight line and lower them slowly.",
+        "de": "Lieg auf dem Rücken, Knie gebeugt. Heb die Hüfte bis zu einer geraden Linie und senke sie langsam."
+      },
+      "kind": "isolation",
+      "loadType": "bodyweight",
+      "equipment": "bodyweight",
+      "primaryMuscles": [
+        "glutes"
+      ],
+      "secondaryMuscles": [
+        "hamstrings",
+        "core"
+      ],
+      "defaultStepKg": 2.5
+    },
+    {
+      "id": "6d711ed1-415e-563d-8168-8680ec44f6da",
+      "slug": "single-leg-glute-bridge",
+      "name": {
+        "nl": "Glute bridge op één been",
+        "en": "Single-leg glute bridge",
+        "de": "Einbeiniges Beckenheben"
+      },
+      "instructions": {
+        "nl": "Lig op je rug, één voet op de grond en het andere been gestrekt. Duw je heupen omhoog, houd ze recht en wissel daarna.",
+        "en": "Lie on your back, one foot on the floor and the other leg straight. Push your hips up, keep them level, then switch.",
+        "de": "Lieg auf dem Rücken, ein Fuß am Boden, das andere Bein gestreckt. Heb die Hüfte gerade an und wechsle danach."
+      },
+      "kind": "isolation",
+      "loadType": "bodyweight",
+      "equipment": "bodyweight",
+      "primaryMuscles": [
+        "glutes"
+      ],
+      "secondaryMuscles": [
+        "hamstrings",
+        "core"
+      ],
+      "defaultStepKg": 2.5
+    },
+    {
+      "id": "1748d1a5-11ae-514d-8d89-630041b5c4e3",
+      "slug": "cable-kickback",
+      "name": {
+        "nl": "Kickback aan de kabel",
+        "en": "Cable kickback",
+        "de": "Kickbacks am Kabel"
+      },
+      "instructions": {
+        "nl": "Maak de band om je enkel vast en houd je vast aan het frame. Strek je been naar achteren zonder je onderrug hol te trekken.",
+        "en": "Fasten the strap round your ankle and hold the frame. Extend your leg back without arching your lower back.",
+        "de": "Befestige die Schlaufe am Knöchel und halte dich fest. Streck das Bein nach hinten, ohne ins Hohlkreuz zu gehen."
+      },
+      "kind": "isolation",
+      "loadType": "external",
+      "equipment": "cable",
+      "primaryMuscles": [
+        "glutes"
+      ],
+      "secondaryMuscles": [
+        "hamstrings"
+      ],
+      "defaultStepKg": 5
+    },
+    {
+      "id": "87009a54-e35f-56b4-8176-da31b534aba1",
+      "slug": "cable-pull-through",
+      "name": {
+        "nl": "Pull-through aan de kabel",
+        "en": "Cable pull-through",
+        "de": "Pull-Through am Kabel"
+      },
+      "instructions": {
+        "nl": "Sta met je rug naar de lage kabel, touw tussen je benen. Duw je heupen naar achteren en strek ze daarna krachtig.",
+        "en": "Stand facing away from the low cable, rope between your legs. Push your hips back, then extend them firmly.",
+        "de": "Steh mit dem Rücken zum tiefen Kabel, Seil zwischen den Beinen. Schieb die Hüfte zurück und streck sie dann kräftig."
+      },
+      "kind": "isolation",
+      "loadType": "external",
+      "equipment": "cable",
+      "primaryMuscles": [
+        "glutes"
+      ],
+      "secondaryMuscles": [
+        "hamstrings"
+      ],
+      "defaultStepKg": 5
+    },
+    {
+      "id": "bdea6f52-29a1-5859-a993-5fe7470e44b4",
+      "slug": "donkey-kick",
+      "name": {
+        "nl": "Donkey kick",
+        "en": "Donkey kick",
+        "de": "Donkey Kick"
+      },
+      "instructions": {
+        "nl": "Steun op handen en knieën. Duw één gebogen been omhoog naar het plafond en laat het langzaam zakken.",
+        "en": "Support yourself on hands and knees. Push one bent leg up towards the ceiling and lower it slowly.",
+        "de": "Stütz dich auf Hände und Knie. Drück ein gebeugtes Bein zur Decke und senke es langsam."
+      },
+      "kind": "isolation",
+      "loadType": "bodyweight",
+      "equipment": "bodyweight",
+      "primaryMuscles": [
+        "glutes"
+      ],
+      "secondaryMuscles": [
+        "core"
+      ],
+      "defaultStepKg": 2.5
+    },
+    {
+      "id": "fd04401f-f97f-54b8-824e-7252dfc457d5",
+      "slug": "side-lying-leg-raise",
+      "name": {
+        "nl": "Zijliggend been heffen",
+        "en": "Side-lying leg raise",
+        "de": "Beinheben in Seitlage"
+      },
+      "instructions": {
+        "nl": "Lig op je zij met gestrekte benen. Til je bovenste been op zonder je bekken te kantelen en laat het langzaam zakken.",
+        "en": "Lie on your side with straight legs. Raise your top leg without tipping your pelvis and lower it slowly.",
+        "de": "Lieg mit gestreckten Beinen auf der Seite. Heb das obere Bein, ohne das Becken zu kippen, und senke es langsam."
+      },
+      "kind": "isolation",
+      "loadType": "bodyweight",
+      "equipment": "bodyweight",
+      "primaryMuscles": [
+        "glutes"
+      ],
+      "secondaryMuscles": [
+        "core"
+      ],
+      "defaultStepKg": 2.5
+    },
+    {
+      "id": "9aba4156-c81b-5ae2-a819-d66584d2f74d",
+      "slug": "hip-abduction",
+      "name": {
+        "nl": "Heupen naar buiten op de machine",
+        "en": "Hip abduction",
+        "de": "Abduktion an der Maschine"
+      },
+      "instructions": {
+        "nl": "Zit met de kussens tegen de buitenkant van je knieën. Duw je benen naar buiten en laat ze langzaam terugkomen.",
+        "en": "Sit with the pads against the outside of your knees. Push your legs apart and let them return slowly.",
+        "de": "Sitz mit den Polstern außen an den Knien. Drück die Beine auseinander und lass sie langsam zurück."
+      },
+      "kind": "isolation",
+      "loadType": "external",
+      "equipment": "machine",
+      "primaryMuscles": [
+        "glutes"
+      ],
+      "secondaryMuscles": [],
+      "defaultStepKg": 5
+    },
+    {
+      "id": "11934754-237e-5166-b295-b6e1beebf7b4",
+      "slug": "seated-calf-raise",
+      "name": {
+        "nl": "Kuitheffen zittend",
+        "en": "Seated calf raise",
+        "de": "Wadenheben sitzend"
+      },
+      "instructions": {
+        "nl": "Zit met het kussen op je knieën en je voorvoeten op de rand. Til je hielen zo hoog mogelijk en laat ze diep zakken.",
+        "en": "Sit with the pad on your knees and the balls of your feet on the edge. Lift your heels high and lower them deep.",
+        "de": "Sitz mit dem Polster auf den Knien, Vorfüße auf der Kante. Heb die Fersen hoch und senke sie tief."
+      },
+      "kind": "isolation",
+      "loadType": "external",
+      "equipment": "machine",
+      "primaryMuscles": [
+        "calves"
+      ],
+      "secondaryMuscles": [],
+      "defaultStepKg": 5
+    },
+    {
+      "id": "5f4a5c78-2af7-59e5-ab7c-d75bbb98ac15",
+      "slug": "dumbbell-calf-raise",
+      "name": {
+        "nl": "Kuitheffen met dumbbells",
+        "en": "Dumbbell calf raise",
+        "de": "Wadenheben mit Kurzhanteln"
+      },
+      "instructions": {
+        "nl": "Sta rechtop met een dumbbell in elke hand. Kom hoog op je tenen en zak langzaam terug.",
+        "en": "Stand tall with a dumbbell in each hand. Rise high onto your toes and lower slowly.",
+        "de": "Steh aufrecht, eine Kurzhantel in jeder Hand. Geh hoch auf die Zehen und senke dich langsam."
+      },
+      "kind": "isolation",
+      "loadType": "external",
+      "equipment": "dumbbell",
+      "primaryMuscles": [
+        "calves"
+      ],
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "defaultStepKg": 2
+    },
+    {
+      "id": "1d48502a-225a-56f1-8fc1-94cc4a0c69e6",
+      "slug": "bodyweight-calf-raise",
+      "name": {
+        "nl": "Kuitheffen zonder gewicht",
+        "en": "Bodyweight calf raise",
+        "de": "Wadenheben ohne Gewicht"
+      },
+      "instructions": {
+        "nl": "Sta met je handen tegen de muur. Kom zo hoog mogelijk op je tenen en zak langzaam terug.",
+        "en": "Stand with your hands on the wall. Rise as high as you can onto your toes and lower slowly.",
+        "de": "Steh mit den Händen an der Wand. Geh so hoch wie möglich auf die Zehen und senke dich langsam."
+      },
+      "kind": "isolation",
+      "loadType": "bodyweight",
+      "equipment": "bodyweight",
+      "primaryMuscles": [
+        "calves"
+      ],
+      "secondaryMuscles": [],
+      "defaultStepKg": 2.5
+    },
+    {
+      "id": "d10066e0-29fa-5270-9cf5-294107f541d1",
+      "slug": "single-leg-calf-raise",
+      "name": {
+        "nl": "Kuitheffen op één been",
+        "en": "Single-leg calf raise",
+        "de": "Einbeiniges Wadenheben"
+      },
+      "instructions": {
+        "nl": "Sta met één voorvoet op een rand en houd je vast. Kom hoog op je tenen, zak diep en wissel daarna van been.",
+        "en": "Stand with one forefoot on an edge and hold on. Rise high, lower deep, then switch legs.",
+        "de": "Steh mit einem Vorfuß auf einer Kante und halte dich fest. Geh hoch, senke dich tief und wechsle dann das Bein."
+      },
+      "kind": "isolation",
+      "loadType": "bodyweight",
+      "equipment": "bodyweight",
+      "primaryMuscles": [
+        "calves"
+      ],
+      "secondaryMuscles": [
+        "core"
+      ],
+      "defaultStepKg": 2.5
+    },
+    {
+      "id": "c53355e3-33a4-5dfb-92f0-076a664c1461",
+      "slug": "leg-press-calf-raise",
+      "name": {
+        "nl": "Kuitheffen in de beenpers",
+        "en": "Leg press calf raise",
+        "de": "Wadendrücken in der Beinpresse"
+      },
+      "instructions": {
+        "nl": "Zet je voorvoeten onder aan het plateau, knieën bijna gestrekt. Duw met je tenen en laat je hielen langzaam terugkomen.",
+        "en": "Put the balls of your feet on the bottom of the platform, knees almost straight. Push with your toes and let your heels return slowly.",
+        "de": "Setz die Vorfüße unten auf die Platte, Knie fast gestreckt. Drück mit den Zehen und lass die Fersen langsam zurück."
+      },
+      "kind": "isolation",
+      "loadType": "external",
+      "equipment": "machine",
+      "primaryMuscles": [
+        "calves"
+      ],
+      "secondaryMuscles": [],
+      "defaultStepKg": 5
+    },
+    {
+      "id": "022fbe20-c240-5f12-b70e-351704531aa0",
+      "slug": "crunch",
+      "name": {
+        "nl": "Crunch",
+        "en": "Crunch",
+        "de": "Crunch"
+      },
+      "instructions": {
+        "nl": "Lig op je rug met je knieën gebogen. Rol je schouders van de grond zonder aan je nek te trekken en zak langzaam terug.",
+        "en": "Lie on your back with your knees bent. Curl your shoulders off the floor without pulling your neck and lower slowly.",
+        "de": "Lieg auf dem Rücken, Knie gebeugt. Roll die Schultern vom Boden, ohne am Nacken zu ziehen, und senke dich langsam."
+      },
+      "kind": "isolation",
+      "loadType": "bodyweight",
+      "equipment": "bodyweight",
+      "primaryMuscles": [
+        "core"
+      ],
+      "secondaryMuscles": [],
+      "defaultStepKg": 2.5
+    },
+    {
+      "id": "352892e4-ec87-5f1b-a524-7709b036c21b",
+      "slug": "sit-up",
+      "name": {
+        "nl": "Sit-up",
+        "en": "Sit-up",
+        "de": "Sit-up"
+      },
+      "instructions": {
+        "nl": "Lig met gebogen knieën en je armen gekruist voor je borst. Kom helemaal omhoog tot zit en zak beheerst terug.",
+        "en": "Lie with bent knees and arms crossed over your chest. Come all the way up to sitting and lower under control.",
+        "de": "Lieg mit gebeugten Knien, Arme vor der Brust gekreuzt. Komm ganz zum Sitzen hoch und senke dich kontrolliert."
+      },
+      "kind": "isolation",
+      "loadType": "bodyweight",
+      "equipment": "bodyweight",
+      "primaryMuscles": [
+        "core"
+      ],
+      "secondaryMuscles": [],
+      "defaultStepKg": 2.5
+    },
+    {
+      "id": "04ea7e4c-12e6-5eba-9669-378258ed87a6",
+      "slug": "reverse-crunch",
+      "name": {
+        "nl": "Omgekeerde crunch",
+        "en": "Reverse crunch",
+        "de": "Reverse Crunch"
+      },
+      "instructions": {
+        "nl": "Lig met je knieën boven je heupen. Rol je billen van de grond door je knieën naar je borst te brengen en zak langzaam.",
+        "en": "Lie with your knees over your hips. Roll your hips off the floor by bringing your knees to your chest, then lower slowly.",
+        "de": "Lieg mit den Knien über der Hüfte. Roll das Becken vom Boden, die Knie zur Brust, und senke dich langsam."
+      },
+      "kind": "isolation",
+      "loadType": "bodyweight",
+      "equipment": "bodyweight",
+      "primaryMuscles": [
+        "core"
+      ],
+      "secondaryMuscles": [],
+      "defaultStepKg": 2.5
+    },
+    {
+      "id": "f1a2828e-731c-5e6b-8b83-2195a55cca46",
+      "slug": "lying-leg-raise",
+      "name": {
+        "nl": "Liggend benen heffen",
+        "en": "Lying leg raise",
+        "de": "Beinheben liegend"
+      },
+      "instructions": {
+        "nl": "Lig op je rug met je onderrug tegen de grond. Hef je gestrekte benen tot ze rechtop staan en laat ze langzaam zakken.",
+        "en": "Lie on your back with your lower back on the floor. Raise your straight legs until upright and lower them slowly.",
+        "de": "Lieg auf dem Rücken, unterer Rücken am Boden. Heb die gestreckten Beine senkrecht und senke sie langsam."
+      },
+      "kind": "isolation",
+      "loadType": "bodyweight",
+      "equipment": "bodyweight",
+      "primaryMuscles": [
+        "core"
+      ],
+      "secondaryMuscles": [],
+      "defaultStepKg": 2.5
+    },
+    {
+      "id": "158952f6-eb57-5784-a07d-adb32f11b7be",
+      "slug": "bicycle-crunch",
+      "name": {
+        "nl": "Fietscrunch",
+        "en": "Bicycle crunch",
+        "de": "Fahrrad-Crunch"
+      },
+      "instructions": {
+        "nl": "Lig met je handen bij je hoofd. Draai je schouder naar de andere knie terwijl je het vrije been strekt en wissel rustig.",
+        "en": "Lie with your hands by your head. Turn your shoulder to the opposite knee as you extend the free leg and switch slowly.",
+        "de": "Lieg mit den Händen am Kopf. Dreh die Schulter zum anderen Knie, streck das freie Bein und wechsle ruhig."
+      },
+      "kind": "isolation",
+      "loadType": "bodyweight",
+      "equipment": "bodyweight",
+      "primaryMuscles": [
+        "core"
+      ],
+      "secondaryMuscles": [],
+      "defaultStepKg": 2.5
+    },
+    {
+      "id": "9d515a55-fdd4-5b19-a5a6-792cc4dd880a",
+      "slug": "russian-twist",
+      "name": {
+        "nl": "Russische twist",
+        "en": "Russian twist",
+        "de": "Russian Twist"
+      },
+      "instructions": {
+        "nl": "Zit iets achterover met je knieën gebogen. Draai je schouders en handen van de ene naar de andere kant.",
+        "en": "Sit leaning back slightly with your knees bent. Turn your shoulders and hands from one side to the other.",
+        "de": "Sitz leicht zurückgelehnt, Knie gebeugt. Dreh Schultern und Hände von einer Seite zur anderen."
+      },
+      "kind": "isolation",
+      "loadType": "bodyweight",
+      "equipment": "bodyweight",
+      "primaryMuscles": [
+        "core"
+      ],
+      "secondaryMuscles": [],
+      "defaultStepKg": 2.5
+    },
+    {
+      "id": "d07c7f5b-89c1-581e-a706-c4dc3bb33767",
+      "slug": "dead-bug",
+      "name": {
+        "nl": "Dead bug",
+        "en": "Dead bug",
+        "de": "Dead Bug"
+      },
+      "instructions": {
+        "nl": "Lig met je armen omhoog en knieën boven je heupen. Strek een arm en het andere been uit met je onderrug op de grond en wissel.",
+        "en": "Lie with arms up and knees over your hips. Extend one arm and the opposite leg, lower back on the floor, and switch.",
+        "de": "Lieg mit Armen nach oben, Knie über der Hüfte. Streck einen Arm und das andere Bein, unterer Rücken am Boden, und wechsle."
+      },
+      "kind": "isolation",
+      "loadType": "bodyweight",
+      "equipment": "bodyweight",
+      "primaryMuscles": [
+        "core"
+      ],
+      "secondaryMuscles": [],
+      "defaultStepKg": 2.5
+    },
+    {
+      "id": "82ea7913-73d8-5829-b318-407228680997",
+      "slug": "bird-dog",
+      "name": {
+        "nl": "Bird dog",
+        "en": "Bird dog",
+        "de": "Bird Dog"
+      },
+      "instructions": {
+        "nl": "Steun op handen en knieën. Strek een arm en het andere been uit zonder je heupen te draaien en wissel.",
+        "en": "Support yourself on hands and knees. Extend one arm and the opposite leg without turning your hips, then switch.",
+        "de": "Stütz dich auf Hände und Knie. Streck einen Arm und das andere Bein, ohne die Hüfte zu drehen, und wechsle."
+      },
+      "kind": "isolation",
+      "loadType": "bodyweight",
+      "equipment": "bodyweight",
+      "primaryMuscles": [
+        "core"
+      ],
+      "secondaryMuscles": [
+        "glutes",
+        "back"
+      ],
+      "defaultStepKg": 2.5
+    },
+    {
+      "id": "b8d245ed-7271-55fe-ab98-4884370d8c14",
+      "slug": "mountain-climber",
+      "name": {
+        "nl": "Mountain climber",
+        "en": "Mountain climber",
+        "de": "Bergsteiger"
+      },
+      "instructions": {
+        "nl": "Steun met gestrekte armen in een plank. Trek om en om een knie naar je borst met je heupen laag.",
+        "en": "Hold a plank on straight arms. Draw one knee at a time to your chest with your hips low.",
+        "de": "Halte den Stütz mit gestreckten Armen. Zieh abwechselnd ein Knie zur Brust, die Hüfte tief."
+      },
+      "kind": "isolation",
+      "loadType": "bodyweight",
+      "equipment": "bodyweight",
+      "primaryMuscles": [
+        "core"
+      ],
+      "secondaryMuscles": [
+        "shoulders",
+        "quads"
+      ],
+      "defaultStepKg": 2.5
+    },
+    {
+      "id": "70d3b706-7bfd-52c2-bdf4-34c4cc9854a0",
+      "slug": "ab-wheel",
+      "name": {
+        "nl": "Buikwiel",
+        "en": "Ab wheel rollout",
+        "de": "Bauchroller"
+      },
+      "instructions": {
+        "nl": "Kniel met het wiel onder je schouders. Rol naar voren zover je onderrug recht blijft en trek jezelf terug.",
+        "en": "Kneel with the wheel under your shoulders. Roll forwards as far as your lower back stays straight and pull yourself back.",
+        "de": "Knie mit dem Rad unter den Schultern. Roll vor, solange der untere Rücken gerade bleibt, und zieh dich zurück."
+      },
+      "kind": "isolation",
+      "loadType": "bodyweight",
+      "equipment": "bodyweight",
+      "primaryMuscles": [
+        "core"
+      ],
+      "secondaryMuscles": [
+        "shoulders",
+        "back"
+      ],
+      "defaultStepKg": 2.5
+    },
+    {
+      "id": "ed122c54-849d-5995-987f-8849aaaa846b",
+      "slug": "pallof-press",
+      "name": {
+        "nl": "Pallof press",
+        "en": "Pallof press",
+        "de": "Pallof Press"
+      },
+      "instructions": {
+        "nl": "Sta zijwaarts naast de kabel met de greep voor je borst. Strek je armen vooruit zonder dat je romp meedraait.",
+        "en": "Stand side-on to the cable with the handle at your chest. Press your arms forwards without letting your torso turn.",
+        "de": "Steh seitlich zum Kabel, Griff vor der Brust. Streck die Arme nach vorn, ohne dass der Rumpf mitdreht."
+      },
+      "kind": "isolation",
+      "loadType": "external",
+      "equipment": "cable",
+      "primaryMuscles": [
+        "core"
+      ],
+      "secondaryMuscles": [
+        "shoulders"
+      ],
+      "defaultStepKg": 5
+    },
+    {
+      "id": "76f26c25-a784-55ba-8a33-91d96bffe330",
+      "slug": "woodchop",
+      "name": {
+        "nl": "Houthakker aan de kabel",
+        "en": "Cable woodchop",
+        "de": "Holzhacker am Kabel"
+      },
+      "instructions": {
+        "nl": "Sta zijwaarts naast de hoge kabel. Trek de greep met gestrekte armen schuin omlaag langs je lijf en draai je romp mee.",
+        "en": "Stand side-on to the high cable. Pull the handle diagonally down across your body with straight arms, turning your torso.",
+        "de": "Steh seitlich zum hohen Kabel. Zieh den Griff mit gestreckten Armen diagonal am Körper vorbei und dreh den Rumpf mit."
+      },
+      "kind": "isolation",
+      "loadType": "external",
+      "equipment": "cable",
+      "primaryMuscles": [
+        "core"
+      ],
+      "secondaryMuscles": [
+        "shoulders"
+      ],
+      "defaultStepKg": 5
+    },
+    {
+      "id": "fc336ee8-bb09-54ac-9961-f911feb033b8",
+      "slug": "hanging-knee-raise",
+      "name": {
+        "nl": "Hangend knieën heffen",
+        "en": "Hanging knee raise",
+        "de": "Hängendes Knieheben"
+      },
+      "instructions": {
+        "nl": "Hang aan de stang. Breng je gebogen knieën boven heuphoogte zonder te zwaaien en laat ze langzaam zakken.",
+        "en": "Hang from the bar. Bring your bent knees above hip height without swinging and lower them slowly.",
+        "de": "Häng an der Stange. Bring die gebeugten Knie ohne Schwung über Hüfthöhe und senke sie langsam."
+      },
+      "kind": "isolation",
+      "loadType": "bodyweight",
+      "equipment": "bodyweight",
+      "primaryMuscles": [
+        "core"
+      ],
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "defaultStepKg": 2.5
     }
   ],
   "programs": [
