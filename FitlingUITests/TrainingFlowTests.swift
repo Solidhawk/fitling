@@ -40,9 +40,9 @@ final class TrainingFlowTests: XCTestCase {
         XCTAssertTrue(element.waitForExistence(timeout: 5))
     }
 
-    /// From the programme back to Training. On the CI simulator a tap on the back button while the
-    /// workout was still closing went nowhere now and then (UNFORGET S22), so the tap waits until the
-    /// button can be tapped and is made again when Training does not appear.
+    /// From the programme back to Training. On the CI simulator Training once did not appear after the
+    /// tap (UNFORGET S22). A tap lost while the workout was closing is the likely cause, not a proven
+    /// one, so the tap waits until the button can be tapped and is made again when Training stays away.
     @MainActor
     private func backToTraining(_ app: XCUIApplication) {
         let training = app.navigationBars["Training"]
