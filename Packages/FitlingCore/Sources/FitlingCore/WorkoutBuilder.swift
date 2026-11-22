@@ -36,12 +36,15 @@ public struct WorkoutCandidate: Sendable, Equatable {
     public var id: UUID
     public var kind: ExerciseKind
     public var primaryMuscles: [MuscleGroup]
+    /// Its place in the ready-made programmes, lower is earlier. Nil when it is in none.
+    public var preference: Int?
     public var lastDone: Day?
 
-    public init(id: UUID, kind: ExerciseKind, primaryMuscles: [MuscleGroup], lastDone: Day? = nil) {
+    public init(id: UUID, kind: ExerciseKind, primaryMuscles: [MuscleGroup], preference: Int? = nil, lastDone: Day? = nil) {
         self.id = id
         self.kind = kind
         self.primaryMuscles = primaryMuscles
+        self.preference = preference
         self.lastDone = lastDone
     }
 }
@@ -51,6 +54,19 @@ public struct PlannedExercise: Sendable, Equatable {
     public var sets: Int
     public var repRange: ClosedRange<Int>
     public var restSeconds: Int
+}
+
+/// The workout the builder proposes, with how long it takes.
+public struct WorkoutPlan: Sendable, Equatable {
+    public var exercises: [PlannedExercise]
+    /// The time asked for.
+    public var minutes: Int
+    public var seconds: Int
+    /// The muscles of the focus that did not fit.
+    public var leftOut: [MuscleGroup]
+
+    public var roundedMinutes: Int { 0 }
+    public var leavesTimeOver: Bool { false }
 }
 
 /// Makes a workout for one focus with the usual rules for muscle growth: compound exercises first
@@ -66,6 +82,14 @@ public enum WorkoutBuilder {
     public static let isolationSets = 3
     public static let isolationReps = 10...15
     public static let isolationRestSeconds = 75
+
+    public static let durations: [Int] = []
+    public static let defaultMinutes = 60
+    public static let shortCompoundRestSeconds = 150
+
+    public static func plan(_ focus: TrainingFocus, minutes: Int, from candidates: [WorkoutCandidate], history: [[UUID]]) -> WorkoutPlan {
+        WorkoutPlan(exercises: build(focus, from: candidates), minutes: minutes, seconds: 0, leftOut: [])
+    }
 
     public static func build(_ focus: TrainingFocus, from candidates: [WorkoutCandidate]) -> [PlannedExercise] {
         let usable = candidates.filter { !$0.primaryMuscles.isEmpty && Set($0.primaryMuscles).isSubset(of: focus.allowed) }
