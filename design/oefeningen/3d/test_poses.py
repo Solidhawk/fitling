@@ -11,7 +11,7 @@ import poses
 
 ROOT = Path(__file__).resolve().parents[3]
 CATALOG = {e['id']: e for e in json.loads((ROOT / 'Fitling/Resources/SportCatalog.json').read_text('utf-8'))['exercises']}
-SEVEN = {'hip-thrust', 'one-arm-dumbbell-row', 'goblet-squat', 'face-pull', 'cable-crunch', 'hanging-leg-raise', 'kettlebell-swing'}
+SEVEN = {'hip-thrust', 'dumbbell-row', 'goblet-squat', 'face-pull', 'cable-crunch', 'hanging-leg-raise', 'kettlebell-swing'}
 STEPS = [i / 100 for i in range(101)]
 
 
@@ -124,17 +124,17 @@ class HipThrust(unittest.TestCase):
 
 class OneArmRow(unittest.TestCase):
     def test_hand_and_knee_rest_on_the_bench(self):
-        for pose in track('one-arm-dumbbell-row'):
+        for pose in track('dumbbell-row'):
             self.assertAlmostEqual(pose.sides[-1].knee[2], poses.BENCH_ROW + 0.06, delta=0.03)
             self.assertAlmostEqual(pose.sides[-1].wrist[2], poses.BENCH_ROW + 0.04, delta=0.01)
 
     def test_from_a_straight_arm_to_the_hip(self):
-        low, top = ends('one-arm-dumbbell-row')
+        low, top = ends('dumbbell-row')
         self.assertGreater(angle(low.sides[1].shoulder, low.sides[1].elbow, low.sides[1].wrist), 160)
         self.assertLess(distance(top.sides[1].wrist, top.sides[1].hip), 0.23)
 
     def test_the_back_stays_still_and_flat(self):
-        low, top = ends('one-arm-dumbbell-row')
+        low, top = ends('dumbbell-row')
         self.assertLess(distance(low.neck, top.neck), 0.002)
         self.assertLess(abs(low.neck[2] - low.pelvis[2]), 0.15)
 

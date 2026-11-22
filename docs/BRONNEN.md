@@ -18,6 +18,13 @@ Alles hieronder mag in de app worden gebruikt onder de genoemde licentie. De app
     - Kabel crossover: [0048-relaxation.png](https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/dist/png/0048-relaxation.png) als begin en [0048-tension.png](https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/dist/png/0048-tension.png) als eind.
     - Schouderdrukken met dumbbells (niet in `dist/png`, wel in `src/images-web`): [dumbbell-shoulder-press-1.png](https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/dumbbell-shoulder-press-1.png) als begin en [dumbbell-shoulder-press-2.png](https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/dumbbell-shoulder-press-2.png) als eind.
 
+## Animaties van oefeningen
+
+- **Eigen werk**, zonder bestanden van anderen: figuur, toestellen en bewegingen komen uit de code in `design/oefeningen/3d`. Opnieuw maken, vanuit die map:
+  1. `blender -b --factory-startup -P render.py -- <map>` tekent de beelden (Blender 5.3).
+  2. `python build.py <map>` maakt `Fitling/Resources/ExerciseAnimations` (Pillow nodig).
+  3. `python -m unittest` toetst de houdingen aan de uitleg in `SportCatalog.json`.
+
 ## Foto's van recepten (Wikimedia Commons)
 
 | Recept | Foto | Maker | Licentie |

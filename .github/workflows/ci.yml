@@ -102,6 +102,8 @@ jobs:
       - run: node scripts/check-models.mjs
       - run: node scripts/sport-seed.mjs --check
       - run: node scripts/recipe-seed.mjs --check
+      - name: Houdingen van de geanimeerde oefeningen
+        run: python3 -m unittest discover -s design/oefeningen/3d
 
   ios:
     name: iOS (simulator)
