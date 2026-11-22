@@ -151,6 +151,10 @@ struct TrainingStore {
         touch(item)
     }
 
+    func canChange(_ day: ProgramDay) -> Bool {
+        day.ownerID == userID
+    }
+
     // MARK: Workouts
 
     /// A workout that was started and not finished, if there is one.

@@ -134,6 +134,22 @@ import FitlingCore
         #expect(items.allSatisfy { $0.deletedAt != nil })
     }
 
+    /// Otherwise an empty programme stays behind, and the next workout makes a second one next to it.
+    @Test func discardingTheOnlyComposedWorkoutLeavesNoEmptyProgramme() {
+        let day = composed(.upperBody, "Bovenlichaam", daysAgo: 1)
+        fixture.store.discard(fixture.store.start(day))
+        #expect(composedPrograms.isEmpty)
+        composed(.lowerBody, "Onderlichaam", daysAgo: 0)
+        #expect(composedPrograms.count == 1)
+    }
+
+    @Test func aComposedDayCannotBeChangedOnTheProgrammeScreen() throws {
+        let day = composed(.upperBody, "Bovenlichaam", daysAgo: 0)
+        #expect(!fixture.store.canChange(day))
+        let own = fixture.store.createProgram(named: "Eigen", daysPerWeek: 1) { "Dag \($0)" }
+        #expect(fixture.store.canChange(try #require(fixture.store.days(of: own).first)))
+    }
+
     @Test func discardingARepeatKeepsTheDayOfTheWorkoutThatWasDone() throws {
         let finished = done(.upperBody, "Bovenlichaam", daysAgo: 2)
         let day = try #require(finished.programDayID.flatMap { fixture.store.day($0) })
