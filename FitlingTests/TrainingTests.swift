@@ -410,7 +410,7 @@ struct TrainingFixture {
         #expect(store.photos().count == 1)
 
         store.removeAll()
-        #expect(!FileManager.default.fileExists(atPath: folder.path()))
+        #expect(!FileManager.default.fileExists(atPath: folder.path(percentEncoded: false)))
     }
 
     /// The photos live in "Application Support": a folder with a space in its name, on a device too.
