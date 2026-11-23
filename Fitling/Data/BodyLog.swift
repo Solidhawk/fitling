@@ -96,9 +96,10 @@ struct ProgressPhotoStore {
         folder.appending(path: photo.fileName)
     }
 
-    /// The photo itself, for the grid and the detail.
+    /// The photo itself, for the grid and the detail. The file path without percent encoding: the folder is in
+    /// "Application Support", and "%20" is not a space to the file system.
     static func image(at url: URL) -> UIImage? {
-        UIImage(contentsOfFile: url.path())
+        UIImage(contentsOfFile: url.path(percentEncoded: false))
     }
 
     @discardableResult
