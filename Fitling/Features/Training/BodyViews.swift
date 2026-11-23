@@ -166,6 +166,12 @@ struct ProgressPhotosView: View {
     }
 }
 
+/// The date on a progress photo: a small chip at the bottom of the tile.
+enum PhotoDateChip {
+    static let foreground = ColorResource.onRibbon
+    static let background = ColorResource.track
+}
+
 private struct PhotoTile: View {
     let url: URL
     let day: Day?
@@ -183,10 +189,10 @@ private struct PhotoTile: View {
                 if let day {
                     Text(day.startDate, format: .dateTime.day().month(.abbreviated))
                         .font(.caption.weight(.bold))
-                        .foregroundStyle(Color.onRibbon)
+                        .foregroundStyle(Color(PhotoDateChip.foreground))
                         .padding(.horizontal, Spacing.s)
                         .padding(.vertical, Spacing.xs)
-                        .background(Color.track, in: Capsule())
+                        .background(Color(PhotoDateChip.background), in: Capsule())
                         .padding(Spacing.s)
                 }
             }
