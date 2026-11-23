@@ -1,68 +1,46 @@
 import XCTest
 
-/// TASKS 7.2: Apple's accessibility audit on every tab. It checks labels for VoiceOver, contrast,
-/// tap targets, traits and actions. Every finding is collected first, so one run shows them all.
-///
-/// - Only elements that are wholly between the navigation bar and the tab bar count. A row that is
-///   half under the tab bar is measured against the bar's blur and reported as clipped and low in
-///   contrast, while it reads fine once scrolled into view.
-/// - Dynamic Type and clipped text are left to the flows at the largest text size
-///   (`FoodFlowTests`, `TrainingFlowTests`, `OnboardingFlowTests`): those prove that every step can
-///   still be reached and read. The audit reports standard SwiftUI list text as "partially
-///   unsupported" even when it grows to the largest size.
-/// - A finding without an element cannot be traced to a view; it is attached to the test result.
+/// Apple's accessibility audit on every tab (TASKS 7.2): contrast, labels, hit regions, Dynamic Type and
+/// clipped text, in light, in dark and at the largest text size. All findings of a run are collected and
+/// attached as one report before the test fails, so one run shows the whole list.
 final class AccessibilityAuditTests: XCTestCase {
-    override func setUp() {
-        continueAfterFailure = true
-    }
+    private let tabs = ["Vandaag", "Training", "Menu", "Partner", "Dagdoel"]
 
     @MainActor
-    private func auditEveryTab(dark: Bool) throws {
+    private func audit(_ extra: [String], named name: String) throws {
         let app = XCUIApplication()
-        app.launchArguments = ["--ui-testing-with-profile", "-AppleLanguages", "(nl)", "-AppleLocale", "nl_NL"]
-            + (dark ? ["--ui-testing-dark"] : [])
+        app.launchArguments = ["--ui-testing-with-profile", "--ui-testing-workout-history", "-AppleLanguages", "(nl)", "-AppleLocale", "nl_NL"] + extra
         app.launch()
-        let tabs = app.tabBars.firstMatch
-        XCTAssertTrue(tabs.waitForExistence(timeout: 10))
-        let count = tabs.buttons.count
-        XCTAssertGreaterThanOrEqual(count, 5)
-        var issues: [String] = []
-        var untraced: [String] = []
-        for index in 0..<count {
-            let tab = tabs.buttons.element(boundBy: index)
-            let name = tab.label
-            tab.tap()
-            let navigationBar = app.navigationBars.firstMatch
-            XCTAssertTrue(navigationBar.waitForExistence(timeout: 5))
-            let top = navigationBar.frame.maxY
-            let bottom = tabs.frame.minY
-            try app.performAccessibilityAudit(for: .all.subtracting([.dynamicType, .textClipped])) { issue in
-                guard let element = issue.element else {
-                    untraced.append("\(name): \(issue.auditType.rawValue) \(issue.compactDescription)")
-                    return true
-                }
-                let frame = element.frame
-                guard frame.minY >= top - 1, frame.maxY <= bottom + 1 else { return true }
-                issues.append("\(name): \(issue.auditType.rawValue) \(issue.compactDescription) [\(element.elementType.rawValue) '\(element.identifier)' '\(element.label)']")
+        XCTAssertTrue(app.navigationBars["Vandaag"].waitForExistence(timeout: 10))
+        var findings: [String] = []
+        for tab in tabs {
+            app.tabBars.buttons[tab].tap()
+            sleep(1)
+            try app.performAccessibilityAudit(for: .all) { issue in
+                let element = issue.element.map { "\($0.elementType.rawValue) '\($0.label)' \($0.identifier)" } ?? "-"
+                findings.append("\(tab) | \(issue.auditType) | \(issue.compactDescription) | \(element)")
                 return true
             }
         }
-        if !untraced.isEmpty {
-            let attachment = XCTAttachment(string: untraced.joined(separator: "\n"))
-            attachment.name = "audit-zonder-element\(dark ? "-donker" : "")"
-            attachment.lifetime = .keepAlways
-            add(attachment)
-        }
-        XCTAssertEqual(issues, [], issues.joined(separator: "\n"))
+        let report = XCTAttachment(string: findings.isEmpty ? "geen bevindingen" : findings.joined(separator: "\n"))
+        report.name = "toegankelijkheid-\(name)"
+        report.lifetime = .keepAlways
+        add(report)
+        XCTAssertTrue(findings.isEmpty, "\(findings.count) findings:\n" + findings.joined(separator: "\n"))
     }
 
     @MainActor
-    func testEveryTabPassesTheAudit() throws {
-        try auditEveryTab(dark: false)
+    func testLight() throws {
+        try audit([], named: "licht")
     }
 
     @MainActor
-    func testEveryTabPassesTheAuditInDarkMode() throws {
-        try auditEveryTab(dark: true)
+    func testDark() throws {
+        try audit(["--ui-testing-dark"], named: "donker")
+    }
+
+    @MainActor
+    func testLargestText() throws {
+        try audit(["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"], named: "grootste-tekst")
     }
 }
