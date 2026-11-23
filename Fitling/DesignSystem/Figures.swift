@@ -243,6 +243,8 @@ struct PartnerCanvas: View {
             // The long contact shadow of a zoomed-in young form would otherwise spill past its tile.
             .frame(width: side, height: side)
             .clipped()
+            // Clipping only hides the overflow; without this a tap beside the tile still lands on the enlarged layers.
+            .contentShape(Rectangle())
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .accessibilityHidden(true)
