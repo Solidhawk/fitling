@@ -16,9 +16,13 @@ final class AccessibilityAuditTests: XCTestCase {
         for tab in tabs {
             app.tabBars.buttons[tab].tap()
             sleep(1)
+            let shot = XCTAttachment(screenshot: app.screenshot())
+            shot.name = "toegankelijkheid-\(name)-\(tab)"
+            shot.lifetime = .keepAlways
+            add(shot)
             try app.performAccessibilityAudit(for: .all) { issue in
-                let element = issue.element.map { "\($0.elementType.rawValue) '\($0.label)' \($0.identifier)" } ?? "-"
-                findings.append("\(tab) | \(issue.auditType) | \(issue.compactDescription) | \(element)")
+                let element = issue.element.map { "\($0.elementType.rawValue) '\($0.label)' \($0.identifier) \($0.frame)" } ?? "-"
+                findings.append("\(tab) | \(issue.auditType.rawValue) | \(issue.compactDescription) | \(element) | \(issue.detailedDescription)")
                 return true
             }
         }
