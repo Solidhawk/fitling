@@ -36,7 +36,10 @@ struct AboutView: View {
             Text(key)
             if let link = URL(string: url) {
                 Link(destination: link) {
+                    // A line of footnote is far below the 44 pt a finger needs.
                     Text(verbatim: link.host() ?? url).font(.footnote)
+                        .frame(minHeight: 44, alignment: .leading)
+                        .contentShape(Rectangle())
                 }
             }
         }
