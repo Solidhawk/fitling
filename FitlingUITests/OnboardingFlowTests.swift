@@ -56,6 +56,14 @@ final class OnboardingFlowTests: XCTestCase {
     }
 
     @MainActor
+    private func diag(_ prefix: String, _ text: String) {
+        let attachment = XCTAttachment(string: text)
+        attachment.name = "\(prefix)-diag"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+    }
+
+    @MainActor
     private func isClear(_ element: XCUIElement, of bar: XCUIElement) -> Bool {
         guard element.exists, element.isHittable else { return false }
         guard bar.exists else { return true }
@@ -144,9 +152,9 @@ final class OnboardingFlowTests: XCTestCase {
         let owl = app.descendants(matching: .any)["partner.setup.species.owl"]
         XCTAssertTrue(owl.waitForExistence(timeout: 10))
         keepScreenshot(app, named: "\(prefix)-9-partner-kiezen")
-        print("DIAG owl before tap: frame \(owl.frame) hittable \(owl.isHittable) screen \(app.frame)")
+        diag(prefix, "owl before tap: frame \(owl.frame) hittable \(owl.isHittable) screen \(app.frame)")
         owl.tap()
-        print("DIAG owl after tap: frame \(owl.frame) name field \(app.textFields["partner.setup.name"].exists)")
+        diag(prefix, "owl after tap: frame \(owl.frame) name field \(app.textFields["partner.setup.name"].exists)")
         keepScreenshot(app, named: "\(prefix)-9b-na-tik")
 
         let list = app.collectionViews["partner.setup.list"]
@@ -157,7 +165,7 @@ final class OnboardingFlowTests: XCTestCase {
             list.swipeUp(velocity: .slow)
             swipes += 1
         }
-        print("DIAG after \(swipes) swipes: name exists \(name.exists)")
+        diag(prefix, "after \(swipes) swipes: name exists \(name.exists)")
         keepScreenshot(app, named: "\(prefix)-9c-na-vegen")
         XCTAssertTrue(name.waitForExistence(timeout: 5))
         name.tap()
