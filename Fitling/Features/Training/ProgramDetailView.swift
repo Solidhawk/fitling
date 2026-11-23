@@ -106,14 +106,18 @@ struct ProgramDetailView: View {
         }
     }
 
+    /// Opens the exercise, with its animation and instructions, also before it was ever done.
     private func itemRow(_ item: ProgramExercise) -> some View {
-        VStack(alignment: .leading, spacing: Spacing.xs) {
-            Text(verbatim: store.exercise(item.exerciseID)?.name.text(preferring: languages) ?? "")
-            Text("training.item.detail \(item.targetSets) \(item.repMin) \(item.repMax) \(item.restSeconds)")
-                .font(.footnote)
-                .foregroundStyle(Color.inkSoft)
+        NavigationLink(value: TrainingRoute.exercise(item.exerciseID)) {
+            VStack(alignment: .leading, spacing: Spacing.xs) {
+                Text(verbatim: store.exercise(item.exerciseID)?.name.text(preferring: languages) ?? "")
+                Text("training.item.detail \(item.targetSets) \(item.repMin) \(item.repMax) \(item.restSeconds)")
+                    .font(.footnote)
+                    .foregroundStyle(Color.inkSoft)
+            }
+            .accessibilityElement(children: .combine)
         }
-        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("program.exercise.\(item.exerciseID.uuidString.lowercased())")
     }
 
     /// A composed day carries its date, or ten times "Bovenlichaam" could not be told apart. It is never changed
