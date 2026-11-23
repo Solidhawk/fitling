@@ -23,6 +23,13 @@ import FitlingCore
         #expect(ShoppingAmount.text(2, "piece", bundle: try bundle("de")) == "2 Stück")
     }
 
+    /// What is shown decides: a sum of recipe amounts such as 1,004 is shown as "1", so it is "1 stuk", not "1 stuks".
+    @Test func anAmountShownAsOneIsSingular() throws {
+        #expect(ShoppingAmount.text(1.004, "piece", bundle: try bundle("nl")) == "1 stuk")
+        #expect(ShoppingAmount.text(0.999, "piece", bundle: try bundle("nl")) == "1 stuk")
+        #expect(ShoppingAmount.text(1.01, "piece", bundle: try bundle("nl")).hasSuffix(" stuks"))
+    }
+
     /// Half a piece is not one: "0,5 stuks", as Dutch says it.
     @Test func aPartOfAPieceIsPlural() throws {
         #expect(ShoppingAmount.text(0.5, "piece", bundle: try bundle("nl")).hasSuffix(" stuks"))
