@@ -101,14 +101,11 @@ final class AccessibilityAuditTests: XCTestCase {
         try auditScreen("partner-aanpassen", app, open: app.navigationBars.buttons["Aanpassen"], close: closeSheet, findings: &findings)
         app.tabBars.buttons["Dagdoel"].tap()
         try auditScreen("account", app, open: app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Account")).firstMatch, close: back, findings: &findings)
-        let report = XCTAttachment(string: findings.isEmpty ? "geen bevindingen" : findings.joined(separator: "
-"))
+        let report = XCTAttachment(string: findings.isEmpty ? "geen bevindingen" : findings.joined(separator: "\n"))
         report.name = "toegankelijkheid-schermen"
         report.lifetime = .keepAlways
         add(report)
-        XCTAssertTrue(findings.isEmpty, "\(findings.count) findings:
-" + findings.joined(separator: "
-"))
+        XCTAssertTrue(findings.isEmpty, "\(findings.count) findings:\n" + findings.joined(separator: "\n"))
     }
 
     @MainActor
