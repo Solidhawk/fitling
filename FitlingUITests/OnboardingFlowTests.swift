@@ -144,7 +144,10 @@ final class OnboardingFlowTests: XCTestCase {
         let owl = app.descendants(matching: .any)["partner.setup.species.owl"]
         XCTAssertTrue(owl.waitForExistence(timeout: 10))
         keepScreenshot(app, named: "\(prefix)-9-partner-kiezen")
+        print("DIAG owl before tap: frame \(owl.frame) hittable \(owl.isHittable) screen \(app.frame)")
         owl.tap()
+        print("DIAG owl after tap: frame \(owl.frame) name field \(app.textFields["partner.setup.name"].exists)")
+        keepScreenshot(app, named: "\(prefix)-9b-na-tik")
 
         let list = app.collectionViews["partner.setup.list"]
         let done = app.buttons["partner.setup.done"]
@@ -154,6 +157,8 @@ final class OnboardingFlowTests: XCTestCase {
             list.swipeUp(velocity: .slow)
             swipes += 1
         }
+        print("DIAG after \(swipes) swipes: name exists \(name.exists)")
+        keepScreenshot(app, named: "\(prefix)-9c-na-vegen")
         XCTAssertTrue(name.waitForExistence(timeout: 5))
         name.tap()
         name.typeText("tje")
