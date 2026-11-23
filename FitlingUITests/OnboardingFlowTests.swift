@@ -56,14 +56,6 @@ final class OnboardingFlowTests: XCTestCase {
     }
 
     @MainActor
-    private func diag(_ prefix: String, _ text: String) {
-        let attachment = XCTAttachment(string: text)
-        attachment.name = "\(prefix)-diag"
-        attachment.lifetime = .keepAlways
-        add(attachment)
-    }
-
-    @MainActor
     private func isClear(_ element: XCUIElement, of bar: XCUIElement) -> Bool {
         guard element.exists, element.isHittable else { return false }
         guard bar.exists else { return true }
@@ -152,21 +144,23 @@ final class OnboardingFlowTests: XCTestCase {
         let owl = app.descendants(matching: .any)["partner.setup.species.owl"]
         XCTAssertTrue(owl.waitForExistence(timeout: 10))
         keepScreenshot(app, named: "\(prefix)-9-partner-kiezen")
-        diag(prefix, "owl before tap: frame \(owl.frame) hittable \(owl.isHittable) screen \(app.frame)")
-        owl.tap()
-        diag(prefix, "owl after tap: frame \(owl.frame) name field \(app.textFields["partner.setup.name"].exists)")
-        keepScreenshot(app, named: "\(prefix)-9b-na-tik")
 
         let list = app.collectionViews["partner.setup.list"]
         let done = app.buttons["partner.setup.done"]
         let name = app.textFields["partner.setup.name"]
+        // At the largest text the owl starts behind the Klaar bar, where a tap does not reach it (run 45207844329).
         var swipes = 0
+        while !isClear(owl, of: done) && swipes < 10 {
+            list.swipeUp(velocity: .slow)
+            swipes += 1
+        }
+        owl.tap()
+
+        swipes = 0
         while !isClear(name, of: done) && swipes < 10 {
             list.swipeUp(velocity: .slow)
             swipes += 1
         }
-        diag(prefix, "after \(swipes) swipes: name exists \(name.exists)")
-        keepScreenshot(app, named: "\(prefix)-9c-na-vegen")
         XCTAssertTrue(name.waitForExistence(timeout: 5))
         name.tap()
         name.typeText("tje")
