@@ -130,6 +130,7 @@ struct ProgressPhotosView: View {
                             PhotoTile(url: store.url(of: photo), day: Day(isoString: photo.takenOn))
                         }
                         .buttonStyle(.plain)
+                        .accessibilityIdentifier("photos.tile")
                     }
                 }
             }
