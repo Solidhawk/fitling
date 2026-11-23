@@ -96,14 +96,7 @@ struct RecipeDetailView: View {
     }
 
     private func amount(_ ingredient: RecipeIngredient) -> String {
-        let quantity = ingredient.quantity.formatted(.number.precision(.fractionLength(0...2)))
-        switch ingredient.unit {
-        case "g": return "\(quantity) \(UnitMass.grams.symbol)"
-        case "ml": return "\(quantity) \(UnitVolume.milliliters.symbol)"
-        case "tbsp": return String(localized: "menu.unit.tbsp \(quantity)")
-        case "tsp": return String(localized: "menu.unit.tsp \(quantity)")
-        default: return String(localized: "menu.unit.piece \(quantity)")
-        }
+        ShoppingAmount.text(ingredient.quantity, ingredient.unit)
     }
 }
 

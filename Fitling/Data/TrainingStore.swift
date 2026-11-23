@@ -151,6 +151,12 @@ struct TrainingStore {
         touch(item)
     }
 
+    /// For the programme of composed workouts the number of them; nil for every other programme.
+    func composedWorkoutCount(of program: Program) -> Int? {
+        let count = days(of: program).filter { ComposedWorkout.focus(of: $0.id) != nil }.count
+        return count > 0 ? count : nil
+    }
+
     /// Whether the programme screen may change the day: the user's own, and not a composed one. That is the record
     /// of one workout; another one is composed instead.
     func canChange(_ day: ProgramDay) -> Bool {
@@ -294,12 +300,14 @@ struct TrainingStore {
             descriptor.fetchLimit = 1
             return (try? context.fetch(descriptor).first).map { (id, $0) }
         })
+        // Workouts on the same day by their start: which one is the last decides the advice.
         return Dictionary(grouping: sets.filter { $0.sessionID != excluded && sessions[$0.sessionID] != nil }, by: \.sessionID)
-            .compactMap { sessionID, sets -> ExerciseSession? in
+            .compactMap { sessionID, sets -> (started: Date, exercise: ExerciseSession)? in
                 guard let session = sessions[sessionID], let day = Day(isoString: session.performedOn) else { return nil }
-                return ExerciseSession(day: day, sets: sets.sorted { $0.position < $1.position }.compactMap(\.workingSet))
+                return (session.startedAt, ExerciseSession(day: day, sets: sets.sorted { $0.position < $1.position }.compactMap(\.workingSet)))
             }
-            .sorted { $0.day < $1.day }
+            .sorted { $0.exercise.day != $1.exercise.day ? $0.exercise.day < $1.exercise.day : $0.started < $1.started }
+            .map(\.exercise)
     }
 
     func setting(for exerciseID: UUID) -> ExerciseSetting? {

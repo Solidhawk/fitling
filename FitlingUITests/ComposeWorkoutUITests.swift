@@ -84,7 +84,10 @@ final class ComposeWorkoutUITests: XCTestCase {
         }
         arms.tap()
         keepScreenshot(app, named: "samenstellen-90-armen")
-        app.swipeDown()
+        // Back up only when the list was scrolled: at the top a swipe down closes the whole sheet (run 45159247688).
+        if swipes > 0 {
+            for _ in 0..<swipes { app.collectionViews.firstMatch.swipeDown(velocity: .slow) }
+        }
         let timeOver = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "eerder klaar")).firstMatch
         XCTAssertTrue(timeOver.waitForExistence(timeout: 5), "Nothing says the workout is shorter than asked")
         keepScreenshot(app, named: "samenstellen-90-armen-boven")
