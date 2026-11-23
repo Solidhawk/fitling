@@ -4515,6 +4515,28 @@
         }
       }
     },
+    "menu.unit.piece.one %@": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ stuk"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ pc"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ Stück"
+          }
+        }
+      }
+    },
     "menu.unit.tbsp %@": {
       "localizations": {
         "nl": {
@@ -10413,6 +10435,64 @@
           "stringUnit": {
             "state": "translated",
             "value": "Optionen"
+          }
+        }
+      }
+    },
+    "training.program.composed %lld": {
+      "localizations": {
+        "nl": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Door de app samengesteld · %lld training"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Door de app samengesteld · %lld trainingen"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Composed by the app · %lld workout"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Composed by the app · %lld workouts"
+                }
+              }
+            }
+          }
+        },
+        "de": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Von der App zusammengestellt · %lld Training"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Von der App zusammengestellt · %lld Trainings"
+                }
+              }
+            }
           }
         }
       }

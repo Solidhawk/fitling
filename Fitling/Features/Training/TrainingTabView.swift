@@ -80,7 +80,7 @@ struct TrainingTabView: View {
                         NavigationLink(value: TrainingRoute.program(program.id)) {
                             VStack(alignment: .leading, spacing: Spacing.xs) {
                                 Text(verbatim: program.name.text(preferring: Locale.preferredLanguages))
-                                Text(program.ownerID == nil ? LocalizedStringKey("training.program.shared \(program.daysPerWeek)") : "training.program.own \(program.daysPerWeek)")
+                                programDetail(program)
                                     .font(.footnote)
                                     .foregroundStyle(Color.inkSoft)
                             }
@@ -189,6 +189,12 @@ struct TrainingTabView: View {
         case .photos:
             ProgressPhotosView(store: ProgressPhotoStore(context: viewModel.store.context))
         }
+    }
+
+    private func programDetail(_ program: Program) -> Text {
+        if program.ownerID == nil { return Text("training.program.shared \(program.daysPerWeek)") }
+        if let count = viewModel.store.composedWorkoutCount(of: program) { return Text("training.program.composed \(count)") }
+        return Text("training.program.own \(program.daysPerWeek)")
     }
 
     /// The next day of a programme starts; the next composed workout is composed first, so the time still counts.

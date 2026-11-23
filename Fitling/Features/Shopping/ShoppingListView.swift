@@ -221,15 +221,19 @@ struct ShoppingListView: View {
     }
 }
 
+/// An amount with its unit, on the shopping list and in recipes. `bundle` is there for the tests of each language.
 enum ShoppingAmount {
     static func text(_ quantity: Double, _ unit: String, bundle: Bundle = .main) -> String {
         let value = quantity.formatted(.number.precision(.fractionLength(0...2)))
         switch unit {
         case "g": return "\(value) \(UnitMass.grams.symbol)"
         case "ml": return "\(value) \(UnitVolume.milliliters.symbol)"
-        case "tbsp": return String(localized: "menu.unit.tbsp \(value)")
-        case "tsp": return String(localized: "menu.unit.tsp \(value)")
-        default: return String(localized: "menu.unit.piece \(value)")
+        case "tbsp": return String(localized: "menu.unit.tbsp \(value)", bundle: bundle)
+        case "tsp": return String(localized: "menu.unit.tsp \(value)", bundle: bundle)
+        // The number comes in as text, so the catalogue cannot choose singular or plural itself. In Dutch,
+        // English and German only exactly 1 is singular; 0,5 and 1,5 are plural.
+        case _ where quantity == 1: return String(localized: "menu.unit.piece.one \(value)", bundle: bundle)
+        default: return String(localized: "menu.unit.piece \(value)", bundle: bundle)
         }
     }
 }
