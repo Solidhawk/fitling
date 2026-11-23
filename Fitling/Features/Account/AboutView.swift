@@ -11,10 +11,10 @@ struct AboutView: View {
     var body: some View {
         List {
             Section {
-                source("account.about.off", url: "https://world.openfoodfacts.org")
-                source("account.about.usda", url: "https://fdc.nal.usda.gov")
-                source("account.about.prijsprofeet", url: "https://www.prijsprofeet.nl")
-                source("account.about.everkinetic", url: "https://github.com/everkinetic/data")
+                source("account.about.off", name: "Open Food Facts", url: "https://world.openfoodfacts.org")
+                source("account.about.usda", name: "USDA FoodData Central", url: "https://fdc.nal.usda.gov")
+                source("account.about.prijsprofeet", name: "PrijsProfeet", url: "https://www.prijsprofeet.nl")
+                source("account.about.everkinetic", name: "Everkinetic", url: "https://github.com/everkinetic/data")
                 Text("account.about.photos")
             } header: {
                 Text("account.about.sources")
@@ -27,11 +27,14 @@ struct AboutView: View {
                 .listRowBackground(Color.card)
             }
         }
+        // Ink like every other list: the system grey of the section header is too faint on the pastel ground.
+        .foregroundStyle(Color.ink)
         .groundBackground()
         .navigationTitle("account.about")
     }
 
-    private func source(_ key: LocalizedStringKey, url: String) -> some View {
+    /// `name` is the source's own name, the same in every language.
+    private func source(_ key: LocalizedStringKey, name: String, url: String) -> some View {
         VStack(alignment: .leading, spacing: Spacing.xs) {
             Text(key)
             if let link = URL(string: url) {
@@ -41,6 +44,8 @@ struct AboutView: View {
                         .frame(minHeight: 44, alignment: .leading)
                         .contentShape(Rectangle())
                 }
+                // VoiceOver would spell out the web address.
+                .accessibilityLabel(Text("account.about.website \(name)"))
             }
         }
     }
