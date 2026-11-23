@@ -222,7 +222,7 @@ struct ShoppingListView: View {
 }
 
 enum ShoppingAmount {
-    static func text(_ quantity: Double, _ unit: String) -> String {
+    static func text(_ quantity: Double, _ unit: String, bundle: Bundle = .main) -> String {
         let value = quantity.formatted(.number.precision(.fractionLength(0...2)))
         switch unit {
         case "g": return "\(value) \(UnitMass.grams.symbol)"
