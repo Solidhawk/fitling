@@ -9919,6 +9919,28 @@
         }
       }
     },
+    "training.exercise.explain": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uitleg en animatie"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How to do it"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anleitung und Animation"
+          }
+        }
+      }
+    },
     "training.instructions": {
       "localizations": {
         "nl": {

@@ -59,14 +59,14 @@ struct ComposeWorkoutView: View {
                         Text("training.compose.none")
                     }
                     ForEach(plan.exercises, id: \.exerciseID) { planned in
-                        HStack(alignment: .firstTextBaseline) {
-                            Text(verbatim: viewModel.store.exercise(planned.exerciseID)?.name.text(preferring: Locale.preferredLanguages) ?? "")
-                            Spacer(minLength: Spacing.s)
-                            Text("training.compose.sets \(planned.sets) \(planned.repRange.lowerBound) \(planned.repRange.upperBound)")
-                                .fontWeight(.heavy)
-                                .monospacedDigit()
+                        if let exercise = viewModel.store.exercise(planned.exerciseID) {
+                            NavigationLink {
+                                ExerciseProgressView(exercise: exercise, store: viewModel.store)
+                            } label: {
+                                plannedRow(planned, name: exercise.name.text(preferring: Locale.preferredLanguages))
+                            }
+                            .accessibilityIdentifier("training.compose.exercise.\(exercise.id.uuidString.lowercased())")
                         }
-                        .accessibilityElement(children: .combine)
                     }
                 } header: {
                     Text("training.compose.exercises")
@@ -99,6 +99,17 @@ struct ComposeWorkoutView: View {
                 }
             }
         }
+    }
+
+    private func plannedRow(_ planned: PlannedExercise, name: String) -> some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text(verbatim: name)
+            Spacer(minLength: Spacing.s)
+            Text("training.compose.sets \(planned.sets) \(planned.repRange.lowerBound) \(planned.repRange.upperBound)")
+                .fontWeight(.heavy)
+                .monospacedDigit()
+        }
+        .accessibilityElement(children: .combine)
     }
 
     /// What the chosen time gives: the estimate, and what it costs or leaves over.

@@ -34,6 +34,13 @@ struct WorkoutView: View {
             List {
                 ForEach(viewModel.entries) { entry in
                     Section {
+                        // The animation and how it is done, without leaving the workout.
+                        NavigationLink {
+                            ExerciseProgressView(exercise: entry.exercise, store: viewModel.exerciseStore)
+                        } label: {
+                            Label("training.exercise.explain", systemImage: "info.circle")
+                        }
+                        .accessibilityIdentifier("workout.exercise.\(entry.exercise.id.uuidString.lowercased())")
                         adviceText(for: entry)
                             .font(.subheadline)
                             .foregroundStyle(Color.inkSoft)
