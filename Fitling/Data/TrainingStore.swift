@@ -151,14 +151,14 @@ struct TrainingStore {
         touch(item)
     }
 
-    /// Whether the programme screen may change the day: the user's own, and not a composed one. That is the record
-    /// of one workout; another one is composed instead.
     /// For the programme of composed workouts the number of them; nil for every other programme.
     func composedWorkoutCount(of program: Program) -> Int? {
         let count = days(of: program).filter { ComposedWorkout.focus(of: $0.id) != nil }.count
         return count > 0 ? count : nil
     }
 
+    /// Whether the programme screen may change the day: the user's own, and not a composed one. That is the record
+    /// of one workout; another one is composed instead.
     func canChange(_ day: ProgramDay) -> Bool {
         day.ownerID == userID && ComposedWorkout.focus(of: day.id) == nil
     }
