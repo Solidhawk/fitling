@@ -168,7 +168,7 @@ struct ProgressPhotosView: View {
 
 /// The date on a progress photo: a small chip at the bottom of the tile.
 enum PhotoDateChip {
-    static let foreground = ColorResource.onRibbon
+    static let foreground = ColorResource.ink
     static let background = ColorResource.track
 }
 
