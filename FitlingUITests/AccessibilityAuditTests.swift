@@ -11,7 +11,8 @@ import XCTest
 /// - Dynamic Type on buttons in the navigation bar: the bars stop growing on purpose (`NavigationBarStyleTests`);
 ///   a long press shows the large version.
 /// - Contrast without an element: only on the tabs with the 3D partner, a picture hidden from VoiceOver.
-/// - Elements behind the tab bar: their contrast is measured against the bar instead of their own ground.
+/// - Elements behind the tab bar, or behind a button bar at the bottom of a sheet (with its fade): their contrast
+///   is measured against the bar instead of their own ground.
 final class AccessibilityAuditTests: XCTestCase {
     private let tabs = ["Vandaag", "Training", "Menu", "Partner", "Dagdoel"]
 
@@ -20,6 +21,8 @@ final class AccessibilityAuditTests: XCTestCase {
         guard let element = issue.element else { return issue.auditType == .contrast }
         let frame = element.frame
         if frame.intersects(app.tabBars.firstMatch.frame) { return true }
+        let start = app.buttons["training.compose.start"]
+        if start.exists, frame.maxY > start.frame.minY - 24 { return true }
         if issue.auditType == .dynamicType, frame.intersects(app.navigationBars.firstMatch.frame) { return true }
         return false
     }
@@ -77,8 +80,8 @@ final class AccessibilityAuditTests: XCTestCase {
         sleep(1)
     }
 
-    /// The screens behind the tabs: logging food, composing a workout, the shopping list, recipes, the account
-    /// and editing the partner.
+    /// The screens behind the tabs: logging food, composing a workout, the shopping list, recipes, editing the
+    /// partner, the account and "Over Fitling".
     @MainActor
     func testScreensBehindTheTabs() throws {
         let app = XCUIApplication()
@@ -100,7 +103,8 @@ final class AccessibilityAuditTests: XCTestCase {
         app.tabBars.buttons["Partner"].tap()
         try auditScreen("partner-aanpassen", app, open: app.navigationBars.buttons["Aanpassen"], close: closeSheet, findings: &findings)
         app.tabBars.buttons["Dagdoel"].tap()
-        try auditScreen("account", app, open: app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Account")).firstMatch, close: back, findings: &findings)
+        try auditScreen("account", app, open: app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Account")).firstMatch, close: {}, findings: &findings)
+        try auditScreen("over", app, open: app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Over Fitling")).firstMatch, close: back, findings: &findings)
         let report = XCTAttachment(string: findings.isEmpty ? "geen bevindingen" : findings.joined(separator: "\n"))
         report.name = "toegankelijkheid-schermen"
         report.lifetime = .keepAlways
