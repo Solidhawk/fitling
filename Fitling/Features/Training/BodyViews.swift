@@ -175,7 +175,7 @@ private struct PhotoTile: View {
         Color.track
             .aspectRatio(3 / 4, contentMode: .fit)
             .overlay {
-                if let image = UIImage(contentsOfFile: url.path()) {
+                if let image = ProgressPhotoStore.image(at: url) {
                     Image(uiImage: image).resizable().scaledToFill()
                 }
             }
@@ -212,7 +212,7 @@ private struct PhotoDetail: View {
     var body: some View {
         NavigationStack {
             Group {
-                if let image = UIImage(contentsOfFile: url.path()) {
+                if let image = ProgressPhotoStore.image(at: url) {
                     Image(uiImage: image).resizable().scaledToFit()
                 } else {
                     Color.track

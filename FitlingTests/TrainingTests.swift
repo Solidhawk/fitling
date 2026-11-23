@@ -412,6 +412,19 @@ struct TrainingFixture {
         store.removeAll()
         #expect(!FileManager.default.fileExists(atPath: folder.path()))
     }
+
+    /// The photos live in "Application Support": a folder with a space in its name, on a device too.
+    @Test func aPhotoInAFolderWithASpaceCanBeShown() throws {
+        let folder = FileManager.default.temporaryDirectory.appending(path: "Application Support \(UUID().uuidString)", directoryHint: .isDirectory)
+        let store = ProgressPhotoStore(context: fixture.context, folder: folder, timeZone: .gmt, now: { [now = fixture.now] in now })
+        let jpeg = try #require(UIGraphicsImageRenderer(size: CGSize(width: 30, height: 40)).image { context in
+            UIColor.systemTeal.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 30, height: 40))
+        }.jpegData(compressionQuality: 0.8))
+        let photo = try store.add(jpeg)
+        #expect(ProgressPhotoStore.image(at: store.url(of: photo)) != nil)
+        store.removeAll()
+    }
 }
 
 // MARK: - Coach (feedback 2026-11-21: compose a workout, go heavier, switch exercises)
