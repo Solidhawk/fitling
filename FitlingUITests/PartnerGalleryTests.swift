@@ -19,7 +19,10 @@ final class PartnerGalleryTests: XCTestCase {
         ] {
             let button = app.buttons["gallery.\(species)"]
             XCTAssertTrue(button.waitForExistence(timeout: 5))
+            let name = button.label
             button.tap()
+            // The name plate follows the tap: a tap that lands on a neighbouring partner shows its name instead.
+            XCTAssertTrue(app.staticTexts[name].waitForExistence(timeout: 2), "Tapped \(name), the gallery shows another partner")
             let attachment = XCTAttachment(screenshot: app.screenshot())
             attachment.name = "partner-galerij-\(species)"
             attachment.lifetime = .keepAlways

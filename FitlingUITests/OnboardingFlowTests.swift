@@ -144,12 +144,19 @@ final class OnboardingFlowTests: XCTestCase {
         let owl = app.descendants(matching: .any)["partner.setup.species.owl"]
         XCTAssertTrue(owl.waitForExistence(timeout: 10))
         keepScreenshot(app, named: "\(prefix)-9-partner-kiezen")
-        owl.tap()
 
         let list = app.collectionViews["partner.setup.list"]
         let done = app.buttons["partner.setup.done"]
         let name = app.textFields["partner.setup.name"]
+        // At the largest text the owl starts behind the Klaar bar, where a tap does not reach it (run 45207844329).
         var swipes = 0
+        while !isClear(owl, of: done) && swipes < 10 {
+            list.swipeUp(velocity: .slow)
+            swipes += 1
+        }
+        owl.tap()
+
+        swipes = 0
         while !isClear(name, of: done) && swipes < 10 {
             list.swipeUp(velocity: .slow)
             swipes += 1
