@@ -180,6 +180,8 @@ private struct PhotoTile: View {
                 }
             }
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            // Clipping only hides the overflow; without this a tap beside a landscape photo still opens it.
+            .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             .overlay(alignment: .bottomLeading) {
                 if let day {
                     Text(day.startDate, format: .dateTime.day().month(.abbreviated))
