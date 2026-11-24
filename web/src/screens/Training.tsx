@@ -116,6 +116,15 @@ export function Training({ userID }: { userID: string }) {
         </div>
       </div>
     );
+  } else if (route?.kind === "program" && !rows.programs.some((program) => program.id === route.id)) {
+    // A programme just made on another screen, until it is read back.
+    screen = (
+      <div className="tab-page pushed" data-page="program">
+        <div className="loading tab-loading" aria-busy="true">
+          <span className="spinner" role="progressbar" aria-label={t("common.loading")} />
+        </div>
+      </div>
+    );
   } else if (route?.kind === "program") {
     screen = (
       <ProgramDetail
@@ -163,19 +172,31 @@ export function Training({ userID }: { userID: string }) {
           onCancel={() => setCreating(false)}
           onCreate={(name, days) => {
             setCreating(false);
+            let id: string | undefined;
+            // Opened once it is read back, so FitlingCore knows it.
             void act(async () => {
-              const id = await createProgram(
+              id = await createProgram(
                 supabase,
                 userID,
                 { name, daysPerWeek: days, dayName: (position) => t("training.day.default %lld", position), language: typingLanguage() },
                 new Date(),
               );
-              push({ kind: "program", id });
-            });
+            }).then(() => id && push({ kind: "program", id }));
           }}
         />
       )}
-      {composing && core && input && <ComposeWorkout core={core} input={input} focus={composing} onCancel={() => setComposing(undefined)} onStart={startComposed} />}
+      {composing && core && input && rows && (
+        <ComposeWorkout
+          core={core}
+          userID={userID}
+          input={input}
+          rows={rows}
+          focus={composing}
+          onCancel={() => setComposing(undefined)}
+          onStart={startComposed}
+          onChanged={reload}
+        />
+      )}
       {workout && core && rows && (
         <Workout
           core={core}

@@ -36,16 +36,26 @@ async function run<T>(mode: IDBTransactionMode, work: (photos: IDBObjectStore) =
   }
 }
 
+/** As stored: the bytes, not a Blob, which not every WebKit keeps in IndexedDB. */
+interface StoredPhoto {
+  id: string;
+  takenOn: IsoDay;
+  bytes: ArrayBuffer;
+  type: string;
+}
+
 /** Newest first. */
 export async function listPhotos(): Promise<Photo[]> {
-  const all = await run<Photo[]>("readonly", (photos) => photos.getAll() as IDBRequest<Photo[]>);
-  return all.sort((a, b) => (a.takenOn === b.takenOn ? 0 : a.takenOn < b.takenOn ? 1 : -1));
+  const all = await run<StoredPhoto[]>("readonly", (photos) => photos.getAll() as IDBRequest<StoredPhoto[]>);
+  return all
+    .sort((a, b) => (a.takenOn === b.takenOn ? 0 : a.takenOn < b.takenOn ? 1 : -1))
+    .map((stored) => ({ id: stored.id, takenOn: stored.takenOn, image: new Blob([stored.bytes], { type: stored.type }) }));
 }
 
 export async function addPhoto(image: Blob, takenOn: IsoDay): Promise<Photo> {
-  const photo = { id: crypto.randomUUID(), takenOn, image };
-  await run("readwrite", (photos) => photos.put(photo));
-  return photo;
+  const stored: StoredPhoto = { id: crypto.randomUUID(), takenOn, bytes: await image.arrayBuffer(), type: image.type };
+  await run("readwrite", (photos) => photos.put(stored));
+  return { id: stored.id, takenOn, image };
 }
 
 export async function removePhoto(id: string): Promise<void> {

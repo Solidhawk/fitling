@@ -99,6 +99,9 @@ test("discardingRemovesTheWorkout", async ({ page }) => {
   await page.getByTestId("workout.options").click();
   await page.getByRole("menuitem", { name: nl("training.workout.discard") }).click();
   await page.getByRole("button", { name: nl("training.workout.discard") }).click();
+  // Back on the programme it was started from, as on the iPhone.
+  await expect(page.getByRole("button", { name: nl("training.program.start") }).first()).toBeVisible({ timeout: 15_000 });
+  await page.getByRole("button", { name: nl("training.title") }).click();
   await expect(page.getByTestId("training.compose")).toBeVisible({ timeout: 15_000 });
   await expect(page.getByTestId("training.resume")).toHaveCount(0);
   const { data } = await admin.from("workout_sets").select("deleted_at").eq("user_id", user.id);
@@ -112,6 +115,7 @@ test("setsFromAnotherDeviceAreShown", async ({ page }) => {
   await startFirstDay(page);
   await page.getByTestId("workout.options").click();
   await page.getByRole("menuitem", { name: nl("training.workout.later") }).click();
+  await page.getByRole("button", { name: nl("training.title") }).click();
   await expect(page.getByTestId("training.resume")).toBeVisible({ timeout: 15_000 });
   const session = await admin.from("workout_sessions").select("id").eq("user_id", user.id).is("ended_at", null).single();
   const stored = await admin.from("workout_sets").insert({

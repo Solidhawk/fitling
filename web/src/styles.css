@@ -1832,8 +1832,11 @@ input.picker[type="date"] {
 }
 
 .planned-row {
+  display: flex;
   justify-content: space-between;
   align-items: baseline;
+  gap: var(--space-s);
+  width: 100%;
 }
 
 .planned-sets,
@@ -1913,6 +1916,7 @@ input.picker[type="date"] {
 }
 
 .number-box-field input {
+  flex: 1;
   width: 100%;
   min-width: 0;
   border: 0;
@@ -1928,6 +1932,16 @@ input.picker[type="date"] {
   outline: none;
 }
 
+.number-box-field input::placeholder {
+  color: var(--ink-soft);
+  font-weight: 400;
+}
+
+.number-box-field > .secondary {
+  flex: none;
+  white-space: nowrap;
+}
+
 .number-box-field:focus-within {
   outline: 2px solid var(--ink);
   outline-offset: 0;
@@ -1941,9 +1955,19 @@ input.picker[type="date"] {
   gap: var(--space-s);
 }
 
+/* The RPE as a Picker in a menu: its label above, the chosen value with the up-and-down chevrons. */
+.rpe-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.rpe-field .picker-value {
+  margin-left: 0;
+}
+
 .rpe-picker {
   color: var(--ink);
-  font-weight: 600;
 }
 
 .warmup-toggle {
@@ -2170,6 +2194,11 @@ span.labeled-row {
   font-weight: 600;
 }
 
+.large-value::placeholder {
+  color: var(--ink-soft);
+  font-weight: 400;
+}
+
 /* Progress photos: a grid of tiles of 3 by 4 with their date on a chip. */
 .photos {
   display: flex;
@@ -2243,4 +2272,9 @@ span.labeled-row {
   overflow: hidden;
   clip: rect(0 0 0 0);
   white-space: nowrap;
+}
+
+/* A sheet opened from a sheet (an exercise from a workout) lies over everything of the first, its rest timer too. */
+.sheet .sheet {
+  z-index: 12;
 }

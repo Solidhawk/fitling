@@ -8,18 +8,22 @@ import { Alert } from "../ui/Alert";
 import { useDialogFocus } from "../ui/dialogFocus";
 import { NavBar } from "../ui/NavBar";
 
-/** A picked image as a JPEG at 85 %, as the app stores it; nil when the browser cannot read the file. */
+/** A picked image as a JPEG at 85 %, as the app stores it; nothing when the browser cannot read the file. */
 async function jpeg(file: File): Promise<Blob | undefined> {
+  const url = URL.createObjectURL(file);
   try {
-    const bitmap = await createImageBitmap(file);
+    const image = new Image();
+    image.src = url;
+    await image.decode();
     const canvas = document.createElement("canvas");
-    canvas.width = bitmap.width;
-    canvas.height = bitmap.height;
-    canvas.getContext("2d")?.drawImage(bitmap, 0, 0);
-    bitmap.close();
+    canvas.width = image.naturalWidth;
+    canvas.height = image.naturalHeight;
+    canvas.getContext("2d")?.drawImage(image, 0, 0);
     return await new Promise<Blob | undefined>((resolve) => canvas.toBlob((blob) => resolve(blob ?? undefined), "image/jpeg", 0.85));
   } catch {
     return undefined;
+  } finally {
+    URL.revokeObjectURL(url);
   }
 }
 

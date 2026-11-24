@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { type ComponentProps, useRef, useState } from "react";
 import type { FitlingCore, TrainingInput } from "../core/fitlingCore";
 import { supabase } from "../data/supabase";
 import { saveStep, type TrainingRows } from "../data/training";
@@ -6,6 +6,7 @@ import { t } from "../i18n";
 import { adviceText, weight } from "../training/texts";
 import { usesPounds } from "../units";
 import { Alert } from "../ui/Alert";
+import { useDialogFocus } from "../ui/dialogFocus";
 import { ExerciseAnimation, useAnimation } from "../ui/ExerciseAnimation";
 import { LineChart } from "../ui/LineChart";
 import { List, ListRow, ListSection } from "../ui/List";
@@ -147,6 +148,17 @@ export function ExerciseProgress({
         )}
       </List>
       {failed && <Alert title={t(failed)} onClose={() => setFailed(undefined)} />}
+    </div>
+  );
+}
+
+/** An exercise opened from a sheet or a workout, over it, with its own focus and Escape (a NavigationLink there). */
+export function ExerciseSheet({ label, ...props }: ComponentProps<typeof ExerciseProgress> & { label: string }) {
+  const sheet = useRef<HTMLDivElement>(null);
+  useDialogFocus(sheet, props.onBack);
+  return (
+    <div ref={sheet} className="sheet" role="dialog" aria-modal="true" aria-label={label} tabIndex={-1}>
+      <ExerciseProgress {...props} />
     </div>
   );
 }

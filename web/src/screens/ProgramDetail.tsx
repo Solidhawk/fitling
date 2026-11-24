@@ -1,4 +1,4 @@
-import { Ellipsis, Play, Plus } from "lucide-react";
+import { CircleEllipsis, Play, Plus } from "lucide-react";
 import { useState } from "react";
 import type { FitlingCore, TrainingInput } from "../core/fitlingCore";
 import { supabase } from "../data/supabase";
@@ -64,7 +64,7 @@ export function ProgramDetail({
   const trailing = program.own ? (
     <Menu
       label={t("training.program.options")}
-      icon={<Ellipsis aria-hidden="true" size={24} strokeWidth={2.2} />}
+      icon={<CircleEllipsis aria-hidden="true" size={24} strokeWidth={2} />}
       testID="program.options"
       items={[
         { label: t("training.program.rename"), onSelect: () => setRenaming(program.name) },
@@ -75,13 +75,13 @@ export function ProgramDetail({
     <button
       type="button"
       className="nav-back nav-action"
-      onClick={() =>
-        void act(async () =>
-          onOpenCopy(
-            await copyProgram(supabase, userID, rows, programID, { name: t("training.program.copyName %@", program.name), language: typingLanguage() }, new Date()),
-          ),
-        )
-      }
+      onClick={() => {
+        let copy: string | undefined;
+        // Opened once it is read back, so FitlingCore knows it.
+        void act(async () => {
+          copy = await copyProgram(supabase, userID, rows, programID, { name: t("training.program.copyName %@", program.name), language: typingLanguage() }, new Date());
+        }).then(() => copy && onOpenCopy(copy));
+      }}
     >
       {t("training.program.copy")}
     </button>
@@ -120,7 +120,7 @@ export function ProgramDetail({
             )}
             <ListRow onClick={() => onStart(day.id)} disabled={day.items.length === 0}>
               <span className="inline-action strong" data-testid={`training.start.${day.id}`}>
-                <Play aria-hidden="true" size={18} strokeWidth={2.4} />
+                <Play aria-hidden="true" size={18} strokeWidth={2.4} fill="currentColor" />
                 <span>{t("training.program.start")}</span>
               </span>
             </ListRow>

@@ -1,4 +1,4 @@
-import { Ellipsis, Info, Plus } from "lucide-react";
+import { ChevronsUpDown, CircleEllipsis, Info, Plus } from "lucide-react";
 import { useRef, useState } from "react";
 import type { FitlingCore, WorkoutEntry } from "../core/fitlingCore";
 import { supabase } from "../data/supabase";
@@ -18,7 +18,7 @@ import { NavBar } from "../ui/NavBar";
 import { RestTimer } from "../ui/RestTimer";
 import { SwipeRow } from "../ui/SwipeRow";
 import { ExercisePicker } from "./ExercisePicker";
-import { ExerciseProgress } from "./ExerciseProgress";
+import { ExerciseSheet } from "./ExerciseProgress";
 
 /** What the user is about to log for one exercise, as typed, in their own unit (WorkoutViewModel.Draft). */
 interface Draft {
@@ -146,14 +146,6 @@ export function Workout({
   const adviceFor = (entry: WorkoutEntry) =>
     entry.advice.kind === "findStartingWeight" && entry.exerciseID !== firstNew ? t("training.advice.startAgain") : adviceText(entry.advice, pounds);
 
-  if (opened) {
-    return (
-      <div ref={sheet} className="sheet" role="dialog" aria-modal="true" aria-label={workout?.title ?? t("training.session.free")} tabIndex={-1}>
-        <ExerciseProgress core={core} userID={userID} input={input} rows={rows} exerciseID={opened} onBack={() => setOpened(undefined)} onChanged={onChanged} />
-      </div>
-    );
-  }
-
   return (
     <div ref={sheet} className="sheet workout" role="dialog" aria-modal="true" aria-label={workout?.title ?? t("training.session.free")} tabIndex={-1}>
       <NavBar
@@ -161,7 +153,7 @@ export function Workout({
         leading={
           <Menu
             label={t("training.workout.options")}
-            icon={<Ellipsis aria-hidden="true" size={24} strokeWidth={2.2} />}
+            icon={<CircleEllipsis aria-hidden="true" size={24} strokeWidth={2} />}
             testID="workout.options"
             items={[
               { label: t("training.workout.later"), onSelect: onClose },
@@ -221,6 +213,7 @@ export function Workout({
                       <input
                         inputMode="decimal"
                         aria-label={t("training.set.weight")}
+                        placeholder={t("training.set.weight")}
                         data-testid={`workout.weight.${entry.exerciseID}`}
                         value={draft.weight}
                         onChange={(event) => change(entry, { weight: event.target.value })}
@@ -235,6 +228,7 @@ export function Workout({
                       <input
                         inputMode="numeric"
                         aria-label={t("training.set.reps")}
+                        placeholder={t("training.set.reps")}
                         data-testid={`workout.reps.${entry.exerciseID}`}
                         value={draft.reps}
                         onChange={(event) => change(entry, { reps: event.target.value })}
@@ -245,19 +239,24 @@ export function Workout({
                   </label>
                 </div>
                 <div className="draft-options">
-                  <select
-                    className="picker rpe-picker"
-                    aria-label={t("training.set.rpeLabel")}
-                    value={draft.rpe === undefined ? "" : String(draft.rpe)}
-                    onChange={(event) => change(entry, { rpe: event.target.value === "" ? undefined : Number(event.target.value) })}
-                  >
-                    <option value="">{t("training.set.rpeNone")}</option>
-                    {rpeChoices.map((value) => (
-                      <option key={value} value={String(value)}>
-                        {new Intl.NumberFormat(language(), { maximumFractionDigits: 1 }).format(value)}
-                      </option>
-                    ))}
-                  </select>
+                  <label className="rpe-field">
+                    <span>{t("training.set.rpeLabel")}</span>
+                    <span className="picker-value">
+                      <select
+                        className="picker rpe-picker"
+                        value={draft.rpe === undefined ? "" : String(draft.rpe)}
+                        onChange={(event) => change(entry, { rpe: event.target.value === "" ? undefined : Number(event.target.value) })}
+                      >
+                        <option value="">{t("training.set.rpeNone")}</option>
+                        {rpeChoices.map((value) => (
+                          <option key={value} value={String(value)}>
+                            {new Intl.NumberFormat(language(), { maximumFractionDigits: 1 }).format(value)}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronsUpDown className="picker-chevrons" aria-hidden="true" size={14} strokeWidth={2.4} />
+                    </span>
+                  </label>
                   <label className="toggle-row warmup-toggle">
                     <span>{t("training.set.warmup")}</span>
                     <input type="checkbox" role="switch" className="switch" checked={draft.isWarmup} onChange={(event) => change(entry, { isWarmup: event.target.checked })} />
@@ -307,6 +306,18 @@ export function Workout({
             setRecords([]);
             onClose();
           }}
+        />
+      )}
+      {opened && (
+        <ExerciseSheet
+          label={workout?.title ?? t("training.session.free")}
+          core={core}
+          userID={userID}
+          input={input}
+          rows={rows}
+          exerciseID={opened}
+          onBack={() => setOpened(undefined)}
+          onChanged={onChanged}
         />
       )}
       {failed && <Alert title={t(failed)} onClose={() => setFailed(undefined)} />}

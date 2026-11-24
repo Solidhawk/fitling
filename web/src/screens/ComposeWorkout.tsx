@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { FitlingCore, TrainingInput, WorkoutPlan } from "../core/fitlingCore";
+import type { TrainingRows } from "../data/training";
 import { language, t } from "../i18n";
 import { rememberedMinutes, rememberMinutes } from "../training/minutes";
 import { focusTitle, listed, muscleName } from "../training/texts";
@@ -7,6 +8,7 @@ import { PrimaryButton } from "../ui/Buttons";
 import { FormSheet } from "../ui/FormSheet";
 import { ListRow, ListSection } from "../ui/List";
 import { PickerRow } from "../ui/PickerRow";
+import { ExerciseSheet } from "./ExerciseProgress";
 
 export interface ComposeChoice {
   focus: string;
@@ -30,22 +32,29 @@ function muscleList(muscles: string[]): string {
  */
 export function ComposeWorkout({
   core,
+  userID,
   input,
+  rows,
   focus: initial,
   onStart,
   onCancel,
+  onChanged,
 }: {
   core: FitlingCore;
+  userID: string;
   input: TrainingInput;
+  rows: TrainingRows;
   focus: string;
   onStart: (choice: ComposeChoice) => void;
   onCancel: () => void;
+  onChanged: () => Promise<void>;
 }) {
   const choices = core.trainingChoices();
   const [minutes, setMinutes] = useState(() => rememberedMinutes(choices));
   const [focus, setFocus] = useState(initial);
   const plan = core.composePlan({ training: input, focus, minutes });
-
+  // A planned exercise opens its animation and progress over the sheet, as a NavigationLink on iOS.
+  const [opened, setOpened] = useState<string>();
   return (
     <FormSheet title={t("training.compose.title")} onSave={() => undefined} onCancel={onCancel}>
       <div className="sheet-bottom-space">
@@ -100,13 +109,27 @@ export function ComposeWorkout({
         <ListSection header={t("training.compose.exercises")} footer={t("training.compose.footer")}>
           {plan.exercises.length === 0 && <ListRow>{t("training.compose.none")}</ListRow>}
           {plan.exercises.map((planned) => (
-            <div key={planned.exerciseID} className="list-row planned-row" data-testid={`training.compose.exercise.${planned.exerciseID}`}>
-              <span>{planned.name}</span>
-              <span className="planned-sets">{t("training.compose.sets %lld %lld %lld", planned.sets, planned.repMin, planned.repMax)}</span>
-            </div>
+            <ListRow key={planned.exerciseID} onClick={() => setOpened(planned.exerciseID)} chevron>
+              <span className="planned-row" data-testid={`training.compose.exercise.${planned.exerciseID}`}>
+                <span>{planned.name}</span>
+                <span className="planned-sets">{t("training.compose.sets %lld %lld %lld", planned.sets, planned.repMin, planned.repMax)}</span>
+              </span>
+            </ListRow>
           ))}
         </ListSection>
       </div>
+      {opened && (
+        <ExerciseSheet
+          label={t("training.compose.title")}
+          core={core}
+          userID={userID}
+          input={input}
+          rows={rows}
+          exerciseID={opened}
+          onBack={() => setOpened(undefined)}
+          onChanged={onChanged}
+        />
+      )}
       <div className="bottom-bar">
         <PrimaryButton disabled={plan.exercises.length === 0} onClick={() => onStart({ focus, plan })} data-testid="training.compose.start">
           {t("training.compose.start")}
