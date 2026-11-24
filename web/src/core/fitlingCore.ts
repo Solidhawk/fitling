@@ -92,17 +92,14 @@ export async function loadCore(wasm: ArrayBuffer): Promise<FitlingCore> {
     return result;
   }
 
-  const missing = () => {
-    throw new Error("not written yet");
-  };
   return {
     dailyPlan: (input) => call("dailyPlan", input) as DailyPlan,
-    bodyInput: missing,
-    birthDay: missing,
-    macros: missing,
-    kcalShares: missing,
-    warnings: missing,
-    targetsOnDay: missing,
-    creature: missing,
+    bodyInput: (input) => call("bodyInput", input) as BodyInputAnswer,
+    birthDay: (input) => call("birthDay", input) as ReturnType<FitlingCore["birthDay"]>,
+    macros: (input) => call("macros", input) as Targets,
+    kcalShares: (targets) => call("kcalShares", targets) as ReturnType<FitlingCore["kcalShares"]>,
+    warnings: (input) => call("warnings", input) as ReturnType<FitlingCore["warnings"]>,
+    targetsOnDay: (input) => call("targetsOnDay", input) as Targets,
+    creature: (input) => call("creature", input) as ReturnType<FitlingCore["creature"]>,
   };
 }
