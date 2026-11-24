@@ -32,3 +32,8 @@ test("an unknown goal is an error, not a crash", async () => {
   // The module still answers after a failure.
   expect(core.dailyPlan(maintain).targets.kcal).toBe(2760);
 });
+
+// Every visitor downloads this file before the numbers appear; on a phone that has to stay small.
+test("the module is at most 5 MB", () => {
+  expect(file.byteLength).toBeLessThanOrEqual(5 * 1024 * 1024);
+});
