@@ -52,29 +52,54 @@ export async function entriesOn(client: SupabaseClient, day: IsoDay): Promise<Fo
   return (data as Row[]).map(entryFromRow);
 }
 
-/** What was logged from `first` through `last`, for the partner's days. */
+/** The server answers at most this many rows at a time (PostgREST max_rows). */
+const page = 1000;
+
+/** Every row a query matches, page by page in the order of `id`, so no row is read twice or skipped. */
+async function allRows(
+  query: (from: number, to: number) => PromiseLike<{ data: Row[] | null; error: { message: string } | null }>,
+): Promise<Row[]> {
+  const rows: Row[] = [];
+  for (let from = 0; ; from += page) {
+    const { data, error } = await query(from, from + page - 1);
+    if (error) throw failure(error);
+    rows.push(...(data ?? []));
+    if ((data ?? []).length < page) return rows;
+  }
+}
+
+/**
+ * What was logged from `first` through `last`, for the partner's days; a partner that was not folded in for months
+ * reads every entry since.
+ */
 export async function entriesBetween(client: SupabaseClient, first: IsoDay, last: IsoDay): Promise<FoodEntry[]> {
-  const { data, error } = await client
-    .from("food_entries")
-    .select("*")
-    .gte("consumed_on", first)
-    .lte("consumed_on", last)
-    .is("deleted_at", null);
-  if (error) throw failure(error);
-  return (data as Row[]).map(entryFromRow);
+  const rows = await allRows((from, to) =>
+    client
+      .from("food_entries")
+      .select("*")
+      .gte("consumed_on", first)
+      .lte("consumed_on", last)
+      .is("deleted_at", null)
+      .order("id")
+      .range(from, to),
+  );
+  return rows.map(entryFromRow);
 }
 
 /** Days with a finished workout from `first` through `last`. */
 export async function workoutDaysBetween(client: SupabaseClient, first: IsoDay, last: IsoDay): Promise<IsoDay[]> {
-  const { data, error } = await client
-    .from("workout_sessions")
-    .select("performed_on")
-    .gte("performed_on", first)
-    .lte("performed_on", last)
-    .not("ended_at", "is", null)
-    .is("deleted_at", null);
-  if (error) throw failure(error);
-  return [...new Set((data as Row[]).map((row) => row.performed_on as string))];
+  const rows = await allRows((from, to) =>
+    client
+      .from("workout_sessions")
+      .select("id, performed_on")
+      .gte("performed_on", first)
+      .lte("performed_on", last)
+      .not("ended_at", "is", null)
+      .is("deleted_at", null)
+      .order("id")
+      .range(from, to),
+  );
+  return [...new Set(rows.map((row) => row.performed_on as string))];
 }
 
 /** Water is added in glasses of this size (DayViewModel.glassMl). */
