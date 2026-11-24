@@ -131,3 +131,22 @@ export async function saveProfile(client: SupabaseClient, profile: Profile, chan
     .eq("id", profile.id);
   if (error) throw new Error("error.server");
 }
+
+/** The target periods, for the target that applied on a day (TargetPeriods in FitlingCore). */
+export async function loadTargetPeriods(client: SupabaseClient): Promise<{ effectiveOn: string; updatedAtMs: number; targets: Targets }[]> {
+  const { data, error } = await client
+    .from("target_history")
+    .select("effective_on, updated_at, kcal_target, protein_target_g, carbs_target_g, fat_target_g")
+    .is("deleted_at", null);
+  if (error) throw new Error("error.server");
+  return (data as Record<string, unknown>[]).map((row) => ({
+    effectiveOn: row.effective_on as string,
+    updatedAtMs: Date.parse(row.updated_at as string),
+    targets: {
+      kcal: row.kcal_target as number,
+      proteinG: row.protein_target_g as number,
+      carbsG: row.carbs_target_g as number,
+      fatG: row.fat_target_g as number,
+    },
+  }));
+}

@@ -19,6 +19,9 @@ export function useDialogFocus(dialog: RefObject<HTMLElement | null>, onEscape: 
     if (!element.contains(document.activeElement)) ((focusFirst ? items()[0] : undefined) ?? element).focus();
 
     const keydown = (event: KeyboardEvent) => {
+      // A dialog opened on top of this one (the scanner over the log sheet) handles its own keys.
+      const owner = (document.activeElement as HTMLElement | null)?.closest('[role="dialog"], [role="alertdialog"]');
+      if (owner && owner !== element) return;
       if (event.key === "Escape") {
         event.preventDefault();
         escape.current();
