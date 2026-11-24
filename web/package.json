@@ -4,13 +4,30 @@
   "type": "module",
   "scripts": {
     "generate": "node scripts/generate.mjs",
-    "test": "node scripts/generate.mjs && vitest run"
+    "test": "node scripts/generate.mjs && vitest run",
+    "build": "node scripts/generate.mjs && tsc && vite build",
+    "e2e": "playwright test"
   },
   "dependencies": {
-    "@bjorn3/browser_wasi_shim": "^0.4.1"
+    "@bjorn3/browser_wasi_shim": "^0.4.1",
+    "lucide-react": "^0.460.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.10.2",
+    "@playwright/test": "^1.53.1",
+    "@types/node": "^22.15.30",
+    "@types/react": "^18.3.23",
+    "@types/react-dom": "^18.3.7",
+    "@vitejs/plugin-react": "^4.5.2",
     "typescript": "^5.9.3",
+    "vite": "^6.3.5",
     "vitest": "^3.2.4"
+  },
+  "overrides": {
+    "@axe-core/playwright": {
+      "playwright-core": "1.53.1"
+    }
   }
 }

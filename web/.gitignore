@@ -6,3 +6,5 @@ src/generated/
 public/partners/
 public/exercises/
 public/recipes/
+test-results/
+playwright-report/

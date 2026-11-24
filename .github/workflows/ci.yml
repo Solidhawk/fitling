@@ -60,6 +60,20 @@ jobs:
         run: |
           npm ci
           npm test
+      - name: Webapp bouwen
+        working-directory: web
+        run: npm run build
+      - name: Webapp in Safari (WebKit) en Chrome
+        working-directory: web
+        run: |
+          npx playwright install --with-deps chromium webkit
+          npx playwright test
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: web-screenshots
+          path: web/test-results/
+          if-no-files-found: ignore
 
   backend:
     name: Supabase (Linux)
