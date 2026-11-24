@@ -1533,3 +1533,8 @@ input.picker[type="date"] {
 .scan-manual .button {
   width: auto;
 }
+
+/* A Label that is the whole row: the row is already the 44 px target, so the label adds no height of its own. */
+.list-row-button .inline-action {
+  min-height: 0;
+}
