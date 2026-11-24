@@ -175,6 +175,17 @@ import Testing
         #expect(book(exercises: [bench], days: days, workouts: [(onDay, [])]).cleanup(discarding: onDay.id) == nil)
     }
 
+    /// Two unfinished workouts (a double tap, or a phone that had not synced the other): each is found by its id.
+    @Test func aWorkoutIsFoundByItsOwnID() {
+        let bench = exercise("Bench press")
+        let older = SessionRecord(id: UUID(), programDayID: nil, performedOn: today, startedAt: now - 60)
+        let newer = SessionRecord(id: UUID(), programDayID: nil, performedOn: today, startedAt: now)
+        let records = book(exercises: [bench], workouts: [(older, []), (newer, [])])
+        #expect(records.activeSession()?.id == newer.id)
+        #expect(records.session(older.id) == older)
+        #expect(records.session(UUID()) == nil)
+    }
+
     @Test func removedDaysKeepTheirNameButLeaveTheProgramme() {
         let bench = exercise("Bench press")
         let (program, days, items) = programme(bench, days: 2, owner: user)

@@ -349,6 +349,16 @@ import FitlingCore
         #expect(number(poundsDraft["weight"]) == 220.46)
     }
 
+    /// Review: an unfinished workout that is not the newest one opens instead of failing.
+    @Test func workoutFindsAnyUnfinishedWorkout() throws {
+        var (json, squat, days) = squatProgramme()
+        let older = SessionRecord(id: UUID(), programDayID: days[1].id, performedOn: Day(isoString: "2026-11-18")!, startedAt: 1_794_999_000)
+        let newer = SessionRecord(id: UUID(), programDayID: nil, performedOn: Day(isoString: "2026-11-18")!, startedAt: 1_795_000_000)
+        json.sessions += [older, newer]
+        let result = try answer("workout", try json.with(#""sessionID":"\#(older.id)","added":[],"usesPounds":false"#))
+        #expect((result["entries"] as? [[String: Any]])?.first?["exerciseID"] as? String == squat.id.uuidString.lowercased())
+    }
+
     @Test func loggedSetIsBounded() throws {
         let pounds = try answer("loggedSet", #"{"weight":135,"reps":5,"usesPounds":true}"#)
         #expect(number(pounds["weightKg"]) == 61.23 && pounds["canLog"] as? Bool == true)

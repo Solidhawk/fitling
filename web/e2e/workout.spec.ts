@@ -56,6 +56,24 @@ test("aSetNeedsWeightAndReps", async ({ page }) => {
   await expect(log).toBeDisabled();
 });
 
+// Review: what the user types while a set is being saved stays; only the RPE is asked again.
+test("whatIsTypedWhileSavingIsKept", async ({ page }) => {
+  await openTraining(page);
+  await startFirstDay(page);
+  const exerciseID = (await page.locator('[data-testid^="workout.log."]').first().getAttribute("data-testid"))!.replace("workout.log.", "");
+  let release: () => void = () => undefined;
+  const held = new Promise<void>((resolve) => (release = resolve));
+  await page.route("**/rest/v1/workout_sets*", async (route) => {
+    if (route.request().method() === "POST") await held;
+    await route.continue();
+  });
+  await logSet(page, exerciseID, "40", "8");
+  await page.getByTestId(`workout.reps.${exerciseID}`).fill("6");
+  release();
+  await expect(page.getByTestId("workout.set")).toHaveCount(1);
+  await expect(page.getByTestId(`workout.reps.${exerciseID}`)).toHaveValue("6");
+});
+
 test("restTimerStartsAfterAWorkingSet", async ({ page }) => {
   await openTraining(page);
   await startFirstDay(page);
