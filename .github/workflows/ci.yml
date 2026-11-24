@@ -31,11 +31,13 @@ jobs:
       - name: Rekenregels voor het web (Swift)
         working-directory: web/core
         run: swift test
+      # Zelf downloaden: de downloader van `swift sdk install` crasht in deze container (run 45395292745).
       - name: Swift SDK voor WebAssembly
-        run: >
-          swift sdk install
-          https://download.swift.org/swift-6.4.3-release/wasm-sdk/swift-6.4.3-RELEASE/swift-6.4.3-RELEASE_wasm.artifactbundle.tar.gz
-          --checksum 5f24408dc9737ce4cb23b7e3ed4306cabfa02cc02f22ab260b14579b955d4b12
+        run: |
+          command -v curl >/dev/null || (apt-get update && apt-get install -y curl)
+          curl -fsSL -o /tmp/wasm-sdk.artifactbundle.tar.gz https://download.swift.org/swift-6.4.3-release/wasm-sdk/swift-6.4.3-RELEASE/swift-6.4.3-RELEASE_wasm.artifactbundle.tar.gz
+          echo "5f24408dc9737ce4cb23b7e3ed4306cabfa02cc02f22ab260b14579b955d4b12  /tmp/wasm-sdk.artifactbundle.tar.gz" | sha256sum -c -
+          swift sdk install /tmp/wasm-sdk.artifactbundle.tar.gz
       - name: Rekenregels als WebAssembly
         working-directory: web/core
         run: |
