@@ -1,3 +1,4 @@
 node_modules/
 dist/
 public/fitling-core.wasm
+public/fitling-core.wasm.gz

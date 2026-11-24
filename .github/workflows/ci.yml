@@ -46,11 +46,12 @@ jobs:
           mkdir -p ../public
           cp "$(swift build --swift-sdk swift-6.4.3-RELEASE_wasm -c release --show-bin-path)/fitling-core.wasm" ../public/fitling-core.wasm
           ls -l ../public/fitling-core.wasm
-          gzip -9 -c ../public/fitling-core.wasm | wc -c
+          gzip -9 -k -f ../public/fitling-core.wasm
+          ls -l ../public/fitling-core.wasm.gz
       - uses: actions/upload-artifact@v4
         with:
           name: fitling-core-wasm
-          path: web/public/fitling-core.wasm
+          path: web/public/fitling-core.wasm*
       - uses: actions/setup-node@v4
         with:
           node-version: 22

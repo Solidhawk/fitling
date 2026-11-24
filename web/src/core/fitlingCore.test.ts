@@ -33,7 +33,9 @@ test("an unknown goal is an error, not a crash", async () => {
   expect(core.dailyPlan(maintain).targets.kcal).toBe(2760);
 });
 
-// Every visitor downloads this file before the numbers appear; on a phone that has to stay small.
-test("the module is at most 5 MB", () => {
-  expect(file.byteLength).toBeLessThanOrEqual(5 * 1024 * 1024);
+// Every visitor downloads this file before the numbers appear; on a phone that has to stay small. The
+// web app downloads the gzipped file and unpacks it with DecompressionStream.
+test("the download is at most 4 MB", async () => {
+  const packed = await readFile(new URL("../../public/fitling-core.wasm.gz", import.meta.url));
+  expect(packed.byteLength).toBeLessThanOrEqual(4 * 1024 * 1024);
 });
