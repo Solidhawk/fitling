@@ -45,13 +45,14 @@ describe.skipIf(!url || !key || !serviceKey)("training on the server", () => {
     const after = await loadTraining(client);
     const copy = after.programs.find((program) => program.id === copyID)!;
     expect(copy).toMatchObject({ ownerID: id, name: { nl: "Mijn schema" }, daysPerWeek: shared.daysPerWeek });
-    const sharedDays = before.days.filter((day) => day.programID === shared.id);
-    const copiedDays = after.days.filter((day) => day.programID === copyID);
+    const byPosition = (a: { position: number }, b: { position: number }) => a.position - b.position;
+    const sharedDays = before.days.filter((day) => day.programID === shared.id).sort(byPosition);
+    const copiedDays = after.days.filter((day) => day.programID === copyID).sort(byPosition);
     expect(copiedDays.map((day) => day.name)).toEqual(sharedDays.map((day) => day.name));
     const count = (rows: TrainingRows, dayIDs: string[]) => rows.items.filter((item) => dayIDs.includes(item.programDayID)).length;
     expect(count(after, copiedDays.map((day) => day.id))).toBe(count(before, sharedDays.map((day) => day.id)));
     // The shared original is as it was.
-    expect(after.days.filter((day) => day.programID === shared.id)).toEqual(sharedDays);
+    expect(after.days.filter((day) => day.programID === shared.id).sort(byPosition)).toEqual(sharedDays);
   });
 
   test("discardingRemovesTheSetsAndTheComposedDay", async () => {

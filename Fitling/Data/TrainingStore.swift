@@ -448,8 +448,8 @@ struct CoachNote: Identifiable {
 // The SwiftData rows as FitlingCore reads them.
 
 extension Exercise {
-    var trainingRecord: ExerciseRecord {
-        ExerciseRecord(
+    var trainingRecord: FitlingCore.ExerciseRecord {
+        FitlingCore.ExerciseRecord(
             id: id, ownerID: ownerID, name: name, kind: kind, loadType: loadType, primaryMuscles: primaryMuscles,
             secondaryMuscles: secondaryMuscles, defaultStepKg: defaultStepKg
         )
@@ -457,14 +457,14 @@ extension Exercise {
 }
 
 extension Program {
-    var trainingRecord: ProgramRecord {
-        ProgramRecord(id: id, ownerID: ownerID, name: name, daysPerWeek: daysPerWeek, deleted: deletedAt != nil)
+    var trainingRecord: FitlingCore.ProgramRecord {
+        FitlingCore.ProgramRecord(id: id, ownerID: ownerID, name: name, daysPerWeek: daysPerWeek, deleted: deletedAt != nil)
     }
 }
 
 extension ProgramDay {
-    var trainingRecord: ProgramDayRecord {
-        ProgramDayRecord(
+    var trainingRecord: FitlingCore.ProgramDayRecord {
+        FitlingCore.ProgramDayRecord(
             id: id, programID: programID, ownerID: ownerID, name: name, position: position,
             updatedAt: updatedAt.timeIntervalSince1970, deleted: deletedAt != nil
         )
@@ -472,8 +472,8 @@ extension ProgramDay {
 }
 
 extension ProgramExercise {
-    var trainingRecord: ProgramItemRecord {
-        ProgramItemRecord(
+    var trainingRecord: FitlingCore.ProgramItemRecord {
+        FitlingCore.ProgramItemRecord(
             id: id, programDayID: programDayID, ownerID: ownerID, exerciseID: exerciseID, position: position, targetSets: targetSets,
             repMin: repMin, repMax: repMax, restSeconds: restSeconds
         )
@@ -481,16 +481,16 @@ extension ProgramExercise {
 }
 
 extension ExerciseSetting {
-    var trainingRecord: ExerciseSettingRecord {
-        ExerciseSettingRecord(exerciseID: exerciseID, stepKg: stepKg, repMin: repMin, repMax: repMax, updatedAt: updatedAt.timeIntervalSince1970)
+    var trainingRecord: FitlingCore.ExerciseSettingRecord {
+        FitlingCore.ExerciseSettingRecord(exerciseID: exerciseID, stepKg: stepKg, repMin: repMin, repMax: repMax, updatedAt: updatedAt.timeIntervalSince1970)
     }
 }
 
 extension WorkoutSession {
     /// Nil for a session whose day cannot be read; it never counts.
-    var trainingRecord: SessionRecord? {
+    var trainingRecord: FitlingCore.SessionRecord? {
         Day(isoString: performedOn).map {
-            SessionRecord(
+            FitlingCore.SessionRecord(
                 id: id, programDayID: programDayID, performedOn: $0, startedAt: startedAt.timeIntervalSince1970,
                 endedAt: endedAt?.timeIntervalSince1970
             )
@@ -499,7 +499,7 @@ extension WorkoutSession {
 }
 
 extension WorkoutSet {
-    var trainingRecord: SetRecord {
-        SetRecord(id: id, sessionID: sessionID, exerciseID: exerciseID, position: position, weightKg: weightKg, reps: reps, rpe: rpe, isWarmup: isWarmup)
+    var trainingRecord: FitlingCore.SetRecord {
+        FitlingCore.SetRecord(id: id, sessionID: sessionID, exerciseID: exerciseID, position: position, weightKg: weightKg, reps: reps, rpe: rpe, isWarmup: isWarmup)
     }
 }
