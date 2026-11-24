@@ -12,10 +12,17 @@ const url = process.env.VITE_SUPABASE_URL ?? "";
 const service = process.env.LOCAL_SUPABASE_SERVICE_KEY ?? "";
 export const admin = createClient(url, service, { auth: { persistSession: false, autoRefreshToken: false } });
 
-/** The Dutch text of a key, as the browser in the tests shows it (locale nl-NL). */
+/** The Dutch text of a key, as the browser in the tests shows it (locale nl-NL); a plural in its "other" form. */
 export function nl(key: string): string {
   const entry = strings.nl[key];
   return typeof entry === "string" ? entry : (entry?.other ?? key);
+}
+
+/** The Dutch text of a plural key for `count`, with the number filled in, as the app chooses it. */
+export function nlCount(key: string, count: number): string {
+  const entry = strings.nl[key];
+  const text = typeof entry === "string" ? entry : new Intl.PluralRules("nl").select(count) === "one" ? entry.one : entry.other;
+  return text.replace("%lld", String(count));
 }
 
 export const password = "lang-genoeg-wachtwoord-1";

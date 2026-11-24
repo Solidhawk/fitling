@@ -13,6 +13,8 @@ export function SwipeRow({ children, deleteLabel, onDelete }: { children: ReactN
 
   function down(event: PointerEvent) {
     start.current = { x: event.clientX, y: event.clientY, offset };
+    // The row keeps getting the moves while the finger or mouse slides past its edge.
+    event.currentTarget.setPointerCapture?.(event.pointerId);
   }
 
   function move(event: PointerEvent) {

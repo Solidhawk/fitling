@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "./fixtures";
-import { admin, createUser, foodEntry, localDay, nl, signIn } from "./users";
+import { admin, createUser, foodEntry, localDay, nl, nlCount, signIn } from "./users";
 
 /** Signed in with a profile (2760 kcal) and a partner; the app opens on Vandaag. */
 async function start(page: Page) {
@@ -38,7 +38,7 @@ test("reportsUnknownMacros", async ({ page }) => {
   const user = await start(page);
   await foodEntry(user.id, { consumed_on: localDay(), protein_g: null });
   await page.reload();
-  await expect(page.getByText(nl("day.unknown.protein %lld").replace("%lld", "1"))).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText(nlCount("day.unknown.protein %lld", 1))).toBeVisible({ timeout: 15_000 });
 });
 
 test("waterAddsUp", async ({ page }) => {

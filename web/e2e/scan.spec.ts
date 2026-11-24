@@ -35,7 +35,7 @@ test("scanOfAKnownProductOpensThePortion", async ({ page }) => {
   });
   await type(page, gtin);
   await expect(page.getByTestId("portion.quantity")).toBeVisible();
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText(product.name);
+  await expect(page.locator('[data-page="portion"] .nav-title')).toHaveText(product.name);
   expect(asked).toBe(0);
 });
 

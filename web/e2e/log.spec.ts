@@ -109,7 +109,8 @@ test("addAnOwnProductAndLogIt", async ({ page }, info) => {
   await page.getByTestId("product.add.save").click();
   await expect(page.getByTestId("portion.quantity")).toHaveValue("1");
   await page.getByTestId("portion.save").click();
-  await expect(page.getByText("Oma's appeltaart")).toBeVisible();
+  await expect(page.locator('[data-screen="logFood"]')).toHaveCount(0);
+  await expect(page.getByTestId("day.entry").filter({ hasText: "Oma's appeltaart" })).toBeVisible();
   const { data } = await admin.from("products").select("kcal_100, search_name, owner_id").eq("owner_id", user.id).single();
   expect(data).toEqual({ kcal_100: 280.4, search_name: "oma's appeltaart", owner_id: user.id });
 });
