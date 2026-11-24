@@ -85,6 +85,26 @@ jobs:
           name: web-screenshots
           path: web/test-results/
           if-no-files-found: ignore
+      # Alleen main gaat live, op https://solidhawk.github.io/fitling/ (D-24).
+      - uses: actions/upload-pages-artifact@v3
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        with:
+          path: web/dist
+
+  pages:
+    name: Web publiceren
+    needs: web
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4
 
   backend:
     name: Supabase (Linux)
