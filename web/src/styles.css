@@ -807,7 +807,7 @@ p {
   padding: 0 var(--space-l) var(--space-xl);
 }
 
-.tab-page.loading,
+.tab-loading,
 .tab-page.unavailable {
   min-height: 60dvh;
 }

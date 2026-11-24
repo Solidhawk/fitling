@@ -60,8 +60,11 @@ export function Profile({ userID, auth }: { userID: string; auth: AuthService })
   }
   if (!core || !profile) {
     return (
-      <div className="tab-page loading" data-page="profile" aria-busy="true">
-        <span className="spinner" role="progressbar" aria-label={t("common.loading")} />
+      <div className="tab-page" data-page="profile" aria-busy="true">
+        <h1 className="large-title">{t("profile.title")}</h1>
+        <div className="loading tab-loading">
+          <span className="spinner" role="progressbar" aria-label={t("common.loading")} />
+        </div>
       </div>
     );
   }

@@ -1,5 +1,5 @@
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { confirmationLink, createUser, nl, password, signIn } from "./users";
 
 const partners = ["bumblebee", "mole", "frog", "owl", "hedgehog", "snail", "axolotl", "seal", "penguin", "turtle", "rabbit", "raccoon", "ladybird", "octopus", "squirrel", "lamb"];

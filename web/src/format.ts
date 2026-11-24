@@ -2,8 +2,9 @@ import { language } from "./i18n";
 
 // Numbers as the app shows them through Measurement and .formatted: in the user's language, abbreviated units.
 
+/** Intl knows no kilocalorie unit, so the abbreviation is added; a no-break space keeps it with the number. */
 export function kcal(value: number): string {
-  return new Intl.NumberFormat(language(), { style: "unit", unit: "kilocalorie", unitDisplay: "short", maximumFractionDigits: 0 }).format(value);
+  return `${new Intl.NumberFormat(language(), { maximumFractionDigits: 0 }).format(value)} kcal`;
 }
 
 export function grams(value: number): string {

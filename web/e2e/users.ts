@@ -82,8 +82,9 @@ export async function createUser(options: { profile?: boolean; creature?: boolea
 export async function signIn(page: Page, email: string) {
   await page.goto("./");
   await page.getByTestId("welcome.email").click();
-  await page.getByLabel(nl("auth.email.field")).fill(email);
-  await page.getByLabel(nl("auth.password.field")).fill(password);
+  // By field type, not by label: the tests in en-US see English labels.
+  await page.locator('input[type="email"]').fill(email);
+  await page.locator('input[type="password"]').fill(password);
   await page.getByTestId("auth.submit").click();
 }
 

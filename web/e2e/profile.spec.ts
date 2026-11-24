@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import AxeBuilder from "@axe-core/playwright";
-import { expect, type Page, test } from "@playwright/test";
+import { expect, type Page, test } from "./fixtures";
 import { admin, createUser, nl, signIn } from "./users";
 
 /** Signed in with the profile of NutritionEngineTests (2760 kcal) and a partner, on the Dagdoel tab. */

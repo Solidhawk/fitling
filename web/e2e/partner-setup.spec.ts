@@ -1,5 +1,5 @@
 import AxeBuilder from "@axe-core/playwright";
-import { expect, type Page, test } from "@playwright/test";
+import { expect, type Page, test } from "./fixtures";
 import { admin, createUser, nl, signIn } from "./users";
 
 /** Signed in with a profile and no partner yet: the app opens on choosing one. */
