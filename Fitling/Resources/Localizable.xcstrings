@@ -1700,19 +1700,19 @@
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Groot nieuws: je partner straalt. Meer om tien uur."
+            "value": "Groot nieuws: je partner straalt. Lees er alles over in je logboek."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Breaking news: your partner is glowing. More at ten."
+            "value": "Breaking news: your partner is glowing. Read all about it in your log."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Eilmeldung: Dein Partner strahlt. Mehr um zehn."
+            "value": "Eilmeldung: Dein Partner strahlt. Alles Weitere in deinem Logbuch."
           }
         }
       }
@@ -1832,19 +1832,19 @@
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Sinds gisteren niets gelogd. Begin met je volgende maaltijd."
+            "value": "Nog niets gelogd vandaag. Begin met je volgende maaltijd."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nothing logged since yesterday. Start with your next meal."
+            "value": "Nothing logged yet today. Start with your next meal."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Seit gestern nichts erfasst. Fang mit deiner nächsten Mahlzeit an."
+            "value": "Heute noch nichts erfasst. Fang mit deiner nächsten Mahlzeit an."
           }
         }
       }
@@ -2294,7 +2294,7 @@
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ik ben zo moe dat ik geeuw in mijn slaap. Tijd om te eten!"
+            "value": "Ik ben zo moe dat ik in mijn slaap geeuw. Tijd om te eten!"
           }
         },
         "en": {
@@ -2470,19 +2470,19 @@
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ik rol meer dan ik loop. Een frisse salade misschien?"
+            "value": "Ik ben toe aan een frisse salade. Jij ook?"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "I roll more than I walk. A fresh salad, maybe?"
+            "value": "I could go for a fresh salad. You too?"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ich rolle mehr, als ich laufe. Vielleicht ein frischer Salat?"
+            "value": "Ich hätte Lust auf einen frischen Salat. Du auch?"
           }
         }
       }
