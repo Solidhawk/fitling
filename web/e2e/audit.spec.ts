@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "./fixtures";
-import { createUser, nl, signIn } from "./users";
+import { createUser, foodEntry, localDay, nl, sharedProduct, signIn } from "./users";
 
 // Every screen of phase 1 in light, dark and at 200 % text (the largest text on iOS is about that): no axe
 // violations, and at 200 % nothing that only a sideways scroll reaches. The screenshots go on the board next to iOS.
@@ -88,6 +88,34 @@ for (const mode of modes) {
       await page.getByTestId("partner.setup.species.owl").click();
       await page.getByTestId("partner.setup.name").scrollIntoViewIfNeeded();
       await check(page, mode, "10-partner-naam", info.project.name);
+    });
+
+    // Review Focus: long names and brands at 200 % stay on screen in the lists, the portion and the own product.
+    test("Vandaag and logging", async ({ page }, info) => {
+      const user = await createUser({ profile: true, creature: true });
+      const product = await sharedProduct("Volkoren meergranen desembrood met zonnebloempitten en lijnzaad", {
+        brand: "Bakkerij van de Hoogstraat en Zonen",
+        serving_size: 35,
+        protein_100: null,
+      });
+      await foodEntry(user.id, { consumed_on: localDay(), name: "Griekse yoghurt met honing, walnoten en vers fruit van het seizoen" });
+      await signIn(page, user.email);
+      await expect(page.getByTestId("day.progress")).toBeVisible({ timeout: 15_000 });
+      await check(page, mode, "11-vandaag", info.project.name);
+      await page.getByTestId("day.add.breakfast").click();
+      await check(page, mode, "20-loggen", info.project.name);
+      await page.getByTestId("log.search").fill(product.name);
+      await page.getByRole("button", { name: new RegExp(product.name) }).click();
+      await expect(page.getByTestId("portion.quantity")).toBeVisible();
+      await check(page, mode, "21-portie", info.project.name);
+      await page.getByRole("button", { name: nl("meal.breakfast") }).click();
+      await page.getByTestId("log.search").fill("");
+      await page.getByTestId("log.ownProduct").click();
+      await check(page, mode, "22-eigen-product", info.project.name);
+      await page.getByRole("button", { name: nl("meal.breakfast") }).click();
+      await page.getByTestId("log.scan").click();
+      await expect(page.locator('[data-screen="scan"]')).toBeVisible();
+      await check(page, mode, "23-scannen", info.project.name);
     });
 
     test("Dagdoel and account", async ({ page }, info) => {
