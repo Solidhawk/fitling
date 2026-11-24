@@ -1,9 +1,10 @@
 """Sixteen partners as soft 3D toy figures in six forms each, built from code in Blender and rendered with Cycles.
 
-Run: blender -b --factory-startup -P partners_3d.py -- <output folder> [samples] [names, e.g. hommel,uil] [forms, e.g. 1,6] [layers]
+Run: blender -b --factory-startup -P partners_3d.py -- <output folder> [samples] [names, e.g. hommel,uil] [forms, e.g. 1,6] [layers [which, e.g. item-backpack]]
 Writes <name>-<form>.png (transparent, with the contact shadow in the alpha) and partners.blend.
 With `layers` it writes the app's stackable 600 px layers instead: <species>/<form>/body.png, face-<mood>.png and
 item-<item>.png (every pass is holdout-masked against the layers beneath it) and _anchors_<species>.json.
+With `which` only those layers are rendered again; the others stay as they are.
 Every figure stands on z = 0 and faces -Y. One camera for all, so the growth from form 1 to 6 shows.
 
 The six forms change the body plan, not just the size (the figure is fitted to the frame per form, see HEIGHTS):
@@ -31,6 +32,11 @@ ALL = ['hommel', 'mol', 'kikker', 'uil', 'egel', 'slak', 'axolotl', 'zeehond',
 ONLY = args[2].split(',') if len(args) > 2 and args[2] != 'all' else ALL
 FORMS = [int(x) for x in args[3].split(',')] if len(args) > 3 else [1, 2, 3, 4, 5, 6]
 LAYERS = len(args) > 4 and args[4] == 'layers'
+WHICH = set(args[5].split(',')) if len(args) > 5 else None
+
+
+def wanted(layer):
+    return WHICH is None or layer in WHICH
 
 # The athletic anatomy per form (index = form - 1). Lengths are in design units; every figure is about T tall
 # before it is fitted to the frame, and then scaled to HEIGHTS (frame fractions of the 4.0 tall picture).
@@ -103,6 +109,16 @@ def set_body(pack_c, pack_r, strap_r=0.05, straps=()):
     """Where a backpack sits on species that are not built by athlete()."""
     global BODY
     BODY = SimpleNamespace(pack_c=tuple(pack_c), pack_r=tuple(pack_r), strap_r=strap_r, straps=list(straps))
+
+
+def head_pack(P, wide=1.22, el=-15):
+    """A backpack that reads from the front on a figure that is mostly head: wider than the head behind it, so it
+    shows on both sides, with the straps low around the sides and under the face, so they do not read as headphones."""
+    C, Rb = P.hc, P.hr
+    pack, _ = on(C, Rb, 180, el, out=-0.25 * Rb[1])
+    straps = [[tuple(on(C, Rb, side * az, el, out=0.05 * Rb[0])[0]) for az, el in ((160, 5), (120, -2), (85, -18), (66, -40), (58, -62))]
+              for side in (1, -1)]
+    set_body(pack, (Rb[0] * wide, Rb[1] * 0.5, Rb[2] * 0.66), 0.07 * Rb[0], straps)
 
 
 def use_lid(material):
@@ -558,12 +574,17 @@ def athlete(skin, *, torso=None, head=None, limb=None, hand=None, leg=None, foot
         for j in range(toes):
             q = fc + Vector(((j - (toes - 1) / 2) * fs.x * 0.7, -fs.y * 0.85, fs.z * 0.05))
             ball(tuple(q), fs.x * 0.34, matte(foot))
-    global BODY
-    R = (rx, ry, half)
-    pack, _ = on(P.tc, R, 180, 8, out=0.12 * rx)
-    BODY = SimpleNamespace(pack_c=tuple(pack), pack_r=(rx * 0.62, 0.3 * rx + 0.08, half * 0.55), strap_r=0.06 * rx + 0.02,
-                           straps=[[tuple(on(P.tc, R, side * az, el, out=0.04)[0]) for az, el in ((165, 25), (120, 55), (75, 58), (35, 32), (22, -4))]
-                                   for side in (1, -1)])
+    # The backpack has to read from the front: the pack is wider than the figure, so it shows on both sides, and the
+    # straps come down where the camera sees them. Forms 1 and 2 are almost all head (head_pack); on the later forms
+    # the straps go over the shoulders and down the chest.
+    if FORM <= 2:
+        head_pack(P)
+    else:
+        R = (rx, ry, half)
+        pack, _ = on(P.tc, R, 180, 10, out=-0.1 * ry)
+        path = ((160, 35), (118, 72), (52, 74), (36, 42), (33, 5), (35, -30))
+        set_body(pack, (rx * 1.35, ry * 0.6, half * 0.8), 0.1 * rx,
+                 [[tuple(on(P.tc, R, side * az, el, out=0.05 * rx)[0]) for az, el in path] for side in (1, -1)])
     return P
 
 
@@ -843,7 +864,9 @@ def slak():
     rx, ry = 0.52 * Sr, Sr
     sc = Vector((0, 0.35 + 0.35 * Sr, 0.28 + Sr * 0.9))
     ball(tuple(sc), (rx, ry, ry), mat('shell', rough=0.4, coat=0.5))
-    set_body((0, sc.y + 0.1 * ry, sc.z + 0.85 * ry), (0.3 * Sr, 0.3 * Sr, 0.25 * Sr))
+    # On top of the shell, big enough to stand out above it; the baby's shell is tiny, so its pack is relatively bigger.
+    k = max(1.0, 1.0 / Sr)
+    set_body((0, sc.y + 0.05 * ry, sc.z + 0.95 * ry), (0.42 * Sr * k, 0.38 * Sr * k, 0.3 * Sr * k))
     line = mat('shellLine', rough=0.4, coat=0.5)
     turns = grow(0.32, 0.45)
     for side in (1, -1):
@@ -916,7 +939,7 @@ def zeehond():
     P = SimpleNamespace(hc=tuple(hc), hr=(hz * 0.95, hz * 0.9, hz), u=hz / 0.85)
     ball(P.hc, P.hr, body)
     use_lid(body)
-    set_body(C + Vector((0, 0.2 * Lb, 0.8 * Hb)), (W * 0.5, 0.3, Hb * 0.5))
+    head_pack(P)
     if FORM >= 4:
         ball(tuple(C + fdir * Lb * 0.95 - Vector((0, 0, 0.1))), (W * 0.85, W * 0.8, hz * 0.8), body)
         p, n = on_tilted(C, (W, Lb, Hb), rot, (0, -1, 0.1), out=-0.1)
@@ -1141,7 +1164,8 @@ def octopus():
     P = SimpleNamespace(hc=(0, 0, T - hz), hr=(hx, hx * 0.95, hz), u=hz / 0.85)
     ball(P.hc, P.hr, body)
     use_lid(body)
-    set_body((0, hx * 0.95 + 0.1, T - hz), (hx * 0.55, 0.3 * hx, hz * 0.45))
+    # The raised arms of forms 5 and 6 stand beside the head; there the pack sits higher, so it shows above them.
+    head_pack(P, wide=1.6, el=-15 if FORM < 5 else 35)
     z0 = T - 2 * hz
     ra, Lr = [0.14, 0.15, 0.18, 0.21, 0.24, 0.27][f], [0.3, 0.5, 0.75, 1.0, 1.15, 1.3][f]
     ball((0, 0, z0 + 0.25), (hx * 0.85, hx * 0.8, 0.35), body)
@@ -1430,15 +1454,18 @@ for name in ONLY:
         anchors[f'{SPECIES[name]}/{form}'] = {'headTop': [round(float(u[1]), 4), round(1 - float(v[1]), 4)],
                                               'headCenter': [round(float(u[0]), 4), round(1 - float(v[0]), 4)],
                                               'headRadius': round(float(hr[0] * scale * k[0]), 4)}
-        set_pass('body')
-        render_to(os.path.join(folder, 'body.png'))
-        set_pass('face')
-        render_to(os.path.join(folder, 'face-content.png'))
+        if wanted('body'):
+            set_pass('body')
+            render_to(os.path.join(folder, 'body.png'))
+        if wanted('face-content'):
+            set_pass('face')
+            render_to(os.path.join(folder, 'face-content.png'))
         for item in ITEMS:
-            set_pass('item', item)
-            render_to(os.path.join(folder, f'item-{item}.png'))
+            if wanted(f'item-{item}'):
+                set_pass('item', item)
+                render_to(os.path.join(folder, f'item-{item}.png'))
         for mood in MOODS:
-            if mood == 'content':
+            if mood == 'content' or not wanted(f'face-{mood}'):
                 continue
             root = build(name, form, mood, False)
             root.scale, root.location = (scale,) * 3, loc
