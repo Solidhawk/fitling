@@ -322,7 +322,7 @@ export interface FitlingCore {
   loggedSet(input: { weight?: number; reps?: number; rpe?: number; usesPounds: boolean }): { canLog: boolean; weightKg: number; reps: number; rpe?: number };
   discardCleanup(input: { training: TrainingInput; sessionID: string }): { dayID?: string; itemIDs: string[]; programID?: string };
   composePlan(input: { training: TrainingInput; focus: string; minutes: number }): WorkoutPlan;
-  trainingChoices(): { durations: number[]; defaultMinutes: number; focuses: string[] };
+  trainingChoices(): { durations: number[]; defaultMinutes: number; shortWorkoutMinutes: number; focuses: { id: string; muscles: string[] }[] };
   exerciseProgress(input: { training: TrainingInput; exerciseID: string }): ExerciseProgress;
   weeklyVolume(input: { training: TrainingInput; lastWeek: boolean }): { muscle: string; sets: number }[];
   measurementStored(input: { value: number; kind: MeasurementKind; usesMetric: boolean }): { value?: number };

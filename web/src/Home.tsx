@@ -8,6 +8,7 @@ import { t } from "./i18n";
 import { Day } from "./screens/Day";
 import { Partner } from "./screens/Partner";
 import { Profile } from "./screens/Profile";
+import { Training } from "./screens/Training";
 import { type Tab, TabBar, tabs } from "./TabBar";
 
 /**
@@ -40,6 +41,8 @@ export function Home({ userID, auth }: { userID: string; auth: AuthService }) {
         <div id={`panel-${tab}`} role="tabpanel" aria-labelledby={`tab-${tab}`}>
           {tab === "today" ? (
             <Day userID={userID} advance={advance} />
+          ) : tab === "training" ? (
+            <Training userID={userID} />
           ) : tab === "partner" ? (
             <Partner userID={userID} advance={advance} news={news} onNewsSeen={() => setNews([])} />
           ) : tab === "target" ? (

@@ -3,8 +3,13 @@ import type { IsoDay, Localized, TrainingInput } from "../core/fitlingCore";
 import { failure } from "./failure";
 import { allRows, type Row } from "./pages";
 
-/** The training rows of the user and the shared catalogue, as FitlingCore reads them, plus the exercises' instructions. */
-export type TrainingRows = Omit<TrainingInput, "userID" | "today" | "languages"> & { instructions: Record<string, Localized> };
+/** The training rows of the user and the shared catalogue, as FitlingCore reads them, plus what only the screens show. */
+export type TrainingRows = Omit<TrainingInput, "userID" | "today" | "languages"> & {
+  /** Per exercise id. */
+  instructions: Record<string, Localized>;
+  /** Per exercise id: barbell, dumbbell, machine, cable, kettlebell, band, bodyweight or other. */
+  equipment: Record<string, string>;
+};
 
 const seconds = (value: unknown) => Date.parse(value as string) / 1000;
 const optional = <T>(value: unknown) => (value === null || value === undefined ? undefined : (value as T));
@@ -24,7 +29,7 @@ function rows(client: SupabaseClient, table: string, columns: string, alive = tr
  */
 export async function loadTraining(client: SupabaseClient): Promise<TrainingRows> {
   const [exercises, programs, days, items, settings, sessions, sets] = await Promise.all([
-    rows(client, "exercises", "id, owner_id, name, instructions, kind, load_type, primary_muscles, secondary_muscles, default_step_kg"),
+    rows(client, "exercises", "id, owner_id, name, instructions, kind, load_type, equipment, primary_muscles, secondary_muscles, default_step_kg"),
     rows(client, "programs", "id, owner_id, name, days_per_week, deleted_at", false),
     rows(client, "program_days", "id, program_id, owner_id, name, position, updated_at, deleted_at", false),
     rows(client, "program_exercises", "id, program_day_id, owner_id, exercise_id, position, target_sets, rep_min, rep_max, rest_seconds"),
@@ -44,6 +49,7 @@ export async function loadTraining(client: SupabaseClient): Promise<TrainingRows
       defaultStepKg: Number(row.default_step_kg),
     })),
     instructions: Object.fromEntries(exercises.map((row) => [row.id as string, (row.instructions as Localized | null) ?? {}])),
+    equipment: Object.fromEntries(exercises.map((row) => [row.id as string, row.equipment as string])),
     programs: programs.map((row) => ({
       id: row.id as string,
       ownerID: optional<string>(row.owner_id),

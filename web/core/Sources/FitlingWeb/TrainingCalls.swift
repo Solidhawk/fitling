@@ -425,15 +425,26 @@ func composePlan(_ request: ComposeRequest) throws -> PlanAnswer {
     )
 }
 
+struct FocusOutput: Encodable {
+    let id: String
+    /// The muscles it trains, to name under it.
+    let muscles: [String]
+}
+
 struct DurationsAnswer: Encodable {
     let durations: [Int]
     let defaultMinutes: Int
-    let focuses: [String]
+    /// At or under this many minutes rest is shorter and there are sometimes fewer sets.
+    let shortWorkoutMinutes: Int
+    let focuses: [FocusOutput]
 }
 
 /// The times and focuses the composer offers.
 func trainingChoices() -> DurationsAnswer {
-    DurationsAnswer(durations: WorkoutBuilder.durations, defaultMinutes: WorkoutBuilder.defaultMinutes, focuses: TrainingFocus.allCases.map(\.rawValue))
+    DurationsAnswer(
+        durations: WorkoutBuilder.durations, defaultMinutes: WorkoutBuilder.defaultMinutes, shortWorkoutMinutes: WorkoutBuilder.shortWorkoutMinutes,
+        focuses: TrainingFocus.allCases.map { FocusOutput(id: $0.rawValue, muscles: $0.muscles.map(\.rawValue)) }
+    )
 }
 
 // MARK: Progress

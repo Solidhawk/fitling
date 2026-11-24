@@ -1,5 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "./fixtures";
+import { exercise, finishedWorkout, firstProgramme, openTraining } from "./training";
 import { admin, createUser, foodEntry, localDay, nl, sharedProduct, signIn } from "./users";
 
 // Every screen of phase 1 in light, dark and at 200 % text (the largest text on iOS is about that): no axe
@@ -149,6 +150,52 @@ for (const mode of modes) {
       await expect(page.getByTestId("partner.hero")).toBeVisible({ timeout: 15_000 });
       await page.getByTestId("partner.item.crown").scrollIntoViewIfNeeded();
       await check(page, mode, "25-partner-alles", info.project.name);
+    });
+
+    // Review Focus: every training screen at 200 % and in dark mode, with a long programme name and a coach note.
+    test("Training", async ({ page }, info) => {
+      const bench = await exercise("Bench press");
+      const programme = await firstProgramme();
+      await openTraining(page, async (userID) => {
+        await finishedWorkout(userID, bench.id, 9, [[60, 12], [60, 12], [60, 12]]);
+        await finishedWorkout(userID, bench.id, 2, [[60, 12], [60, 12], [60, 12]]);
+      });
+      await check(page, mode, "04-training", info.project.name);
+      await page.getByTestId(`training.program.${programme.id}`).click();
+      await expect(page.getByRole("heading", { name: programme.name })).toBeVisible();
+      await check(page, mode, "05-schema", info.project.name);
+      await page.getByTestId(`training.start.${programme.days[0].id}`).click();
+      await expect(page.getByRole("dialog", { name: programme.days[0].name })).toBeVisible({ timeout: 15_000 });
+      await check(page, mode, "05b-training-loggen", info.project.name);
+      await page.getByTestId("workout.options").click();
+      await page.getByRole("menuitem", { name: nl("training.workout.later") }).click();
+      await page.goBack();
+      await expect(page.getByTestId("training.resume")).toBeVisible({ timeout: 15_000 });
+      await page.getByRole("button", { name: nl("training.progress.exercises") }).click();
+      await page.getByTestId(`progress.exercise.${bench.id}`).click();
+      await expect(page.getByRole("heading", { name: bench.name })).toBeVisible();
+      await check(page, mode, "07-per-oefening", info.project.name);
+      await page.goBack();
+      await page.goBack();
+      await page.getByRole("button", { name: nl("training.progress.volume") }).click();
+      await check(page, mode, "08-volume", info.project.name);
+      await page.goBack();
+      await page.getByRole("button", { name: nl("body.title") }).click();
+      await check(page, mode, "09-lichaam", info.project.name);
+      await page.goBack();
+      await page.getByRole("button", { name: nl("photos.title") }).click();
+      await check(page, mode, "10-voortgangsfotos", info.project.name);
+    });
+
+    test("Composing and a new programme", async ({ page }, info) => {
+      await openTraining(page);
+      await page.getByTestId("training.compose").click();
+      await expect(page.getByTestId("training.compose.start")).toBeVisible();
+      await check(page, mode, "06-training-samenstellen", info.project.name);
+      await page.getByRole("button", { name: nl("common.cancel") }).click();
+      await page.getByTestId("training.program.new").click();
+      await page.getByTestId("training.program.name").fill("Mijn eigen schema voor maandag en donderdag");
+      await check(page, mode, "11-eigen-schema", info.project.name);
     });
 
     test("Dagdoel and account", async ({ page }, info) => {

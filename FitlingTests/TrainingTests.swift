@@ -149,7 +149,8 @@ struct TrainingFixture {
 
         let decodedSet = try JSONDecoder().decode(WorkoutSetRecord.self, from: JSONEncoder().encode(set.record))
         #expect(decodedSet == set.record)
-        let decodedExercise = try JSONDecoder().decode(ExerciseRecord.self, from: JSONEncoder().encode(exercise.record))
+        // The sync row of the app; FitlingCore has an ExerciseRecord of its own.
+        let decodedExercise = try JSONDecoder().decode(Fitling.ExerciseRecord.self, from: JSONEncoder().encode(exercise.record))
         #expect(decodedExercise == exercise.record)
         let json = try JSONSerialization.jsonObject(with: JSONEncoder().encode(session.record)) as? [String: Any]
         #expect(json?["synced_at"] == nil)

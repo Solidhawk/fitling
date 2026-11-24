@@ -14,7 +14,8 @@ export function FormSheet({
   children,
 }: {
   title: string;
-  saveLabel: string;
+  /** Without it there is no save button, as in a sheet that only picks. */
+  saveLabel?: string;
   canSave?: boolean;
   onSave: () => void;
   onCancel: () => void;
@@ -32,9 +33,11 @@ export function FormSheet({
           </button>
         }
         trailing={
-          <button type="button" className="nav-back nav-action nav-confirm" disabled={!canSave} onClick={onSave}>
-            {saveLabel}
-          </button>
+          saveLabel && (
+            <button type="button" className="nav-back nav-action nav-confirm" disabled={!canSave} onClick={onSave}>
+              {saveLabel}
+            </button>
+          )
         }
       />
       <List>{children}</List>

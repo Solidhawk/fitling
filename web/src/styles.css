@@ -1706,3 +1706,541 @@ input.picker[type="date"] {
 .list-row-button .inline-action {
   min-height: 0;
 }
+
+/* Training (TrainingTabView, ProgramDetailView, WorkoutView, ProgressViews, BodyViews). */
+.icon-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-m);
+  min-width: 0;
+}
+
+.icon-label > svg {
+  flex: none;
+  width: 1.75rem;
+}
+
+.row-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  min-width: 0;
+}
+
+.row-headline {
+  font-weight: 700;
+}
+
+.row-headline.heavy,
+.day-header,
+.entry-header .row-headline {
+  font-weight: 800;
+}
+
+.coach-row {
+  align-items: flex-start;
+}
+
+.coach-row > svg {
+  flex: none;
+  margin-top: 0.125rem;
+}
+
+/* The name of a day as the header of its section, in ink and as written (textCase(nil)). */
+.list-header .day-header,
+.list-header .entry-header {
+  color: var(--ink);
+  font-size: 1.0625rem;
+  text-transform: none;
+}
+
+.inline-action.strong {
+  font-weight: 700;
+}
+
+.list-row-button:disabled .inline-action {
+  color: var(--ink-soft);
+}
+
+/* Stepper: the label, then minus and plus in one grey capsule. */
+.stepper-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-s) var(--space-m);
+  width: 100%;
+}
+
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  margin-left: auto;
+  border-radius: 0.5rem;
+  background-color: var(--track);
+}
+
+.stepper button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.9rem;
+  height: 2rem;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.stepper button:disabled {
+  color: var(--ink-soft);
+  opacity: 0.45;
+  cursor: default;
+}
+
+.stepper button:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: -2px;
+  border-radius: 0.5rem;
+}
+
+.stepper-divider {
+  width: 1px;
+  height: 1.1rem;
+  background-color: var(--ink-soft);
+  opacity: 0.35;
+}
+
+.menu-item.destructive,
+.alert-button.destructive {
+  color: var(--destructive);
+}
+
+.alert-field {
+  padding: 0 var(--space-l) var(--space-l);
+}
+
+.alert-input {
+  width: 100%;
+  border-radius: 0.5rem;
+  background-color: var(--card);
+}
+
+/* Room under a sheet list for its bar with the main button. */
+.sheet-bottom-space {
+  padding-bottom: calc(6rem + env(safe-area-inset-bottom));
+}
+
+.planned-row {
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.planned-sets,
+.set-number,
+.set-summary {
+  font-variant-numeric: tabular-nums;
+}
+
+.planned-sets {
+  flex: none;
+  font-weight: 800;
+}
+
+/* A workout over the whole screen, with room for the rest timer under it. */
+.sheet.workout .list {
+  padding-bottom: calc(8rem + env(safe-area-inset-bottom));
+}
+
+.advice-row {
+  color: var(--ink-soft);
+  font-size: 0.9375rem;
+}
+
+.set-row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-s);
+  width: 100%;
+}
+
+.set-number {
+  min-width: 1.5rem;
+  font-weight: 800;
+}
+
+.set-summary {
+  flex: 1;
+}
+
+.draft-row {
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-s);
+}
+
+.draft-fields {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-s) var(--space-m);
+}
+
+/* A number with its label above it and its unit beside it, on the ground colour, so weight and reps never read as
+   one value. */
+.number-box {
+  display: flex;
+  flex: 1 1 8rem;
+  flex-direction: column;
+  gap: var(--space-xs);
+  min-width: 0;
+}
+
+.number-box-label {
+  color: var(--ink-soft);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.number-box-field {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-xs);
+  padding: var(--space-s) var(--space-m);
+  border-radius: calc(var(--radius-card) / 2);
+  background-color: var(--ground);
+  cursor: text;
+}
+
+.number-box-field input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 1.25rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.number-box-field input:focus-visible {
+  outline: none;
+}
+
+.number-box-field:focus-within {
+  outline: 2px solid var(--ink);
+  outline-offset: 0;
+}
+
+.draft-options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-s);
+}
+
+.rpe-picker {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.warmup-toggle {
+  width: auto;
+  margin-left: auto;
+}
+
+.rest-timer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 11;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-m);
+  max-width: 30rem;
+  margin: 0 auto;
+  padding: var(--space-m) var(--space-l) max(var(--space-m), env(safe-area-inset-bottom));
+  background-color: var(--ink);
+  color: var(--card);
+}
+
+.rest-title {
+  font-size: 0.9375rem;
+  font-weight: 700;
+}
+
+.rest-time {
+  font-size: 2.125rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.rest-skip {
+  min-height: 2.75rem;
+  border: 0;
+  background: none;
+  color: var(--card);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.rest-skip:focus-visible {
+  outline: 2px solid var(--card);
+}
+
+/* The exercise animation: frames of 4 by 3 from one sheet, at most 240 px high. */
+.animation-row {
+  justify-content: center;
+}
+
+.exercise-animation {
+  position: relative;
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.exercise-frame {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background-repeat: no-repeat;
+}
+
+.exercise-animation-state {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  color: var(--ink-soft);
+}
+
+.exercise-stills {
+  display: flex;
+  gap: var(--space-s);
+  width: 100%;
+}
+
+.exercise-stills .exercise-frame {
+  flex: 1;
+  max-height: 240px;
+}
+
+.labeled-row {
+  justify-content: space-between;
+  gap: var(--space-m);
+  width: 100%;
+}
+
+span.labeled-row {
+  display: flex;
+  align-items: baseline;
+}
+
+.chart-row {
+  display: block;
+}
+
+.instructions {
+  white-space: pre-line;
+}
+
+/* LineChart: the line and dots in ink, the values on the right, the first and last day below. */
+.line-chart {
+  position: relative;
+  margin: 0;
+  padding-right: 2.75rem;
+  padding-bottom: 1.25rem;
+}
+
+.line-chart svg {
+  display: block;
+  width: 100%;
+  height: 200px;
+  overflow: visible;
+}
+
+.chart-grid {
+  stroke: var(--track);
+  stroke-width: 1;
+}
+
+.chart-line {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.chart-point {
+  fill: var(--ink);
+}
+
+.chart-axis-values {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  color: var(--ink-soft);
+  font-size: 0.6875rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.chart-unit {
+  font-weight: 700;
+}
+
+.chart-axis-days {
+  position: absolute;
+  left: 0;
+  right: 2.75rem;
+  bottom: 0;
+  display: flex;
+  justify-content: space-between;
+  color: var(--ink-soft);
+  font-size: 0.6875rem;
+}
+
+/* Volume: a bar in ink per muscle, as long as its share of the most, with the number beside it. */
+.volume-chart {
+  display: block;
+}
+
+.bars {
+  display: grid;
+  grid-template-columns: minmax(0, auto) 1fr;
+  gap: var(--space-s) var(--space-m);
+  align-items: center;
+  margin: 0;
+}
+
+.bar-row {
+  display: contents;
+}
+
+.bars dt {
+  color: var(--ink-soft);
+  font-size: 0.8125rem;
+}
+
+.bars dd {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  margin: 0;
+  min-width: 0;
+}
+
+.bar {
+  height: 1.375rem;
+  border-radius: 0.25rem;
+  background-color: var(--ink);
+}
+
+.bar-value {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.value-field {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-s);
+  width: 100%;
+}
+
+.large-value {
+  flex: 1;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+/* Progress photos: a grid of tiles of 3 by 4 with their date on a chip. */
+.photos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-l);
+  padding: 0 var(--space-l) var(--space-xl);
+}
+
+.photos .footnote {
+  margin: 0;
+}
+
+.photos-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-s);
+}
+
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: var(--space-s);
+}
+
+.photo-tile {
+  position: relative;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background-color: var(--track);
+  cursor: pointer;
+}
+
+.photo-tile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photo-date {
+  position: absolute;
+  left: var(--space-s);
+  bottom: var(--space-s);
+  padding: var(--space-xs) var(--space-s);
+  border-radius: 999px;
+  background-color: var(--track);
+  color: var(--ink);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.photo-detail {
+  display: flex;
+  flex-direction: column;
+}
+
+.photo-large {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  object-fit: contain;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

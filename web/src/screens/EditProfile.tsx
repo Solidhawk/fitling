@@ -1,4 +1,3 @@
-import { ChevronsUpDown } from "lucide-react";
 import { useRef, useState } from "react";
 import type { Activity, BodyFields, FitlingCore, Goal, ProfileRules, Sex, Targets } from "../core/fitlingCore";
 import type { Body, Profile } from "../data/profileStore";
@@ -9,38 +8,8 @@ import { t } from "../i18n";
 import { activityKeys, goalKeys } from "../profileTexts";
 import { FormSheet } from "../ui/FormSheet";
 import { ListRow, ListSection } from "../ui/List";
+import { PickerRow } from "../ui/PickerRow";
 import { usesMetric } from "../units";
-
-/** A Picker in a Form: the label, the chosen value on the right, the choices when tapped. */
-function PickerRow<Value extends string>({
-  label,
-  value,
-  options,
-  onChange,
-}: {
-  label: string;
-  value: Value;
-  options: [Value, string][];
-  onChange: (value: Value) => void;
-}) {
-  return (
-    <ListRow>
-      <label className="labeled picker-row">
-        <span>{label}</span>
-        <span className="picker-value">
-          <select className="picker" value={value} onChange={(event) => onChange(event.target.value as Value)}>
-            {options.map(([option, title]) => (
-              <option key={option} value={option}>
-                {title}
-              </option>
-            ))}
-          </select>
-          <ChevronsUpDown className="picker-chevrons" aria-hidden="true" size={14} strokeWidth={2.4} />
-        </span>
-      </label>
-    </ListRow>
-  );
-}
 
 function NumberRow({ label, value, unit, testID, onChange }: { label: string; value: string; unit: string; testID: string; onChange: (text: string) => void }) {
   return (
