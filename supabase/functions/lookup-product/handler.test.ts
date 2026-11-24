@@ -142,3 +142,22 @@ Deno.test('limits calls per user per hour', async () => {
   assertEquals(limited.status, 429);
   assertEquals(await limited.json(), { error: 'rate_limited' });
 });
+
+// The web app calls from its own origin, so the browser asks first with OPTIONS (UNFORGET S35).
+Deno.test('the browser preflight is answered without a token', async () => {
+  const d = deps();
+  const response = await handle(new Request('http://localhost/lookup-product', { method: 'OPTIONS' }), d);
+  assertEquals(response.status, 204);
+  assertEquals(response.headers.get('Access-Control-Allow-Origin'), '*');
+  assertEquals(response.headers.get('Access-Control-Allow-Methods'), 'POST, OPTIONS');
+  assertEquals(
+    response.headers.get('Access-Control-Allow-Headers'),
+    'authorization, x-client-info, apikey, content-type',
+  );
+  assertEquals(d.sourceCalls, 0);
+});
+
+Deno.test('every answer can be read by the web app', async () => {
+  const unauthorized = await handle(new Request('http://localhost/lookup-product', { method: 'POST' }), deps());
+  assertEquals(unauthorized.headers.get('Access-Control-Allow-Origin'), '*');
+});

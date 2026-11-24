@@ -69,7 +69,7 @@ export function App() {
         />
       )}
       {screen.kind === "partnerSetup" && <PartnerSetup key={screen.userID} userID={screen.userID} onFinished={() => void refresh()} />}
-      {screen.kind === "home" && <Home />}
+      {screen.kind === "home" && <Home key={screen.userID} userID={screen.userID} auth={auth} />}
       {deletionFailed && <Alert title={t("error.server")} onClose={() => setDeletionFailed(false)} />}
       {resettingPassword && (
         <ResetPassword auth={auth} onDone={() => setResettingPassword(false)} onCancel={() => setResettingPassword(false)} />

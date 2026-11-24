@@ -1,10 +1,12 @@
 import { useState } from "react";
-import type { BodyFields, DailyPlanInput } from "../core/fitlingCore";
+import type { Activity, BodyFields, DailyPlanInput, Goal } from "../core/fitlingCore";
 import { useCore } from "../core/useCore";
+import { thirtyYearsBefore, today } from "../day";
 import { finishOnboarding } from "../data/saveProfile";
 import { supabase } from "../data/supabase";
-import { percent } from "../format";
+import { parseNumber, percent } from "../format";
 import { t } from "../i18n";
+import { activityKeys, goalKeys, orderedWarnings, warningKeys } from "../profileTexts";
 import { Alert } from "../ui/Alert";
 import { PrimaryButton, SecondaryButton } from "../ui/Buttons";
 import { List, ListRow, ListSection } from "../ui/List";
@@ -14,8 +16,6 @@ import { usesMetric } from "../units";
 
 const steps = ["consent", "birthDate", "sex", "height", "weight", "activity", "goal", "result"] as const;
 type Step = (typeof steps)[number];
-type Activity = DailyPlanInput["activityLevel"];
-type Goal = DailyPlanInput["goal"];
 
 const titles: Record<Step, string> = {
   consent: "consent.title",
@@ -27,49 +27,6 @@ const titles: Record<Step, string> = {
   goal: "onboarding.goal.title",
   result: "onboarding.result.title",
 };
-
-const activityKeys: Record<Activity, string> = {
-  sedentary: "onboarding.activity.sedentary",
-  light: "onboarding.activity.light",
-  moderate: "onboarding.activity.moderate",
-  active: "onboarding.activity.active",
-  very_active: "onboarding.activity.veryActive",
-};
-
-const goalKeys: Record<Goal, string> = {
-  lose: "onboarding.goal.lose",
-  build_muscle: "onboarding.goal.buildMuscle",
-  maintain: "onboarding.goal.maintain",
-  recomp: "onboarding.goal.recomp",
-};
-
-const warningKeys: Record<string, string> = {
-  below_floor: "targets.warning.belowFloor",
-  below_common_minimum: "targets.warning.low",
-  large_deficit: "targets.warning.largeDeficit",
-};
-
-/** Today where the user is, as "2026-11-24". */
-function today(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-}
-
-/** The same day thirty years back, where the date picker opens (BirthDayPicking.day). */
-function thirtyYearsBefore(day: string): string {
-  const [year, month, date] = day.split("-").map(Number);
-  const candidate = new Date(Date.UTC(year - 30, month - 1, date));
-  // 29 February becomes 28 February.
-  if (candidate.getUTCMonth() !== month - 1) candidate.setUTCDate(0);
-  return candidate.toISOString().slice(0, 10);
-}
-
-/** A number as typed, with a comma or a point; empty is nothing. */
-function parseNumber(text: string): number | undefined {
-  if (text.trim() === "") return undefined;
-  const value = Number(text.replace(",", "."));
-  return Number.isFinite(value) ? value : undefined;
-}
 
 /**
  * The eight onboarding steps, each pushed on the previous one (OnboardingFlowView.swift and
@@ -269,11 +226,9 @@ export function Onboarding({ userID, onFinished, onDeleteAccount }: { userID: st
           {step === "result" && plan && (
             <ListSection header={<TargetsCard targets={plan.targets} shares={core.kcalShares(plan.targets)} />}>
               {plan.floorApplied && <ListRow>{t("targets.floor")}</ListRow>}
-              {["below_floor", "below_common_minimum", "large_deficit"]
-                .filter((warning) => plan.warnings.includes(warning))
-                .map((warning) => (
-                  <ListRow key={warning}>{t(warningKeys[warning])}</ListRow>
-                ))}
+              {orderedWarnings(plan.warnings).map((warning) => (
+                <ListRow key={warning}>{t(warningKeys[warning])}</ListRow>
+              ))}
               <ListRow>{t("onboarding.result.footer")}</ListRow>
             </ListSection>
           )}

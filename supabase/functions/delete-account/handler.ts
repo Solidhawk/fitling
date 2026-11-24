@@ -9,8 +9,18 @@ export type Deps = {
 
 export type Config = { url: string; secretKey: string };
 
+/**
+ * The web app calls from its own origin, so the browser asks first with OPTIONS (UNFORGET S35). The token in the
+ * Authorization header is the only credential, so any origin may ask.
+ */
+export const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
 function json(status: number, body: unknown): Response {
-  return Response.json(body, { status });
+  return Response.json(body, { status, headers: corsHeaders });
 }
 
 /** The settings the function cannot work without, or the names of those that are missing. */
@@ -44,6 +54,7 @@ async function appleAuthorizationCode(req: Request): Promise<string | null> {
 }
 
 export async function handle(req: Request, deps: Deps): Promise<Response> {
+  if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders });
   const header = req.headers.get('Authorization') ?? '';
   const token = header.startsWith('Bearer ') ? header.slice('Bearer '.length).trim() : '';
   if (token === '') return json(401, { error: 'unauthorized' });

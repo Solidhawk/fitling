@@ -61,6 +61,18 @@ test("underageCannotContinue", async ({ page }) => {
   await expect(page.getByRole("button", { name: nl("onboarding.underage.delete") })).toBeVisible();
 });
 
+// AppFlowTests.underageDeletionClosesWhenSignedOut: the account goes, the app shows Welcome.
+test("underageDeletionLeadsToWelcome", async ({ page }) => {
+  const user = await start(page);
+  await page.getByTestId("consent.agree").check();
+  await next(page, "consent");
+  await page.getByTestId("input.birthDate").fill("2015-01-01");
+  await page.getByRole("button", { name: nl("onboarding.underage.delete") }).click();
+  await expect(page.locator('[data-screen="welcome"]')).toBeAttached();
+  const { data } = await admin.auth.admin.getUserById(user.id);
+  expect(data.user).toBeNull();
+});
+
 test("saveFailureShowsServerError", async ({ page }) => {
   const user = await start(page);
   await page.getByTestId("consent.agree").check();

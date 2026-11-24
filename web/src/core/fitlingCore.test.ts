@@ -75,3 +75,11 @@ test("the target of a day and a new partner", async () => {
   expect(targets).toEqual(second);
   expect(core.creature({ level: 1 })).toEqual({ startShape: 0.3, colorCount: 3, growthStage: 0 });
 });
+
+test("the rules Dagdoel shows and the ranges of typed targets", async () => {
+  const core = await loadCore(wasm);
+  const rules = core.profileRules();
+  expect(rules.activityFactors.moderate).toBe(1.55);
+  expect(rules.proteinPerKg.maintain).toBe(1.6);
+  expect(rules.targetLimits).toEqual({ kcal: [1, 20000], proteinG: [0, 1000], carbsG: [0, 5000], fatG: [0, 2000] });
+});

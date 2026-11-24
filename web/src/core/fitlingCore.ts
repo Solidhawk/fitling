@@ -47,6 +47,14 @@ export interface BodyInputAnswer {
 
 export type Sex = DailyPlanInput["sex"];
 export type Goal = DailyPlanInput["goal"];
+export type Activity = DailyPlanInput["activityLevel"];
+
+export interface ProfileRules {
+  activityFactors: Record<Activity, number>;
+  proteinPerKg: Record<Goal, number>;
+  /** Lowest and highest value of each target the user may type. */
+  targetLimits: Record<keyof Targets, [number, number]>;
+}
 
 /** The rules of FitlingCore, the same code as in the iOS app (D-24). */
 export interface FitlingCore {
@@ -59,6 +67,7 @@ export interface FitlingCore {
   targetsOnDay(input: { day: IsoDay; fallback: Targets; periods: { effectiveOn: IsoDay; updatedAtMs: number; targets: Targets }[] }): Targets;
   creature(input: { level: number }): { startShape: number; colorCount: number; growthStage: number };
   goalFactors(): Record<Goal, number>;
+  profileRules(): ProfileRules;
 }
 
 interface Exports {
@@ -105,5 +114,6 @@ export async function loadCore(wasm: ArrayBuffer): Promise<FitlingCore> {
     targetsOnDay: (input) => call("targetsOnDay", input) as Targets,
     creature: (input) => call("creature", input) as ReturnType<FitlingCore["creature"]>,
     goalFactors: () => call("goalFactors", {}) as Record<Goal, number>,
+    profileRules: () => call("profileRules", {}) as ProfileRules,
   };
 }

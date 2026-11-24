@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useCore } from "../core/useCore";
 import { saveCreature, type Tone } from "../data/saveCreature";
+import { today } from "../day";
 import { supabase } from "../data/supabase";
 import { t } from "../i18n";
 import { hue } from "../partner/framing";
@@ -15,12 +16,6 @@ import { NamePlate } from "../ui/NamePlate";
 import { NavBar } from "../ui/NavBar";
 
 const tones: Tone[] = ["sweet", "funny", "coach"];
-
-/** Today where the user is, as "2026-11-24". */
-function today(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-}
 
 /**
  * Choosing a partner: species, name, colour and the voice of its reminders (PartnerSetupView.swift and

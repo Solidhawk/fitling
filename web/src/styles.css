@@ -777,3 +777,307 @@ p {
   height: 100%;
   border-radius: 50%;
 }
+
+/* The system red of a destructive action, in its higher-contrast form so it reads on a card. */
+:root {
+  --destructive: #d70015;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --destructive: #ff6961;
+  }
+}
+
+.destructive {
+  color: var(--destructive);
+}
+
+/* A tab's own screens inside the page column: the list takes the column's width, a pushed screen starts at the top. */
+.tab-page .list {
+  padding-right: 0;
+  padding-left: 0;
+}
+
+.tab-page.pushed {
+  margin: calc(-1 * max(1rem, env(safe-area-inset-top))) -1rem 0;
+}
+
+.tab-page.pushed .list {
+  padding: 0 var(--space-l) var(--space-xl);
+}
+
+.tab-page.loading,
+.tab-page.unavailable {
+  min-height: 60dvh;
+}
+
+/* The bar above a large title, with its action on the right (toolbar on iOS). */
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 2.75rem;
+}
+
+.toolbar + .large-title {
+  margin-top: 0;
+}
+
+.nav-action {
+  padding: 0 var(--space-s);
+}
+
+.nav-confirm {
+  font-weight: 700;
+}
+
+.nav-back:disabled {
+  color: var(--ink-soft);
+  cursor: default;
+}
+
+/* Menu: a short list of actions under its button. */
+.menu {
+  position: relative;
+}
+
+.menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 14;
+}
+
+.menu-items {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 15;
+  min-width: 15rem;
+  overflow: hidden;
+  border-radius: 0.875rem;
+  background-color: var(--card);
+  box-shadow: 0 8px 30px rgb(0 0 0 / 0.2);
+}
+
+.menu-item {
+  display: block;
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0 var(--space-l);
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.menu-item + .menu-item {
+  border-top: 1px solid var(--track);
+}
+
+/* confirmationDialog: the question and its actions in one group, Cancel apart below them. */
+.action-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background-color: rgb(0 0 0 / 0.3);
+}
+
+.action-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-s);
+  width: min(30rem, 100%);
+  padding: var(--space-s) var(--space-s) max(var(--space-s), env(safe-area-inset-bottom));
+}
+
+.action-sheet-group {
+  overflow: hidden;
+  border-radius: 0.875rem;
+  background-color: var(--card);
+  text-align: center;
+}
+
+.action-sheet-title {
+  margin: 0;
+  padding: var(--space-m) var(--space-l) var(--space-s);
+  color: var(--ink-soft);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.action-sheet-message {
+  margin: 0;
+  padding: 0 var(--space-l) var(--space-m);
+  color: var(--ink-soft);
+  font-size: 0.8125rem;
+}
+
+.action-sheet-button {
+  width: 100%;
+  min-height: 3.5rem;
+  border: 0;
+  border-top: 1px solid var(--track);
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 1.25rem;
+  cursor: pointer;
+}
+
+.action-sheet-button.destructive {
+  color: var(--destructive);
+}
+
+.action-sheet-cancel {
+  border: 0;
+  border-radius: 0.875rem;
+  background-color: var(--card);
+  font-weight: 600;
+}
+
+/* ProfileView: the build-up card as wide as the rows, its notes under it in footnote. */
+.profile-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-m);
+  margin-bottom: var(--space-m);
+}
+
+.note {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-xs);
+  margin: 0 var(--space-l);
+  color: var(--ink);
+  font-size: 0.8125rem;
+}
+
+.note svg {
+  flex: none;
+  margin-top: 1px;
+}
+
+/* TargetBuildUp: steps as wide as their share of the largest number; at large text each takes the full width. */
+.build-up {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-s);
+}
+
+.build-step-width {
+  width: max(calc(var(--share) * 100%), min(100%, 10rem));
+}
+
+.build-step {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-xs);
+  min-height: 2.75rem;
+  padding: var(--space-s) var(--space-l);
+  border-radius: var(--radius-ribbon);
+  background-color: var(--track);
+}
+
+.build-step-label {
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.build-step-value {
+  font-size: 1.25rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.build-factor {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  margin: 0;
+  padding-left: var(--space-l);
+  color: var(--ink-soft);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.build-target {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: center;
+  align-items: baseline;
+  justify-content: space-between;
+  column-gap: var(--space-s);
+  min-height: 56px;
+  padding: var(--space-m) var(--space-l);
+  border-radius: var(--radius-ribbon);
+  background-color: var(--ink);
+  color: var(--card);
+}
+
+.build-target-label {
+  font-size: 0.9375rem;
+  font-weight: 700;
+}
+
+.build-target-value {
+  font-size: 1.75rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.build-up .macro-blocks {
+  margin-top: var(--space-s);
+}
+
+/* LabeledContent: the label on the left, the value on the right. */
+.labeled {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-m);
+  width: 100%;
+}
+
+.value {
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+/* A Picker or DatePicker in a Form: the chosen value in soft ink on the right. */
+.picker {
+  min-height: 2.75rem;
+  border: 0;
+  background: none;
+  color: var(--ink-soft);
+  font: inherit;
+  text-align: right;
+  cursor: pointer;
+}
+
+/* AboutView: a source and its website, the link tall enough for a finger. */
+.source {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.source-link {
+  display: flex;
+  align-items: center;
+  min-height: 2.75rem;
+  color: var(--ink);
+  font-size: 0.8125rem;
+  text-decoration: none;
+}
+
+.source-link:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}

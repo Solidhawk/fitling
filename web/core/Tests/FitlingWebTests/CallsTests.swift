@@ -127,4 +127,21 @@ import Testing
         #expect(number(factors["maintain"]) == 1.0)
         #expect(number(factors["recomp"]) == 0.95)
     }
+
+    /// What Dagdoel shows of how the target is built, and the ranges a typed target may take.
+    @Test func profileRulesAreTheRulesOwn() throws {
+        let rules = try answer("profileRules", "{}")
+        let activity = try #require(rules["activityFactors"] as? [String: Any])
+        #expect(number(activity["sedentary"]) == 1.2)
+        #expect(number(activity["moderate"]) == 1.55)
+        #expect(number(activity["very_active"]) == 1.9)
+        let protein = try #require(rules["proteinPerKg"] as? [String: Any])
+        #expect(number(protein["maintain"]) == 1.6)
+        #expect(number(protein["recomp"]) == 2.2)
+        let limits = try #require(rules["targetLimits"] as? [String: Any])
+        #expect((limits["kcal"] as? [Any])?.compactMap(number) == [1, 20000])
+        #expect((limits["proteinG"] as? [Any])?.compactMap(number) == [0, 1000])
+        #expect((limits["carbsG"] as? [Any])?.compactMap(number) == [0, 5000])
+        #expect((limits["fatG"] as? [Any])?.compactMap(number) == [0, 2000])
+    }
 }

@@ -20,6 +20,7 @@ public func handle(_ request: Data) -> Data {
         case "targetsOnDay": return try encode(targetsOnDay(try input(request)))
         case "creature": return try encode(creature(try input(request)))
         case "goalFactors": return try encode(goalFactors())
+        case "profileRules": return try encode(profileRules())
         default:
             return failure("unknown function \(call.fn)")
         }
@@ -249,4 +250,24 @@ func creature(_ request: CreatureRequest) throws -> CreatureAnswer {
 /// Each goal's factor on the total expenditure, so the onboarding text names the same share as the rule.
 func goalFactors() -> [String: Double] {
     Dictionary(uniqueKeysWithValues: Goal.allCases.map { ($0.rawValue, $0.kcalFactor) })
+}
+
+struct ProfileRules: Encodable {
+    let activityFactors: [String: Double]
+    let proteinPerKg: [String: Double]
+    /// Lowest and highest value of each target the user may type (EditTargetsView).
+    let targetLimits: [String: [Int]]
+}
+
+func profileRules() -> ProfileRules {
+    ProfileRules(
+        activityFactors: Dictionary(uniqueKeysWithValues: ActivityLevel.allCases.map { ($0.rawValue, $0.multiplier) }),
+        proteinPerKg: Dictionary(uniqueKeysWithValues: Goal.allCases.map { ($0.rawValue, $0.proteinPerKg) }),
+        targetLimits: [
+            "kcal": [Limits.kcal.lowerBound, Limits.kcal.upperBound],
+            "proteinG": [Limits.proteinG.lowerBound, Limits.proteinG.upperBound],
+            "carbsG": [Limits.carbsG.lowerBound, Limits.carbsG.upperBound],
+            "fatG": [Limits.fatG.lowerBound, Limits.fatG.upperBound],
+        ]
+    )
 }
