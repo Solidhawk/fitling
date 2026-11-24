@@ -1,3 +1,4 @@
+import { ChevronsUpDown } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import type { Activity, BodyFields, FitlingCore, Goal, ProfileRules, Sex, Targets } from "../core/fitlingCore";
 import type { Body, Profile } from "../data/profileStore";
@@ -60,13 +61,16 @@ function PickerRow<Value extends string>({
     <ListRow>
       <label className="labeled picker-row">
         <span>{label}</span>
-        <select className="picker" value={value} onChange={(event) => onChange(event.target.value as Value)}>
-          {options.map(([option, title]) => (
-            <option key={option} value={option}>
-              {title}
-            </option>
-          ))}
-        </select>
+        <span className="picker-value">
+          <select className="picker" value={value} onChange={(event) => onChange(event.target.value as Value)}>
+            {options.map(([option, title]) => (
+              <option key={option} value={option}>
+                {title}
+              </option>
+            ))}
+          </select>
+          <ChevronsUpDown className="picker-chevrons" aria-hidden="true" size={14} strokeWidth={2.4} />
+        </span>
       </label>
     </ListRow>
   );
@@ -195,10 +199,11 @@ export function EditTargets({
   onCancel: () => void;
 }) {
   const [texts, setTexts] = useState<Record<keyof Targets, string>>({
-    kcal: String(targets.kcal),
-    proteinG: String(targets.proteinG),
-    carbsG: String(targets.carbsG),
-    fatG: String(targets.fatG),
+    // Grouped as the number fields on iOS show them: "2.760".
+    kcal: decimal(targets.kcal, 0),
+    proteinG: decimal(targets.proteinG, 0),
+    carbsG: decimal(targets.carbsG, 0),
+    fatG: decimal(targets.fatG, 0),
   });
   const [showsRangeError, setShowsRangeError] = useState(false);
 

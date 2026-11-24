@@ -60,7 +60,7 @@ export function Account({ auth, onBack, onOpen }: { auth: AuthService; onBack: (
 
   return (
     <div className="tab-page pushed" data-page="account">
-      <NavBar title={t("account.title")} back={t("profile.title")} onBack={onBack} />
+      <NavBar title={t("account.title")} back={t("profile.title")} onBack={onBack} large />
       <List>
         <ListSection footer={<span className="message">{t(exportFailed ? "account.export.failed" : "account.export.footer")}</span>}>
           <ListRow onClick={() => void exportData()} disabled={exporting}>
@@ -107,7 +107,7 @@ export function DeleteAccount({ auth, onBack }: { auth: AuthService; onBack: () 
 
   return (
     <div className="tab-page pushed" data-page="deleteAccount">
-      <NavBar title={t("account.delete")} back={t("account.title")} onBack={onBack} />
+      <NavBar title={t("account.delete")} back={t("account.title")} onBack={onBack} large />
       <List>
         <ListSection>
           <ListRow>{t("account.delete.body")}</ListRow>
@@ -142,7 +142,7 @@ const sources: [key: string, name: string, url: string][] = [
 export function About({ onBack }: { onBack: () => void }) {
   return (
     <div className="tab-page pushed" data-page="about">
-      <NavBar title={t("account.about")} back={t("account.title")} onBack={onBack} />
+      <NavBar title={t("account.about")} back={t("account.title")} onBack={onBack} large />
       <List>
         <ListSection header={t("account.about.sources")}>
           {sources.map(([key, name, url]) => (

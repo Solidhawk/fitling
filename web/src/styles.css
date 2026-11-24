@@ -528,6 +528,11 @@ p {
   width: 100%;
 }
 
+/* The unit stays whole beside its number. */
+.number-row > .secondary {
+  flex: none;
+}
+
 .number-field {
   font-size: 1.25rem;
   font-weight: 600;
@@ -843,8 +848,15 @@ p {
   padding-left: 0;
 }
 
-.tab-page.pushed {
-  margin: calc(-1 * max(1rem, env(safe-area-inset-top))) -1rem 0;
+/* A pushed screen starts at the top edge with its own bar, so the page column drops its margins for it. */
+.page:has(.tab-page.pushed) {
+  padding-top: 0;
+  padding-right: 0;
+  padding-left: 0;
+}
+
+.tab-page.pushed .large-title {
+  margin: 0 var(--space-l) var(--space-s);
 }
 
 .tab-page.pushed .list {
@@ -1100,16 +1112,53 @@ p {
   flex-wrap: wrap;
 }
 
+.picker-value {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  min-width: 0;
+  margin-left: auto;
+  color: var(--ink-soft);
+}
+
 .picker {
   max-width: 100%;
   min-width: 0;
   min-height: 2.75rem;
   border: 0;
   background: none;
-  color: var(--ink-soft);
+  color: inherit;
   font: inherit;
   text-align: right;
   cursor: pointer;
+  appearance: none;
+}
+
+/* The menu-style Picker: the chosen value with the up-and-down chevrons after it. */
+select.picker {
+  padding-right: 1.125rem;
+}
+
+.picker-chevrons {
+  position: absolute;
+  right: 0;
+  pointer-events: none;
+}
+
+/* The compact DatePicker: the date in a pale capsule, in ink. */
+input.picker[type="date"] {
+  min-height: auto;
+  padding: 0.25rem 0.625rem;
+  border-radius: 0.5rem;
+  background-color: var(--track);
+  color: var(--ink);
+}
+
+/* A Form row with a field is as low as on iOS; the field itself stays 44 px tall. */
+.sheet .list-row:has(input, select) {
+  padding-top: 0;
+  padding-bottom: 0;
 }
 
 /* AboutView: a source and its website, the link tall enough for a finger. */
