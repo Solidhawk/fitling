@@ -38,7 +38,9 @@ async function check(page: Page, mode: Mode, name: string, project: string) {
         if (box.width === 0) continue;
         const visible = getComputedStyle(element).overflowX === "visible";
         const outside = box.right > width + 1 || box.left < -1;
-        const textOut = visible && element.clientWidth > 0 && element.scrollWidth > element.clientWidth + 1;
+        // A long value scrolls inside its field, as in a TextField on iOS; the field itself must stay on screen.
+        const field = element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement;
+        const textOut = visible && !field && element.clientWidth > 0 && element.scrollWidth > element.clientWidth + 1;
         if (outside || textOut) found.push(`${element.tagName.toLowerCase()}.${element.className}`);
       }
       return found.slice(0, 6);
