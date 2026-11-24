@@ -1,5 +1,5 @@
 import { ChevronsUpDown, CircleEllipsis, Info, Plus } from "lucide-react";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import type { FitlingCore, WorkoutEntry } from "../core/fitlingCore";
 import { supabase } from "../data/supabase";
 import { discardWorkout, finishWorkout, logSet, removeSet, type TrainingRows } from "../data/training";
@@ -67,9 +67,14 @@ export function Workout({
   const [busy, setBusy] = useState(false);
   useDialogFocus(sheet, () => undefined);
 
-  const input = trainingInput(userID, rows);
+  const input = useMemo(() => trainingInput(userID, rows), [userID, rows]);
   const session = rows.sessions.find((candidate) => candidate.id === sessionID);
-  const workout = session ? core.workout({ training: input, sessionID, added, usesPounds: pounds }) : undefined;
+  const workout = useMemo(
+    () => (session ? core.workout({ training: input, sessionID, added, usesPounds: pounds }) : undefined),
+    [core, input, session, sessionID, added, pounds],
+  );
+  // The next set goes after the last one, also before the read after a quick second set is back.
+  const nextPosition = useRef(0);
   const entries = workout?.entries ?? [];
   const sets = rows.sets.filter((set) => set.sessionID === sessionID).sort((a, b) => a.position - b.position);
 
@@ -85,9 +90,11 @@ export function Workout({
     });
   }
 
-  const draftOf = (entry: WorkoutEntry): Draft => drafts[entry.exerciseID] ?? { weight: "", reps: "", isWarmup: false };
+  const empty: Draft = { weight: "", reps: "", isWarmup: false };
+  const draftOf = (entry: WorkoutEntry): Draft => drafts[entry.exerciseID] ?? empty;
+  // From the latest drafts, not those of this render: what is typed while a set is saved stays.
   const change = (entry: WorkoutEntry, patch: Partial<Draft>) =>
-    setDrafts((shown) => ({ ...shown, [entry.exerciseID]: { ...draftOf(entry), ...patch } }));
+    setDrafts((shown) => ({ ...shown, [entry.exerciseID]: { ...(shown[entry.exerciseID] ?? empty), ...patch } }));
 
   function stored(entry: WorkoutEntry) {
     const draft = draftOf(entry);
@@ -100,6 +107,7 @@ export function Workout({
     });
   }
 
+  /** Log is free again once the write is done; reading everything back follows without holding it. */
   async function act(work: () => Promise<unknown>) {
     setBusy(true);
     try {
@@ -107,8 +115,8 @@ export function Workout({
     } catch (error) {
       setFailed(error instanceof Error ? error.message : "error.server");
     }
-    await onChanged();
     setBusy(false);
+    await onChanged();
   }
 
   /** Stores the draft as a set; a working set starts the rest timer, and RPE is asked again for the next one. */
@@ -116,7 +124,8 @@ export function Workout({
     const set = stored(entry);
     if (!set.canLog || busy) return;
     const draft = draftOf(entry);
-    const position = Math.max(-1, ...sets.map((candidate) => candidate.position)) + 1;
+    const position = Math.max(nextPosition.current, Math.max(-1, ...sets.map((candidate) => candidate.position)) + 1);
+    nextPosition.current = position + 1;
     void act(async () => {
       await logSet(supabase, userID, { sessionID, exerciseID: entry.exerciseID, position, weightKg: set.weightKg, reps: set.reps, rpe: set.rpe, isWarmup: draft.isWarmup }, new Date());
       if (!draft.isWarmup) setRestEndsAt(Date.now() + entry.restSeconds * 1000);

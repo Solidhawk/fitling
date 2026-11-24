@@ -62,11 +62,21 @@ export async function removePhoto(id: string): Promise<void> {
   await run("readwrite", (photos) => photos.delete(id));
 }
 
-/** On signing out and when the account is deleted. */
+/** On signing out on request, when the account is deleted and when another user signs in. */
 export async function removeAllPhotos(): Promise<void> {
+  if (typeof indexedDB === "undefined") return;
   await new Promise<void>((resolve) => {
     const request = indexedDB.deleteDatabase(database);
     // A blocked delete finishes once open tabs close; signing out does not wait for that.
     request.onsuccess = request.onerror = request.onblocked = () => resolve();
   });
+}
+
+/** The most pixels a canvas holds in Safari on an iPhone; a photo of 24 or 48 megapixels is scaled to fit. */
+export const largestCanvasPixels = 16_777_216;
+
+/** The size to store a picked photo at: as it is, or scaled down with its shape kept to fit the canvas. */
+export function fittingSize(width: number, height: number): { width: number; height: number } {
+  const scale = Math.min(1, Math.sqrt(largestCanvasPixels / Math.max(width * height, 1)));
+  return { width: Math.floor(width * scale), height: Math.floor(height * scale) };
 }

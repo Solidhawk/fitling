@@ -1,5 +1,5 @@
 import { Activity, BicepsFlexed, Dumbbell, PersonStanding, Search, StretchHorizontal, Weight } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { FitlingCore, TrainingInput } from "../core/fitlingCore";
 import type { TrainingRows } from "../data/training";
 import { t } from "../i18n";
@@ -65,9 +65,10 @@ export function ExercisePicker({
   const [repMin, setRepMin] = useState(8);
   const [repMax, setRepMax] = useState(12);
   const [rest, setRest] = useState(120);
-  const all = core.trainingExercises({ training: input });
+  const all = useMemo(() => core.trainingExercises({ training: input }), [core, input]);
+  const keys = useMemo(() => all.map((exercise) => core.searchKey({ text: exercise.name }).key), [core, all]);
   const term = core.searchKey({ text: query }).key;
-  const matches = term === "" ? all : all.filter((exercise) => core.searchKey({ text: exercise.name }).key.includes(term));
+  const matches = term === "" ? all : all.filter((_, index) => keys[index].includes(term));
 
   function choose(exercise: (typeof all)[number]) {
     setChosen(exercise);

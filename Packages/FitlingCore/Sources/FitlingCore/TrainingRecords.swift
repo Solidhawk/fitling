@@ -304,6 +304,11 @@ public struct TrainingRecords: Sendable {
 
     // MARK: Workouts
 
+    /// A workout by its id, finished or not.
+    public func session(_ id: UUID) -> SessionRecord? {
+        sessionsByID[id]
+    }
+
     /// A workout that was started and not finished, if there is one.
     public func activeSession() -> SessionRecord? {
         sessionRows.filter { $0.endedAt == nil }.max { $0.startedAt < $1.startedAt }

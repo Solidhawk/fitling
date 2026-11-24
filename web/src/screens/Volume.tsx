@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { FitlingCore, TrainingInput } from "../core/fitlingCore";
 import { language, t } from "../i18n";
 import { muscleName } from "../training/texts";
@@ -9,7 +9,7 @@ import { Segmented } from "../ui/Segmented";
 /** Working sets per muscle in this week or the last, as bars in ink with their number beside them (VolumeView on iOS). */
 export function Volume({ core, input, onBack }: { core: FitlingCore; input: TrainingInput; onBack: () => void }) {
   const [lastWeek, setLastWeek] = useState(false);
-  const bars = core.weeklyVolume({ training: input, lastWeek });
+  const bars = useMemo(() => core.weeklyVolume({ training: input, lastWeek }), [core, input, lastWeek]);
   const most = Math.max(1, ...bars.map((bar) => bar.sets));
   const number = new Intl.NumberFormat(language(), { maximumFractionDigits: 1 });
   return (

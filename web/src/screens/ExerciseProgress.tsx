@@ -1,4 +1,4 @@
-import { type ComponentProps, useRef, useState } from "react";
+import { type ComponentProps, useMemo, useRef, useState } from "react";
 import type { FitlingCore, TrainingInput } from "../core/fitlingCore";
 import { supabase } from "../data/supabase";
 import { saveStep, type TrainingRows } from "../data/training";
@@ -28,7 +28,7 @@ export function ExerciseProgressList({
   onBack: () => void;
   onOpen: (exerciseID: string) => void;
 }) {
-  const exercises = core.trainingExercises({ training: input }).filter((exercise) => exercise.done);
+  const exercises = useMemo(() => core.trainingExercises({ training: input }).filter((exercise) => exercise.done), [core, input]);
   return (
     <div className="tab-page pushed" data-page="exerciseProgressList">
       <NavBar title={t("training.progress.exercises")} back={t("training.title")} onBack={onBack} large />
@@ -73,7 +73,7 @@ export function ExerciseProgress({
   onChanged: () => Promise<void>;
 }) {
   const pounds = usesPounds();
-  const progress = core.exerciseProgress({ training: input, exerciseID });
+  const progress = useMemo(() => core.exerciseProgress({ training: input, exerciseID }), [core, input, exerciseID]);
   const exercise = input.exercises.find((candidate) => candidate.id === exerciseID);
   const name = exercise ? core.localizedText({ values: exercise.name, languages: input.languages }).text : "";
   const instructions = core.localizedText({ values: rows.instructions[exerciseID] ?? {}, languages: input.languages }).text;

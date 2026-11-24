@@ -44,6 +44,7 @@ struct ExerciseProgressView: View {
     let store: TrainingStore
     @State private var history: [ExerciseSession] = []
     @State private var step: Double = 2.5
+    @State private var advice: ProgressionAdvice = .findStartingWeight
     private let unit = WeightUnit(locale: .current)
 
     init(exercise: Exercise, store: TrainingStore) {
@@ -109,7 +110,7 @@ struct ExerciseProgressView: View {
             .listRowBackground(Color.card)
 
             Section {
-                Text(store.adviceAfterLastWorkout(for: exercise).text(unit: unit))
+                Text(advice.text(unit: unit))
                 Stepper(value: $step, in: 0.25...25, step: 0.25) {
                     Text("training.step.label \(unit.format(kilograms: step))")
                 }
@@ -117,6 +118,7 @@ struct ExerciseProgressView: View {
                     // Opening the screen sets the stepper too; only a real change is stored.
                     if value != store.setting(for: exercise.id)?.stepKg ?? exercise.defaultStepKg {
                         store.saveStep(value, for: exercise)
+                        advice = store.adviceAfterLastWorkout(for: exercise)
                     }
                 }
             } header: {
@@ -137,7 +139,9 @@ struct ExerciseProgressView: View {
         .groundBackground()
         .navigationTitle(Text(verbatim: exercise.name.text(preferring: Locale.preferredLanguages)))
         .onAppear {
-            history = store.history(of: exercise.id)
+            let records = store.records()
+            history = records.history(of: exercise.id)
+            advice = records.adviceAfterLastWorkout(for: exercise.trainingRecord)
             step = store.setting(for: exercise.id)?.stepKg ?? exercise.defaultStepKg
         }
     }

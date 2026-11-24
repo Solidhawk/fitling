@@ -1,6 +1,6 @@
 import { Plus } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { addPhoto, listPhotos, type Photo, removePhoto } from "../data/photos";
+import { addPhoto, fittingSize, listPhotos, type Photo, removePhoto } from "../data/photos";
 import { today } from "../day";
 import { language, t } from "../i18n";
 import { ActionSheet } from "../ui/ActionSheet";
@@ -15,10 +15,11 @@ async function jpeg(file: File): Promise<Blob | undefined> {
     const image = new Image();
     image.src = url;
     await image.decode();
+    const size = fittingSize(image.naturalWidth, image.naturalHeight);
     const canvas = document.createElement("canvas");
-    canvas.width = image.naturalWidth;
-    canvas.height = image.naturalHeight;
-    canvas.getContext("2d")?.drawImage(image, 0, 0);
+    canvas.width = size.width;
+    canvas.height = size.height;
+    canvas.getContext("2d")?.drawImage(image, 0, 0, size.width, size.height);
     return await new Promise<Blob | undefined>((resolve) => canvas.toBlob((blob) => resolve(blob ?? undefined), "image/jpeg", 0.85));
   } catch {
     return undefined;

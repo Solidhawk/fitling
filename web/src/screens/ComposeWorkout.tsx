@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { FitlingCore, TrainingInput, WorkoutPlan } from "../core/fitlingCore";
 import type { TrainingRows } from "../data/training";
 import { language, t } from "../i18n";
@@ -49,10 +49,10 @@ export function ComposeWorkout({
   onCancel: () => void;
   onChanged: () => Promise<void>;
 }) {
-  const choices = core.trainingChoices();
+  const choices = useMemo(() => core.trainingChoices(), [core]);
   const [minutes, setMinutes] = useState(() => rememberedMinutes(choices));
   const [focus, setFocus] = useState(initial);
-  const plan = core.composePlan({ training: input, focus, minutes });
+  const plan = useMemo(() => core.composePlan({ training: input, focus, minutes }), [core, input, focus, minutes]);
   // A planned exercise opens its animation and progress over the sheet, as a NavigationLink on iOS.
   const [opened, setOpened] = useState<string>();
   return (

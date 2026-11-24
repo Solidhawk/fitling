@@ -1,5 +1,5 @@
 import { ArrowLeftRight, ChartLine, ChartNoAxesColumn, CircleArrowUp, CircleCheck, CirclePlay, Images, List as ListIcon, Plus, Scale } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { TrainingOverview } from "../core/fitlingCore";
 import { useCore } from "../core/useCore";
 import { supabase } from "../data/supabase";
@@ -63,8 +63,10 @@ export function Training({ userID }: { userID: string }) {
 
   useEffect(() => window.scrollTo(0, 0), [path.length]);
 
-  const input = rows ? trainingInput(userID, rows) : undefined;
-  const overview = core && input ? core.trainingOverview({ training: input }) : undefined;
+  const input = useMemo(() => (rows ? trainingInput(userID, rows) : undefined), [rows, userID]);
+  const overview = useMemo(() => (core && input ? core.trainingOverview({ training: input }) : undefined), [core, input]);
+  // One start at a time: a double tap on Start makes one workout, not two.
+  const starting = useRef(false);
 
   async function act(work: () => Promise<void>) {
     try {
@@ -81,7 +83,16 @@ export function Training({ userID }: { userID: string }) {
       setWorkout(overview.active.id);
       return;
     }
-    void act(async () => setWorkout(await startWorkout(supabase, userID, dayID, today(), new Date())));
+    if (starting.current) return;
+    starting.current = true;
+    let id: string | undefined;
+    // Opened once it is read back, so FitlingCore knows it.
+    void act(async () => {
+      id = await startWorkout(supabase, userID, dayID, today(), new Date());
+    }).then(() => {
+      starting.current = false;
+      if (id) setWorkout(id);
+    });
   }
 
   /** The composed workout as a day of its own, then started (TrainingViewModel.startComposed). */
@@ -91,7 +102,9 @@ export function Training({ userID }: { userID: string }) {
       setWorkout(overview.active.id);
       return;
     }
-    if (!rows) return;
+    if (!rows || starting.current) return;
+    starting.current = true;
+    let id: string | undefined;
     void act(async () => {
       const dayID = await composeWorkout(
         supabase,
@@ -101,7 +114,10 @@ export function Training({ userID }: { userID: string }) {
         { program: t("training.compose.program"), day: focusTitle(choice.focus), language: typingLanguage() },
         new Date(),
       );
-      setWorkout(await startWorkout(supabase, userID, dayID, today(), new Date()));
+      id = await startWorkout(supabase, userID, dayID, today(), new Date());
+    }).then(() => {
+      starting.current = false;
+      if (id) setWorkout(id);
     });
   }
 

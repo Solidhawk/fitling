@@ -51,11 +51,14 @@ final class WorkoutViewModel {
     private(set) var isFinished = false
 
     private let store: TrainingStore
+    /// The rows FitlingCore reads, once per reload: advice and rules leave this workout out, so they hold while typing.
+    private var training: TrainingRecords
 
     init(session: WorkoutSession, store: TrainingStore, unit: WeightUnit = WeightUnit(locale: .current)) {
         self.session = session
         self.store = store
         self.unit = unit
+        training = store.records()
         if let dayID = session.programDayID, let day = store.day(dayID) {
             entries = store.items(of: day).compactMap { item in store.exercise(item.exerciseID).map { Entry(exercise: $0, item: item) } }
         }
@@ -81,6 +84,7 @@ final class WorkoutViewModel {
 
     func reload() {
         sets = store.sets(of: session)
+        training = store.records()
     }
 
     func sets(of entry: Entry) -> [WorkoutSet] {
@@ -88,16 +92,16 @@ final class WorkoutViewModel {
     }
 
     func advice(for entry: Entry) -> ProgressionAdvice {
-        store.advice(for: entry.exercise, in: entry.item, excluding: session)
+        training.advice(for: entry.exercise.trainingRecord, in: entry.item?.trainingRecord, excluding: session.id)
     }
 
     func rules(for entry: Entry) -> ExerciseRules {
-        store.rules(for: entry.exercise, in: entry.item)
+        training.rules(for: entry.exercise.trainingRecord, in: entry.item?.trainingRecord)
     }
 
     /// Fills in the next set from the advice: the weight it names and the reps to aim for (TrainingRecords.prefill).
     func prefill(_ entry: Entry) {
-        let advised = store.records().prefill(entry.exercise.trainingRecord, in: entry.item?.trainingRecord, excluding: session.id)
+        let advised = training.prefill(entry.exercise.trainingRecord, in: entry.item?.trainingRecord, excluding: session.id)
         var draft = drafts[entry.id] ?? Draft()
         draft.reps = advised.reps
         if let weight = advised.weightKg {

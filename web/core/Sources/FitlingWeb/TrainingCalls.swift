@@ -293,9 +293,8 @@ let defaultRestSeconds = 120
 func workout(_ request: WorkoutRequest) throws -> WorkoutAnswer {
     let records = try request.training.records()
     let unit: WeightUnit = request.usesPounds ? .pounds : .kilograms
-    let session = records.activeSession().flatMap { $0.id == request.sessionID ? $0 : nil }
-        ?? records.finishedSessions(limit: .max).first { $0.id == request.sessionID }
-    guard let session else { throw CallError(description: "unknown workout") }
+    // By its id: a second unfinished workout (a double tap, a phone that had not synced) opens as well.
+    guard let session = records.session(request.sessionID) else { throw CallError(description: "unknown workout") }
     var entries: [(exercise: ExerciseRecord, item: ProgramItemRecord?)] = []
     if let dayID = session.programDayID {
         entries = records.items(of: dayID).compactMap { item in records.exercise(item.exerciseID).map { (exercise: $0, item: item) } }
