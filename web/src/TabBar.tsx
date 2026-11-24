@@ -14,7 +14,8 @@ export const tabs: { id: Tab; title: string; icon: LucideIcon }[] = [
 
 export function TabBar({ selected, onSelect }: { selected: Tab; onSelect: (tab: Tab) => void }) {
   return (
-    <nav className="tab-bar" role="tablist">
+    <nav className="tab-bar-frame">
+      <div className="tab-bar" role="tablist">
       {tabs.map(({ id, title, icon: Icon }) => (
         <button
           key={id}
@@ -30,6 +31,7 @@ export function TabBar({ selected, onSelect }: { selected: Tab; onSelect: (tab: 
           <span>{t(title)}</span>
         </button>
       ))}
+      </div>
     </nav>
   );
 }

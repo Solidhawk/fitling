@@ -8,8 +8,10 @@ export function App() {
   const title = tabs.find((candidate) => candidate.id === tab)?.title ?? "tab.today";
   return (
     <div className="app">
-      <main className="page" id={`panel-${tab}`} role="tabpanel" aria-labelledby={`tab-${tab}`}>
-        <h1 className="large-title">{t(title)}</h1>
+      <main className="page">
+        <div id={`panel-${tab}`} role="tabpanel" aria-labelledby={`tab-${tab}`}>
+          <h1 className="large-title">{t(title)}</h1>
+        </div>
       </main>
       <TabBar selected={tab} onSelect={setTab} />
     </div>
