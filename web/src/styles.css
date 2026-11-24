@@ -679,3 +679,101 @@ p {
   font-weight: 600;
   cursor: pointer;
 }
+
+/* PartnerSetupView: the intro as the first header, in ink and at body size. */
+.list-header:has(.setup-intro) {
+  color: var(--ink);
+  font-size: 1.0625rem;
+  text-transform: none;
+}
+
+/* Three species in a row so nearly all sixteen can be compared; two at very large text. */
+.species-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(max(4.5rem, 30%), 1fr));
+  gap: var(--space-s);
+}
+
+.species-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-xs);
+  min-width: 0;
+  padding: var(--space-s);
+  border: 0;
+  border-radius: calc(var(--radius-card) * 0.6);
+  color: var(--on-ribbon);
+  font: inherit;
+  cursor: pointer;
+}
+
+.species-tile[aria-pressed="true"] {
+  box-shadow: inset 0 0 0 3px var(--ink);
+}
+
+.species-tile:focus-visible,
+.swatch:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.species-name {
+  max-width: 100%;
+  overflow: hidden;
+  padding: 2px var(--space-s);
+  border-radius: 999px;
+  font-size: calc(0.8125rem * var(--fit, 1));
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The preview in the species' tint, as wide as the rows. */
+.partner-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-s);
+  margin-bottom: var(--space-m);
+  padding: var(--space-l);
+  border-radius: var(--radius-card);
+}
+
+.partner-preview-figure {
+  width: 140px;
+}
+
+.name-field {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+/* ColorSwatches: round body colours, the chosen one ringed in ink. */
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-m);
+  padding: var(--space-xs) 0;
+}
+
+.swatch {
+  width: calc(2.5rem + 6px);
+  height: calc(2.5rem + 6px);
+  padding: 3px;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  cursor: pointer;
+}
+
+.swatch[aria-checked="true"] {
+  box-shadow: inset 0 0 0 3px var(--ink);
+}
+
+.swatch-fill {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+}

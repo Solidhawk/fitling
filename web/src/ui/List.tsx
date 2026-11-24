@@ -5,11 +5,15 @@ export function List({ children }: { children: ReactNode }) {
   return <div className="list">{children}</div>;
 }
 
-/** One section: an optional header, white rows with hairlines, an optional footnote in soft ink. */
-export function ListSection({ header, footer, children }: { header?: ReactNode; footer?: ReactNode; children?: ReactNode }) {
+/**
+ * One section: an optional header, white rows with hairlines, an optional footnote in soft ink. `lead` sits above the
+ * rows without being a heading, for a header that VoiceOver skips on iOS (accessibilityHidden).
+ */
+export function ListSection({ header, lead, footer, children }: { header?: ReactNode; lead?: ReactNode; footer?: ReactNode; children?: ReactNode }) {
   return (
     <section className="list-section">
       {header !== undefined && <h2 className="list-header">{header}</h2>}
+      {lead}
       {children !== undefined && <div className="list-rows">{children}</div>}
       {footer !== undefined && <div className="list-footer">{footer}</div>}
     </section>

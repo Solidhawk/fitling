@@ -41,7 +41,7 @@ export function EmailAuth({
   }
 
   return (
-    <div className="screen">
+    <main className="screen">
       <NavBar title={t(isSignUp ? "auth.signUp.title" : "auth.signIn.title")} back={t("welcome.title")} onBack={onBack} />
       <form
         onSubmit={(event) => {
@@ -94,6 +94,6 @@ export function EmailAuth({
           </ListSection>
         </List>
       </form>
-    </div>
+    </main>
   );
 }

@@ -176,7 +176,7 @@ export function Onboarding({ userID, onFinished, onDeleteAccount }: { userID: st
   );
 
   return (
-    <div className="screen with-bottom-bar" data-screen="onboarding">
+    <main className="screen with-bottom-bar" data-screen="onboarding">
       <NavBar
         title={t(titles[step])}
         back={index > 0 ? t(titles[steps[index - 1]]) : undefined}
@@ -301,6 +301,6 @@ export function Onboarding({ userID, onFinished, onDeleteAccount }: { userID: st
         )}
       </div>
       {saveFailed && <Alert title={t("error.server")} onClose={() => setSaveFailed(false)} />}
-    </div>
+    </main>
   );
 }

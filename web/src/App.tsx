@@ -8,6 +8,7 @@ import { t } from "./i18n";
 import { Alert } from "./ui/Alert";
 import { NeedsConnection } from "./screens/NeedsConnection";
 import { Onboarding } from "./screens/Onboarding";
+import { PartnerSetup } from "./screens/PartnerSetup";
 import { ResetPassword } from "./screens/ResetPassword";
 import { type Lookup, type Screen, screenFor } from "./screens/route";
 import { VerifyEmail } from "./screens/VerifyEmail";
@@ -67,7 +68,7 @@ export function App() {
           onDeleteAccount={() => void deleteAccount(supabase, auth).catch(() => setDeletionFailed(true))}
         />
       )}
-      {screen.kind === "partnerSetup" && <main className="screen" data-screen="partnerSetup" />}
+      {screen.kind === "partnerSetup" && <PartnerSetup key={screen.userID} userID={screen.userID} onFinished={() => void refresh()} />}
       {screen.kind === "home" && <Home />}
       {deletionFailed && <Alert title={t("error.server")} onClose={() => setDeletionFailed(false)} />}
       {resettingPassword && (

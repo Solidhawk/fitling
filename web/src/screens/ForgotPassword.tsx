@@ -41,7 +41,7 @@ export function ForgotPassword({
   }
 
   return (
-    <div className="screen">
+    <main className="screen">
       <NavBar title={t("auth.forgot.title")} back={t("auth.signIn.title")} onBack={onBack} />
       <form
         onSubmit={(event) => {
@@ -80,6 +80,6 @@ export function ForgotPassword({
           </ListSection>
         </List>
       </form>
-    </div>
+    </main>
   );
 }
