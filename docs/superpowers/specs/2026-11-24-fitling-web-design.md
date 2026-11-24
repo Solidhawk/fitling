@@ -62,7 +62,7 @@ Bekeken:
 
 - **Taal en bouw:** TypeScript, React en Vite. Een statische site, zonder eigen server.
 - **Gegevens:** `@supabase/supabase-js` met de publishable key, op dezelfde tabellen. Toegang per gebruiker regelt de beveiliging per rij die er al is.
-- **Rekenregels:** FitlingCore met de officiële Swift SDK voor WebAssembly (Swift 6.x), via een dunne Swift-laag. Elke functie krijgt JSON en geeft JSON terug. De webapp roept die laag aan via JavaScriptKit; meer dan één functie per regel komt er niet.
+- **Rekenregels:** FitlingCore met de officiële Swift SDK voor WebAssembly (Swift 6.x), via een dunne Swift-laag. Elke functie krijgt JSON en geeft JSON terug. De laag exporteert drie functies (`fitling_alloc`, `fitling_free`, `fitling_call`); de webapp roept ze aan via `@bjorn3/browser_wasi_shim`, zonder JavaScriptKit. Onder WASI gebruikt FitlingCore `FoundationEssentials` in plaats van Foundation (13 MB in plaats van 62 MB; als gzip 3,8 MB).
   - Tijdzone: `Day(_:timeZone:)` is het enige gebruik van `TimeZone`. De weblaag geeft de afwijking van de browser in seconden mee, zodat WebAssembly geen tijdzonegegevens nodig heeft.
 - **Barcode scannen:** camera via `getUserMedia`, herkenning met `@zxing/browser` (open source). Safari heeft geen ingebouwde barcodeherkenning. Opzoeken gaat via de bestaande Edge Function `lookup-product`.
 - **Lettertype:** de systeemletter (`system-ui`, `ui-rounded` voor de ronde variant). Op Apple-toestellen is dat SF Pro en SF Rounded, dus hetzelfde als in de app. De licentie van SF staat niet toe dat we de letter zelf meesturen, en dat gebeurt dus ook niet. Op andere toestellen valt het terug op de systeemletter daar.
