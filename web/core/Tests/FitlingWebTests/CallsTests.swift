@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import FitlingCore
 @testable import FitlingWeb
 
 /// The bridge answers with what FitlingCore answers in the app.

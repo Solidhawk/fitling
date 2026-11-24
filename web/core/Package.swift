@@ -16,6 +16,7 @@ let package = Package(
     targets: [
         .target(name: "FitlingWeb", dependencies: [.product(name: "FitlingCore", package: "FitlingCore")]),
         .executableTarget(name: "fitling-core", dependencies: ["FitlingWeb"]),
-        .testTarget(name: "FitlingWebTests", dependencies: ["FitlingWeb"]),
+        // FitlingCore too: a test compares an answer with what the engine itself gives.
+        .testTarget(name: "FitlingWebTests", dependencies: ["FitlingWeb", .product(name: "FitlingCore", package: "FitlingCore")]),
     ]
 )
