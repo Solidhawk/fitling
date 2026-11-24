@@ -74,6 +74,8 @@ test("swipingAnEntryLeftShowsDelete", async ({ page }) => {
   await page.reload();
   const row = page.getByTestId("day.entry").filter({ hasText: "Appel" });
   await expect(row).toBeVisible({ timeout: 15_000 });
+  // The snack row lies below the fold on a phone, and the tab bar covers the bottom: in the middle of the screen.
+  await row.evaluate((element) => element.scrollIntoView({ block: "center" }));
   const box = (await row.boundingBox())!;
   await page.mouse.move(box.x + box.width - 20, box.y + box.height / 2);
   await page.mouse.down();
