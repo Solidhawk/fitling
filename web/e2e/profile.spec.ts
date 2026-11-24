@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import AxeBuilder from "@axe-core/playwright";
+import type { Download } from "@playwright/test";
 import { expect, type Page, test } from "./fixtures";
 import { admin, createUser, nl, signIn } from "./users";
 
@@ -94,10 +95,14 @@ test("exportGivesAFileWithTheProfile", async ({ page }) => {
   await page.addInitScript(() => Object.defineProperty(navigator, "canShare", { value: undefined }));
   const user = await start(page);
   await page.getByRole("button", { name: nl("account.title") }).click();
-  const download = page.waitForEvent("download");
+  // One download per file, in an order the browser chooses (WebKit starts with a CSV file).
+  const download = new Promise<Download>((resolve) => {
+    page.on("download", (file) => {
+      if (file.suggestedFilename() === "fitling-export.json") resolve(file);
+    });
+  });
   await page.getByRole("button", { name: nl("account.export") }).click();
   const file = await download;
-  expect(file.suggestedFilename()).toBe("fitling-export.json");
   const exported = JSON.parse(await readFile((await file.path())!, "utf8"));
   expect(exported.tables.profiles).toEqual([expect.objectContaining({ id: user.id, kcal_target: 2760 })]);
   expect(exported.tables.creatures).toEqual([expect.objectContaining({ species: "owl", name: "Uiltje" })]);
@@ -126,4 +131,15 @@ test("signedOutElsewhereReturnsToWelcome", async ({ page, context }) => {
   await other.getByRole("button", { name: nl("account.signOut") }).click();
   await expect(other.locator('[data-screen="welcome"]')).toBeAttached();
   await expect(page.locator('[data-screen="welcome"]')).toBeAttached();
+});
+
+test("swipingBackLeavesAccountForDagdoel", async ({ page }) => {
+  await start(page);
+  await page.getByRole("button", { name: nl("account.title") }).click();
+  await page.getByRole("button", { name: nl("account.about") }).click();
+  await expect(page.locator('[data-page="about"]')).toBeVisible();
+  await page.goBack();
+  await expect(page.locator('[data-page="account"]')).toBeVisible();
+  await page.goBack();
+  await expect(page.getByTestId("profile.target")).toBeVisible();
 });

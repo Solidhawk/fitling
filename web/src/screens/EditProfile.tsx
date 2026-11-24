@@ -2,8 +2,8 @@ import { type ReactNode, useState } from "react";
 import type { Activity, BodyFields, FitlingCore, Goal, ProfileRules, Sex, Targets } from "../core/fitlingCore";
 import type { Body, Profile } from "../data/profileStore";
 import { outOfRange } from "../data/profileStore";
-import { today } from "../day";
-import { decimal, parseNumber } from "../format";
+import { isIsoDay, today } from "../day";
+import { decimal, parseInteger, parseNumber } from "../format";
 import { t } from "../i18n";
 import { activityKeys, goalKeys } from "../profileTexts";
 import { List, ListRow, ListSection } from "../ui/List";
@@ -138,7 +138,7 @@ export function EditProfile({ core, profile, onSave, onCancel }: { core: Fitling
               min="1900-01-01"
               max={day}
               value={birthDay}
-              onChange={(event) => event.target.value && setBirthDay(event.target.value)}
+              onChange={(event) => isIsoDay(event.target.value) && setBirthDay(event.target.value)}
             />
           </label>
         </ListRow>
@@ -203,7 +203,7 @@ export function EditTargets({
   const [showsRangeError, setShowsRangeError] = useState(false);
 
   function save() {
-    const values = Object.fromEntries(targetFields.map(([key]) => [key, parseNumber(texts[key])])) as Record<keyof Targets, number | undefined>;
+    const values = Object.fromEntries(targetFields.map(([key]) => [key, parseInteger(texts[key])])) as Record<keyof Targets, number | undefined>;
     if (targetFields.some(([key]) => values[key] === undefined)) return setShowsRangeError(true);
     const typed = values as Targets;
     if (outOfRange(typed, limits)) return setShowsRangeError(true);

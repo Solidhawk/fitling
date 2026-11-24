@@ -20,13 +20,13 @@ export function NavBar({
   trailing?: ReactNode;
 }) {
   return (
-    <header className="nav-bar">
+    <header className={onBack ? "nav-bar nav-bar-pushed" : "nav-bar"}>
       <div className="nav-bar-side">
         {leading}
         {onBack && (
           <button type="button" className="nav-back" onClick={onBack}>
             <ChevronLeft aria-hidden="true" size={28} strokeWidth={2.2} />
-            <span>{back}</span>
+            <span className="nav-back-label">{back}</span>
           </button>
         )}
       </div>

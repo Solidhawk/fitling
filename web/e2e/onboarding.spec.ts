@@ -120,3 +120,17 @@ test.describe("in the United States", () => {
     expect(data).toEqual({ height_cm: 180.3, weight_kg: 79.8 });
   });
 });
+
+// Spec: "terugknop en terugvegen". Swiping back on an iPhone is the browser going back one entry.
+test("swipingBackGoesOneStepBack", async ({ page }) => {
+  await start(page);
+  await page.getByTestId("consent.agree").check();
+  await next(page, "consent");
+  await next(page, "birthDate");
+  await expect(page.getByTestId("onboarding.step.sex")).toBeVisible();
+  await page.goBack();
+  await expect(page.getByTestId("onboarding.step.birthDate")).toBeVisible();
+  await page.goBack();
+  await expect(page.getByTestId("onboarding.step.consent")).toBeVisible();
+  await expect(page.getByTestId("consent.agree")).toBeChecked();
+});

@@ -1,5 +1,6 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { expect, test } from "vitest";
-import { csv, exportFiles, exportJSON, exportTables } from "./export";
+import { csv, exportFiles, exportJSON, exportTables, fetchTables } from "./export";
 
 // DataExportTests on iOS. 2026-11-18, 11:06:40 UTC.
 const now = new Date(1_795_000_000_000);
@@ -58,4 +59,31 @@ test("csvHasOneHeaderAndQuotesWhatNeedsQuoting", () => {
 test("writesOneJSONFileAndOneCSVPerTable", () => {
   const files = exportFiles(exportTables({ water_entries: [water(250)], products: [{ owner_id: user }] }), now);
   expect(files.map((file) => file.name).sort()).toEqual(["fitling-export.json", "products.csv", "water_entries.csv"]);
+});
+
+// PostgREST answers at most 1000 rows per request (max_rows); years of food entries are more.
+test("everyRowIsFetchedPastTheServersLimitOf1000", async () => {
+  const entries = Array.from({ length: 2500 }, (_, index) => ({ id: String(index).padStart(5, "0") }));
+  const client = {
+    from(table: string) {
+      const rows = table === "food_entries" ? entries : [];
+      let order = "";
+      const query = {
+        select: () => query,
+        not: () => query,
+        order(column: string) {
+          order = column;
+          return query;
+        },
+        range(from: number, to: number) {
+          expect(order).not.toBe("");
+          return Promise.resolve({ data: rows.slice(from, Math.min(to + 1, from + 1000)), error: null });
+        },
+      };
+      return query;
+    },
+  } as unknown as SupabaseClient;
+  const tables = await fetchTables(client);
+  expect(tables.food_entries).toHaveLength(2500);
+  expect(tables.creatures).toEqual([]);
 });

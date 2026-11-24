@@ -30,3 +30,13 @@ export function parseNumber(text: string): number | undefined {
 export function fixed(value: number, digits: number): string {
   return new Intl.NumberFormat(language(), { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(value);
 }
+
+/**
+ * A whole number as typed, without the language's thousands separator: "2.000" in Dutch is 2000, as a number
+ * field on iOS reads it. Anything that is not a whole number is nothing.
+ */
+export function parseInteger(text: string): number | undefined {
+  const separator = new Intl.NumberFormat(language()).formatToParts(10000).find((part) => part.type === "group")?.value ?? "";
+  const plain = text.trim().split(separator).join("");
+  return /^-?\d+$/.test(plain) ? Number(plain) : undefined;
+}

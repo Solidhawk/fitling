@@ -12,3 +12,8 @@ export function thirtyYearsBefore(day: string): string {
   if (candidate.getUTCMonth() !== month - 1) candidate.setUTCDate(0);
   return candidate.toISOString().slice(0, 10);
 }
+
+/** A date as FitlingCore's Day reads it: four digits for the year. A desktop date field also allows five or six. */
+export function isIsoDay(text: string): boolean {
+  return /^\d{4}-\d{2}-\d{2}$/.test(text);
+}

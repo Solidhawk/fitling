@@ -21,10 +21,20 @@ export function ListSection({ header, lead, footer, children }: { header?: React
 }
 
 /** A row; `as="button"` for a tappable row such as a NavigationLink, with the disclosure chevron. */
-export function ListRow({ children, onClick, chevron = false }: { children: ReactNode; onClick?: () => void; chevron?: boolean }) {
+export function ListRow({
+  children,
+  onClick,
+  chevron = false,
+  disabled = false,
+}: {
+  children: ReactNode;
+  onClick?: () => void;
+  chevron?: boolean;
+  disabled?: boolean;
+}) {
   if (onClick) {
     return (
-      <button type="button" className="list-row list-row-button" onClick={onClick}>
+      <button type="button" className="list-row list-row-button" disabled={disabled} onClick={onClick}>
         <span className="list-row-content">{children}</span>
         {chevron && (
           <svg className="list-chevron" viewBox="0 0 8 14" aria-hidden="true">

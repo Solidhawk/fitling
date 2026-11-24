@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { AuthService } from "../data/auth";
+import { useHistoryStack } from "../historyStack";
 import { t } from "../i18n";
 import { species } from "../partner/species";
 import { SecondaryButton } from "../ui/Buttons";
@@ -17,7 +18,7 @@ export function Welcome({ auth }: { auth: AuthService }) {
   const [stack, setStack] = useState<Page[]>([{ kind: "welcome" }]);
   const page = stack[stack.length - 1];
   const push = (next: Page) => setStack([...stack, next]);
-  const pop = () => setStack(stack.slice(0, -1));
+  const pop = useHistoryStack(stack.length - 1, (depth) => setStack(stack.slice(0, depth + 1)));
 
   if (page.kind === "email") {
     return (

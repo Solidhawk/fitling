@@ -1,7 +1,8 @@
 import { useState } from "react";
 import type { Activity, BodyFields, DailyPlanInput, Goal } from "../core/fitlingCore";
 import { useCore } from "../core/useCore";
-import { thirtyYearsBefore, today } from "../day";
+import { useHistoryStack } from "../historyStack";
+import { isIsoDay, thirtyYearsBefore, today } from "../day";
 import { finishOnboarding } from "../data/saveProfile";
 import { supabase } from "../data/supabase";
 import { parseNumber, percent } from "../format";
@@ -45,6 +46,9 @@ export function Onboarding({ userID, onFinished, onDeleteAccount }: { userID: st
   const [goal, setGoal] = useState<Goal>();
   const [saving, setSaving] = useState(false);
   const [saveFailed, setSaveFailed] = useState(false);
+
+  // Each step is pushed on the one before: swiping back or the browser's back button goes one step back.
+  const back = useHistoryStack(steps.indexOf(step), (depth) => setStep(steps[depth]));
 
   if (!core) {
     return (
@@ -137,7 +141,7 @@ export function Onboarding({ userID, onFinished, onDeleteAccount }: { userID: st
       <NavBar
         title={t(titles[step])}
         back={index > 0 ? t(titles[steps[index - 1]]) : undefined}
-        onBack={index > 0 ? () => setStep(steps[index - 1]) : undefined}
+        onBack={index > 0 ? back : undefined}
       />
       <List>
         <div data-testid={`onboarding.step.${step}`}>
@@ -174,7 +178,7 @@ export function Onboarding({ userID, onFinished, onDeleteAccount }: { userID: st
                   min="1900-01-01"
                   max={day}
                   value={birthDay}
-                  onChange={(event) => event.target.value && setBirthDay(event.target.value)}
+                  onChange={(event) => isIsoDay(event.target.value) && setBirthDay(event.target.value)}
                 />
               </ListRow>
             </ListSection>

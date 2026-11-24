@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { deleteAccount } from "../data/account";
 import type { AuthService } from "../data/auth";
-import { deliver, exportFiles, exportTables, fetchTables } from "../data/export";
+import { deliver, exportFiles, exportTables, fetchTables, type Table } from "../data/export";
 import { supabase } from "../data/supabase";
 import { t } from "../i18n";
 import { ActionSheet } from "../ui/ActionSheet";
@@ -17,16 +17,33 @@ function message(key: string | undefined) {
 /** Export, About, signing out and deleting the account (AccountView.swift). */
 export function Account({ auth, onBack, onOpen }: { auth: AuthService; onBack: () => void; onOpen: (page: Opens) => void }) {
   const [exportFailed, setExportFailed] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [prepared, setPrepared] = useState<Table[]>();
   const [working, setWorking] = useState(false);
   const [messageKey, setMessageKey] = useState<string>();
 
+  // Read when the screen opens: Safari opens the share sheet only straight from a tap, not after a minute of loading.
+  useEffect(() => {
+    let current = true;
+    fetchTables(supabase).then(
+      (rows) => current && setPrepared(exportTables(rows)),
+      () => undefined,
+    );
+    return () => {
+      current = false;
+    };
+  }, []);
+
   async function exportData() {
+    setExporting(true);
     try {
-      const exported = exportTables(await fetchTables(supabase));
+      const exported = prepared ?? exportTables(await fetchTables(supabase));
       await deliver(exportFiles(exported, new Date()));
       setExportFailed(false);
     } catch {
       setExportFailed(true);
+    } finally {
+      setExporting(false);
     }
   }
 
@@ -46,7 +63,9 @@ export function Account({ auth, onBack, onOpen }: { auth: AuthService; onBack: (
       <NavBar title={t("account.title")} back={t("profile.title")} onBack={onBack} />
       <List>
         <ListSection footer={<span className="message">{t(exportFailed ? "account.export.failed" : "account.export.footer")}</span>}>
-          <ListRow onClick={() => void exportData()}>{t("account.export")}</ListRow>
+          <ListRow onClick={() => void exportData()} disabled={exporting}>
+            {t("account.export")}
+          </ListRow>
         </ListSection>
         <ListSection>
           <ListRow onClick={() => onOpen("about")} chevron>
@@ -54,7 +73,9 @@ export function Account({ auth, onBack, onOpen }: { auth: AuthService; onBack: (
           </ListRow>
         </ListSection>
         <ListSection footer={message(messageKey)}>
-          <ListRow onClick={working ? undefined : () => void signOut()}>{t("account.signOut")}</ListRow>
+          <ListRow onClick={() => void signOut()} disabled={working}>
+            {t("account.signOut")}
+          </ListRow>
         </ListSection>
         <ListSection>
           <ListRow onClick={() => onOpen("delete")} chevron>

@@ -105,7 +105,20 @@ jobs:
           name: web-screenshots
           path: web/test-results/
           if-no-files-found: ignore
-      # Alleen main gaat live, op https://solidhawk.github.io/fitling/ (D-24).
+      # Alleen main gaat live, op https://solidhawk.github.io/fitling/ (D-24). De geteste bouw praat met de lokale
+      # Supabase van deze job; de site wordt opnieuw gebouwd tegen het echte project, uit de GitHub-variabelen (S34).
+      - name: Webapp bouwen voor de site
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        working-directory: web
+        env:
+          VITE_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          if [ -z "$VITE_SUPABASE_URL" ] || [ -z "$VITE_SUPABASE_PUBLISHABLE_KEY" ]; then
+            echo "::error::Zet de GitHub-variabelen SUPABASE_URL en SUPABASE_PUBLISHABLE_KEY (S34) voordat de site live gaat."
+            exit 1
+          fi
+          npm run build
       - uses: actions/upload-pages-artifact@v3
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         with:

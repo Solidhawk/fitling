@@ -48,7 +48,9 @@ export class AuthService {
     return () => this.listeners.delete(listener);
   }
 
+  /** A repeat of the same state (a tab that comes back, a refreshed token) is no change and is not passed on. */
   private set(state: AuthState) {
+    if (JSON.stringify(state) === JSON.stringify(this.state)) return;
     this.state = state;
     for (const listener of this.listeners) listener(state);
   }
@@ -81,8 +83,9 @@ export class AuthService {
     this.set({ kind: "signedIn", userID: data.user.id, email: data.user.email ?? email });
   }
 
+  /** Only this browser, as AuthService.swift with scope .local: the user's other devices stay signed in. */
   async signOut(): Promise<void> {
-    await this.run(() => this.client.auth.signOut());
+    await this.run(() => this.client.auth.signOut({ scope: "local" }));
     this.set({ kind: "signedOut" });
   }
 

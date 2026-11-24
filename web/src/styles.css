@@ -238,6 +238,11 @@ body {
   box-shadow: inset var(--space-l) 1px 0 0 var(--card), inset 0 1px 0 0 var(--track);
 }
 
+.list-row-button:disabled {
+  color: var(--ink-soft);
+  cursor: default;
+}
+
 .list-row-button {
   width: 100%;
   border: 0;
@@ -269,18 +274,39 @@ body {
   top: 0;
   z-index: 1;
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  /* Cancel and Save of a sheet keep their full width; the title in the middle gives way. */
+  grid-template-columns: minmax(max-content, 1fr) minmax(0, max-content) minmax(max-content, 1fr);
   align-items: center;
   min-height: 2.75rem;
   padding: env(safe-area-inset-top) var(--space-s) 0;
   background-color: var(--ground);
 }
 
+/* A pushed screen: the title stays in the middle; when space runs out the title and the back label are cut short,
+   as UIKit does, and the chevron always stays. */
+.nav-bar-pushed {
+  grid-template-columns: minmax(2.75rem, 1fr) minmax(0, max-content) minmax(2.75rem, 1fr);
+}
+
+.nav-bar-side {
+  display: flex;
+  min-width: 0;
+}
+
 .nav-title {
+  overflow: hidden;
   margin: 0;
   font-size: 1.0625rem;
   font-weight: 700;
   text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nav-back-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .nav-bar-trailing {
@@ -291,7 +317,9 @@ body {
 .nav-back {
   display: inline-flex;
   align-items: center;
+  max-width: 100%;
   min-height: 2.75rem;
+  white-space: nowrap;
   border: 0;
   background: none;
   color: var(--ink);
@@ -628,7 +656,8 @@ p {
 
 .macro-title {
   overflow: hidden;
-  font-size: 0.9375rem;
+  max-width: 100%;
+  font-size: calc(0.9375rem * var(--fit, 1));
   font-weight: 700;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -860,7 +889,7 @@ p {
   top: 100%;
   right: 0;
   z-index: 15;
-  min-width: 15rem;
+  min-width: min(15rem, calc(100vw - 2rem));
   overflow: hidden;
   border-radius: 0.875rem;
   background-color: var(--card);

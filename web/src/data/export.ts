@@ -104,14 +104,30 @@ export function exportFiles(exported: Table[], exportedAt: Date): File[] {
   ];
 }
 
-/** Reads every synced table; row level security returns only the user's own rows and the shared ones. */
+/** The server answers at most this many rows at a time (PostgREST max_rows). */
+const page = 1000;
+
+/** The primary key, for a stable order between pages; one row per user in the tables keyed by user_id. */
+function key(name: string): string {
+  return name === "creatures" || name === "menu_preferences" ? "user_id" : "id";
+}
+
+/**
+ * Reads every synced table, page by page; row level security returns only the user's own rows and the shared ones,
+ * and the shared ones are not asked for.
+ */
 export async function fetchTables(client: SupabaseClient): Promise<Record<string, Row[]>> {
   const results = await Promise.all(
     tables.map(async ([name, owner]) => {
-      const query = client.from(name).select("*");
-      const { data, error } = await (owner ? query.not(owner, "is", null) : query);
-      if (error) throw new Error("account.export.failed");
-      return [name, data as Row[]] as const;
+      const rows: Row[] = [];
+      for (let from = 0; ; from += page) {
+        const query = client.from(name).select("*");
+        const { data, error } = await (owner ? query.not(owner, "is", null) : query).order(key(name)).range(from, from + page - 1);
+        if (error) throw new Error("account.export.failed");
+        rows.push(...(data as Row[]));
+        if (data.length < page) break;
+      }
+      return [name, rows] as const;
     }),
   );
   return Object.fromEntries(results);

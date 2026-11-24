@@ -17,7 +17,11 @@ export function core(): Promise<FitlingCore> {
       ? await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"))).arrayBuffer()
       : bytes.buffer;
     return loadCore(wasm);
-  })();
+  })().catch((error: unknown) => {
+    // Not kept: the next call downloads again.
+    loading = undefined;
+    throw error;
+  });
   return loading;
 }
 
@@ -26,12 +30,35 @@ export function useCore(): FitlingCore | undefined {
   const [loaded, setLoaded] = useState<FitlingCore>();
   useEffect(() => {
     let current = true;
-    void core().then((value) => {
-      if (current) setLoaded(value);
-    });
+    // A failure is shown by the app (useCoreFailure); the screen keeps waiting.
+    core().then(
+      (value) => current && setLoaded(value),
+      () => undefined,
+    );
     return () => {
       current = false;
     };
   }, []);
   return loaded;
+}
+
+/**
+ * Whether the rules could not be downloaded (a weak connection, a browser without DecompressionStream), and a way to
+ * try again. The app then shows "no connection" instead of a screen that waits for ever.
+ */
+export function useCoreFailure(active: boolean): { failed: boolean; retry: () => void } {
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  useEffect(() => {
+    if (!active) return;
+    let current = true;
+    core().then(
+      () => current && setFailed(false),
+      () => current && setFailed(true),
+    );
+    return () => {
+      current = false;
+    };
+  }, [active, attempt]);
+  return { failed, retry: () => setAttempt((count) => count + 1) };
 }

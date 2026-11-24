@@ -6,6 +6,7 @@ import type { AuthService } from "../data/auth";
 import { editedProfile, loadProfile, type Body, type Profile as StoredProfile, saveProfile } from "../data/profileStore";
 import { supabase } from "../data/supabase";
 import { today } from "../day";
+import { useHistoryStack } from "../historyStack";
 import { decimal, fixed, kcal, percent } from "../format";
 import { t } from "../i18n";
 import { orderedWarnings, warningKeys } from "../profileTexts";
@@ -44,10 +45,12 @@ export function Profile({ userID, auth }: { userID: string; auth: AuthService })
   }, [load]);
 
   useEffect(() => window.scrollTo(0, 0), [page]);
+  // Account on Dagdoel, About and Delete on Account; swiping back goes one screen back.
+  const back = useHistoryStack(page === "profile" ? 0 : page === "account" ? 1 : 2, (depth) => setPage(depth === 0 ? "profile" : "account"));
 
-  if (page === "account") return <Account auth={auth} onBack={() => setPage("profile")} onOpen={setPage} />;
-  if (page === "about") return <About onBack={() => setPage("account")} />;
-  if (page === "delete") return <DeleteAccount auth={auth} onBack={() => setPage("account")} />;
+  if (page === "account") return <Account auth={auth} onBack={back} onOpen={setPage} />;
+  if (page === "about") return <About onBack={back} />;
+  if (page === "delete") return <DeleteAccount auth={auth} onBack={back} />;
 
   if (loadFailed) {
     return (

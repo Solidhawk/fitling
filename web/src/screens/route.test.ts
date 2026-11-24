@@ -31,3 +31,19 @@ test("without a connection: needs connection, but onboarding and partner setup k
   expect(screenFor(signedIn, failed, { kind: "onboarding", userID: "u1" })).toEqual({ kind: "onboarding", userID: "u1" });
   expect(screenFor(signedIn, failed, { kind: "partnerSetup", userID: "u1" })).toEqual({ kind: "partnerSetup", userID: "u1" });
 });
+
+// Checking again for the same user (the tab came back, onboarding or the partner was just saved) keeps what is on
+// screen until the answer is in; only a first check shows the spinner.
+test("checking again for the same user keeps the screen", () => {
+  const pending = { kind: "pending" } as const;
+  const failed = { kind: "failed" } as const;
+  for (const current of [
+    { kind: "onboarding", userID: "u1" },
+    { kind: "partnerSetup", userID: "u1" },
+    { kind: "home", userID: "u1" },
+  ] as const) {
+    expect(screenFor(signedIn, pending, current)).toEqual(current);
+  }
+  expect(screenFor(signedIn, failed, { kind: "home", userID: "u1" })).toEqual({ kind: "home", userID: "u1" });
+  expect(screenFor(signedIn, pending, { kind: "home", userID: "someone else" })).toEqual({ kind: "loading" });
+});

@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AuthService, type AuthState } from "./data/auth";
+import { useCoreFailure } from "./core/useCore";
 import { deleteAccount } from "./data/account";
 import { lookUp } from "./data/profile";
 import { supabase } from "./data/supabase";
@@ -24,7 +25,12 @@ export function App() {
   const [resettingPassword, setResettingPassword] = useState(false);
   const [deletionFailed, setDeletionFailed] = useState(false);
 
-  useEffect(() => auth.subscribe(setAuthState), []);
+  useEffect(() => {
+    const unsubscribe = auth.subscribe(setAuthState);
+    // The first event may have come before this subscription.
+    setAuthState(auth.state);
+    return unsubscribe;
+  }, []);
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY") setResettingPassword(true);
@@ -32,15 +38,22 @@ export function App() {
     return () => data.subscription.unsubscribe();
   }, []);
 
+  const userID = authState.kind === "signedIn" ? authState.userID : undefined;
+  const currentUser = useRef(userID);
+  currentUser.current = userID;
+
+  // Asked again only when another user signs in; an answer for a user who is no longer signed in is dropped.
   const refresh = useCallback(async () => {
-    if (authState.kind !== "signedIn") return;
     setLookup({ kind: "pending" });
+    if (!userID) return;
+    let answer: Lookup;
     try {
-      setLookup(await lookUp(supabase, authState.userID));
+      answer = await lookUp(supabase, userID);
     } catch {
-      setLookup({ kind: "failed" });
+      answer = { kind: "failed" };
     }
-  }, [authState]);
+    if (currentUser.current === userID) setLookup(answer);
+  }, [userID]);
 
   useEffect(() => {
     void refresh();
@@ -49,6 +62,10 @@ export function App() {
   useEffect(() => {
     setScreen((current) => screenFor(authState, lookup, current));
   }, [authState, lookup]);
+
+  // The screens after sign-in need the rules; without them there is nothing to show but "no connection".
+  const needsRules = screen.kind === "onboarding" || screen.kind === "partnerSetup" || screen.kind === "home";
+  const rules = useCoreFailure(needsRules);
 
   return (
     <>
@@ -59,8 +76,15 @@ export function App() {
       )}
       {screen.kind === "welcome" && <Welcome auth={auth} />}
       {screen.kind === "verifyEmail" && <VerifyEmail key={screen.email} auth={auth} email={screen.email} />}
-      {screen.kind === "needsConnection" && <NeedsConnection onRetry={() => void refresh()} />}
-      {screen.kind === "onboarding" && (
+      {(screen.kind === "needsConnection" || (needsRules && rules.failed)) && (
+        <NeedsConnection
+          onRetry={() => {
+            rules.retry();
+            void refresh();
+          }}
+        />
+      )}
+      {screen.kind === "onboarding" && !rules.failed && (
         <Onboarding
           key={screen.userID}
           userID={screen.userID}
@@ -68,8 +92,8 @@ export function App() {
           onDeleteAccount={() => void deleteAccount(supabase, auth).catch(() => setDeletionFailed(true))}
         />
       )}
-      {screen.kind === "partnerSetup" && <PartnerSetup key={screen.userID} userID={screen.userID} onFinished={() => void refresh()} />}
-      {screen.kind === "home" && <Home key={screen.userID} userID={screen.userID} auth={auth} />}
+      {screen.kind === "partnerSetup" && !rules.failed && <PartnerSetup key={screen.userID} userID={screen.userID} onFinished={() => void refresh()} />}
+      {screen.kind === "home" && !rules.failed && <Home key={screen.userID} userID={screen.userID} auth={auth} />}
       {deletionFailed && <Alert title={t("error.server")} onClose={() => setDeletionFailed(false)} />}
       {resettingPassword && (
         <ResetPassword auth={auth} onDone={() => setResettingPassword(false)} onCancel={() => setResettingPassword(false)} />

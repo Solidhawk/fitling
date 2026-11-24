@@ -14,8 +14,8 @@ export type Lookup = { kind: "pending" } | { kind: "failed" } | { kind: "loaded"
 
 /**
  * The screen to show, as RootViewModel.refresh and route do on iOS. Onboarding only starts once the server has
- * confirmed there is no profile, and a dropped connection halfway through onboarding or partner setup keeps the
- * user's answers on screen.
+ * confirmed there is no profile, and checking again for the same user (a dropped connection, a tab that comes back)
+ * keeps the user's answers on screen.
  */
 export function screenFor(auth: AuthState, lookup: Lookup, current: Screen): Screen {
   switch (auth.kind) {
@@ -27,11 +27,10 @@ export function screenFor(auth: AuthState, lookup: Lookup, current: Screen): Scr
       return { kind: "verifyEmail", email: auth.email };
     case "signedIn": {
       const { userID } = auth;
-      if (lookup.kind === "pending") return { kind: "loading" };
-      if (lookup.kind === "failed") {
-        const keeps = (current.kind === "onboarding" || current.kind === "partnerSetup") && current.userID === userID;
-        return keeps ? current : { kind: "needsConnection" };
-      }
+      // Checking again for the same user keeps what is on screen, with the user's answers in it.
+      const keeps = (current.kind === "onboarding" || current.kind === "partnerSetup" || current.kind === "home") && current.userID === userID;
+      if (lookup.kind === "pending") return keeps ? current : { kind: "loading" };
+      if (lookup.kind === "failed") return keeps ? current : { kind: "needsConnection" };
       if (!lookup.hasProfile) return { kind: "onboarding", userID };
       if (!lookup.hasCreature) return { kind: "partnerSetup", userID };
       return { kind: "home", userID };
