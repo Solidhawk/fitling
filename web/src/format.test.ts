@@ -9,8 +9,8 @@ beforeEach(() => {
 
 // As Measurement(.kilocalories).formatted(.measurement(width: .abbreviated)) in Dutch: grouped, no decimals.
 test("kcal in the user's language", () => {
-  expect(kcal(2760)).toBe("2.760 kcal");
-  expect(kcal(1779.6)).toBe("1.780 kcal");
+  expect(kcal(2760)).toBe("2.760 kcal");
+  expect(kcal(1779.6)).toBe("1.780 kcal");
 });
 
 test("grams, a fixed decimal and a typed number", () => {

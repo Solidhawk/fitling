@@ -2,9 +2,12 @@ import { language } from "./i18n";
 
 // Numbers as the app shows them through Measurement and .formatted: in the user's language, abbreviated units.
 
-/** Intl knows no kilocalorie unit, so the abbreviation is added; a no-break space keeps it with the number. */
+/**
+ * Intl knows no kilocalorie unit, so the abbreviation is added. With an ordinary space: at very large text the unit
+ * goes to the next line, as the text wraps on iOS, instead of the number sticking out of its card.
+ */
 export function kcal(value: number): string {
-  return `${new Intl.NumberFormat(language(), { maximumFractionDigits: 0 }).format(value)} kcal`;
+  return `${new Intl.NumberFormat(language(), { maximumFractionDigits: 0 }).format(value)} kcal`;
 }
 
 export function grams(value: number): string {

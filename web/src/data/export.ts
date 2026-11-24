@@ -147,7 +147,8 @@ export async function deliver(files: File[]): Promise<void> {
     }
   }
   for (const file of files) {
-    const url = URL.createObjectURL(file);
+    // As plain bytes: a browser opens a JSON file it knows the type of instead of saving it (WebKit).
+    const url = URL.createObjectURL(new Blob([file], { type: "application/octet-stream" }));
     const link = document.createElement("a");
     link.href = url;
     link.download = file.name;

@@ -21,13 +21,30 @@ async function prepare(page: Page, mode: Mode) {
 }
 
 async function check(page: Page, mode: Mode, name: string, project: string) {
+  // First the picture, so a failing check below can be seen.
+  await page.screenshot({ path: `test-results/screens/${project}-audit-${mode}-${name}.png` });
   const axe = await new AxeBuilder({ page }).analyze();
   expect(axe.violations.map((violation) => `${mode} ${name}: ${violation.id}`)).toEqual([]);
   if (mode === "groot") {
-    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
-    expect(overflow, `${name} scrolls sideways at 200 %`).toBeLessThanOrEqual(0);
+    // Against the phone's width, not window.innerWidth: content that sticks out widens a phone's layout viewport.
+    // Text sticking out of its own box counts too; the partner drawings are clipped on purpose.
+    const width = page.viewportSize()?.width ?? 0;
+    const sticking = await page.evaluate((width) => {
+      const found: string[] = [];
+      if (document.documentElement.scrollWidth > width + 1) found.push(`page ${document.documentElement.scrollWidth}px`);
+      for (const element of document.querySelectorAll<HTMLElement>("body *")) {
+        if (element.closest(".partner-canvas")) continue;
+        const box = element.getBoundingClientRect();
+        if (box.width === 0) continue;
+        const visible = getComputedStyle(element).overflowX === "visible";
+        const outside = box.right > width + 1 || box.left < -1;
+        const textOut = visible && element.clientWidth > 0 && element.scrollWidth > element.clientWidth + 1;
+        if (outside || textOut) found.push(`${element.tagName.toLowerCase()}.${element.className}`);
+      }
+      return found.slice(0, 6);
+    }, width);
+    expect(sticking, `${name}: sticks out at 200 %`).toEqual([]);
   }
-  await page.screenshot({ path: `test-results/screens/${project}-audit-${mode}-${name}.png` });
 }
 
 for (const mode of modes) {
