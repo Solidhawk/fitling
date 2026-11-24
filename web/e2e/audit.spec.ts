@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "./fixtures";
-import { createUser, foodEntry, localDay, nl, sharedProduct, signIn } from "./users";
+import { admin, createUser, foodEntry, localDay, nl, sharedProduct, signIn } from "./users";
 
 // Every screen of phase 1 in light, dark and at 200 % text (the largest text on iOS is about that): no axe
 // violations, and at 200 % nothing that only a sideways scroll reaches. The screenshots go on the board next to iOS.
@@ -116,6 +116,24 @@ for (const mode of modes) {
       await page.getByTestId("log.scan").click();
       await expect(page.locator('[data-screen="scan"]')).toBeVisible();
       await check(page, mode, "23-scannen", info.project.name);
+    });
+
+    // Review Focus: a long name at 200 % on the name plate and in the mood line, every accessory unlocked.
+    test("Partner", async ({ page }, info) => {
+      const user = await createUser({ profile: true, creature: true });
+      const { error } = await admin.from("creatures").update({ name: "Wollige Wervelwind Pip", xp: 30_000 }).eq("user_id", user.id);
+      if (error) throw error;
+      await foodEntry(user.id, { consumed_on: localDay(), kcal: 2700, protein_g: 130 });
+      await signIn(page, user.email);
+      await expect(page.getByTestId("day.progress")).toBeVisible({ timeout: 15_000 });
+      await page.getByRole("tab", { name: nl("partner.title") }).click();
+      await expect(page.getByTestId("partner.hero")).toBeVisible({ timeout: 15_000 });
+      await check(page, mode, "12-partner", info.project.name);
+      await page.getByTestId("partner.item.crown").scrollIntoViewIfNeeded();
+      await check(page, mode, "23-partner-onder", info.project.name);
+      await page.getByRole("button", { name: nl("partner.edit") }).click();
+      await expect(page.getByRole("dialog", { name: nl("partner.edit") })).toBeVisible();
+      await check(page, mode, "24-partner-aanpassen", info.project.name);
     });
 
     test("Dagdoel and account", async ({ page }, info) => {
