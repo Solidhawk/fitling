@@ -118,10 +118,11 @@ for (const mode of modes) {
       await check(page, mode, "23-scannen", info.project.name);
     });
 
-    // Review Focus: a long name at 200 % on the name plate and in the mood line, every accessory unlocked.
+    // Review Focus: a long name at 200 % on the name plate and in the mood line; at level 1 the locked accessories
+    // and colours with their level, as on the iPhone's screens 12 and 23.
     test("Partner", async ({ page }, info) => {
       const user = await createUser({ profile: true, creature: true });
-      const { error } = await admin.from("creatures").update({ name: "Wollige Wervelwind Pip", xp: 30_000 }).eq("user_id", user.id);
+      const { error } = await admin.from("creatures").update({ name: "Wollige Wervelwind Pip" }).eq("user_id", user.id);
       if (error) throw error;
       await foodEntry(user.id, { consumed_on: localDay(), kcal: 2700, protein_g: 130 });
       await signIn(page, user.email);
@@ -134,6 +135,18 @@ for (const mode of modes) {
       await page.getByRole("button", { name: nl("partner.edit") }).click();
       await expect(page.getByRole("dialog", { name: nl("partner.edit") })).toBeVisible();
       await check(page, mode, "24-partner-aanpassen", info.project.name);
+    });
+
+    test("Partner with everything unlocked", async ({ page }, info) => {
+      const user = await createUser({ profile: true, creature: true });
+      const { error } = await admin.from("creatures").update({ xp: 30_000, equipped_items: ["scarf", "crown"] }).eq("user_id", user.id);
+      if (error) throw error;
+      await signIn(page, user.email);
+      await expect(page.getByTestId("day.progress")).toBeVisible({ timeout: 15_000 });
+      await page.getByRole("tab", { name: nl("partner.title") }).click();
+      await expect(page.getByTestId("partner.hero")).toBeVisible({ timeout: 15_000 });
+      await page.getByTestId("partner.item.crown").scrollIntoViewIfNeeded();
+      await check(page, mode, "25-partner-alles", info.project.name);
     });
 
     test("Dagdoel and account", async ({ page }, info) => {

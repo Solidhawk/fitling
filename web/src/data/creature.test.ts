@@ -110,6 +110,31 @@ describe.skipIf(!url || !key || !serviceKey)("the partner on the server", () => 
     expect(twice.events).toEqual([]);
   });
 
+  // Review: a fold the server sets aside (another device wrote later) must not bring news, or it comes again next time.
+  test("aFoldTheServerSetAsideBringsNoNews", async () => {
+    const start = await partnerWithDays();
+    const partner = await loadPartner(start.client, start.id);
+    const snapshot = core.partnerSnapshot({ creature: partner!.state, entries: [], workoutDays: [], periods: [], fallback: targets, today });
+    const { id, client } = await partnerWithDays(snapshot.xpForNextLevel - 1);
+    // Another device wrote a little later than this browser's clock (within the five minutes the server accepts).
+    const later = new Date(Date.now() + 4 * 60_000).toISOString();
+    await admin.from("creatures").update({ updated_at: later }).eq("user_id", id);
+    const result = await advancePartner(client, core, id, today, new Date());
+    expect(result.events).toEqual([]);
+    expect((await stored(id)).xp).toBe(snapshot.xpForNextLevel - 1);
+  });
+
+  // Review Focus: two devices folding at the same time count the days once.
+  test("twoFoldsAtOnceCountTheDaysOnce", async () => {
+    const { id, client } = await partnerWithDays();
+    const before = await loadPartner(client, id);
+    const now = new Date("2026-11-24T08:00:00Z");
+    await Promise.all([advancePartner(client, core, id, today, now), advancePartner(client, core, id, today, now)]);
+    const entries = loggedDays.map((day) => ({ day, kcal: 2000, proteinG: 130 }));
+    const once = core.partnerAdvance({ creature: before!.state, entries, workoutDays: [], periods: [], fallback: targets, today });
+    expect((await stored(id)).xp).toBe(once.creature.xp);
+  });
+
   test("changesOnThePartnerTabAreSaved", async () => {
     const { id, client } = await partnerWithDays();
     const now = new Date("2026-11-24T10:00:00Z");

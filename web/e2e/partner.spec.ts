@@ -66,6 +66,26 @@ test("wearingACapTakesOffTheCrown", async ({ page }) => {
   await expect.poll(async () => (await stored(user.id)).equipped_items).toEqual(["cap"]);
 });
 
+// Review Focus: a crown put on on another device comes off for the cap.
+test("aCrownFromAnotherDeviceComesOffForTheCap", async ({ page }) => {
+  const user = await start(page, { xp: 30_000, equipped_items: ["crown"] });
+  await openPartner(page, user.email);
+  await expect(page.getByRole("switch", { name: nl("partner.item.crown") })).toBeChecked();
+  await page.getByRole("switch", { name: nl("partner.item.cap") }).click();
+  await expect(page.getByRole("switch", { name: nl("partner.item.crown") })).not.toBeChecked();
+  await expect.poll(async () => (await stored(user.id)).equipped_items).toEqual(["cap"]);
+});
+
+// Review Focus: with "reduce motion" the partner stands still (PartnerFigure on iOS); otherwise it bobs.
+test("thePartnerStandsStillWithReduceMotion", async ({ page }) => {
+  const user = await start(page);
+  await openPartner(page, user.email);
+  const animation = () => page.getByTestId("partner.hero").locator(".partner-moving").evaluate((element) => getComputedStyle(element).animationName);
+  expect(await animation()).toContain("partner-lift");
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  expect(await animation()).toBe("none");
+});
+
 test("lockedItemsShowTheirLevel", async ({ page }, info) => {
   const user = await start(page);
   await openPartner(page, user.email);
