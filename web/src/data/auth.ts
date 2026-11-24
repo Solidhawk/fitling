@@ -53,20 +53,21 @@ export class AuthService {
     for (const listener of this.listeners) listener(state);
   }
 
-  private async run<T>(work: () => Promise<{ data: T; error: unknown }>): Promise<T> {
-    let result: { data: T; error: unknown };
+  /** Runs a Supabase call; any failure becomes an Error whose message is the String Catalog key. */
+  private async run<R extends { error: unknown }>(work: () => Promise<R>): Promise<R> {
+    let result: R;
     try {
       result = await work();
     } catch (error) {
       throw new Error(failureKey(error));
     }
     if (result.error) throw new Error(failureKey(result.error));
-    return result.data;
+    return result;
   }
 
   /** With email confirmation on there is no session yet: the user waits for the link. */
   async signUp(email: string, password: string): Promise<void> {
-    const data = await this.run(() => this.client.auth.signUp({ email, password, options: { emailRedirectTo: this.redirectTo } }));
+    const { data } = await this.run(() => this.client.auth.signUp({ email, password, options: { emailRedirectTo: this.redirectTo } }));
     if (data.session?.user) {
       this.set({ kind: "signedIn", userID: data.session.user.id, email });
     } else {
@@ -75,12 +76,13 @@ export class AuthService {
   }
 
   async signIn(email: string, password: string): Promise<void> {
-    const data = await this.run(() => this.client.auth.signInWithPassword({ email, password }));
+    const { data } = await this.run(() => this.client.auth.signInWithPassword({ email, password }));
+    if (!data.user) throw new Error("error.server");
     this.set({ kind: "signedIn", userID: data.user.id, email: data.user.email ?? email });
   }
 
   async signOut(): Promise<void> {
-    await this.run(() => this.client.auth.signOut().then((result) => ({ data: null, error: result.error })));
+    await this.run(() => this.client.auth.signOut());
     this.set({ kind: "signedOut" });
   }
 
@@ -93,9 +95,7 @@ export class AuthService {
   }
 
   async resendVerification(email: string): Promise<void> {
-    await this.run(() =>
-      this.client.auth.resend({ type: "signup", email, options: { emailRedirectTo: this.redirectTo } }).then((result) => ({ data: null, error: result.error })),
-    );
+    await this.run(() => this.client.auth.resend({ type: "signup", email, options: { emailRedirectTo: this.redirectTo } }));
   }
 
   /** Back to Welkom from "confirm your email", for example after a typo in the address. */
