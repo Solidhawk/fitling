@@ -94,7 +94,7 @@ final class PartnerViewModel {
     /// Levels at which the colours that are still locked unlock.
     var lockedColorLevels: [Int] {
         guard let snapshot else { return [] }
-        return CreatureEngine.colorUnlockLevels.filter { $0 > snapshot.level }
+        return CreatureEngine.lockedColorLevels(atLevel: snapshot.level)
     }
 
     // MARK: Name and voice

@@ -69,7 +69,7 @@ export async function advancePartner(
   });
   if (!result.changed) return { partner, events: [] };
   const state = result.creature;
-  const { error } = await client
+  const { data, error } = await client
     .from("creatures")
     .update({
       xp: state.xp,
@@ -78,8 +78,12 @@ export async function advancePartner(
       off_target_days: state.offTargetDays,
       updated_at: now.toISOString(),
     })
-    .eq("user_id", userID);
+    .eq("user_id", userID)
+    .select("user_id");
   if (error) throw failure(error);
+  // The server sets an update aside when another device wrote later (last writer wins): then nothing was folded
+  // here, and the news would come again with the next fold.
+  if (!data || data.length === 0) return { partner, events: [] };
   return { partner: { ...partner, state }, events: result.events };
 }
 

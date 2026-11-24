@@ -1,6 +1,6 @@
 // The filled SF Symbols the partner tab uses, drawn as SVG: lucide only has their outlines.
 
-/** lock.fill: a solid body under an open shackle. */
+/** lock.fill: a solid body under its shackle. */
 export function LockFill({ size = 13 }: { size?: number }) {
   return (
     <svg className="symbol" width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">

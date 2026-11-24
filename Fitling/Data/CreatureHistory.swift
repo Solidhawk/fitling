@@ -49,8 +49,7 @@ struct CreatureHistory {
     @discardableResult
     func update(_ creature: Creature) -> [CreatureEvent] {
         guard let state = creature.state else { return [] }
-        // The engine judges a day by the seven days ending on it.
-        let start = (state.lastProcessedDay ?? state.createdOn).adding(-(CreatureEngine.windowDays - 1))
+        let start = CreatureEngine.firstRecordDay(toAdvance: state)
         let update = CreatureEngine.advance(state, records: records(from: start, through: today), today: today)
         guard update.state != state else { return update.events }
         creature.apply(update.state, at: now())

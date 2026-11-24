@@ -95,7 +95,7 @@ func partnerSnapshot(_ request: PartnerDaysRequest) throws -> PartnerSnapshotAns
         trainedRecently: snapshot.trainedRecently, unlockedItems: snapshot.unlockedItems.map(\.rawValue),
         items: CreatureItem.allCases.map { ItemOutput(item: $0.rawValue, unlockLevel: $0.unlockLevel) },
         unlockedColorCount: snapshot.unlockedColorCount,
-        lockedColorLevels: CreatureEngine.colorUnlockLevels.filter { $0 > snapshot.level },
+        lockedColorLevels: CreatureEngine.lockedColorLevels(atLevel: snapshot.level),
         todayXP: XPOutput(todayXP), historyDays: historyDays
     )
 }
@@ -112,7 +112,7 @@ struct AdvanceFromAnswer: Encodable {
 /// Where the days to fold in start, so the web reads only those (CreatureHistory.update).
 func advanceFrom(_ request: CreatureRowRequest) -> AdvanceFromAnswer {
     let state = request.creature
-    return AdvanceFromAnswer(firstDay: (state.lastProcessedDay ?? state.createdOn).adding(-(CreatureEngine.windowDays - 1)).isoString)
+    return AdvanceFromAnswer(firstDay: CreatureEngine.firstRecordDay(toAdvance: state).isoString)
 }
 
 struct EventOutput: Encodable {
@@ -152,7 +152,7 @@ struct PartnerAdvanceAnswer: Encodable {
 func partnerAdvance(_ request: PartnerDaysRequest) throws -> PartnerAdvanceAnswer {
     let today = try day(request.today, "today")
     let state = request.creature
-    let start = (state.lastProcessedDay ?? state.createdOn).adding(-(CreatureEngine.windowDays - 1))
+    let start = CreatureEngine.firstRecordDay(toAdvance: state)
     let update = CreatureEngine.advance(state, records: try request.records(from: start, through: today), today: today)
     return PartnerAdvanceAnswer(creature: update.state, changed: update.state != state, events: update.events.map(EventOutput.init))
 }
