@@ -1,4 +1,8 @@
+#if os(WASI)
+import FoundationEssentials
+#else
 import Foundation
+#endif
 import FitlingCore
 
 /// One request from the web app, `{"fn": name, "input": {...}}`, answered with JSON. Every failure is

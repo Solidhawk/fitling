@@ -1,4 +1,8 @@
+#if os(WASI)
+import FoundationEssentials
+#else
 import Foundation
+#endif
 
 /// What a workout made on the spot trains.
 public enum TrainingFocus: String, Sendable, CaseIterable, Codable {

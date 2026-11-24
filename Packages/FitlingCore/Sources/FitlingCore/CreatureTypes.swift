@@ -1,4 +1,8 @@
+#if os(WASI)
+import FoundationEssentials
+#else
 import Foundation
+#endif
 
 // Raw values are the exact `check` values of the `creatures` table in Supabase.
 public enum Species: String, Sendable, CaseIterable, Codable {

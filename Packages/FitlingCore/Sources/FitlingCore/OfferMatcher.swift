@@ -1,4 +1,8 @@
+#if os(WASI)
+import FoundationEssentials
+#else
 import Foundation
+#endif
 
 public struct ListItemForMatching: Sendable, Equatable {
     public var id: UUID

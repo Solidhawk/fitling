@@ -1,4 +1,8 @@
+#if os(WASI)
+import FoundationEssentials
+#else
 import Foundation
+#endif
 
 // Works on days, not on `Date`: a birthday is a calendar day, and a `Date` would move it when
 // the device changes time zone. A 29 February birthday is reached on 1 March in other years.

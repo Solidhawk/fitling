@@ -1,4 +1,8 @@
+#if os(WASI)
+import FoundationEssentials
+#else
 import Foundation
+#endif
 
 /// Energy and macro targets from fixed formulas. Nothing here is estimated or tuned per user.
 public enum NutritionEngine {

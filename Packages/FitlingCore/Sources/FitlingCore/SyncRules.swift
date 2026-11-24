@@ -1,4 +1,8 @@
+#if os(WASI)
+import FoundationEssentials
+#else
 import Foundation
+#endif
 
 /// What sync knows about a row on the device.
 public struct LocalRowState: Sendable, Equatable {

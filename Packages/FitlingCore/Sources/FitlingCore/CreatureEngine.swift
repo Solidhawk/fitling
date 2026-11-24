@@ -1,4 +1,8 @@
+#if os(WASI)
+import FoundationEssentials
+#else
 import Foundation
+#endif
 
 /// The creature's rules. The engine returns a state; it never decides how that state looks.
 ///

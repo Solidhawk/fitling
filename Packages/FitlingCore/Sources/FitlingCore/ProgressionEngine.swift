@@ -1,4 +1,8 @@
+#if os(WASI)
+import FoundationEssentials
+#else
 import Foundation
+#endif
 
 /// Double progression: first more reps inside the range, then more weight.
 public enum ProgressionEngine {

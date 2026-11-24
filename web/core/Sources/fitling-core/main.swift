@@ -1,4 +1,8 @@
+#if os(WASI)
+import FoundationEssentials
+#else
 import Foundation
+#endif
 import FitlingWeb
 
 // The three functions JavaScript calls (web/src/core/fitlingCore.ts). Memory for requests and answers

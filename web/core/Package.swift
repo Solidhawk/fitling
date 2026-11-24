@@ -1,8 +1,9 @@
 // swift-tools-version: 6.0
 import PackageDescription
 
-// FitlingCore for the web: the same rules, built as a WebAssembly reactor (D-24). The iOS package
-// itself stays as it is; this package only adds the JSON bridge.
+// FitlingCore for the web: the same rules, built as a WebAssembly reactor (D-24). This package only adds
+// the JSON bridge. Under WASI the sources import FoundationEssentials instead of Foundation: the full
+// Foundation brings about 50 MB of language data (ICU) along that the rules never use.
 let package = Package(
     name: "FitlingWeb",
     platforms: [.macOS(.v14)],

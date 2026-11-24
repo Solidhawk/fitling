@@ -1,4 +1,8 @@
+#if os(WASI)
+import FoundationEssentials
+#else
 import Foundation
+#endif
 
 // Raw values are the exact `check` values of `food_entries.quantity_unit`.
 public enum QuantityUnit: String, Sendable, CaseIterable, Codable {

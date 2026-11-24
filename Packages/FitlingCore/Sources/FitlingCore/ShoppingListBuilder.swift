@@ -1,4 +1,8 @@
+#if os(WASI)
+import FoundationEssentials
+#else
 import Foundation
+#endif
 
 /// One ingredient of a recipe, as written for the number of servings the recipe makes.
 public struct MenuIngredient: Sendable, Equatable {

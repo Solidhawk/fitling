@@ -1,4 +1,8 @@
+#if os(WASI)
+import FoundationEssentials
+#else
 import Foundation
+#endif
 
 /// Picks recipes per day: greedy per meal, then a correction per day. See docs/ARCHITECTURE.md
 /// for why this beats an exact optimisation here.
