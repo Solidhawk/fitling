@@ -211,7 +211,10 @@ struct ShoppingListView: View {
                 Text("shopping.offers.footer").footerStyle()
                 if let source = URL(string: "https://www.prijsprofeet.nl") {
                     Link(destination: source) {
+                        // A line of footnote is far below the 44 pt a finger needs.
                         Text("shopping.offers.source").font(.footnote.weight(.semibold))
+                            .frame(minHeight: 44, alignment: .leading)
+                            .contentShape(Rectangle())
                     }
                     .tint(Color.ink)
                 }

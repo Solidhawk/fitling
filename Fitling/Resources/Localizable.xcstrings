@@ -11999,6 +11999,28 @@
         }
       }
     },
+    "account.about.website %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Website von %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ website"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Website van %@"
+          }
+        }
+      }
+    },
     "creature.bumblebee.name": {
       "localizations": {
         "nl": {
