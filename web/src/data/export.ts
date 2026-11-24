@@ -146,13 +146,15 @@ export async function deliver(files: File[]): Promise<void> {
       if (error instanceof DOMException && error.name === "AbortError") return;
     }
   }
-  for (const file of files) {
-    // As plain bytes: a browser opens a JSON file it knows the type of instead of saving it (WebKit).
+  for (const [index, file] of files.entries()) {
+    // One after the other: a browser drops downloads started in the same moment (WebKit kept only some).
+    if (index > 0) await new Promise((resolve) => setTimeout(resolve, 250));
+    // As plain bytes: a browser opens a JSON file it knows the type of instead of saving it.
     const url = URL.createObjectURL(new Blob([file], { type: "application/octet-stream" }));
     const link = document.createElement("a");
     link.href = url;
     link.download = file.name;
     link.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    setTimeout(() => URL.revokeObjectURL(url), 10_000);
   }
 }
