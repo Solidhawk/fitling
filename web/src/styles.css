@@ -296,8 +296,9 @@ body {
   min-width: 0;
 }
 
-/* The bar's text does not grow with the text size, as UINavigationBar on iOS. */
-.nav-bar .nav-back {
+/* The bar's text does not grow with the text size, as UINavigationBar on iOS; the toolbar above a large title neither. */
+.nav-bar .nav-back,
+.toolbar .nav-back {
   font-size: min(1.0625rem, 17px);
 }
 
@@ -1050,6 +1051,13 @@ p {
   font-size: 1.25rem;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
+}
+
+/* The arrow grows with its line, as an SF Symbol does. */
+.build-factor svg {
+  flex: none;
+  width: 1.15em;
+  height: 1.15em;
 }
 
 .build-factor {
