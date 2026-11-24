@@ -128,6 +128,10 @@ test.describe("at 200 % text", () => {
     const [first, second, third] = await Promise.all(["bumblebee", "mole", "frog"].map((name) => species(page, name).boundingBox()));
     expect(second?.y).toBe(first?.y);
     expect(third!.y).toBeGreaterThan(first!.y);
+    // The longest name, "Lieveheersbeestje", takes two lines instead of being cut short (lineLimit 2 on iOS).
+    const name = species(page, "ladybird").locator(".species-name");
+    await expect(name).toHaveAttribute("data-two-lines", "");
+    expect(await name.evaluate((element) => element.scrollHeight <= element.clientHeight + 1 && element.scrollWidth <= element.clientWidth + 1)).toBe(true);
     await shot(page, "9-kiezen-groot", info.project.name);
   });
 });

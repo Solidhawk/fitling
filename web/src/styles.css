@@ -312,6 +312,11 @@ body {
   white-space: nowrap;
 }
 
+/* Focused from code for screen readers; it is no control, so no ring. */
+.nav-title:focus {
+  outline: none;
+}
+
 .nav-back-label {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -779,6 +784,17 @@ p {
   white-space: nowrap;
 }
 
+/* At very large text a name may take two lines, hyphenated where the language allows. */
+.species-name[data-two-lines] {
+  display: -webkit-box;
+  border-radius: 0.75rem;
+  white-space: normal;
+  text-align: center;
+  hyphens: auto;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
 /* The preview in the species' tint, as wide as the rows. */
 .partner-preview {
   display: flex;
@@ -1098,6 +1114,18 @@ p {
 
 .build-up .macro-blocks {
   margin-top: var(--space-s);
+}
+
+/* Label in a list: the symbol before the text, in ink. */
+.label-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-m);
+}
+
+.label-row svg {
+  flex: none;
+  margin-top: 0.125rem;
 }
 
 /* LabeledContent: the label on the left, the value on the right. */

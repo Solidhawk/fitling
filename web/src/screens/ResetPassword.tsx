@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { minimumPasswordLength } from "../credentials";
 import type { AuthService } from "../data/auth";
 import { t } from "../i18n";
 import { PrimaryButton } from "../ui/Buttons";
+import { useDialogFocus } from "../ui/dialogFocus";
 import { List, ListRow, ListSection } from "../ui/List";
 import { NavBar } from "../ui/NavBar";
 
@@ -27,8 +28,11 @@ export function ResetPassword({ auth, onDone, onCancel }: { auth: AuthService; o
     }
   }
 
+  const sheet = useRef<HTMLDivElement>(null);
+  useDialogFocus(sheet, onCancel);
+
   return (
-    <div className="sheet" role="dialog" aria-modal="true" aria-label={t("auth.reset.title")}>
+    <div ref={sheet} className="sheet" role="dialog" aria-modal="true" aria-label={t("auth.reset.title")} tabIndex={-1}>
       <NavBar
         title={t("auth.reset.title")}
         trailing={

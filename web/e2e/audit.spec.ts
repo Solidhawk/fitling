@@ -94,7 +94,7 @@ for (const mode of modes) {
       const user = await createUser({ profile: true, creature: true });
       await signIn(page, user.email);
       await page.getByRole("tab", { name: nl("profile.title") }).click();
-      await expect(page.getByTestId("profile.target")).toBeVisible();
+      await expect(page.getByTestId("profile.target")).toBeVisible({ timeout: 15_000 });
       await check(page, mode, "13-dagdoel", info.project.name);
       await page.getByTestId("profile.adjust").click();
       await expect(page.getByRole("menu")).toBeVisible();

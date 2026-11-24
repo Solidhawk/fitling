@@ -8,4 +8,7 @@ if (!url || !key) {
   throw new Error("VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY are needed to build the web app");
 }
 
-export const supabase = createClient(url, key, { auth: { persistSession: true, detectSessionInUrl: true } });
+/** Where this browser keeps the session, so signing out without a connection can remove it. */
+export const sessionKey = "fitling-session";
+
+export const supabase = createClient(url, key, { auth: { persistSession: true, detectSessionInUrl: true, storageKey: sessionKey } });

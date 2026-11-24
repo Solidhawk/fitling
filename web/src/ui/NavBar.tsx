@@ -34,7 +34,13 @@ export function NavBar({
             </button>
           )}
         </div>
-        {large ? <span /> : <h1 className="nav-title">{title}</h1>}
+        {large ? (
+          <span />
+        ) : (
+          <h1 className="nav-title" tabIndex={-1}>
+            {title}
+          </h1>
+        )}
         <div className="nav-bar-side nav-bar-trailing">{trailing}</div>
       </header>
       {large && <h1 className="large-title">{title}</h1>}

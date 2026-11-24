@@ -91,6 +91,7 @@ export function PartnerSetup({ userID, onFinished }: { userID: string; onFinishe
                     className="species-name"
                     text={t(`creature.${species}.name`)}
                     minimumScale={0.75}
+                    twoLinesWhenLarge
                     style={{ backgroundColor: `var(--partner-ribbon-${species})` }}
                   />
                 </button>

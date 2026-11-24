@@ -55,5 +55,6 @@ export async function finishOnboarding(client: SupabaseClient, finished: Finishe
   const period = await client.from("target_history").insert(rows.period);
   if (period.error) throw new Error("error.server");
   const profile = await client.from("profiles").insert(rows.profile);
-  if (profile.error) throw new Error("error.server");
+  // 23505: the profile is already there, stored by an earlier try whose answer got lost.
+  if (profile.error && profile.error.code !== "23505") throw new Error("error.server");
 }

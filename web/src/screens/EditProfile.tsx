@@ -1,5 +1,5 @@
 import { ChevronsUpDown } from "lucide-react";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useRef, useState } from "react";
 import type { Activity, BodyFields, FitlingCore, Goal, ProfileRules, Sex, Targets } from "../core/fitlingCore";
 import type { Body, Profile } from "../data/profileStore";
 import { outOfRange } from "../data/profileStore";
@@ -7,6 +7,7 @@ import { isIsoDay, today } from "../day";
 import { decimal, parseInteger, parseNumber } from "../format";
 import { t } from "../i18n";
 import { activityKeys, goalKeys } from "../profileTexts";
+import { useDialogFocus } from "../ui/dialogFocus";
 import { List, ListRow, ListSection } from "../ui/List";
 import { NavBar } from "../ui/NavBar";
 import { usesMetric } from "../units";
@@ -25,8 +26,10 @@ function FormSheet({
   onCancel: () => void;
   children: ReactNode;
 }) {
+  const sheet = useRef<HTMLDivElement>(null);
+  useDialogFocus(sheet, onCancel);
   return (
-    <div className="sheet" role="dialog" aria-modal="true" aria-label={title}>
+    <div ref={sheet} className="sheet" role="dialog" aria-modal="true" aria-label={title} tabIndex={-1}>
       <NavBar
         title={title}
         leading={
@@ -118,13 +121,15 @@ export function EditProfile({ core, profile, onSave, onCancel }: { core: Fitling
   const [activity, setActivity] = useState<Activity>(profile.body.activityLevel);
   const [goal, setGoal] = useState<Goal>(profile.body.goal);
 
+  // With the stored values, so unchanged fields keep them exactly (180 cm is not 5 ft 10.9 in back).
   const input = core.bodyInput({
     usesMetric: metric,
+    stored: { heightCm: profile.body.heightCm, weightKg: profile.body.weightKg },
     fields: { centimetres: parseNumber(texts.centimetres), feet: parseNumber(texts.feet), inches: parseNumber(texts.inches), weight: parseNumber(texts.weight) },
   });
   // Nothing while a value is missing or outside what the database accepts.
   const edited: Body | undefined =
-    input.isValid && input.heightCm !== undefined && input.weightKg !== undefined && core.birthDay({ birthDay, today: day }).isValid
+    input.isValid && input.heightCm !== undefined && input.weightKg !== undefined && isIsoDay(birthDay) && core.birthDay({ birthDay, today: day }).isValid
       ? { birthDay, sex, heightCm: input.heightCm, weightKg: input.weightKg, activityLevel: activity, goal }
       : undefined;
   const text = (field: keyof BodyFields) => (value: string) => setTexts({ ...texts, [field]: value });
@@ -142,7 +147,7 @@ export function EditProfile({ core, profile, onSave, onCancel }: { core: Fitling
               min="1900-01-01"
               max={day}
               value={birthDay}
-              onChange={(event) => isIsoDay(event.target.value) && setBirthDay(event.target.value)}
+              onChange={(event) => setBirthDay(event.target.value)}
             />
           </label>
         </ListRow>

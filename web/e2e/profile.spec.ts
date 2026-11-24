@@ -9,7 +9,8 @@ async function start(page: Page) {
   const user = await createUser({ profile: true, creature: true });
   await signIn(page, user.email);
   await page.getByRole("tab", { name: nl("profile.title") }).click();
-  await expect(page.getByTestId("profile.target")).toBeVisible();
+  // The first visit also loads the rules (WebAssembly); WebKit on a busy CI machine needs more than 5 s for that.
+  await expect(page.getByTestId("profile.target")).toBeVisible({ timeout: 15_000 });
   return user;
 }
 
@@ -142,4 +143,39 @@ test("swipingBackLeavesAccountForDagdoel", async ({ page }) => {
   await expect(page.locator('[data-page="account"]')).toBeVisible();
   await page.goBack();
   await expect(page.getByTestId("profile.target")).toBeVisible();
+});
+
+test.describe("in the United States", () => {
+  test.use({ locale: "en-US" });
+
+  // BodyInput keeps the stored value while the fields are unchanged: 180 cm shown as 5 ft 10.9 in stays 180 cm.
+  test("savingTheProfileUnchangedKeepsTheHeight", async ({ page }) => {
+    const user = await createUser({ profile: true, creature: true });
+    await signIn(page, user.email);
+    await page.getByRole("tab").nth(4).click();
+    await expect(page.getByTestId("profile.target")).toBeVisible({ timeout: 15_000 });
+    await page.getByTestId("profile.adjust").click();
+    await page.getByRole("menuitem").first().click();
+    await expect(page.getByTestId("input.inches")).toHaveValue("10.9");
+    await page.locator(".nav-confirm").click();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    const { data } = await admin.from("profiles").select("height_cm, kcal_target").eq("id", user.id).single();
+    expect(data).toEqual({ height_cm: 180, kcal_target: 2760 });
+    const { data: periods } = await admin.from("target_history").select("id").eq("user_id", user.id);
+    expect(periods).toHaveLength(1);
+  });
+});
+
+// A sheet keeps the keyboard inside it, closes on Escape and gives the focus back to Aanpassen.
+test("aSheetKeepsTheFocusAndGivesItBack", async ({ page }) => {
+  await start(page);
+  await page.getByTestId("profile.adjust").click();
+  await page.getByRole("menuitem", { name: nl("profile.editTargets") }).click();
+  const inside = () => page.evaluate(() => document.activeElement?.closest('[role="dialog"]') !== null);
+  expect(await inside()).toBe(true);
+  for (let press = 0; press < 12; press++) await page.keyboard.press("Tab");
+  expect(await inside()).toBe(true);
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.getByTestId("profile.adjust")).toBeFocused();
 });

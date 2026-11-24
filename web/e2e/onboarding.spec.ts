@@ -134,3 +134,23 @@ test("swipingBackGoesOneStepBack", async ({ page }) => {
   await expect(page.getByTestId("onboarding.step.consent")).toBeVisible();
   await expect(page.getByTestId("consent.agree")).toBeChecked();
 });
+
+// A cleared date field is no date: no going on with a date the field no longer shows.
+test("clearingTheBirthDateBlocksContinue", async ({ page }) => {
+  await start(page);
+  await page.getByTestId("consent.agree").check();
+  await next(page, "consent");
+  await page.getByTestId("input.birthDate").fill("");
+  await expect(page.getByTestId("onboarding.continue.birthDate")).toBeDisabled();
+  await expect(page.getByText(nl("onboarding.underage.body"))).toHaveCount(0);
+  await page.getByTestId("input.birthDate").fill("1990-05-12");
+  await expect(page.getByTestId("onboarding.continue.birthDate")).toBeEnabled();
+});
+
+// A new step is read out from its title, as VoiceOver does when a screen is pushed.
+test("aNewStepTakesTheFocusOnItsTitle", async ({ page }) => {
+  await start(page);
+  await page.getByTestId("consent.agree").check();
+  await next(page, "consent");
+  await expect(page.getByRole("heading", { level: 1, name: nl("onboarding.birthDate.title") })).toBeFocused();
+});

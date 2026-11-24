@@ -43,6 +43,8 @@ export function Menu({ label, items, testID }: { label: string; items: { label: 
                 className="menu-item"
                 onClick={() => {
                   setOpen(false);
+                  // The sheet this opens gives the focus back here when it closes.
+                  button.current?.focus();
                   item.onSelect();
                 }}
               >

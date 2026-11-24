@@ -1,5 +1,6 @@
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import { t } from "../i18n";
+import { useDialogFocus } from "./dialogFocus";
 
 export interface SheetAction {
   label: string;
@@ -24,24 +25,18 @@ export function ActionSheet({
   cancelLabel?: string;
   onCancel: () => void;
 }) {
-  const first = useRef<HTMLButtonElement>(null);
-  useEffect(() => first.current?.focus(), []);
-  useEffect(() => {
-    const close = (event: KeyboardEvent) => event.key === "Escape" && onCancel();
-    window.addEventListener("keydown", close);
-    return () => window.removeEventListener("keydown", close);
-  }, [onCancel]);
+  const sheet = useRef<HTMLDivElement>(null);
+  useDialogFocus(sheet, onCancel, false);
 
   return (
     <div className="action-sheet-backdrop" onClick={(event) => event.target === event.currentTarget && onCancel()}>
-      <div className="action-sheet" role="alertdialog" aria-modal="true" aria-label={title}>
+      <div ref={sheet} className="action-sheet" role="alertdialog" aria-modal="true" aria-label={title} tabIndex={-1}>
         <div className="action-sheet-group">
           <p className="action-sheet-title">{title}</p>
           {message && <p className="action-sheet-message">{message}</p>}
-          {actions.map((action, index) => (
+          {actions.map((action) => (
             <button
               key={action.label}
-              ref={index === 0 ? first : undefined}
               type="button"
               className={action.destructive ? "action-sheet-button destructive" : "action-sheet-button"}
               onClick={action.onSelect}

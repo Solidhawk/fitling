@@ -33,6 +33,8 @@ export class AuthService {
     readonly client: SupabaseClient,
     /** Where the links in the mails lead back to: the web app itself. */
     readonly redirectTo: string,
+    /** Removes the session stored in this browser, for signing out without a connection. */
+    private readonly forgetSession: () => void = () => undefined,
   ) {
     client.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
@@ -83,9 +85,22 @@ export class AuthService {
     this.set({ kind: "signedIn", userID: data.user.id, email: data.user.email ?? email });
   }
 
-  /** Only this browser, as AuthService.swift with scope .local: the user's other devices stay signed in. */
+  /**
+   * Only this browser, as AuthService.swift with scope .local: the user's other devices stay signed in. Without a
+   * connection it signs out all the same, as on iOS: the stored session is forgotten and no longer refreshed.
+   */
   async signOut(): Promise<void> {
-    await this.run(() => this.client.auth.signOut({ scope: "local" }));
+    let error: unknown;
+    try {
+      ({ error } = await this.client.auth.signOut({ scope: "local" }));
+    } catch (thrown) {
+      error = thrown;
+    }
+    if (error) {
+      if (failureKey(error) !== "error.network") throw new Error(failureKey(error));
+      await this.client.auth.stopAutoRefresh();
+      this.forgetSession();
+    }
     this.set({ kind: "signedOut" });
   }
 

@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { ArrowUpToLine, TriangleAlert } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import type { Activity, BodyFields, DailyPlanInput, Goal } from "../core/fitlingCore";
 import { useCore } from "../core/useCore";
 import { useHistoryStack } from "../historyStack";
@@ -33,7 +34,7 @@ const titles: Record<Step, string> = {
  * The eight onboarding steps, each pushed on the previous one (OnboardingFlowView.swift and
  * OnboardingViewModel.swift). Every check and number comes from FitlingCore.
  */
-export function Onboarding({ userID, onFinished, onDeleteAccount }: { userID: string; onFinished: () => void; onDeleteAccount: () => void }) {
+export function Onboarding({ userID, onFinished, onDeleteAccount }: { userID: string; onFinished: () => void; onDeleteAccount: () => Promise<void> }) {
   const core = useCore();
   const day = today();
   const metric = usesMetric();
@@ -46,9 +47,20 @@ export function Onboarding({ userID, onFinished, onDeleteAccount }: { userID: st
   const [goal, setGoal] = useState<Goal>();
   const [saving, setSaving] = useState(false);
   const [saveFailed, setSaveFailed] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   // Each step is pushed on the one before: swiping back or the browser's back button goes one step back.
   const back = useHistoryStack(steps.indexOf(step), (depth) => setStep(steps[depth]));
+
+  // A new step is read out from its title, as VoiceOver does when a screen is pushed.
+  const firstStep = useRef(true);
+  useEffect(() => {
+    if (firstStep.current) {
+      firstStep.current = false;
+      return;
+    }
+    document.querySelector<HTMLElement>('[data-screen="onboarding"] .nav-title')?.focus();
+  }, [step]);
 
   if (!core) {
     return (
@@ -65,7 +77,8 @@ export function Onboarding({ userID, onFinished, onDeleteAccount }: { userID: st
     weight: parseNumber(texts.weight),
   };
   const body = core.bodyInput({ usesMetric: metric, fields });
-  const age = core.birthDay({ birthDay, today: day });
+  // A cleared field (or a year of five digits) is no date yet: not valid, and not under 18 either.
+  const age = isIsoDay(birthDay) ? core.birthDay({ birthDay, today: day }) : { age: 0, isAdult: true, isValid: false };
   const profile =
     sex && activity && goal && body.isValid && age.isValid && body.heightCm !== undefined && body.weightKg !== undefined
       ? { birthDay, sex, heightCm: body.heightCm, weightKg: body.weightKg, activityLevel: activity, goal }
@@ -178,7 +191,7 @@ export function Onboarding({ userID, onFinished, onDeleteAccount }: { userID: st
                   min="1900-01-01"
                   max={day}
                   value={birthDay}
-                  onChange={(event) => isIsoDay(event.target.value) && setBirthDay(event.target.value)}
+                  onChange={(event) => setBirthDay(event.target.value)}
                 />
               </ListRow>
             </ListSection>
@@ -229,9 +242,21 @@ export function Onboarding({ userID, onFinished, onDeleteAccount }: { userID: st
           )}
           {step === "result" && plan && (
             <ListSection header={<TargetsCard targets={plan.targets} shares={core.kcalShares(plan.targets)} />}>
-              {plan.floorApplied && <ListRow>{t("targets.floor")}</ListRow>}
+              {plan.floorApplied && (
+                <ListRow>
+                  <span className="label-row">
+                    <ArrowUpToLine aria-hidden="true" size={18} strokeWidth={2.2} />
+                    <span>{t("targets.floor")}</span>
+                  </span>
+                </ListRow>
+              )}
               {orderedWarnings(plan.warnings).map((warning) => (
-                <ListRow key={warning}>{t(warningKeys[warning])}</ListRow>
+                <ListRow key={warning}>
+                  <span className="label-row">
+                    <TriangleAlert aria-hidden="true" size={18} strokeWidth={2.2} />
+                    <span>{t(warningKeys[warning])}</span>
+                  </span>
+                </ListRow>
               ))}
               <ListRow>{t("onboarding.result.footer")}</ListRow>
             </ListSection>
@@ -251,7 +276,15 @@ export function Onboarding({ userID, onFinished, onDeleteAccount }: { userID: st
         {step === "birthDate" && !age.isAdult ? (
           <>
             <p className="footnote">{t("onboarding.underage.body")}</p>
-            <SecondaryButton onClick={onDeleteAccount}>{t("onboarding.underage.delete")}</SecondaryButton>
+            <SecondaryButton
+              disabled={deleting}
+              onClick={() => {
+                setDeleting(true);
+                void onDeleteAccount().finally(() => setDeleting(false));
+              }}
+            >
+              {t("onboarding.underage.delete")}
+            </SecondaryButton>
           </>
         ) : (
           <PrimaryButton disabled={!canContinue[step]} onClick={() => void advance()} data-testid={`onboarding.continue.${step}`}>

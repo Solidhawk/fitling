@@ -1,11 +1,13 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
+import { AuthRetryableFetchError, type SupabaseClient } from "@supabase/supabase-js";
 import { expect, test } from "vitest";
 import { AuthService, type AuthState } from "./auth";
 
 /** Just enough of the Supabase client to drive the auth state, without a server. */
-function fake() {
+function fake(offline = false) {
   const listeners: ((event: string, session: unknown) => void)[] = [];
   const signOuts: unknown[] = [];
+  let forgotten = false;
+  let refreshing = true;
   const client = {
     auth: {
       onAuthStateChange(listener: (event: string, session: unknown) => void) {
@@ -14,12 +16,18 @@ function fake() {
       },
       async signOut(options?: unknown) {
         signOuts.push(options);
-        return { error: null };
+        return { error: offline ? new AuthRetryableFetchError("Failed to fetch", 0) : null };
+      },
+      async stopAutoRefresh() {
+        refreshing = false;
       },
     },
   } as unknown as SupabaseClient;
   const emit = (event: string, session: unknown) => listeners.forEach((listener) => listener(event, session));
-  return { auth: new AuthService(client, "http://localhost/"), emit, signOuts };
+  const auth = new AuthService(client, "http://localhost/", () => {
+    forgotten = true;
+  });
+  return { auth, emit, signOuts, forgotten: () => forgotten, refreshing: () => refreshing };
 }
 
 const session = { user: { id: "u1", email: "a@b.nl" } };
@@ -43,4 +51,14 @@ test("the same session again is not a change", () => {
   expect(seen).toEqual([{ kind: "signedIn", userID: "u1", email: "a@b.nl" }]);
   emit("SIGNED_OUT", null);
   expect(seen.at(-1)).toEqual({ kind: "signedOut" });
+});
+
+// AuthService.swift: without a connection signing out still signs out here; the session on this device is forgotten.
+test("signing out without a connection still signs out", async () => {
+  const { auth, emit, forgotten, refreshing } = fake(true);
+  emit("INITIAL_SESSION", session);
+  await auth.signOut();
+  expect(auth.state).toEqual({ kind: "signedOut" });
+  expect(forgotten()).toBe(true);
+  expect(refreshing()).toBe(false);
 });

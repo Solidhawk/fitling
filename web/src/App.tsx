@@ -3,7 +3,7 @@ import { AuthService, type AuthState } from "./data/auth";
 import { useCoreFailure } from "./core/useCore";
 import { deleteAccount } from "./data/account";
 import { lookUp } from "./data/profile";
-import { supabase } from "./data/supabase";
+import { sessionKey, supabase } from "./data/supabase";
 import { Home } from "./Home";
 import { t } from "./i18n";
 import { Alert } from "./ui/Alert";
@@ -15,7 +15,7 @@ import { type Lookup, type Screen, screenFor } from "./screens/route";
 import { VerifyEmail } from "./screens/VerifyEmail";
 import { Welcome } from "./screens/Welcome";
 
-const auth = new AuthService(supabase, `${location.origin}${import.meta.env.BASE_URL}`);
+const auth = new AuthService(supabase, `${location.origin}${import.meta.env.BASE_URL}`, () => localStorage.removeItem(sessionKey));
 
 /** Picks the screen from the session and what the server has, as RootView and RootViewModel on iOS. */
 export function App() {
@@ -89,7 +89,7 @@ export function App() {
           key={screen.userID}
           userID={screen.userID}
           onFinished={() => void refresh()}
-          onDeleteAccount={() => void deleteAccount(supabase, auth).catch(() => setDeletionFailed(true))}
+          onDeleteAccount={() => deleteAccount(supabase, auth).catch(() => setDeletionFailed(true))}
         />
       )}
       {screen.kind === "partnerSetup" && !rules.failed && <PartnerSetup key={screen.userID} userID={screen.userID} onFinished={() => void refresh()} />}
