@@ -368,6 +368,22 @@ import FitlingCore
         #expect(number(result["stepKg"]) == 2.5)
     }
 
+    @Test func discardingAComposedWorkoutTakesItsDayAlong() throws {
+        var (json, squat, _) = squatProgramme()
+        let program = ProgramRecord(id: UUID(), ownerID: json.userID, name: LocalizedText(["nl": "Samengesteld"]), daysPerWeek: 1)
+        let day = ProgramDayRecord(id: ComposedWorkout.dayID(for: .lowerBody), programID: program.id, ownerID: json.userID, name: LocalizedText(["nl": "Onder"]), position: 0, updatedAt: 0)
+        let item = ProgramItemRecord(id: UUID(), programDayID: day.id, ownerID: json.userID, exerciseID: squat.id, position: 0, targetSets: 3, repMin: 6, repMax: 10, restSeconds: 150)
+        let started = SessionRecord(id: UUID(), programDayID: day.id, performedOn: Day(isoString: "2026-11-18")!, startedAt: 1_795_000_000)
+        json.programs.append(program)
+        json.days.append(day)
+        json.items.append(item)
+        json.sessions.append(started)
+        let result = try answer("discardCleanup", try json.with(#""sessionID":"\#(started.id)""#))
+        #expect(result["dayID"] as? String == day.id.uuidString.lowercased())
+        #expect(result["itemIDs"] as? [String] == [item.id.uuidString.lowercased()])
+        #expect(result["programID"] as? String == program.id.uuidString.lowercased())
+    }
+
     @Test func measurementsFollowTheCore() throws {
         #expect(number(try answer("measurementStored", #"{"value":176,"kind":"weight","usesMetric":false}"#)["value"]) == 79.8)
         #expect(try answer("measurementStored", #"{"value":600,"kind":"waist","usesMetric":true}"#)["value"] == nil)

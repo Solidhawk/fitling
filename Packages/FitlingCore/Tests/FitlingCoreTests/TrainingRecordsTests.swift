@@ -153,6 +153,28 @@ import Testing
         #expect(records.programs().first?.id == shared.id)
     }
 
+    @Test func discardingAComposedWorkoutTakesItsDayAlong() {
+        let bench = exercise("Bench press")
+        let program = ProgramRecord(id: UUID(), ownerID: user, name: LocalizedText(["nl": "Samengesteld"]), daysPerWeek: 1)
+        let push = ProgramDayRecord(id: ComposedWorkout.dayID(for: .push), programID: program.id, ownerID: user, name: LocalizedText(["nl": "Duwen"]), position: 0, updatedAt: now)
+        let item = ProgramItemRecord(id: UUID(), programDayID: push.id, ownerID: user, exerciseID: bench.id, position: 0, targetSets: 2, repMin: 6, repMax: 10, restSeconds: 90)
+        let started = SessionRecord(id: UUID(), programDayID: push.id, performedOn: today, startedAt: now)
+        // The only day of its programme: the programme goes too.
+        let alone = book(exercises: [bench], programs: [program], days: [push], items: [item], workouts: [(started, [])])
+        #expect(alone.cleanup(discarding: started.id) == DiscardCleanup(dayID: push.id, itemIDs: [item.id], programID: program.id))
+        // Another workout was done on the day: it stays.
+        let done = workout(bench, daysAgo: 1, sets: [(60, 10, false)], day: push.id)
+        #expect(book(exercises: [bench], programs: [program], days: [push], items: [item], workouts: [(started, []), done]).cleanup(discarding: started.id) == nil)
+        // Another composed day in the programme: the programme stays.
+        let pull = ProgramDayRecord(id: ComposedWorkout.dayID(for: .pull), programID: program.id, ownerID: user, name: LocalizedText(["nl": "Trekken"]), position: 1, updatedAt: now)
+        #expect(book(exercises: [bench], programs: [program], days: [push, pull], items: [item], workouts: [(started, [])]).cleanup(discarding: started.id)
+            == DiscardCleanup(dayID: push.id, itemIDs: [item.id], programID: nil))
+        // A day of a programme is never removed with a workout.
+        let (_, days, _) = programme(bench, days: 1, owner: user)
+        let onDay = SessionRecord(id: UUID(), programDayID: days[0].id, performedOn: today, startedAt: now)
+        #expect(book(exercises: [bench], days: days, workouts: [(onDay, [])]).cleanup(discarding: onDay.id) == nil)
+    }
+
     @Test func removedDaysKeepTheirNameButLeaveTheProgramme() {
         let bench = exercise("Bench press")
         let (program, days, items) = programme(bench, days: 2, owner: user)
