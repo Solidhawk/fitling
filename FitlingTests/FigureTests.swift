@@ -103,3 +103,40 @@ struct PartnerLayersTests {
         #expect((0..<20).allSatisfy { PartnerMotion(at: Double($0) * 0.1, energy: 1, asleep: true).lift == 0 })
     }
 }
+
+/// The backpack is worn on the back, and the camera looks at the front. Each layer is only what shows of it
+/// (UNFORGET S33): before, most partners showed nothing at all.
+@MainActor
+@Suite struct BackpackLayerTests {
+    /// How much of a layer is at least a quarter opaque, as a share of the picture.
+    static func visibleShare(_ name: String) -> Double? {
+        guard let image = UIImage(named: name)?.cgImage else { return nil }
+        let width = image.width, height = image.height
+        var pixels = [UInt8](repeating: 0, count: width * height * 4)
+        let drawn = pixels.withUnsafeMutableBytes { buffer -> Bool in
+            guard let context = CGContext(data: buffer.baseAddress, width: width, height: height, bitsPerComponent: 8,
+                                          bytesPerRow: width * 4, space: CGColorSpaceCreateDeviceRGB(),
+                                          bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return false }
+            context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+            return true
+        }
+        guard drawn else { return nil }
+        let visible = stride(from: 3, to: pixels.count, by: 4).filter { pixels[$0] >= 64 }.count
+        return Double(visible) / Double(width * height)
+    }
+
+    @Test func everyPartnerShowsItsBackpackInEveryForm() {
+        var hidden: [String] = []
+        for species in Species.allCases {
+            for form in 1...PartnerLayers.formCount {
+                let name = "partner-\(species.rawValue)-\(form)-item-backpack"
+                guard let share = Self.visibleShare(name) else {
+                    hidden.append("\(name): missing")
+                    continue
+                }
+                if share < 0.001 { hidden.append(name) }
+            }
+        }
+        #expect(hidden.isEmpty, "Backpack not visible: \(hidden.joined(separator: ", "))")
+    }
+}
