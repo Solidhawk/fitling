@@ -59,7 +59,7 @@ jobs:
         working-directory: web
         run: |
           npm ci
-          npx vitest run
+          npm test
 
   backend:
     name: Supabase (Linux)

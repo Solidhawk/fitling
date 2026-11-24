@@ -3,7 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "vitest run"
+    "generate": "node scripts/generate.mjs",
+    "test": "node scripts/generate.mjs && vitest run"
   },
   "dependencies": {
     "@bjorn3/browser_wasi_shim": "^0.4.1"
