@@ -29,6 +29,9 @@ public func handle(_ request: Data) -> Data {
         case "ownProduct": return try encode(ownProduct(try input(request)))
         case "dayTotals": return try encode(dayTotals(try input(request)))
         case "partnerSnapshot": return try encode(partnerSnapshot(try input(request)))
+        case "advanceFrom": return try encode(advanceFrom(try input(request)))
+        case "partnerAdvance": return try encode(partnerAdvance(try input(request)))
+        case "wearing": return try encode(wearing(try input(request)))
         case "localizedText": return try encode(localizedText(try input(request)))
         default:
             return failure("unknown function \(call.fn)")

@@ -182,59 +182,6 @@ func dayTotals(_ request: DayTotalsRequest) -> DayTotalsAnswer {
     )
 }
 
-struct LoggedEntryInput: Decodable {
-    let day: String
-    let kcal: Double
-    let proteinG: Double?
-}
-
-struct PartnerSnapshotRequest: Decodable {
-    /// The `creatures` row: species, colorIndex, tone, createdOn, bodyShape, xp, lastProcessedDay, offTargetDays.
-    let creature: CreatureState
-    let entries: [LoggedEntryInput]
-    /// Days with a finished workout.
-    let workoutDays: [String]
-    let periods: [PeriodInput]
-    let fallback: NutritionTargets
-    let today: String
-}
-
-struct PartnerSnapshotAnswer: Encodable {
-    let mood: String
-    let condition: String
-    let energy: Double
-    let level: Int
-    let growthStage: Int
-    let bodyShape: Double
-    let colorIndex: Int
-    let trainedRecently: Bool
-    let unlockedColorCount: Int
-    /// How many days before today decide the mood; older entries are not needed.
-    let historyDays: Int
-}
-
-/// The partner right now, as CreatureHistory.snapshot: from the last week and today, each day against its own
-/// target. Read only; folding finished days into XP and shape is the partner tab's work (web phase 3).
-func partnerSnapshot(_ request: PartnerSnapshotRequest) throws -> PartnerSnapshotAnswer {
-    let today = try day(request.today, "today")
-    let historyDays = CreatureEngine.windowDays + 1
-    let start = today.adding(-historyDays)
-    let periods = try periodEntries(request.periods)
-    let entries = try request.entries
-        .map { LoggedEntry(day: try day($0.day, "day"), kcal: $0.kcal, proteinG: $0.proteinG) }
-        .filter { $0.day >= start && $0.day <= today }
-    let workoutDays = Set(try request.workoutDays.map { try day($0, "workoutDay") }.filter { $0 >= start && $0 <= today })
-    let records = DayRecords.build(entries: entries, workoutDays: workoutDays) {
-        TargetPeriods.targets(on: $0, periods: periods, fallback: request.fallback)
-    }
-    let snapshot = CreatureEngine.snapshot(of: request.creature, records: records, today: today)
-    return PartnerSnapshotAnswer(
-        mood: snapshot.mood.rawValue, condition: snapshot.condition.rawValue, energy: snapshot.energy, level: snapshot.level,
-        growthStage: snapshot.growthStage, bodyShape: snapshot.bodyShape, colorIndex: snapshot.colorIndex,
-        trainedRecently: snapshot.trainedRecently, unlockedColorCount: snapshot.unlockedColorCount, historyDays: historyDays
-    )
-}
-
 struct LocalizedTextRequest: Decodable {
     /// As jsonb stores it: {"nl": "Brood", "en": "Bread"}.
     let values: [String: String]
