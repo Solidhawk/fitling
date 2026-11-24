@@ -1,10 +1,14 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
+import { createUser, signIn } from "./users";
 
 const tabs = ["Vandaag", "Training", "Menu", "Partner", "Dagdoel"];
 
+// The tabs are there once signed in with a profile and a partner.
 test.beforeEach(async ({ page }) => {
-  await page.goto("./");
+  const user = await createUser({ profile: true, creature: true });
+  await signIn(page, user.email);
+  await expect(page.locator('[data-screen="home"]')).toBeAttached();
 });
 
 test("showsFiveTabs", async ({ page }) => {
