@@ -5,7 +5,8 @@ major_version = 17
 
 [auth]
 site_url = "fitling://auth-callback"
-additional_redirect_urls = ["fitling://auth-callback", "fitling://reset-password"]
+# The web address is for the local web tests (D-24); the real project gets the published address only with approval.
+additional_redirect_urls = ["fitling://auth-callback", "fitling://reset-password", "http://localhost:4173/fitling/"]
 
 [auth.email]
 enable_confirmations = true

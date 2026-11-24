@@ -66,6 +66,24 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      # Een lokale Supabase met het schema, zodat inloggen en opslaan echt getest worden; nooit het echte project.
+      - uses: supabase/setup-cli@v3
+        with:
+          version: 3.2.0
+      - name: Lokale Supabase voor de webtests
+        run: |
+          for attempt in 1 2 3; do
+            supabase start -x studio,imgproxy,vector,logflare,realtime,storage-api,postgres-meta,supavisor && break
+            supabase stop --no-backup || true
+            sleep 10
+          done
+          db="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
+          psql "$db" -v ON_ERROR_STOP=1 -q -f supabase/schema.sql
+          psql "$db" -v ON_ERROR_STOP=1 -q -f supabase/seed/sport.sql
+          psql "$db" -v ON_ERROR_STOP=1 -q -f supabase/seed/recipes.sql
+          eval "$(supabase status -o env)"
+          echo "VITE_SUPABASE_URL=$API_URL" >> "$GITHUB_ENV"
+          echo "VITE_SUPABASE_PUBLISHABLE_KEY=${PUBLISHABLE_KEY:-$ANON_KEY}" >> "$GITHUB_ENV"
       - name: Webapp testen
         working-directory: web
         run: |
