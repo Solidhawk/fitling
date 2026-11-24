@@ -106,7 +106,7 @@ export function PartnerSetup({ userID, onFinished }: { userID: string; onFinishe
                 // How the partner starts: small, at the first growth stage, happy to meet the user.
                 <div className="partner-preview" aria-hidden="true" style={{ backgroundColor: `var(--partner-tint-${chosen})` }}>
                   <div className="partner-preview-figure">
-                    <PartnerCanvas species={chosen} look={{ colorIndex, mood: "happy", growthStage: 0 }} />
+                    <PartnerCanvas species={chosen} look={{ colorIndex, mood: "happy", growthStage: 0 }} energy={0.8} />
                   </div>
                   <NamePlate text={cleanedName(name) || t(`creature.${chosen}.name`)} ribbon={`var(--partner-ribbon-${chosen})`} />
                 </div>
