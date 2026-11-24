@@ -1,6 +1,11 @@
+import { readFileSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
 import type { Page } from "@playwright/test";
-import strings from "../src/generated/strings.json";
+
+// Read as a file: Node only imports JSON with an import attribute, which Playwright's loader does not pass on.
+const strings = JSON.parse(readFileSync(new URL("../src/generated/strings.json", import.meta.url), "utf8")) as {
+  nl: Record<string, string | { one: string; other: string }>;
+};
 
 // Only against the local Supabase that CI starts; its keys are the public development keys of `supabase start`.
 const url = process.env.VITE_SUPABASE_URL ?? "";
@@ -9,7 +14,7 @@ export const admin = createClient(url, service, { auth: { persistSession: false,
 
 /** The Dutch text of a key, as the browser in the tests shows it (locale nl-NL). */
 export function nl(key: string): string {
-  const entry = (strings.nl as Record<string, string | { one: string; other: string }>)[key];
+  const entry = strings.nl[key];
   return typeof entry === "string" ? entry : (entry?.other ?? key);
 }
 
