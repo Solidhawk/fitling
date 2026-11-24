@@ -218,7 +218,7 @@ struct TargetsOnDayRequest: Decodable {
 
 func targetsOnDay(_ request: TargetsOnDayRequest) throws -> NutritionTargets {
     let periods = try request.periods.map { period in
-        TargetPeriodRecord(effectiveOn: try day(period.effectiveOn, "effectiveOn"),
+        TargetPeriodEntry(effectiveOn: try day(period.effectiveOn, "effectiveOn"),
                            updatedAt: Date(timeIntervalSince1970: period.updatedAtMs / 1000), targets: period.targets)
     }
     return TargetPeriods.targets(on: try day(request.day, "day"), periods: periods, fallback: request.fallback)

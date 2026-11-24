@@ -11,8 +11,8 @@ import Testing
 
     @Test func theLatestPeriodOnOrBeforeTheDayHolds() {
         let periods = [
-            TargetPeriodRecord(effectiveOn: day(2026, 11, 10), updatedAt: moment, targets: second),
-            TargetPeriodRecord(effectiveOn: day(2026, 11, 1), updatedAt: moment, targets: first),
+            TargetPeriodEntry(effectiveOn: day(2026, 11, 10), updatedAt: moment, targets: second),
+            TargetPeriodEntry(effectiveOn: day(2026, 11, 1), updatedAt: moment, targets: first),
         ]
         #expect(TargetPeriods.targets(on: day(2026, 11, 9), periods: periods, fallback: fallback) == first)
         #expect(TargetPeriods.targets(on: day(2026, 11, 10), periods: periods, fallback: fallback) == second)
@@ -20,7 +20,7 @@ import Testing
     }
 
     @Test func beforeEveryPeriodTheProfileHolds() {
-        let periods = [TargetPeriodRecord(effectiveOn: day(2026, 11, 1), updatedAt: moment, targets: first)]
+        let periods = [TargetPeriodEntry(effectiveOn: day(2026, 11, 1), updatedAt: moment, targets: first)]
         #expect(TargetPeriods.targets(on: day(2026, 10, 31), periods: periods, fallback: fallback) == fallback)
         #expect(TargetPeriods.targets(on: day(2026, 10, 31), periods: [], fallback: fallback) == fallback)
     }
@@ -28,8 +28,8 @@ import Testing
     /// Two devices made a period for the same day: the newest change holds.
     @Test func onTheSameDayTheNewestHolds() {
         let periods = [
-            TargetPeriodRecord(effectiveOn: day(2026, 11, 10), updatedAt: moment.addingTimeInterval(60), targets: second),
-            TargetPeriodRecord(effectiveOn: day(2026, 11, 10), updatedAt: moment, targets: first),
+            TargetPeriodEntry(effectiveOn: day(2026, 11, 10), updatedAt: moment.addingTimeInterval(60), targets: second),
+            TargetPeriodEntry(effectiveOn: day(2026, 11, 10), updatedAt: moment, targets: first),
         ]
         #expect(TargetPeriods.targets(on: day(2026, 11, 10), periods: periods, fallback: fallback) == second)
         #expect(TargetPeriods.targets(on: day(2026, 11, 10), periods: periods.reversed(), fallback: fallback) == second)

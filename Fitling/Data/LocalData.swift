@@ -35,7 +35,7 @@ extension ModelContext {
         )
         // The rule itself is in FitlingCore, so the web app picks the same target (D-24).
         let periods = ((try? fetch(descriptor)) ?? []).compactMap { period in
-            Day(isoString: period.effectiveOn).map { TargetPeriodRecord(effectiveOn: $0, updatedAt: period.updatedAt, targets: period.targets) }
+            Day(isoString: period.effectiveOn).map { TargetPeriodEntry(effectiveOn: $0, updatedAt: period.updatedAt, targets: period.targets) }
         }
         let base = TargetPeriods.targets(on: day, periods: periods, fallback: profile.targets)
         return NutritionEngine.dayTargets(base: base, workoutKcal: workoutKcal(on: day), countsWorkouts: profile.countsWorkoutEnergy)
