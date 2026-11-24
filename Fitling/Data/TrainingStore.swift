@@ -156,7 +156,7 @@ struct TrainingStore {
     func canChange(_ day: ProgramDay) -> Bool {
         TrainingRecords(
             userID: userID, exercises: [], programs: [], days: [], items: [], settings: [], sessions: [], sets: [], today: today, languages: languages
-        ).canChange(day.record)
+        ).canChange(day.trainingRecord)
     }
 
     // MARK: Workouts
@@ -303,23 +303,23 @@ struct TrainingStore {
 
     /// The user's own setting first, then the programme, then the exercise itself.
     func rules(for exercise: Exercise, in item: ProgramExercise?) -> ExerciseRules {
-        records().rules(for: exercise.record, in: item?.record)
+        records().rules(for: exercise.trainingRecord, in: item?.trainingRecord)
     }
 
     /// The rules the last finished workout with the exercise was done by: those of its programme day, which for a
     /// composed workout is never refilled.
     func rulesOfLastWorkout(for exercise: Exercise) -> ExerciseRules {
-        records().rulesOfLastWorkout(for: exercise.record)
+        records().rulesOfLastWorkout(for: exercise.trainingRecord)
     }
 
     /// The advice outside a workout: by the rules of the last one.
     func adviceAfterLastWorkout(for exercise: Exercise) -> ProgressionAdvice {
-        records().adviceAfterLastWorkout(for: exercise.record)
+        records().adviceAfterLastWorkout(for: exercise.trainingRecord)
     }
 
 
     func advice(for exercise: Exercise, in item: ProgramExercise?, excluding session: WorkoutSession? = nil) -> ProgressionAdvice {
-        records().advice(for: exercise.record, in: item?.record, excluding: session?.id)
+        records().advice(for: exercise.trainingRecord, in: item?.trainingRecord, excluding: session?.id)
     }
 
     private func touch(_ model: some SyncableModel) {
@@ -418,8 +418,8 @@ struct TrainingStore {
             predicate: #Predicate<WorkoutSet> { $0.userID == userID && $0.deletedAt == nil }
         ))) ?? []
         return TrainingRecords(
-            userID: userID, exercises: exercises.map(\.record), programs: programs.map(\.record), days: days.map(\.record),
-            items: items.map(\.record), settings: settings.map(\.record), sessions: sessions.compactMap(\.record), sets: sets.map(\.record),
+            userID: userID, exercises: exercises.map(\.trainingRecord), programs: programs.map(\.trainingRecord), days: days.map(\.trainingRecord),
+            items: items.map(\.trainingRecord), settings: settings.map(\.trainingRecord), sessions: sessions.compactMap(\.trainingRecord), sets: sets.map(\.trainingRecord),
             today: today, languages: languages
         )
     }
@@ -427,7 +427,7 @@ struct TrainingStore {
     /// Only the rows a list needs, for ordering it.
     private func ordering(programs: [Program] = [], exercises: [Exercise] = []) -> TrainingRecords {
         TrainingRecords(
-            userID: userID, exercises: exercises.map(\.record), programs: programs.map(\.record), days: [], items: [], settings: [],
+            userID: userID, exercises: exercises.map(\.trainingRecord), programs: programs.map(\.trainingRecord), days: [], items: [], settings: [],
             sessions: [], sets: [], today: today, languages: languages
         )
     }
@@ -456,7 +456,7 @@ struct CoachNote: Identifiable {
 // The SwiftData rows as FitlingCore reads them.
 
 extension Exercise {
-    var record: ExerciseRecord {
+    var trainingRecord: ExerciseRecord {
         ExerciseRecord(
             id: id, ownerID: ownerID, name: name, kind: kind, loadType: loadType, primaryMuscles: primaryMuscles,
             secondaryMuscles: secondaryMuscles, defaultStepKg: defaultStepKg
@@ -465,13 +465,13 @@ extension Exercise {
 }
 
 extension Program {
-    var record: ProgramRecord {
+    var trainingRecord: ProgramRecord {
         ProgramRecord(id: id, ownerID: ownerID, name: name, daysPerWeek: daysPerWeek, deleted: deletedAt != nil)
     }
 }
 
 extension ProgramDay {
-    var record: ProgramDayRecord {
+    var trainingRecord: ProgramDayRecord {
         ProgramDayRecord(
             id: id, programID: programID, ownerID: ownerID, name: name, position: position,
             updatedAt: updatedAt.timeIntervalSince1970, deleted: deletedAt != nil
@@ -480,7 +480,7 @@ extension ProgramDay {
 }
 
 extension ProgramExercise {
-    var record: ProgramItemRecord {
+    var trainingRecord: ProgramItemRecord {
         ProgramItemRecord(
             id: id, programDayID: programDayID, ownerID: ownerID, exerciseID: exerciseID, position: position, targetSets: targetSets,
             repMin: repMin, repMax: repMax, restSeconds: restSeconds
@@ -489,14 +489,14 @@ extension ProgramExercise {
 }
 
 extension ExerciseSetting {
-    var record: ExerciseSettingRecord {
+    var trainingRecord: ExerciseSettingRecord {
         ExerciseSettingRecord(exerciseID: exerciseID, stepKg: stepKg, repMin: repMin, repMax: repMax, updatedAt: updatedAt.timeIntervalSince1970)
     }
 }
 
 extension WorkoutSession {
     /// Nil for a session whose day cannot be read; it never counts.
-    var record: SessionRecord? {
+    var trainingRecord: SessionRecord? {
         Day(isoString: performedOn).map {
             SessionRecord(
                 id: id, programDayID: programDayID, performedOn: $0, startedAt: startedAt.timeIntervalSince1970,
@@ -507,7 +507,7 @@ extension WorkoutSession {
 }
 
 extension WorkoutSet {
-    var record: SetRecord {
+    var trainingRecord: SetRecord {
         SetRecord(id: id, sessionID: sessionID, exerciseID: exerciseID, position: position, weightKg: weightKg, reps: reps, rpe: rpe, isWarmup: isWarmup)
     }
 }

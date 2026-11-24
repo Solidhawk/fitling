@@ -141,6 +141,118 @@ export interface PartnerEvent {
 }
 
 /** The partner's days, as partnerSnapshot and partnerAdvance read them. */
+/** A name or text in several languages, as jsonb stores it: {"nl": "Bankdrukken", "en": "Bench press"}. */
+export type Localized = Record<string, string>;
+
+/** The user's training rows and the shared catalogue, as TrainingRecords in FitlingCore reads them. */
+export interface TrainingInput {
+  userID: string;
+  today: IsoDay;
+  languages: string[];
+  exercises: {
+    id: string;
+    ownerID?: string;
+    name: Localized;
+    kind: string;
+    loadType: string;
+    primaryMuscles: string[];
+    secondaryMuscles: string[];
+    defaultStepKg: number;
+  }[];
+  /** Also removed ones (`deleted`), as a past workout keeps the name of its day. */
+  programs: { id: string; ownerID?: string; name: Localized; daysPerWeek: number; deleted: boolean }[];
+  days: { id: string; programID: string; ownerID?: string; name: Localized; position: number; updatedAt: number; deleted: boolean }[];
+  items: {
+    id: string;
+    programDayID: string;
+    ownerID?: string;
+    exerciseID: string;
+    position: number;
+    targetSets: number;
+    repMin: number;
+    repMax: number;
+    restSeconds: number;
+  }[];
+  settings: { exerciseID: string; stepKg: number; repMin?: number; repMax?: number; updatedAt: number }[];
+  /** Times in seconds since 1970. */
+  sessions: { id: string; programDayID?: string; performedOn: IsoDay; startedAt: number; endedAt?: number }[];
+  sets: { id: string; sessionID: string; exerciseID: string; position: number; weightKg: number; reps: number; rpe?: number; isWarmup: boolean }[];
+}
+
+/** What the coach or the workout advises (ProgressionAdvice). */
+export interface Advice {
+  kind: "findStartingWeight" | "keepGoing" | "increase" | "addRepsFirst" | "reduce" | "easeBackIn" | "makeHarder" | "makeEasier";
+  weightKg?: number;
+  targetReps?: number;
+}
+
+export interface PersonalRecord {
+  kind: "weight" | "estimatedOneRepMax" | "reps";
+  kg: number;
+  count?: number;
+}
+
+export interface SessionSummary {
+  id: string;
+  title?: string;
+  startedAt: number;
+  setCount: number;
+}
+
+export interface TrainingOverview {
+  programs: { id: string; name: string; shared: boolean; daysPerWeek: number; composedCount?: number }[];
+  active?: SessionSummary;
+  next?: { kind: "programDay" | "compose"; programID?: string; dayID?: string; dayName?: string; programName?: string; focus?: string };
+  recent: SessionSummary[];
+  coach: { exerciseID: string; name: string; kind: "heavier" | "switchTo"; advice?: Advice; otherID?: string; otherName?: string }[];
+}
+
+export interface ProgramDetail {
+  id: string;
+  name: string;
+  own: boolean;
+  days: {
+    id: string;
+    name: string;
+    composed: boolean;
+    updatedAt: number;
+    canChange: boolean;
+    items: { id: string; exerciseID: string; exerciseName: string; targetSets: number; repMin: number; repMax: number; restSeconds: number }[];
+  }[];
+}
+
+export interface WorkoutEntry {
+  exerciseID: string;
+  name: string;
+  itemID?: string;
+  restSeconds: number;
+  rules: { repMin: number; repMax: number; targetSets: number; stepKg: number };
+  advice: Advice;
+  /** In the user's unit. */
+  draft: { weight?: number; reps?: number };
+}
+
+export interface WorkoutPlan {
+  exercises: { exerciseID: string; name: string; sets: number; repMin: number; repMax: number; restSeconds: number }[];
+  minutes: number;
+  roundedMinutes: number;
+  leavesTimeOver: boolean;
+  leftOut: string[];
+  dayID: string;
+  programID?: string;
+}
+
+export interface ExerciseProgress {
+  points: { day: IsoDay; kg: number }[];
+  heaviestKg?: number;
+  bestOneRepMaxKg?: number;
+  workouts: number;
+  advice: Advice;
+  stepKg: number;
+}
+
+export type MeasurementKind = "weight" | "waist" | "chest" | "hips" | "arm" | "thigh" | "neck";
+
 export interface PartnerDays {
   creature: CreatureStateInput;
   entries: { day: IsoDay; kcal: number; proteinG?: number }[];
@@ -202,6 +314,18 @@ export interface FitlingCore {
   advanceFrom(input: { creature: CreatureStateInput }): { firstDay: IsoDay };
   partnerAdvance(input: PartnerDays): { creature: CreatureStateInput; changed: boolean; events: PartnerEvent[] };
   wearing(input: { worn: string[]; item: string; unlocked: string[] }): { worn: string[] };
+  trainingOverview(input: { training: TrainingInput }): TrainingOverview;
+  programDetail(input: { training: TrainingInput; programID: string }): ProgramDetail;
+  trainingExercises(input: { training: TrainingInput }): { id: string; name: string; kind: string; primaryMuscles: string[]; done: boolean }[];
+  workout(input: { training: TrainingInput; sessionID: string; added: string[]; usesPounds: boolean }): { title?: string; entries: WorkoutEntry[] };
+  workoutRecords(input: { training: TrainingInput; sessionID: string; exerciseIDs: string[] }): { exerciseID: string; name: string; record: PersonalRecord }[];
+  loggedSet(input: { weight?: number; reps?: number; rpe?: number; usesPounds: boolean }): { canLog: boolean; weightKg: number; reps: number; rpe?: number };
+  composePlan(input: { training: TrainingInput; focus: string; minutes: number }): WorkoutPlan;
+  trainingChoices(): { durations: number[]; defaultMinutes: number; focuses: string[] };
+  exerciseProgress(input: { training: TrainingInput; exerciseID: string }): ExerciseProgress;
+  weeklyVolume(input: { training: TrainingInput; lastWeek: boolean }): { muscle: string; sets: number }[];
+  measurementStored(input: { value: number; kind: MeasurementKind; usesMetric: boolean }): { value?: number };
+  measurementShown(input: { value: number; kind: MeasurementKind; usesMetric: boolean }): { value?: number };
 }
 
 interface Exports {
@@ -261,6 +385,18 @@ export async function loadCore(wasm: ArrayBuffer): Promise<FitlingCore> {
     advanceFrom: (input) => call("advanceFrom", input) as { firstDay: IsoDay },
     partnerAdvance: (input) => call("partnerAdvance", input) as ReturnType<FitlingCore["partnerAdvance"]>,
     wearing: (input) => call("wearing", input) as { worn: string[] },
+    trainingOverview: (input) => call("trainingOverview", input) as TrainingOverview,
+    programDetail: (input) => call("programDetail", input) as ProgramDetail,
+    trainingExercises: (input) => call("trainingExercises", input) as ReturnType<FitlingCore["trainingExercises"]>,
+    workout: (input) => call("workout", input) as ReturnType<FitlingCore["workout"]>,
+    workoutRecords: (input) => call("workoutRecords", input) as ReturnType<FitlingCore["workoutRecords"]>,
+    loggedSet: (input) => call("loggedSet", input) as ReturnType<FitlingCore["loggedSet"]>,
+    composePlan: (input) => call("composePlan", input) as WorkoutPlan,
+    trainingChoices: () => call("trainingChoices", {}) as ReturnType<FitlingCore["trainingChoices"]>,
+    exerciseProgress: (input) => call("exerciseProgress", input) as ExerciseProgress,
+    weeklyVolume: (input) => call("weeklyVolume", input) as ReturnType<FitlingCore["weeklyVolume"]>,
+    measurementStored: (input) => call("measurementStored", input) as { value?: number },
+    measurementShown: (input) => call("measurementShown", input) as { value?: number },
     localizedText: (input) => call("localizedText", input) as { text: string },
   };
 }

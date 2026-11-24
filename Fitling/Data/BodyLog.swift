@@ -3,22 +3,15 @@ import SwiftData
 import UIKit
 import FitlingCore
 
-/// What can be measured, with the values the `body_measurements` check allows.
-enum MeasurementKind: String, CaseIterable, Identifiable {
-    case weight, waist, chest, hips, arm, thigh, neck
-
-    var id: String { rawValue }
-
-    /// Weight is stored in kilograms, the rest in centimetres.
-    var isWeight: Bool { self == .weight }
+/// What can be measured (FitlingCore), for pickers.
+extension MeasurementKind: @retroactive Identifiable {
+    public var id: String { rawValue }
 }
 
 /// Body weight and circumferences (TASKS 4.8). The user types in their own units; the store
 /// keeps kilograms and centimetres.
 @MainActor
 struct BodyLog {
-    static let centimetresPerInch = 2.54
-
     let context: ModelContext
     let userID: UUID
     var usesMetric = Locale.current.measurementSystem == .metric
@@ -35,23 +28,13 @@ struct BodyLog {
         ))) ?? []
     }
 
-    /// From the user's unit to kilograms or centimetres. Nil outside what the database accepts.
+    /// From the user's unit to kilograms or centimetres. Nil outside what the database accepts (FitlingCore).
     func storedValue(_ value: Double, kind: MeasurementKind) -> Double? {
-        let stored: Double
-        if kind.isWeight {
-            stored = usesMetric ? value : WeightUnit.pounds.kilograms(from: value)
-        } else {
-            stored = usesMetric ? value : value * Self.centimetresPerInch
-        }
-        let rounded = (stored * 10).rounded() / 10
-        return rounded > 0 && rounded <= 500 ? rounded : nil
+        BodyMeasurements.storedValue(value, kind: kind, usesMetric: usesMetric)
     }
 
     func displayValue(_ measurement: BodyMeasurement) -> Double {
-        guard !usesMetric else { return measurement.value }
-        return measurement.kind == MeasurementKind.weight.rawValue
-            ? WeightUnit.pounds.value(fromKilograms: measurement.value)
-            : measurement.value / Self.centimetresPerInch
+        BodyMeasurements.displayValue(measurement.value, kind: MeasurementKind(rawValue: measurement.kind) ?? .waist, usesMetric: usesMetric)
     }
 
     var weightSymbol: String { usesMetric ? UnitMass.kilograms.symbol : UnitMass.pounds.symbol }

@@ -2,22 +2,10 @@ import Foundation
 import Observation
 import FitlingCore
 
-/// Kilograms or pounds, by the user's region. The store always holds kilograms.
-enum WeightUnit: Equatable {
-    case kilograms, pounds
-
-    static let kilogramsPerPound = 0.45359237
-
+/// Kilograms or pounds (FitlingCore), by the user's region. The store always holds kilograms.
+extension WeightUnit {
     init(locale: Locale) {
         self = locale.measurementSystem == .us ? .pounds : .kilograms
-    }
-
-    func kilograms(from value: Double) -> Double {
-        self == .pounds ? value * Self.kilogramsPerPound : value
-    }
-
-    func value(fromKilograms kilograms: Double) -> Double {
-        self == .pounds ? kilograms / Self.kilogramsPerPound : kilograms
     }
 
     var symbol: String {
@@ -109,7 +97,7 @@ final class WorkoutViewModel {
 
     /// Fills in the next set from the advice: the weight it names and the reps to aim for (TrainingRecords.prefill).
     func prefill(_ entry: Entry) {
-        let advised = store.records().prefill(entry.exercise.record, in: entry.item?.record, excluding: session.id)
+        let advised = store.records().prefill(entry.exercise.trainingRecord, in: entry.item?.trainingRecord, excluding: session.id)
         var draft = drafts[entry.id] ?? Draft()
         draft.reps = advised.reps
         if let weight = advised.weightKg {
@@ -119,8 +107,7 @@ final class WorkoutViewModel {
     }
 
     func canLog(_ entry: Entry) -> Bool {
-        guard let draft = drafts[entry.id], let weight = draft.weight, let reps = draft.reps else { return false }
-        return weight >= 0 && reps > 0
+        TrainingRecords.canLog(weight: drafts[entry.id]?.weight, reps: drafts[entry.id]?.reps)
     }
 
     /// Stores the draft as a set. A working set starts the rest timer; a warm-up set does not.
