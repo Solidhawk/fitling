@@ -451,3 +451,231 @@ p {
   overflow-y: auto;
   background-color: var(--ground);
 }
+
+/* Inline pickers: one row per choice, a checkmark on the chosen one (pickerStyle(.inline)). */
+.choice {
+  display: flex;
+  align-items: center;
+  gap: var(--space-m);
+  width: 100%;
+}
+
+.choice-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.choice-detail {
+  color: var(--ink-soft);
+  font-size: 0.8125rem;
+}
+
+.checkmark {
+  width: 0.875rem;
+  height: 0.75rem;
+  color: var(--ink);
+}
+
+.number-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-s);
+  width: 100%;
+}
+
+.number-field {
+  font-size: 1.25rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* A Toggle with the Sprout tint, as consent.agree on iOS. */
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-m);
+  width: 100%;
+  cursor: pointer;
+}
+
+.switch {
+  appearance: none;
+  position: relative;
+  flex: none;
+  width: 3.1875rem;
+  height: 1.9375rem;
+  margin: 0;
+  border-radius: 999px;
+  background-color: var(--track);
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.switch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 1.6875rem;
+  height: 1.6875rem;
+  border-radius: 50%;
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgb(0 0 0 / 0.2);
+  transition: transform 0.2s;
+}
+
+.switch:checked {
+  background-color: var(--sprout);
+}
+
+.switch:checked::after {
+  transform: translateX(1.25rem);
+}
+
+.switch:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+/* The bar at the bottom of an onboarding step: progress pills and the next step. */
+.with-bottom-bar {
+  padding-bottom: calc(9rem + env(safe-area-inset-bottom));
+}
+
+.bottom-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-m);
+  max-width: 30rem;
+  margin: 0 auto;
+  padding: var(--space-l) var(--space-l) max(var(--space-l), env(safe-area-inset-bottom));
+  background-color: var(--ground);
+}
+
+.progress {
+  display: flex;
+  gap: var(--space-xs);
+}
+
+.progress span {
+  flex: 1;
+  height: 0.5rem;
+  border-radius: 999px;
+  background-color: var(--track);
+}
+
+.progress .progress-done {
+  background-color: var(--ink);
+}
+
+/* A white card with a soft shadow (Radius.card). */
+.card {
+  padding: var(--space-l);
+  border-radius: var(--radius-card);
+  background-color: var(--card);
+  box-shadow: 0 4px 12px var(--card-shadow);
+}
+
+.targets-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-m);
+  text-transform: none;
+}
+
+.list-header:has(.targets-card) {
+  margin: 0 0 var(--space-l);
+  color: var(--ink);
+  font-size: inherit;
+}
+
+.kcal-total {
+  font-size: 2.125rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+/* MacroBlocks: three toy blocks side by side, each in its own colour; stacked at very large text. */
+.macro-blocks {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(max(6rem, 30%), 1fr));
+  gap: var(--space-s);
+}
+
+.macro-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  min-height: 7rem;
+  padding: var(--space-m);
+  border-radius: var(--radius-ribbon);
+  color: var(--on-ribbon);
+}
+
+.macro-title {
+  overflow: hidden;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.macro-value {
+  margin-top: auto;
+  font-size: 1.375rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.macro-detail {
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+/* A system alert. */
+.alert-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgb(0 0 0 / 0.3);
+}
+
+.alert {
+  width: min(17rem, 80vw);
+  overflow: hidden;
+  border-radius: 0.875rem;
+  background-color: var(--card);
+  text-align: center;
+}
+
+.alert-title {
+  padding: var(--space-l) var(--space-l) var(--space-xs);
+  font-weight: 700;
+}
+
+.alert-message {
+  padding: 0 var(--space-l) var(--space-l);
+  font-size: 0.8125rem;
+}
+
+.alert-button {
+  width: 100%;
+  min-height: 2.75rem;
+  border: 0;
+  border-top: 1px solid var(--track);
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}

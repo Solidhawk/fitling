@@ -40,6 +40,8 @@ export interface BodyInputAnswer {
   fields: BodyFields;
   heightCm?: number;
   weightKg?: number;
+  heightValid: boolean;
+  weightValid: boolean;
   isValid: boolean;
 }
 
@@ -56,6 +58,7 @@ export interface FitlingCore {
   warnings(input: { kcal: number; bmr: number; tdee: number; sex: Sex }): { warnings: string[]; commonMinimumKcal: number };
   targetsOnDay(input: { day: IsoDay; fallback: Targets; periods: { effectiveOn: IsoDay; updatedAtMs: number; targets: Targets }[] }): Targets;
   creature(input: { level: number }): { startShape: number; colorCount: number; growthStage: number };
+  goalFactors(): Record<Goal, number>;
 }
 
 interface Exports {
@@ -101,5 +104,6 @@ export async function loadCore(wasm: ArrayBuffer): Promise<FitlingCore> {
     warnings: (input) => call("warnings", input) as ReturnType<FitlingCore["warnings"]>,
     targetsOnDay: (input) => call("targetsOnDay", input) as Targets,
     creature: (input) => call("creature", input) as ReturnType<FitlingCore["creature"]>,
+    goalFactors: () => call("goalFactors", {}) as Record<Goal, number>,
   };
 }

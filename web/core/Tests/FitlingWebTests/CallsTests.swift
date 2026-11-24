@@ -68,6 +68,9 @@ import Testing
         #expect(number(result["heightCm"]) == 180.3)
         #expect(number(result["weightKg"]) == 79.8)
         #expect(result["isValid"] as? Bool == true)
+        let short = try answer("bodyInput", #"{"usesMetric":true,"fields":{"centimetres":90}}"#)
+        #expect(short["heightValid"] as? Bool == false)
+        #expect(short["weightValid"] as? Bool == false)
     }
 
     /// Fields filled from a stored profile give back the stored values, not a rounded conversion.
@@ -115,5 +118,13 @@ import Testing
         #expect(number(result["startShape"]) == 0.3)
         #expect(number(result["colorCount"]) == 3)
         #expect(number(result["growthStage"]) == 0)
+    }
+
+    @Test func goalFactorsAreTheRulesOwn() throws {
+        let factors = try answer("goalFactors", "{}")
+        #expect(number(factors["lose"]) == 0.8)
+        #expect(number(factors["build_muscle"]) == 1.1)
+        #expect(number(factors["maintain"]) == 1.0)
+        #expect(number(factors["recomp"]) == 0.95)
     }
 }

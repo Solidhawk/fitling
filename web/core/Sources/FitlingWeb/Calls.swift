@@ -19,6 +19,7 @@ public func handle(_ request: Data) -> Data {
         case "warnings": return try encode(warnings(try input(request)))
         case "targetsOnDay": return try encode(targetsOnDay(try input(request)))
         case "creature": return try encode(creature(try input(request)))
+        case "goalFactors": return try encode(goalFactors())
         default:
             return failure("unknown function \(call.fn)")
         }
@@ -120,6 +121,9 @@ struct BodyInputAnswer: Encodable {
     let fields: BodyFields
     let heightCm: Double?
     let weightKg: Double?
+    /// Each within what the database accepts, for the onboarding step that asks for it alone.
+    let heightValid: Bool
+    let weightValid: Bool
     let isValid: Bool
 }
 
@@ -135,7 +139,10 @@ func bodyInput(_ request: BodyInputRequest) throws -> BodyInputAnswer {
     }
     return BodyInputAnswer(
         fields: BodyFields(centimetres: body.centimetres, feet: body.feet, inches: body.inches, weight: body.weight),
-        heightCm: body.heightCm, weightKg: body.weightKg, isValid: body.isValid
+        heightCm: body.heightCm, weightKg: body.weightKg,
+        heightValid: body.heightCm.map { Limits.heightCm.contains($0) } ?? false,
+        weightValid: body.weightKg.map { Limits.weightKg.contains($0) } ?? false,
+        isValid: body.isValid
     )
 }
 
@@ -237,4 +244,9 @@ struct CreatureAnswer: Encodable {
 func creature(_ request: CreatureRequest) throws -> CreatureAnswer {
     CreatureAnswer(startShape: CreatureEngine.startShape, colorCount: CreatureEngine.unlockedColorCount(atLevel: request.level),
                    growthStage: CreatureEngine.growthStage(forLevel: request.level))
+}
+
+/// Each goal's factor on the total expenditure, so the onboarding text names the same share as the rule.
+func goalFactors() -> [String: Double] {
+    Dictionary(uniqueKeysWithValues: Goal.allCases.map { ($0.rawValue, $0.kcalFactor) })
 }
