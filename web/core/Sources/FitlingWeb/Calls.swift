@@ -21,6 +21,13 @@ public func handle(_ request: Data) -> Data {
         case "creature": return try encode(creature(try input(request)))
         case "goalFactors": return try encode(goalFactors())
         case "profileRules": return try encode(profileRules())
+        case "searchKey": return try encode(searchKey(try input(request)))
+        case "barcode": return try encode(barcode(try input(request)))
+        case "recentProducts": return try encode(recentProducts(try input(request)))
+        case "portion": return try encode(portion(try input(request)))
+        case "logEntry": return try encode(logEntry(try input(request)))
+        case "ownProduct": return try encode(ownProduct(try input(request)))
+        case "dayTotals": return try encode(dayTotals(try input(request)))
         default:
             return failure("unknown function \(call.fn)")
         }
@@ -43,7 +50,7 @@ struct CallError: Error {
     let description: String
 }
 
-private func input<Input: Decodable>(_ request: Data) throws -> Input {
+func input<Input: Decodable>(_ request: Data) throws -> Input {
     try JSONDecoder().decode(Envelope<Input>.self, from: request).input
 }
 
