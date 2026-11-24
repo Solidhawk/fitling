@@ -24,12 +24,37 @@ jobs:
   web:
     name: Web
     runs-on: ubuntu-latest
-    container: swift:6.4
+    # Vast op 6.4.3: de Swift SDK voor WebAssembly moet precies bij de compiler horen.
+    container: swift:6.4.3
     steps:
       - uses: actions/checkout@v4
       - name: Rekenregels voor het web (Swift)
         working-directory: web/core
         run: swift test
+      - name: Swift SDK voor WebAssembly
+        run: >
+          swift sdk install
+          https://download.swift.org/swift-6.4.3-release/wasm-sdk/swift-6.4.3-RELEASE/swift-6.4.3-RELEASE_wasm.artifactbundle.tar.gz
+          --checksum 5f24408dc9737ce4cb23b7e3ed4306cabfa02cc02f22ab260b14579b955d4b12
+      - name: Rekenregels als WebAssembly
+        working-directory: web/core
+        run: |
+          swift build --swift-sdk wasm32-unknown-wasi -c release --product fitling-core -Xswiftc -Xclang-linker -Xswiftc -mexec-model=reactor
+          mkdir -p ../public
+          cp "$(swift build --swift-sdk wasm32-unknown-wasi -c release --show-bin-path)/fitling-core.wasm" ../public/fitling-core.wasm
+          ls -l ../public/fitling-core.wasm
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fitling-core-wasm
+          path: web/public/fitling-core.wasm
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Webapp testen
+        working-directory: web
+        run: |
+          npm ci
+          npx vitest run
 
   backend:
     name: Supabase (Linux)
