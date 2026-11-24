@@ -21,9 +21,41 @@ export interface DailyPlan {
   warnings: string[];
 }
 
+export interface Targets {
+  kcal: number;
+  proteinG: number;
+  carbsG: number;
+  fatG: number;
+}
+
+export interface BodyFields {
+  centimetres?: number;
+  feet?: number;
+  inches?: number;
+  /** Kilograms or pounds, following usesMetric. */
+  weight?: number;
+}
+
+export interface BodyInputAnswer {
+  fields: BodyFields;
+  heightCm?: number;
+  weightKg?: number;
+  isValid: boolean;
+}
+
+export type Sex = DailyPlanInput["sex"];
+export type Goal = DailyPlanInput["goal"];
+
 /** The rules of FitlingCore, the same code as in the iOS app (D-24). */
 export interface FitlingCore {
   dailyPlan(input: DailyPlanInput): DailyPlan;
+  bodyInput(input: { usesMetric: boolean; stored?: { heightCm: number; weightKg: number }; fields?: BodyFields }): BodyInputAnswer;
+  birthDay(input: { birthDay: IsoDay; today: IsoDay }): { age: number; isAdult: boolean; isValid: boolean };
+  macros(input: { kcal: number; weightKg: number; goal: Goal }): Targets;
+  kcalShares(targets: Targets): { protein: number; carbs: number; fat: number };
+  warnings(input: { kcal: number; bmr: number; tdee: number; sex: Sex }): { warnings: string[]; commonMinimumKcal: number };
+  targetsOnDay(input: { day: IsoDay; fallback: Targets; periods: { effectiveOn: IsoDay; updatedAtMs: number; targets: Targets }[] }): Targets;
+  creature(input: { level: number }): { startShape: number; colorCount: number; growthStage: number };
 }
 
 interface Exports {
@@ -60,7 +92,17 @@ export async function loadCore(wasm: ArrayBuffer): Promise<FitlingCore> {
     return result;
   }
 
+  const missing = () => {
+    throw new Error("not written yet");
+  };
   return {
     dailyPlan: (input) => call("dailyPlan", input) as DailyPlan,
+    bodyInput: missing,
+    birthDay: missing,
+    macros: missing,
+    kcalShares: missing,
+    warnings: missing,
+    targetsOnDay: missing,
+    creature: missing,
   };
 }

@@ -44,3 +44,34 @@ test("the download is at most 4 MB", async () => {
   const packed = await readFile(new URL("../../public/fitling-core.wasm.gz", import.meta.url));
   expect(packed.byteLength).toBeLessThanOrEqual(4 * 1024 * 1024);
 });
+
+// The calls of web fase 1, with the numbers of the Swift tests (CallsTests).
+test("body input in feet, inches and pounds", async () => {
+  const core = await loadCore(wasm);
+  const body = core.bodyInput({ usesMetric: false, fields: { feet: 5, inches: 11, weight: 176 } });
+  expect(body).toMatchObject({ heightCm: 180.3, weightKg: 79.8, isValid: true });
+});
+
+test("birth day, macros, shares and warnings", async () => {
+  const core = await loadCore(wasm);
+  expect(core.birthDay({ birthDay: "1996-01-10", today: "2026-11-18" })).toEqual({ age: 30, isAdult: true, isValid: true });
+  const targets = core.macros({ kcal: 2760, weightKg: 80, goal: "maintain" });
+  expect(targets).toEqual({ kcal: 2760, proteinG: 128, carbsG: 389, fatG: 77 });
+  expect(core.kcalShares(targets).protein).toBeCloseTo(512 / 2760, 4);
+  expect(core.warnings({ kcal: 2760, bmr: 1780, tdee: 2759, sex: "male" })).toEqual({ warnings: [], commonMinimumKcal: 1500 });
+});
+
+test("the target of a day and a new partner", async () => {
+  const core = await loadCore(wasm);
+  const second = { kcal: 2500, proteinG: 150, carbsG: 300, fatG: 80 };
+  const targets = core.targetsOnDay({
+    day: "2026-11-10",
+    fallback: { kcal: 2000, proteinG: 100, carbsG: 250, fatG: 70 },
+    periods: [
+      { effectiveOn: "2026-11-10", updatedAtMs: 1000, targets: { kcal: 2200, proteinG: 120, carbsG: 270, fatG: 75 } },
+      { effectiveOn: "2026-11-10", updatedAtMs: 2000, targets: second },
+    ],
+  });
+  expect(targets).toEqual(second);
+  expect(core.creature({ level: 1 })).toEqual({ startShape: 0.3, colorCount: 3, growthStage: 0 });
+});
