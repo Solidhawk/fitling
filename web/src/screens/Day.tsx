@@ -2,8 +2,8 @@ import { ChevronLeft, ChevronRight, Droplet, Plus } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { DayTotals, FitlingCore, PartnerSnapshot, Targets } from "../core/fitlingCore";
 import { useCore } from "../core/useCore";
-import { loadPartner, type Partner } from "../data/creature";
-import { addWater, deleteEntry, entriesBetween, entriesOn, type FoodEntry, type Meal, meals, waterOn, workoutDaysBetween } from "../data/diary";
+import { type Partner, partnerWeek } from "../data/creature";
+import { addWater, deleteEntry, entriesOn, type FoodEntry, type Meal, meals, waterOn } from "../data/diary";
 import { loadProfile, loadTargetPeriods } from "../data/profileStore";
 import { supabase } from "../data/supabase";
 import { addDays, today } from "../day";
@@ -24,34 +24,24 @@ interface Shown {
   snapshot?: PartnerSnapshot;
 }
 
-/** The kcal of the partner's week: more than the eight days FitlingCore looks at, which it picks itself. */
-const partnerDays = 14;
+/** Folds finished days into the partner and returns it, once for Vandaag and the partner tab together (Home). */
+export type Advance = (core: FitlingCore) => Promise<Partner | undefined>;
 
-async function load(core: FitlingCore, userID: string, day: string): Promise<Shown> {
+async function load(core: FitlingCore, userID: string, day: string, advance: Advance): Promise<Shown> {
   const now = today();
-  const [entries, water, profile, periods, partner, week, workouts] = await Promise.all([
+  const [entries, water, profile, periods, partner, week] = await Promise.all([
     entriesOn(supabase, day),
     waterOn(supabase, day),
     loadProfile(supabase, userID),
     loadTargetPeriods(supabase),
-    loadPartner(supabase, userID),
-    entriesBetween(supabase, addDays(now, -partnerDays), now),
-    workoutDaysBetween(supabase, addDays(now, -partnerDays), now),
+    advance(core),
+    partnerWeek(supabase, now),
   ]);
   // The target that applied on that day; earlier days keep theirs.
   const targets = core.targetsOnDay({ day, fallback: profile.targets, periods });
   const totals = core.dayTotals({ entries });
   // The partner as it is today, also when an earlier day is shown, as the iPhone shows it.
-  const snapshot = partner
-    ? core.partnerSnapshot({
-        creature: partner.state,
-        entries: week.map((entry) => ({ day: entry.consumedOn, kcal: entry.kcal, proteinG: entry.proteinG })),
-        workoutDays: workouts,
-        periods,
-        fallback: profile.targets,
-        today: now,
-      })
-    : undefined;
+  const snapshot = partner ? core.partnerSnapshot({ creature: partner.state, ...week, periods, fallback: profile.targets, today: now }) : undefined;
   return { entries, water, totals, targets, partner, snapshot };
 }
 
@@ -72,7 +62,7 @@ function amount(entry: FoodEntry): string {
  * One day: what was eaten per meal, the totals against the target that applied that day, and water (DayView.swift).
  * Read again when the tab comes back, so what another device logged shows up.
  */
-export function Day({ userID }: { userID: string }) {
+export function Day({ userID, advance }: { userID: string; advance: Advance }) {
   const core = useCore();
   const [day, setDay] = useState(today());
   const [shown, setShown] = useState<Shown>();
@@ -86,12 +76,12 @@ export function Day({ userID }: { userID: string }) {
     if (!core) return;
     const mine = ++request.current;
     try {
-      const next = await load(core, userID, day);
+      const next = await load(core, userID, day, advance);
       if (mine === request.current) setShown(next);
     } catch (error) {
       if (mine === request.current) setFailed(error instanceof Error ? error.message : "error.server");
     }
-  }, [core, userID, day]);
+  }, [core, userID, day, advance]);
 
   function show(next: string) {
     setShown(undefined);

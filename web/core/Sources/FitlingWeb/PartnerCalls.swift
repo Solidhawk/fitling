@@ -52,6 +52,11 @@ struct XPOutput: Encodable {
     }
 }
 
+struct ItemOutput: Encodable {
+    let item: String
+    let unlockLevel: Int
+}
+
 struct PartnerSnapshotAnswer: Encodable {
     let mood: String
     let condition: String
@@ -65,6 +70,8 @@ struct PartnerSnapshotAnswer: Encodable {
     let colorIndex: Int
     let trainedRecently: Bool
     let unlockedItems: [String]
+    /// Every accessory in its own order, with the level at which it unlocks (the partner tab lists them all).
+    let items: [ItemOutput]
     let unlockedColorCount: Int
     /// The levels at which the colours that are still locked unlock (PartnerViewModel.lockedColorLevels).
     let lockedColorLevels: [Int]
@@ -86,6 +93,7 @@ func partnerSnapshot(_ request: PartnerDaysRequest) throws -> PartnerSnapshotAns
         xp: snapshot.xp, xpIntoLevel: snapshot.xpIntoLevel, xpForNextLevel: snapshot.xpForNextLevel,
         growthStage: snapshot.growthStage, bodyShape: snapshot.bodyShape, colorIndex: snapshot.colorIndex,
         trainedRecently: snapshot.trainedRecently, unlockedItems: snapshot.unlockedItems.map(\.rawValue),
+        items: CreatureItem.allCases.map { ItemOutput(item: $0.rawValue, unlockLevel: $0.unlockLevel) },
         unlockedColorCount: snapshot.unlockedColorCount,
         lockedColorLevels: CreatureEngine.colorUnlockLevels.filter { $0 > snapshot.level },
         todayXP: XPOutput(todayXP), historyDays: historyDays

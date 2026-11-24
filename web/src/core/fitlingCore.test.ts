@@ -149,5 +149,7 @@ test("the partner folded, dressed and today's XP (web phase 3)", async () => {
   expect(core.wearing({ worn: ["scarf", "crown"], item: "cap", unlocked: ["scarf", "cap", "crown"] })).toEqual({ worn: ["scarf", "cap"] });
   const snapshot = core.partnerSnapshot({ ...days, creature: once.creature });
   expect(snapshot.lockedColorLevels.length).toBeGreaterThan(0);
+  expect(snapshot.items.map((entry) => entry.item)).toEqual(["scarf", "cap", "bow", "glasses", "backpack", "crown"]);
+  expect(snapshot.items.find((entry) => entry.item === "crown")?.unlockLevel).toBe(15);
   expect(Object.keys(snapshot.todayXP).sort()).toEqual(["logging", "protein", "withinTarget", "workout"]);
 });

@@ -270,6 +270,9 @@ import FitlingCore
         #expect(number(today["withinTarget"]) == Double(expected.withinTarget))
         #expect(number(today["protein"]) == Double(expected.protein))
         #expect(result["lockedColorLevels"] as? [Int] == CreatureEngine.colorUnlockLevels)
+        let items = try #require(result["items"] as? [[String: Any]])
+        #expect(items.map { $0["item"] as? String } == CreatureItem.allCases.map(\.rawValue))
+        #expect(items.map { number($0["unlockLevel"]) } == CreatureItem.allCases.map { Double($0.unlockLevel) })
     }
 
     @Test func wearingFollowsTheCore() throws {

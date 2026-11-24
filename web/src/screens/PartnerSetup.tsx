@@ -4,18 +4,17 @@ import { saveCreature, type Tone } from "../data/saveCreature";
 import { today } from "../day";
 import { supabase } from "../data/supabase";
 import { t } from "../i18n";
-import { hue } from "../partner/framing";
 import { cleanedName, limitedName } from "../partner/name";
 import { PartnerCanvas } from "../partner/PartnerCanvas";
 import { type Species, species as allSpecies } from "../partner/species";
 import { Alert } from "../ui/Alert";
+import { ColorSwatches } from "../ui/ColorSwatches";
 import { PrimaryButton } from "../ui/Buttons";
 import { FittedText } from "../ui/FittedText";
 import { List, ListRow, ListSection } from "../ui/List";
 import { NamePlate } from "../ui/NamePlate";
 import { NavBar } from "../ui/NavBar";
-
-const tones: Tone[] = ["sweet", "funny", "coach"];
+import { TonePicker } from "../ui/TonePicker";
 
 /**
  * Choosing a partner: species, name, colour and the voice of its reminders (PartnerSetupView.swift and
@@ -127,49 +126,11 @@ export function PartnerSetup({ userID, onFinished }: { userID: string; onFinishe
             </ListSection>
             <ListSection header={t("partner.setup.color")}>
               <ListRow>
-                <span className="swatches" role="radiogroup" aria-label={t("partner.setup.color")}>
-                  {Array.from({ length: colorCount }, (_, index) => (
-                    <button
-                      key={index}
-                      type="button"
-                      role="radio"
-                      aria-checked={colorIndex === index}
-                      aria-label={t("partner.color %lld", index + 1)}
-                      className="swatch"
-                      onClick={() => setColorIndex(index)}
-                    >
-                      <span
-                        className="swatch-fill"
-                        style={{ backgroundColor: `var(--partner-ribbon-${chosen})`, filter: `hue-rotate(${hue(index)}deg)` }}
-                      />
-                    </button>
-                  ))}
-                </span>
+                <ColorSwatches species={chosen} count={colorCount} selection={colorIndex} onSelect={setColorIndex} label={t("partner.setup.color")} />
               </ListRow>
             </ListSection>
             <ListSection header={t("partner.setup.tone")} footer={t("partner.setup.tone.footer")}>
-              <div role="radiogroup" aria-label={t("partner.setup.tone")}>
-                {tones.map((value) => (
-                  <button
-                    key={value}
-                    type="button"
-                    role="radio"
-                    aria-checked={tone === value}
-                    className="list-row list-row-button choice"
-                    onClick={() => setTone(value)}
-                  >
-                    <span className="choice-text">
-                      <span>{t(`partner.tone.${value}`)}</span>
-                      <span className="choice-detail">{t(`creature.message.hungry.${value}.1`)}</span>
-                    </span>
-                    {tone === value && (
-                      <svg className="checkmark" viewBox="0 0 14 12" aria-hidden="true">
-                        <path d="M1 6.5l4 4L13 1" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    )}
-                  </button>
-                ))}
-              </div>
+              <TonePicker tone={tone} onChange={setTone} label={t("partner.setup.tone")} />
             </ListSection>
           </>
         )}

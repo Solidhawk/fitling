@@ -120,6 +120,8 @@ export interface PartnerSnapshot {
   colorIndex: number;
   trainedRecently: boolean;
   unlockedItems: string[];
+  /** Every accessory in its own order, with the level at which it unlocks. */
+  items: { item: string; unlockLevel: number }[];
   unlockedColorCount: number;
   /** The levels at which the colours that are still locked unlock. */
   lockedColorLevels: number[];

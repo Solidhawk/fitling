@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { CreatureStateInput, FitlingCore, IsoDay, PartnerEvent } from "../core/fitlingCore";
+import type { CreatureStateInput, FitlingCore, IsoDay, PartnerDays, PartnerEvent } from "../core/fitlingCore";
+import { addDays } from "../day";
 import type { Species } from "../partner/species";
 import { entriesBetween, workoutDaysBetween } from "./diary";
 import { failure } from "./failure";
@@ -96,4 +97,16 @@ export async function savePartner(
   if (change.items !== undefined) row.equipped_items = change.items;
   const { error } = await client.from("creatures").update(row).eq("user_id", userID);
   if (error) throw failure(error);
+}
+
+/** The days partnerSnapshot is given: more than the eight it looks at, which it picks itself. */
+const weekDays = 14;
+
+/** What the partner did the last two weeks, for its mood today. */
+export async function partnerWeek(client: SupabaseClient, today: IsoDay): Promise<Pick<PartnerDays, "entries" | "workoutDays">> {
+  const [entries, workoutDays] = await Promise.all([
+    entriesBetween(client, addDays(today, -weekDays), today),
+    workoutDaysBetween(client, addDays(today, -weekDays), today),
+  ]);
+  return { entries: entries.map((entry) => ({ day: entry.consumedOn, kcal: entry.kcal, proteinG: entry.proteinG })), workoutDays };
 }
