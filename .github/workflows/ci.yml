@@ -42,10 +42,11 @@ jobs:
       - name: Rekenregels als WebAssembly
         working-directory: web/core
         run: |
-          swift build --swift-sdk swift-6.4.3-RELEASE_wasm -c release --product fitling-core -Xswiftc -Xclang-linker -Xswiftc -mexec-model=reactor
+          swift build --swift-sdk swift-6.4.3-RELEASE_wasm -c release --product fitling-core -Xswiftc -Xclang-linker -Xswiftc -mexec-model=reactor -Xswiftc -Osize -Xswiftc -gnone -Xlinker --strip-all
           mkdir -p ../public
           cp "$(swift build --swift-sdk swift-6.4.3-RELEASE_wasm -c release --show-bin-path)/fitling-core.wasm" ../public/fitling-core.wasm
           ls -l ../public/fitling-core.wasm
+          gzip -9 -c ../public/fitling-core.wasm | wc -c
       - uses: actions/upload-artifact@v4
         with:
           name: fitling-core-wasm
