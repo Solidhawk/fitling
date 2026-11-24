@@ -1,7 +1,7 @@
 // Makes the web app's texts, colours and images from the iOS app's own files, so there is one source (D-24).
 // Run from web/: `node scripts/generate.mjs`. Writes src/generated/ and the image folders in public/.
 import { copyFile, mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
-import { basename, dirname, join } from "node:path";
+import { basename, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const languages = ["nl", "en", "de"];
@@ -33,8 +33,11 @@ function channel(component) {
   return value.toString(16).padStart(2, "0");
 }
 
-function hex({ red, green, blue }) {
-  return `#${channel(red)}${channel(green)}${channel(blue)}`;
+/** #rrggbb, or #rrggbbaa when the colour is see-through (a shadow). */
+function hex({ red, green, blue, alpha = "1" }) {
+  const opacity = parseFloat(alpha);
+  const rgb = `#${channel(red)}${channel(green)}${channel(blue)}`;
+  return opacity >= 1 ? rgb : rgb + Math.round(opacity * 255).toString(16).padStart(2, "0");
 }
 
 /** "PartnerRibbon/owl" to "--partner-ribbon-owl". */
@@ -114,12 +117,8 @@ export async function generate({ resources, out }) {
     await copyFile(join(resources, "ExerciseAnimations", name), join(exercises, name));
   }
 
-  // The image set's folder is the recipe's id; the photo inside is always photo.jpg.
-  const recipes = join(out, "public/recipes");
-  await fresh(recipes);
-  for (const file of await imagesetFiles(join(resources, "Assets.xcassets/Recipes"), ".jpg")) {
-    await copyFile(file, join(recipes, `${basename(dirname(file)).replace(/\.imageset$/, "")}.jpg`));
-  }
+  // Recipe photos are partly CC BY (docs/BRONNEN.md): they go online with the recipe screen that credits
+  // them (phase 5), not before.
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

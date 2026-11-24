@@ -57,6 +57,9 @@ struct DailyPlanOutput: Encodable {
 func dailyPlan(_ input: DailyPlanInput) throws -> DailyPlanOutput {
     guard let birthDay = Day(isoString: input.birthDay) else { throw CallError(description: "invalid birthDay \(input.birthDay)") }
     guard let today = Day(isoString: input.today) else { throw CallError(description: "invalid today \(input.today)") }
+    // A form can send anything; out of range the rules would trap converting to Int.
+    guard Limits.heightCm.contains(input.heightCm) else { throw CallError(description: "heightCm out of range \(input.heightCm)") }
+    guard Limits.weightKg.contains(input.weightKg) else { throw CallError(description: "weightKg out of range \(input.weightKg)") }
     let profile = BodyProfile(birthDay: birthDay, sex: input.sex, heightCm: input.heightCm, weightKg: input.weightKg,
                               activityLevel: input.activityLevel, goal: input.goal)
     let plan = NutritionEngine.plan(for: profile, on: today)
