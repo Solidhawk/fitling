@@ -196,4 +196,30 @@ import Testing
         #expect(number(totals["unknownProtein"]) == 1)
         #expect(number(totals["unknownFat"]) == 2)
     }
+
+    /// Three days on target after creation: the same mood and energy as the engine gives the app.
+    @Test func partnerSnapshotIsTheEnginesOwn() throws {
+        let state = CreatureState(species: .owl, colorIndex: 0, tone: .sweet, createdOn: Day(isoString: "2026-11-14")!)
+        let days = ["2026-11-21", "2026-11-22", "2026-11-23"]
+        let records = days.map {
+            DayRecord(day: Day(isoString: $0)!, kcal: 2000, kcalTarget: 2000, proteinG: 120, proteinTargetG: 120, entryCount: 1, workoutCompleted: false)
+        }
+        let expected = CreatureEngine.snapshot(of: state, records: records, today: Day(isoString: "2026-11-24")!)
+        let entries = days.map { #"{"day":"\#($0)","kcal":2000,"proteinG":120}"# }.joined(separator: ",")
+        let creature = #"{"species":"owl","colorIndex":0,"tone":"sweet","createdOn":"2026-11-14","bodyShape":0.3,"xp":0,"offTargetDays":0}"#
+        let fallback = #"{"kcal":2000,"proteinG":120,"carbsG":250,"fatG":70}"#
+        let result = try answer(
+            "partnerSnapshot",
+            #"{"creature":\#(creature),"entries":[\#(entries)],"workoutDays":[],"periods":[],"fallback":\#(fallback),"today":"2026-11-24"}"#
+        )
+        #expect(result["mood"] as? String == expected.mood.rawValue)
+        #expect(number(result["energy"]) == expected.energy)
+        #expect(number(result["level"]) == Double(expected.level))
+        #expect(number(result["historyDays"]) == 8)
+    }
+
+    @Test func aNameFollowsTheBrowsersLanguagesThenEnglishThenDutch() throws {
+        #expect(try answer("localizedText", #"{"values":{"nl":"Brood","en":"Bread"},"languages":["de-DE","en-US"]}"#)["text"] as? String == "Bread")
+        #expect(try answer("localizedText", #"{"values":{"nl":"Brood"},"languages":["de"]}"#)["text"] as? String == "Brood")
+    }
 }

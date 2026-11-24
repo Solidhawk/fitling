@@ -28,6 +28,8 @@ public func handle(_ request: Data) -> Data {
         case "logEntry": return try encode(logEntry(try input(request)))
         case "ownProduct": return try encode(ownProduct(try input(request)))
         case "dayTotals": return try encode(dayTotals(try input(request)))
+        case "partnerSnapshot": return try encode(partnerSnapshot(try input(request)))
+        case "localizedText": return try encode(localizedText(try input(request)))
         default:
             return failure("unknown function \(call.fn)")
         }
@@ -54,7 +56,7 @@ func input<Input: Decodable>(_ request: Data) throws -> Input {
     try JSONDecoder().decode(Envelope<Input>.self, from: request).input
 }
 
-private func day(_ text: String, _ name: String) throws -> Day {
+func day(_ text: String, _ name: String) throws -> Day {
     guard let day = Day(isoString: text) else { throw CallError(description: "invalid \(name) \(text)") }
     return day
 }
@@ -231,12 +233,15 @@ struct TargetsOnDayRequest: Decodable {
     let periods: [PeriodInput]
 }
 
-func targetsOnDay(_ request: TargetsOnDayRequest) throws -> NutritionTargets {
-    let periods = try request.periods.map { period in
+func periodEntries(_ periods: [PeriodInput]) throws -> [TargetPeriodEntry] {
+    try periods.map { period in
         TargetPeriodEntry(effectiveOn: try day(period.effectiveOn, "effectiveOn"),
                            updatedAt: Date(timeIntervalSince1970: period.updatedAtMs / 1000), targets: period.targets)
     }
-    return TargetPeriods.targets(on: try day(request.day, "day"), periods: periods, fallback: request.fallback)
+}
+
+func targetsOnDay(_ request: TargetsOnDayRequest) throws -> NutritionTargets {
+    TargetPeriods.targets(on: try day(request.day, "day"), periods: try periodEntries(request.periods), fallback: request.fallback)
 }
 
 struct CreatureRequest: Decodable {

@@ -92,6 +92,34 @@ export interface DayTotals {
   unknownFat: number;
 }
 
+export type Mood = "happy" | "content" | "sluggish" | "tired" | "hungry" | "asleep";
+
+/** The `creatures` row as FitlingCore reads it. */
+export interface CreatureStateInput {
+  species: string;
+  colorIndex: number;
+  tone: string;
+  createdOn: IsoDay;
+  bodyShape: number;
+  xp: number;
+  lastProcessedDay?: IsoDay;
+  offTargetDays: number;
+}
+
+export interface PartnerSnapshot {
+  mood: Mood;
+  condition: string;
+  energy: number;
+  level: number;
+  growthStage: number;
+  bodyShape: number;
+  colorIndex: number;
+  trainedRecently: boolean;
+  unlockedColorCount: number;
+  /** How many days before today decide the mood. */
+  historyDays: number;
+}
+
 export interface ProfileRules {
   activityFactors: Record<Activity, number>;
   proteinPerKg: Record<Goal, number>;
@@ -139,6 +167,15 @@ export interface FitlingCore {
     servingSize?: number;
   }): { fields?: OwnProductFields };
   dayTotals(input: { entries: Nutrients[] }): DayTotals;
+  localizedText(input: { values: Record<string, string>; languages: string[] }): { text: string };
+  partnerSnapshot(input: {
+    creature: CreatureStateInput;
+    entries: { day: IsoDay; kcal: number; proteinG?: number }[];
+    workoutDays: IsoDay[];
+    periods: { effectiveOn: IsoDay; updatedAtMs: number; targets: Targets }[];
+    fallback: Targets;
+    today: IsoDay;
+  }): PartnerSnapshot;
 }
 
 interface Exports {
@@ -194,5 +231,7 @@ export async function loadCore(wasm: ArrayBuffer): Promise<FitlingCore> {
     logEntry: (input) => call("logEntry", input) as ReturnType<FitlingCore["logEntry"]>,
     ownProduct: (input) => call("ownProduct", input) as ReturnType<FitlingCore["ownProduct"]>,
     dayTotals: (input) => call("dayTotals", input) as DayTotals,
+    partnerSnapshot: (input) => call("partnerSnapshot", input) as PartnerSnapshot,
+    localizedText: (input) => call("localizedText", input) as { text: string },
   };
 }

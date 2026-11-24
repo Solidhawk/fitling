@@ -33,24 +33,15 @@ struct CreatureHistory {
             predicate: #Predicate<DayActivity> { $0.day >= first && $0.day <= last && $0.workoutKcal > 0 }
         ))) ?? []
 
-        let entriesByDay = Dictionary(grouping: entries, by: \.consumedOn)
         let workoutDays = Set(sessions.map(\.performedOn)).union(activities.map(\.day))
-        return Set(entriesByDay.keys).union(workoutDays)
-            .compactMap(Day.init(isoString:))
-            .sorted()
-            .map { day in
-                let logged = entriesByDay[day.isoString] ?? []
-                let targets = context.targets(on: day, for: profile)
-                return DayRecord(
-                    day: day,
-                    kcal: Int(logged.reduce(0) { $0 + $1.kcal }.rounded()),
-                    kcalTarget: targets.kcal,
-                    proteinG: Int(logged.reduce(0) { $0 + ($1.proteinG ?? 0) }.rounded()),
-                    proteinTargetG: targets.proteinG,
-                    entryCount: logged.count,
-                    workoutCompleted: workoutDays.contains(day.isoString)
-                )
-            }
+        // The same rule as on the web (FitlingCore.DayRecords).
+        return DayRecords.build(
+            entries: entries.compactMap { entry in
+                Day(isoString: entry.consumedOn).map { LoggedEntry(day: $0, kcal: entry.kcal, proteinG: entry.proteinG) }
+            },
+            workoutDays: Set(workoutDays.compactMap(Day.init(isoString:))),
+            targets: { context.targets(on: $0, for: profile) }
+        )
     }
 
     /// Folds every finished day into the partner's shape and XP, and saves only when that changed
