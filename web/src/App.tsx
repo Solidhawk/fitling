@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AuthService, type AuthState } from "./data/auth";
 import { useCoreFailure } from "./core/useCore";
 import { deleteAccount } from "./data/account";
+import { removeAllPhotos } from "./data/photos";
 import { lookUp } from "./data/profile";
 import { sessionKey, supabase } from "./data/supabase";
 import { Home } from "./Home";
@@ -37,6 +38,11 @@ export function App() {
     });
     return () => data.subscription.unsubscribe();
   }, []);
+
+  // Progress photos belong to the signed-in user and live in this browser alone (RootViewModel.eraseLocalData).
+  useEffect(() => {
+    if (authState.kind === "signedOut") void removeAllPhotos();
+  }, [authState.kind]);
 
   const userID = authState.kind === "signedIn" ? authState.userID : undefined;
   const currentUser = useRef(userID);

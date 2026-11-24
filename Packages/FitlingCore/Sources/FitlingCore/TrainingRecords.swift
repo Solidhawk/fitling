@@ -178,6 +178,20 @@ public struct CoachNoteRecord: Sendable, Equatable {
     public var kind: Kind
 }
 
+/// What goes when a workout is thrown away: a composed day made for it alone, its exercises, and with the last day
+/// its programme.
+public struct DiscardCleanup: Sendable, Equatable {
+    public var dayID: UUID
+    public var itemIDs: [UUID]
+    public var programID: UUID?
+
+    public init(dayID: UUID, itemIDs: [UUID], programID: UUID?) {
+        self.dayID = dayID
+        self.itemIDs = itemIDs
+        self.programID = programID
+    }
+}
+
 /// The next set as the advice fills it in, in kilograms; nil where the user has to choose.
 public struct SetDraft: Sendable, Equatable {
     public var weightKg: Double?
@@ -317,6 +331,16 @@ public struct TrainingRecords: Sendable {
             return .programDay(programID: program.id, dayID: all[(index + 1) % all.count].id)
         }
         return nil
+    }
+
+    /// When a workout is thrown away (TrainingStore.discard): a composed day was made for this one workout, so it goes
+    /// too, unless another workout was done on it; with the last day its programme. Nil when nothing else goes.
+    public func cleanup(discarding sessionID: UUID) -> DiscardCleanup? {
+        guard let id = sessionsByID[sessionID]?.programDayID, ComposedWorkout.focus(of: id) != nil, let unused = day(id), !unused.deleted,
+              unused.ownerID == userID, !sessionRows.contains(where: { $0.programDayID == id && $0.id != sessionID })
+        else { return nil }
+        let othersLeft = days(of: unused.programID).contains { $0.id != id }
+        return DiscardCleanup(dayID: id, itemIDs: items(of: id).map(\.id), programID: othersLeft ? nil : unused.programID)
     }
 
     private func composedWorkoutsDone() -> [(focus: TrainingFocus, day: Day)] {

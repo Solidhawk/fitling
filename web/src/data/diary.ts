@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { FitlingCore, IsoDay, QuantityUnit } from "../core/fitlingCore";
 import { failure } from "./failure";
+import { allRows } from "./pages";
 import { type Product, productName, productsByID } from "./products";
 
 export type Meal = "breakfast" | "lunch" | "dinner" | "snack";
@@ -50,22 +51,6 @@ export async function entriesOn(client: SupabaseClient, day: IsoDay): Promise<Fo
   const { data, error } = await client.from("food_entries").select("*").eq("consumed_on", day).is("deleted_at", null).order("updated_at");
   if (error) throw failure(error);
   return (data as Row[]).map(entryFromRow);
-}
-
-/** The server answers at most this many rows at a time (PostgREST max_rows). */
-const page = 1000;
-
-/** Every row a query matches, page by page in the order of `id`, so no row is read twice or skipped. */
-async function allRows(
-  query: (from: number, to: number) => PromiseLike<{ data: Row[] | null; error: { message: string } | null }>,
-): Promise<Row[]> {
-  const rows: Row[] = [];
-  for (let from = 0; ; from += page) {
-    const { data, error } = await query(from, from + page - 1);
-    if (error) throw failure(error);
-    rows.push(...(data ?? []));
-    if ((data ?? []).length < page) return rows;
-  }
 }
 
 /**

@@ -6,7 +6,8 @@ import Testing
 @Suite struct TrainingUnitsTests {
     @Test func poundsAreStoredAsKilograms() {
         #expect(WeightUnit.pounds.kilograms(from: 135) == 135 * 0.45359237)
-        #expect(abs(WeightUnit.pounds.value(fromKilograms: 61.23) - 135) < 0.01)
+        // 135 lb is stored as 61.23 kg, which is 134.99 lb back.
+        #expect(abs(WeightUnit.pounds.value(fromKilograms: 61.23) - 135) < 0.02)
         #expect(WeightUnit.kilograms.kilograms(from: 60) == 60)
     }
 

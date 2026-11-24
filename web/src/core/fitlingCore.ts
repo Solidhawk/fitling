@@ -320,6 +320,7 @@ export interface FitlingCore {
   workout(input: { training: TrainingInput; sessionID: string; added: string[]; usesPounds: boolean }): { title?: string; entries: WorkoutEntry[] };
   workoutRecords(input: { training: TrainingInput; sessionID: string; exerciseIDs: string[] }): { exerciseID: string; name: string; record: PersonalRecord }[];
   loggedSet(input: { weight?: number; reps?: number; rpe?: number; usesPounds: boolean }): { canLog: boolean; weightKg: number; reps: number; rpe?: number };
+  discardCleanup(input: { training: TrainingInput; sessionID: string }): { dayID?: string; itemIDs: string[]; programID?: string };
   composePlan(input: { training: TrainingInput; focus: string; minutes: number }): WorkoutPlan;
   trainingChoices(): { durations: number[]; defaultMinutes: number; focuses: string[] };
   exerciseProgress(input: { training: TrainingInput; exerciseID: string }): ExerciseProgress;
@@ -391,6 +392,7 @@ export async function loadCore(wasm: ArrayBuffer): Promise<FitlingCore> {
     workout: (input) => call("workout", input) as ReturnType<FitlingCore["workout"]>,
     workoutRecords: (input) => call("workoutRecords", input) as ReturnType<FitlingCore["workoutRecords"]>,
     loggedSet: (input) => call("loggedSet", input) as ReturnType<FitlingCore["loggedSet"]>,
+    discardCleanup: (input) => call("discardCleanup", input) as ReturnType<FitlingCore["discardCleanup"]>,
     composePlan: (input) => call("composePlan", input) as WorkoutPlan,
     trainingChoices: () => call("trainingChoices", {}) as ReturnType<FitlingCore["trainingChoices"]>,
     exerciseProgress: (input) => call("exerciseProgress", input) as ExerciseProgress,

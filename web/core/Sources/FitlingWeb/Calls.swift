@@ -38,6 +38,7 @@ public func handle(_ request: Data) -> Data {
         case "workout": return try encode(workout(try input(request)))
         case "workoutRecords": return try encode(workoutRecords(try input(request)))
         case "loggedSet": return try encode(loggedSet(try input(request)))
+        case "discardCleanup": return try encode(discardCleanup(try input(request)))
         case "composePlan": return try encode(composePlan(try input(request)))
         case "trainingChoices": return try encode(trainingChoices())
         case "exerciseProgress": return try encode(exerciseProgress(try input(request)))

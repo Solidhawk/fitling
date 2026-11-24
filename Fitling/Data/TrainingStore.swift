@@ -194,9 +194,10 @@ struct TrainingStore {
         touch(session)
     }
 
-    /// Throws a workout away with its sets, for a workout that was started by mistake. A composed day was made
-    /// for this one workout, so it goes too, unless another workout was done on it, and with the last day its programme.
+    /// Throws a workout away with its sets, for a workout that was started by mistake, and what FitlingCore says goes
+    /// with it (TrainingRecords.cleanup): a composed day made for this one workout, and with the last day its programme.
     func discard(_ session: WorkoutSession) {
+        let cleanup = records().cleanup(discarding: session.id)
         session.deletedAt = now()
         for set in sets(of: session) {
             set.deletedAt = now()
@@ -204,20 +205,11 @@ struct TrainingStore {
             set.needsPush = true
         }
         touch(session)
-        removeComposedDayIfUnused(session.programDayID)
-    }
-
-    private func removeComposedDayIfUnused(_ id: UUID?) {
-        guard let id, ComposedWorkout.focus(of: id) != nil, let unused = day(id), unused.ownerID == userID else { return }
-        let dayID: UUID? = id
-        let uses = (try? context.fetchCount(FetchDescriptor<WorkoutSession>(
-            predicate: #Predicate<WorkoutSession> { $0.programDayID == dayID && $0.deletedAt == nil }
-        ))) ?? 0
-        guard uses == 0 else { return }
-        for item in items(of: unused) { remove(item) }
+        guard let cleanup, let unused = day(cleanup.dayID) else { return }
+        for item in items(of: unused) where cleanup.itemIDs.contains(item.id) { remove(item) }
         unused.deletedAt = now()
         touch(unused)
-        if let program = program(unused.programID), days(of: program).isEmpty { delete(program) }
+        if let programID = cleanup.programID, let program = program(programID) { delete(program) }
     }
 
     func sets(of session: WorkoutSession) -> [WorkoutSet] {

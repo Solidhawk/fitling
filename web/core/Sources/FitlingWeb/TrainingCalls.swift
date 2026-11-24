@@ -175,7 +175,7 @@ struct ProgramRequest: Decodable {
     let programID: UUID
 }
 
-struct ItemOutput: Encodable {
+struct ProgramItemOutput: Encodable {
     let id: String
     let exerciseID: String
     let exerciseName: String
@@ -192,7 +192,7 @@ struct DayOutput: Encodable {
     let composed: Bool
     let updatedAt: Double
     let canChange: Bool
-    let items: [ItemOutput]
+    let items: [ProgramItemOutput]
 }
 
 struct ProgramAnswer: Encodable {
@@ -214,7 +214,7 @@ func programDetail(_ request: ProgramRequest) throws -> ProgramAnswer {
                 id: lower(day.id), name: day.name.text(preferring: languages), composed: ComposedWorkout.focus(of: day.id) != nil,
                 updatedAt: day.updatedAt, canChange: records.canChange(day),
                 items: records.items(of: day.id).map { item in
-                    ItemOutput(
+                    ProgramItemOutput(
                         id: lower(item.id), exerciseID: lower(item.exerciseID),
                         exerciseName: records.exercise(item.exerciseID)?.name.text(preferring: languages) ?? "",
                         targetSets: item.targetSets, repMin: item.repMin, repMax: item.repMax, restSeconds: item.restSeconds
@@ -339,6 +339,23 @@ func workoutRecords(_ request: RecordsRequest) throws -> [FoundRecord] {
             FoundRecord(exerciseID: lower(found.exerciseID), name: $0.name.text(preferring: records.languages), record: RecordOutput(found.record))
         }
     }
+}
+
+struct DiscardRequest: Decodable {
+    let training: TrainingInput
+    let sessionID: UUID
+}
+
+struct DiscardAnswer: Encodable {
+    let dayID: String?
+    let itemIDs: [String]
+    let programID: String?
+}
+
+/// What goes with a workout that is thrown away (TrainingRecords.cleanup): its composed day, unless used again.
+func discardCleanup(_ request: DiscardRequest) throws -> DiscardAnswer {
+    let cleanup = try request.training.records().cleanup(discarding: request.sessionID)
+    return DiscardAnswer(dayID: cleanup.map { lower($0.dayID) }, itemIDs: cleanup?.itemIDs.map(lower) ?? [], programID: cleanup?.programID.map(lower))
 }
 
 struct SetInput: Decodable {
