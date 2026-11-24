@@ -26,6 +26,9 @@ async function fixture(strings) {
   await write("Assets.xcassets/Ground.colorset/Contents.json", color("0xEF", "0xE9", "0xF8", { red: "0x1B", green: "0x15", blue: "0x24" }));
   await write("Assets.xcassets/Ink.colorset/Contents.json", color("0.137", "0.110", "0.200"));
   await write("Assets.xcassets/PartnerRibbon/owl.colorset/Contents.json", color("0x8A", "0xA6", "0xD6"));
+  const shadow = color("0x23", "0x1A", "0x33", { red: "0x00", green: "0x00", blue: "0x00", alpha: "0.500" });
+  shadow.colors[0].color.components.alpha = "0.120";
+  await write("Assets.xcassets/CardShadow.colorset/Contents.json", shadow);
   await write("Partners.xcassets/owl/partner-owl-1-body.imageset/partner-owl-1-body.png", "png");
   await write("ExerciseAnimations/abc.webp", "webp");
   await write("ExerciseAnimations/ExerciseAnimations.json", { fps: 12, frames: 24, columns: 6, animations: {} });
@@ -72,6 +75,9 @@ test("convertsColors", async () => {
   expect(dark).toContain("--ground: #1b1524;");
   // Without a dark variant the light colour holds in dark mode too.
   expect(dark).toContain("--ink: #231c33;");
+  // A shadow keeps its transparency.
+  expect(light).toContain("--card-shadow: #231a331f;");
+  expect(dark).toContain("--card-shadow: #00000080;");
 });
 
 test("copiesImages", async () => {
@@ -79,7 +85,8 @@ test("copiesImages", async () => {
   await generate(dirs);
   expect(await readdir(join(dirs.out, "public/partners"))).toEqual(["partner-owl-1-body.png"]);
   expect((await readdir(join(dirs.out, "public/exercises"))).sort()).toEqual(["ExerciseAnimations.json", "abc.webp"]);
-  expect(await readdir(join(dirs.out, "public/recipes"))).toEqual(["0f25.jpg"]);
+  // The recipe photos are partly CC BY: they go online only with the recipe screen that credits them (phase 5).
+  await expect(readdir(join(dirs.out, "public/recipes"))).rejects.toThrow();
   expect(JSON.parse(await readFile(join(dirs.out, "src/generated/partnerAnchors.json"), "utf8"))).toEqual({ "owl/1": {} });
 });
 
@@ -89,6 +96,5 @@ test("copiesEveryLayerOnTheRealResources", async () => {
   await generate({ resources, out });
   expect((await readdir(join(out, "public/partners"))).length).toBe(1344);
   expect((await readdir(join(out, "public/exercises"))).length).toBe(114);
-  const recipes = (await readdir(join(resources, "Assets.xcassets/Recipes"))).filter((name) => name.endsWith(".imageset"));
-  expect((await readdir(join(out, "public/recipes"))).length).toBe(recipes.length);
+
 }, 60_000);

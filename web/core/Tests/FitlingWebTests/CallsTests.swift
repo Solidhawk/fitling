@@ -34,6 +34,13 @@ import Testing
         #expect(plan.warnings.isEmpty)
     }
 
+    /// An absurd number from a form is an error with a message, never a trap in WebAssembly.
+    @Test func absurdNumbersAreAnError() throws {
+        let request = maintainRequest.replacingOccurrences(of: #""weightKg":80"#, with: #""weightKg":1e300"#)
+        let failure = try JSONDecoder().decode(Failure.self, from: handle(Data(request.utf8)))
+        #expect(failure.error.contains("weightKg"))
+    }
+
     @Test func unknownFunctionIsAnError() throws {
         let failure = try JSONDecoder().decode(Failure.self, from: handle(Data(#"{"fn":"nope","input":{}}"#.utf8)))
         #expect(failure.error == "unknown function nope")

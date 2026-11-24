@@ -26,6 +26,11 @@ test("the daily plan is the one of the app", async () => {
   expect(plan.warnings).toEqual([]);
 });
 
+test("an absurd weight is an error with a message, not a trap", async () => {
+  const core = await loadCore(wasm);
+  expect(() => core.dailyPlan({ ...maintain, weightKg: 1e300 })).toThrow(/weightKg/);
+});
+
 test("an unknown goal is an error, not a crash", async () => {
   const core = await loadCore(wasm);
   expect(() => core.dailyPlan({ ...maintain, goal: "x" as DailyPlanInput["goal"] })).toThrow();
