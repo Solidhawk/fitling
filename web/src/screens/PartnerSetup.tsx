@@ -69,31 +69,35 @@ export function PartnerSetup({ userID, onFinished }: { userID: string; onFinishe
     <main className="screen with-bottom-bar" data-screen="partnerSetup">
       <NavBar title={t("partner.setup.title")} />
       <List>
-        <ListSection header={<span className="setup-intro">{t("partner.setup.intro")}</span>}>
-          <div className="species-grid">
-            {allSpecies.map((species) => (
-              <button
-                key={species}
-                type="button"
-                className="species-tile"
-                aria-pressed={chosen === species}
-                aria-label={t(`creature.${species}.name`)}
-                aria-description={t(`creature.${species}.note`)}
-                data-testid={`partner.setup.species.${species}`}
-                style={{ backgroundColor: `var(--partner-tint-${species})` }}
-                onClick={() => choose(species)}
-              >
-                <PartnerCanvas species={species} />
-                <FittedText
-                  className="species-name"
-                  text={t(`creature.${species}.name`)}
-                  minimumScale={0.75}
-                  style={{ backgroundColor: `var(--partner-ribbon-${species})` }}
-                />
-              </button>
-            ))}
-          </div>
-        </ListSection>
+        {/* The tiles on the ground itself, without a white row behind them (listRowBackground(.clear)). */}
+        <ListSection
+          header={<span className="setup-intro">{t("partner.setup.intro")}</span>}
+          lead={
+            <div className="species-grid">
+              {allSpecies.map((species) => (
+                <button
+                  key={species}
+                  type="button"
+                  className="species-tile"
+                  aria-pressed={chosen === species}
+                  aria-label={t(`creature.${species}.name`)}
+                  aria-description={t(`creature.${species}.note`)}
+                  data-testid={`partner.setup.species.${species}`}
+                  style={{ backgroundColor: `var(--partner-tint-${species})` }}
+                  onClick={() => choose(species)}
+                >
+                  <PartnerCanvas species={species} />
+                  <FittedText
+                    className="species-name"
+                    text={t(`creature.${species}.name`)}
+                    minimumScale={0.75}
+                    style={{ backgroundColor: `var(--partner-ribbon-${species})` }}
+                  />
+                </button>
+              ))}
+            </div>
+          }
+        />
         {chosen && (
           <>
             <ListSection

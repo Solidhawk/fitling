@@ -1,5 +1,11 @@
-import { expect, test } from "vitest";
+import { beforeEach, expect, test, vi } from "vitest";
 import { fixed, grams, kcal, parseNumber } from "./format";
+
+// The numbers follow the browser's language; these are the Dutch forms, whatever language runs the tests.
+beforeEach(() => {
+  vi.stubGlobal("navigator", { languages: ["nl-NL"] });
+  return () => vi.unstubAllGlobals();
+});
 
 // As Measurement(.kilocalories).formatted(.measurement(width: .abbreviated)) in Dutch: grouped, no decimals.
 test("kcal in the user's language", () => {

@@ -312,6 +312,13 @@ body {
   color: var(--ink-soft);
 }
 
+/* In ink, as everything else that shows focus; the browser's blue would be the only blue in the app. */
+.text-field:focus-visible {
+  border-radius: 0.25rem;
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
 /* Screens outside the tabs: the same column on the pastel ground. */
 .screen {
   max-width: 30rem;
