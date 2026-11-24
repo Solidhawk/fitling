@@ -281,4 +281,95 @@ import FitlingCore
         let locked = try answer("wearing", #"{"worn":[],"item":"crown","unlocked":["scarf"]}"#)
         #expect(locked["worn"] as? [String] == [])
     }
+
+    // Web phase 4: training, from the same TrainingRecords as TrainingStore.
+    struct TrainingJSON: Encodable {
+        var userID = UUID()
+        var today = "2026-11-18"
+        var languages = ["nl"]
+        var exercises: [ExerciseRecord] = []
+        var programs: [ProgramRecord] = []
+        var days: [ProgramDayRecord] = []
+        var items: [ProgramItemRecord] = []
+        var settings: [ExerciseSettingRecord] = []
+        var sessions: [SessionRecord] = []
+        var sets: [SetRecord] = []
+
+        func with(_ extra: String) throws -> String {
+            let training = String(decoding: try JSONEncoder().encode(self), as: UTF8.self)
+            return extra.isEmpty ? #"{"training":\#(training)}"# : #"{"training":\#(training),\#(extra)}"#
+        }
+    }
+
+    /// A shared squat programme of two days (3 × 6–8) and a finished workout on the first day three days ago.
+    func squatProgramme() -> (TrainingJSON, ExerciseRecord, [ProgramDayRecord]) {
+        let squat = ExerciseRecord(
+            id: UUID(), ownerID: nil, name: LocalizedText(["nl": "Squat"]), kind: "compound", loadType: "external",
+            primaryMuscles: ["quads"], secondaryMuscles: [], defaultStepKg: 2.5
+        )
+        let program = ProgramRecord(id: UUID(), ownerID: nil, name: LocalizedText(["nl": "Volledig lichaam"]), daysPerWeek: 2)
+        let days = (0..<2).map {
+            ProgramDayRecord(id: UUID(), programID: program.id, ownerID: nil, name: LocalizedText(["nl": "Dag \($0 + 1)"]), position: $0, updatedAt: 0)
+        }
+        let items = days.map {
+            ProgramItemRecord(id: UUID(), programDayID: $0.id, ownerID: nil, exerciseID: squat.id, position: 0, targetSets: 3, repMin: 6, repMax: 8, restSeconds: 150)
+        }
+        let session = SessionRecord(id: UUID(), programDayID: days[0].id, performedOn: Day(isoString: "2026-11-15")!, startedAt: 1_794_740_000, endedAt: 1_794_743_600)
+        let sets = (0..<3).map { SetRecord(id: UUID(), sessionID: session.id, exerciseID: squat.id, position: $0, weightKg: 100, reps: 6, rpe: 7) }
+        let json = TrainingJSON(exercises: [squat], programs: [program], days: days, items: items, sessions: [session], sets: sets)
+        return (json, squat, days)
+    }
+
+    @Test func trainingOverviewIsTheStoresOwn() throws {
+        let (json, _, days) = squatProgramme()
+        let result = try answer("trainingOverview", try json.with(""))
+        let next = try #require(result["next"] as? [String: Any])
+        #expect(next["kind"] as? String == "programDay")
+        #expect(next["dayID"] as? String == days[1].id.uuidString.lowercased())
+        #expect(next["dayName"] as? String == "Dag 2")
+        let recent = try #require(result["recent"] as? [[String: Any]])
+        #expect(recent.first?["title"] as? String == "Dag 1")
+        #expect(number(recent.first?["setCount"]) == 3)
+        #expect((result["programs"] as? [[String: Any]])?.first?["shared"] as? Bool == true)
+    }
+
+    @Test func workoutPrefillsFromTheAdvice() throws {
+        var (json, squat, days) = squatProgramme()
+        let today = SessionRecord(id: UUID(), programDayID: days[1].id, performedOn: Day(isoString: "2026-11-18")!, startedAt: 1_795_000_000)
+        json.sessions.append(today)
+        let result = try answer("workout", try json.with(#""sessionID":"\#(today.id)","added":[],"usesPounds":false"#))
+        let entry = try #require((result["entries"] as? [[String: Any]])?.first)
+        #expect(entry["exerciseID"] as? String == squat.id.uuidString.lowercased())
+        #expect((entry["advice"] as? [String: Any])?["kind"] as? String == "keepGoing")
+        let draft = try #require(entry["draft"] as? [String: Any])
+        #expect(number(draft["weight"]) == 100 && number(draft["reps"]) == 7)
+        #expect(number(entry["restSeconds"]) == 150)
+        let pounds = try answer("workout", try json.with(#""sessionID":"\#(today.id)","added":[],"usesPounds":true"#))
+        let poundsDraft = try #require(((pounds["entries"] as? [[String: Any]])?.first)?["draft"] as? [String: Any])
+        #expect(number(poundsDraft["weight"]) == 220.46)
+    }
+
+    @Test func loggedSetIsBounded() throws {
+        let pounds = try answer("loggedSet", #"{"weight":135,"reps":5,"usesPounds":true}"#)
+        #expect(number(pounds["weightKg"]) == 61.23 && pounds["canLog"] as? Bool == true)
+        let missing = try answer("loggedSet", #"{"weight":60,"usesPounds":false}"#)
+        #expect(missing["canLog"] as? Bool == false)
+    }
+
+    @Test func exerciseProgressListsEveryWorkout() throws {
+        var (json, squat, _) = squatProgramme()
+        let later = SessionRecord(id: UUID(), programDayID: nil, performedOn: Day(isoString: "2026-11-17")!, startedAt: 1_794_900_000, endedAt: 1_794_903_600)
+        json.sessions.append(later)
+        json.sets.append(SetRecord(id: UUID(), sessionID: later.id, exerciseID: squat.id, position: 0, weightKg: 105, reps: 5, rpe: 8))
+        let result = try answer("exerciseProgress", try json.with(#""exerciseID":"\#(squat.id)""#))
+        #expect(number(result["workouts"]) == 2)
+        #expect((result["points"] as? [[String: Any]])?.count == 2)
+        #expect(number(result["heaviestKg"]) == 105)
+        #expect(number(result["stepKg"]) == 2.5)
+    }
+
+    @Test func measurementsFollowTheCore() throws {
+        #expect(number(try answer("measurementStored", #"{"value":176,"kind":"weight","usesMetric":false}"#)["value"]) == 79.8)
+        #expect(try answer("measurementStored", #"{"value":600,"kind":"waist","usesMetric":true}"#)["value"] == nil)
+    }
 }
