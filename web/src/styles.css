@@ -296,10 +296,15 @@ body {
   min-width: 0;
 }
 
+/* The bar's text does not grow with the text size, as UINavigationBar on iOS. */
+.nav-bar .nav-back {
+  font-size: min(1.0625rem, 17px);
+}
+
 .nav-title {
   overflow: hidden;
   margin: 0;
-  font-size: 1.0625rem;
+  font-size: min(1.0625rem, 17px);
   font-weight: 700;
   text-align: center;
   text-overflow: ellipsis;
@@ -1089,8 +1094,15 @@ p {
   font-variant-numeric: tabular-nums;
 }
 
-/* A Picker or DatePicker in a Form: the chosen value in soft ink on the right. */
+/* A Picker or DatePicker in a Form: the chosen value in soft ink on the right, under the label when there is no
+   room beside it (LabeledContent at the accessibility sizes). */
+.picker-row {
+  flex-wrap: wrap;
+}
+
 .picker {
+  max-width: 100%;
+  min-width: 0;
   min-height: 2.75rem;
   border: 0;
   background: none;
