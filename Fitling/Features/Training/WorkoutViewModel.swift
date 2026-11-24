@@ -107,24 +107,13 @@ final class WorkoutViewModel {
         store.rules(for: entry.exercise, in: entry.item)
     }
 
-    /// Fills in the next set from the advice: the weight it names and the reps to aim for.
+    /// Fills in the next set from the advice: the weight it names and the reps to aim for (TrainingRecords.prefill).
     func prefill(_ entry: Entry) {
-        let rules = self.rules(for: entry)
+        let advised = store.records().prefill(entry.exercise.record, in: entry.item?.record, excluding: session.id)
         var draft = drafts[entry.id] ?? Draft()
-        draft.reps = rules.repRange.lowerBound
-        switch advice(for: entry) {
-        case let .increase(weight), let .reduce(weight), let .easeBackIn(weight):
+        draft.reps = advised.reps
+        if let weight = advised.weightKg {
             draft.weight = rounded(unit.value(fromKilograms: weight))
-        case let .keepGoing(weight):
-            draft.weight = rounded(unit.value(fromKilograms: weight))
-            // Aim for one more rep than last time at this weight, up to the top of the range.
-            let last = store.history(of: entry.exercise.id, excluding: session).last?.sets.filter { $0.weightKg == weight }.map(\.reps).max()
-            draft.reps = min(max((last ?? rules.repRange.lowerBound - 1) + 1, rules.repRange.lowerBound), rules.repRange.upperBound)
-        case let .addRepsFirst(weight, targetReps):
-            draft.weight = rounded(unit.value(fromKilograms: weight))
-            draft.reps = targetReps
-        case .findStartingWeight, .makeHarder, .makeEasier:
-            break
         }
         drafts[entry.id] = draft
     }
@@ -178,14 +167,11 @@ final class WorkoutViewModel {
         isFinished = true
     }
 
-    /// Records set in this workout, to celebrate at the end.
+    /// Records set in this workout, to celebrate at the end (TrainingRecords.records).
     func records() -> [(Exercise, PersonalRecord)] {
-        entries.flatMap { entry -> [(Exercise, PersonalRecord)] in
-            let working = sets(of: entry).compactMap(\.workingSet)
-            guard !working.isEmpty else { return [] }
-            let session = ExerciseSession(day: store.today, sets: working)
-            return ProgressionEngine.personalRecords(in: session, history: store.history(of: entry.exercise.id, excluding: self.session))
-                .map { (entry.exercise, $0) }
+        let exercises = Dictionary(entries.map { ($0.exercise.id, $0.exercise) }, uniquingKeysWith: { first, _ in first })
+        return store.records().records(in: session.id, exerciseIDs: entries.map(\.exercise.id)).compactMap { found in
+            exercises[found.exerciseID].map { ($0, found.record) }
         }
     }
 

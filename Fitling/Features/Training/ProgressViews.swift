@@ -31,7 +31,8 @@ struct ExerciseProgressList: View {
         .groundBackground()
         .navigationTitle("training.progress.exercises")
         .onAppear {
-            exercises = store.exercises().filter { !store.history(of: $0.id).isEmpty }
+            let records = store.records()
+            exercises = store.exercises().filter { !records.history(of: $0.id).isEmpty }
         }
     }
 }
@@ -197,16 +198,7 @@ struct VolumeView: View {
     }
 
     private func load() {
-        let since = store.today.weekStart.adding(-7)
-        var logged: [LoggedExercise] = []
-        for exercise in store.exercises() {
-            let primary = exercise.primaryMuscles.compactMap(MuscleGroup.init(rawValue:))
-            let secondary = exercise.secondaryMuscles.compactMap(MuscleGroup.init(rawValue:))
-            for session in store.history(of: exercise.id) where session.day >= since {
-                logged.append(LoggedExercise(day: session.day, primaryMuscles: primary, secondaryMuscles: secondary, sets: session.sets))
-            }
-        }
-        weeks = ProgressionEngine.weeklyVolume(logged)
+        weeks = store.records().weeklyVolume()
     }
 }
 
