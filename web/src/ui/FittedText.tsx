@@ -31,7 +31,14 @@ export function FittedText({
       element.style.setProperty("--fit", "1");
       const large = twoLinesWhenLarge && parseFloat(getComputedStyle(document.documentElement).fontSize) >= largeText;
       element.toggleAttribute("data-two-lines", large);
-      if (large) return;
+      if (large) {
+        // Two lines, and smaller still where those are not enough, down to the same minimum.
+        for (const scale of [1, 0.9, 0.8, minimumScale]) {
+          element.style.setProperty("--fit", String(scale));
+          if (element.scrollHeight <= element.clientHeight + 1 && element.scrollWidth <= element.clientWidth + 1) break;
+        }
+        return;
+      }
       const overflow = element.scrollWidth / element.clientWidth;
       if (overflow > 1) element.style.setProperty("--fit", String(Math.max(1 / overflow, minimumScale)));
     };
