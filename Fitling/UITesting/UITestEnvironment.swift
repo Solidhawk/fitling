@@ -13,6 +13,7 @@ enum UITestEnvironment {
     /// `--ui-testing-partner-gallery` shows every species in every look, for approving the drawings.
     /// `--ui-testing-workout-history` adds four weeks of finished workouts, so the coach has something to say.
     /// `--ui-testing-animated-exercises` adds one workout with exercises of each kind, so their animations can be opened.
+    /// `--ui-testing-progress-photos` adds a portrait photo of today and a landscape one of yesterday.
     /// `--ui-testing-reduce-motion` acts as if Reduce Motion is on; XCUITest cannot switch that setting on.
     /// `--ui-testing-dark` forces dark mode; setting the appearance from XCUITest did not reach the app on the CI simulator.
     static var colorScheme: ColorScheme? {
@@ -41,6 +42,9 @@ enum UITestEnvironment {
             }
             if arguments.contains("--ui-testing-animated-exercises") {
                 insertAnimatedExerciseHistory(userID: userID, into: sync.context)
+            }
+            if arguments.contains("--ui-testing-progress-photos") {
+                insertProgressPhotos(into: sync.context)
             }
         }
         let source = FakeProductSource()
@@ -110,6 +114,22 @@ enum UITestEnvironment {
         "fb2140a0-eb3f-5b29-b88b-210d435e8163", // dumbbell fly
         "fd04401f-f97f-54b8-824e-7252dfc457d5", // side-lying leg raise
     ]
+
+    /// Today a portrait photo, yesterday a landscape one: in its portrait tile the landscape photo is
+    /// far wider than the tile.
+    static func insertProgressPhotos(into context: ModelContext, now: Date = .now, timeZone: TimeZone = .current) {
+        let store = ProgressPhotoStore(context: context)
+        let today = Day(now, timeZone: timeZone)
+        for (size, color, day) in [(CGSize(width: 300, height: 400), UIColor.systemTeal, today), (CGSize(width: 400, height: 300), UIColor.systemOrange, today.adding(-1))] {
+            let image = UIGraphicsImageRenderer(size: size).image { context in
+                color.setFill()
+                context.fill(CGRect(origin: .zero, size: size))
+            }
+            if let jpeg = image.jpegData(compressionQuality: 0.8) {
+                _ = try? store.add(jpeg, on: day)
+            }
+        }
+    }
 
     /// One finished workout three days ago with those exercises in it: "Per oefening" only lists exercises
     /// that were done.

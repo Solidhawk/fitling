@@ -1,5 +1,6 @@
 import Foundation
 import SwiftData
+import UIKit
 import FitlingCore
 
 /// What can be measured, with the values the `body_measurements` check allows.
@@ -93,6 +94,12 @@ struct ProgressPhotoStore {
 
     func url(of photo: ProgressPhoto) -> URL {
         folder.appending(path: photo.fileName)
+    }
+
+    /// The photo itself, for the grid and the detail. The file path without percent encoding: the folder is in
+    /// "Application Support", and "%20" is not a space to the file system.
+    static func image(at url: URL) -> UIImage? {
+        UIImage(contentsOfFile: url.path(percentEncoded: false))
     }
 
     @discardableResult

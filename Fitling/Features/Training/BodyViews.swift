@@ -130,6 +130,7 @@ struct ProgressPhotosView: View {
                             PhotoTile(url: store.url(of: photo), day: Day(isoString: photo.takenOn))
                         }
                         .buttonStyle(.plain)
+                        .accessibilityIdentifier("photos.tile")
                     }
                 }
             }
@@ -174,11 +175,13 @@ private struct PhotoTile: View {
         Color.track
             .aspectRatio(3 / 4, contentMode: .fit)
             .overlay {
-                if let image = UIImage(contentsOfFile: url.path()) {
+                if let image = ProgressPhotoStore.image(at: url) {
                     Image(uiImage: image).resizable().scaledToFill()
                 }
             }
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            // Clipping only hides the overflow; without this a tap beside a landscape photo still opens it.
+            .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             .overlay(alignment: .bottomLeading) {
                 if let day {
                     Text(day.startDate, format: .dateTime.day().month(.abbreviated))
@@ -211,7 +214,7 @@ private struct PhotoDetail: View {
     var body: some View {
         NavigationStack {
             Group {
-                if let image = UIImage(contentsOfFile: url.path()) {
+                if let image = ProgressPhotoStore.image(at: url) {
                     Image(uiImage: image).resizable().scaledToFit()
                 } else {
                     Color.track
