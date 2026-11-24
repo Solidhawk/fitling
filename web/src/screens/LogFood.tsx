@@ -76,7 +76,8 @@ export function LogFood({ core, userID, meal, day, onClose }: { core: FitlingCor
 
   /** A barcode from the camera or typed in (LogFoodViewModel.handleScan); while one is looked up, the camera waits. */
   async function handleScan(code: string) {
-    if (lookingUp.current) return;
+    // While an alert about the last code is open, the camera waits too.
+    if (lookingUp.current || scanAlert) return;
     lookingUp.current = true;
     try {
       const result = await lookUp(supabase, core, code, new Date());

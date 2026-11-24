@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { t } from "../i18n";
 import { startScanning } from "../scan/camera";
+import { NewCodes } from "../scan/codes";
 import { SecondaryButton } from "../ui/Buttons";
 import { useDialogFocus } from "../ui/dialogFocus";
 import { NavBar } from "../ui/NavBar";
@@ -22,7 +23,8 @@ export function Scan({ onCode, onCancel }: { onCode: (code: string) => void; onC
     if (!video.current) return;
     let stop: (() => void) | undefined;
     let closed = false;
-    startScanning(video.current, (code) => latest.current(code)).then(
+    const codes = new NewCodes();
+    startScanning(video.current, (code) => codes.accept(code) && latest.current(code)).then(
       (stopper) => (closed ? stopper() : (stop = stopper)),
       () => setCanScan(false),
     );

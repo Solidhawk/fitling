@@ -129,3 +129,31 @@ test("loggingWithoutAConnectionKeepsThePortion", async ({ page }) => {
   const { data } = await admin.from("food_entries").select("id").eq("user_id", user.id);
   expect(data).toEqual([]);
 });
+
+// Review: a failed first try must not leave an own copy behind for every retry (FoodDiary keeps its copy).
+test("aRetryUsesTheOwnCopyMadeTheFirstTime", async ({ page }) => {
+  const user = await start(page);
+  const product = await sharedProduct("Rooibos", { kcal_100: null });
+  await search(page, product.name);
+  await page.getByRole("button", { name: new RegExp(product.name) }).click();
+  await page.getByTestId("portion.kcal").fill("2");
+  await page.route("**/rest/v1/food_entries*", (route) => route.abort("internetdisconnected"));
+  await page.getByTestId("portion.save").click();
+  await expect(page.getByText(nl("error.network"))).toBeVisible();
+  await page.unroute("**/rest/v1/food_entries*");
+  await page.getByTestId("portion.save").click();
+  await expect(page.locator('[data-screen="logFood"]')).toHaveCount(0);
+  const { data } = await admin.from("products").select("id").eq("owner_id", user.id);
+  expect(data).toHaveLength(1);
+});
+
+// PortionView: without an amount there is nothing to add and nothing to save.
+test("anEmptyAmountCannotBeSaved", async ({ page }) => {
+  await start(page);
+  const product = await sharedProduct("Rijst");
+  await search(page, product.name);
+  await page.getByRole("button", { name: new RegExp(product.name) }).click();
+  await page.getByTestId("portion.quantity").fill("");
+  await expect(page.getByTestId("portion.save")).toBeDisabled();
+  await expect(page.getByTestId("portion.energy")).toHaveCount(0);
+});

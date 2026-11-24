@@ -19,14 +19,25 @@ declare global {
 export async function startScanning(video: HTMLVideoElement, onCode: (code: string) => void): Promise<() => void> {
   if (!navigator.mediaDevices?.getUserMedia) throw new Error("scan.unavailable");
   const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
+  const stopStream = () => stream.getTracks().forEach((track) => track.stop());
+  try {
+    return await read(stream, video, onCode, stopStream);
+  } catch (error) {
+    // The camera came on but reading did not start (playing refused, the reader did not load): it goes off again.
+    stopStream();
+    throw error;
+  }
+}
+
+async function read(stream: MediaStream, video: HTMLVideoElement, onCode: (code: string) => void, stopStream: () => void): Promise<() => void> {
   video.srcObject = stream;
   video.setAttribute("playsinline", "");
   await video.play();
   let stopped = false;
-  const stopStream = () => stream.getTracks().forEach((track) => track.stop());
 
-  if (window.BarcodeDetector) {
-    const detector = new window.BarcodeDetector({ formats });
+  const Detector = (globalThis as { BarcodeDetector?: Window["BarcodeDetector"] }).BarcodeDetector;
+  if (Detector) {
+    const detector = new Detector({ formats });
     const look = async () => {
       if (stopped) return;
       try {

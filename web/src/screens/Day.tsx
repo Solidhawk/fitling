@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight, Droplet, Plus } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { DayTotals, FitlingCore, PartnerSnapshot, Targets } from "../core/fitlingCore";
 import { useCore } from "../core/useCore";
 import { loadPartner, type Partner } from "../data/creature";
@@ -78,15 +78,25 @@ export function Day({ userID }: { userID: string }) {
   const [shown, setShown] = useState<Shown>();
   const [logging, setLogging] = useState<Meal>();
   const [failed, setFailed] = useState<string>();
+  const request = useRef(0);
 
+  // An answer that a newer request overtook is dropped: tapping back twice quickly shows the second day, not
+  // whichever answer came in last.
   const reload = useCallback(async () => {
     if (!core) return;
+    const mine = ++request.current;
     try {
-      setShown(await load(core, userID, day));
+      const next = await load(core, userID, day);
+      if (mine === request.current) setShown(next);
     } catch (error) {
-      setFailed(error instanceof Error ? error.message : "error.server");
+      if (mine === request.current) setFailed(error instanceof Error ? error.message : "error.server");
     }
   }, [core, userID, day]);
+
+  function show(next: string) {
+    setShown(undefined);
+    setDay(next);
+  }
 
   useEffect(() => {
     void reload();
@@ -109,7 +119,7 @@ export function Day({ userID }: { userID: string }) {
   return (
     <div className="tab-page" data-page="day">
       <div className="toolbar">
-        <button type="button" className="nav-back nav-action icon-button" aria-label={t("day.previous")} onClick={() => setDay(addDays(day, -1))}>
+        <button type="button" className="nav-back nav-action icon-button" aria-label={t("day.previous")} onClick={() => show(addDays(day, -1))}>
           <ChevronLeft aria-hidden="true" size={24} strokeWidth={2.2} />
         </button>
         <button
@@ -117,7 +127,7 @@ export function Day({ userID }: { userID: string }) {
           className="nav-back nav-action icon-button"
           aria-label={t("day.next")}
           disabled={isToday}
-          onClick={() => setDay(addDays(day, 1) > today() ? today() : addDays(day, 1))}
+          onClick={() => show(addDays(day, 1) > today() ? today() : addDays(day, 1))}
         >
           <ChevronRight aria-hidden="true" size={24} strokeWidth={2.2} />
         </button>

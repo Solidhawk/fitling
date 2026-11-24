@@ -2,7 +2,7 @@ import { Star } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { FitlingCore, QuantityUnit } from "../core/fitlingCore";
 import { isFavorite, logProduct, type Meal, setFavorite } from "../data/diary";
-import { ownCopy, type Product, productName } from "../data/products";
+import { ownCopy, type Product, productName, setOwnKcal } from "../data/products";
 import { supabase } from "../data/supabase";
 import { decimal, grams, kcal, parseNumber } from "../format";
 import { t } from "../i18n";
@@ -43,6 +43,8 @@ export function Portion({
   const [quantityText, setQuantityText] = useState(decimal(start.defaultQuantity, 1));
   const [kcalText, setKcalText] = useState("");
   const [favorite, setFavoriteState] = useState(false);
+  /** The user's own copy once made, so a retry after a failure does not make another. */
+  const [copy, setCopy] = useState<Product>();
   const [saving, setSaving] = useState(false);
   const [failed, setFailed] = useState<string>();
   const name = productName(core, product);
@@ -53,7 +55,9 @@ export function Portion({
 
   const quantity = parseNumber(quantityText);
   const kcalOnPackage = parseNumber(kcalText);
-  const portion = core.portion({ quantityUnit: product.quantityUnit, servingSize: product.servingSize, per100, quantity, unit, kcalOnPackage });
+  const answer = core.portion({ quantityUnit: product.quantityUnit, servingSize: product.servingSize, per100, quantity, unit, kcalOnPackage });
+  // An empty or unreadable amount is no portion: nothing to show, nothing to save (the field on iOS stays nil).
+  const portion = quantity === undefined ? { ...answer, preview: undefined, canSave: false } : answer;
   const hasUnknownMacros = product.protein100 === undefined || product.carbs100 === undefined || product.fat100 === undefined;
 
   async function toggleFavorite() {
@@ -70,8 +74,17 @@ export function Portion({
     setSaving(true);
     setFailed(undefined);
     try {
-      // Without kcal the shared product stays as it is; the user's own copy gets the kcal from the package.
-      const logged = portion.needsKcal && kcalOnPackage !== undefined ? await ownCopy(supabase, userID, product, kcalOnPackage, new Date()) : product;
+      // Without kcal the shared product stays as it is; the user's own copy gets the kcal from the package. A retry
+      // uses the copy made the first time, with the kcal as they are typed now.
+      let logged = product;
+      if (portion.needsKcal && kcalOnPackage !== undefined) {
+        logged = !copy
+          ? await ownCopy(supabase, userID, product, kcalOnPackage, new Date())
+          : copy.kcal100 === kcalOnPackage
+            ? copy
+            : await setOwnKcal(supabase, copy, kcalOnPackage, new Date());
+        setCopy(logged);
+      }
       await logProduct(supabase, core, { userID, product: logged, quantity, unit, meal, day, now: new Date() });
       onSaved();
     } catch (error) {

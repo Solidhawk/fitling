@@ -95,20 +95,21 @@ test("theCardShowsThePartnersMood", async ({ page }) => {
   await expect(page.locator(".day-card .partner-canvas")).toBeVisible();
 });
 
-test.describe("around midnight in Amsterdam", () => {
-  test.use({ timezoneId: "Europe/Amsterdam" });
+test.describe("around midnight in Tokyo", () => {
+  // Without summer time, so 23.59 is the same offset all year.
+  test.use({ timezoneId: "Asia/Tokyo" });
 
   // A meal logged at 23.59 belongs to that day; at 00.01 the next day starts empty (Review Focus).
   test("dayFollowsTheBrowsersDate", async ({ page }) => {
     const user = await start(page);
     const day = localDay();
     await foodEntry(user.id, { consumed_on: day, meal: "dinner", name: "Laat avondeten", kcal: 400 });
-    await page.clock.setFixedTime(new Date(`${day}T23:59:00+01:00`));
+    await page.clock.setFixedTime(new Date(`${day}T23:59:00+09:00`));
     await page.reload();
     await expect(page.getByText("Laat avondeten")).toBeVisible({ timeout: 15_000 });
     const [year, month, date] = day.split("-").map(Number);
     const next = new Date(Date.UTC(year, month - 1, date + 1)).toISOString().slice(0, 10);
-    await page.clock.setFixedTime(new Date(`${next}T00:01:00+01:00`));
+    await page.clock.setFixedTime(new Date(`${next}T00:01:00+09:00`));
     await page.reload();
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(nl("day.today"), { timeout: 15_000 });
     await expect(page.getByTestId("day.progress")).toBeVisible();
@@ -116,4 +117,21 @@ test.describe("around midnight in Amsterdam", () => {
     await page.getByRole("button", { name: nl("day.previous") }).click();
     await expect(page.getByText("Laat avondeten")).toBeVisible();
   });
+});
+
+// Review: tapping back twice quickly shows the second day, even when the first day's answer comes in last.
+test("switchingDaysQuicklyShowsTheLastDay", async ({ page }) => {
+  const user = await start(page);
+  await foodEntry(user.id, { consumed_on: daysBefore(1), name: "Gisteren gegeten" });
+  await foodEntry(user.id, { consumed_on: daysBefore(2), name: "Eergisteren gegeten" });
+  await page.route(`**/rest/v1/food_entries*consumed_on=eq.${daysBefore(1)}*`, async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    await route.continue();
+  });
+  await page.getByRole("button", { name: nl("day.previous") }).click();
+  await page.getByRole("button", { name: nl("day.previous") }).click();
+  await expect(page.getByText("Eergisteren gegeten")).toBeVisible({ timeout: 15_000 });
+  await page.waitForTimeout(2000);
+  await expect(page.getByText("Eergisteren gegeten")).toBeVisible();
+  await expect(page.getByText("Gisteren gegeten", { exact: true })).toHaveCount(0);
 });

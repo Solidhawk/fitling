@@ -17,7 +17,11 @@ export interface Product {
   kcal100?: number;
   protein100?: number;
   carbs100?: number;
+  sugars100?: number;
   fat100?: number;
+  saturatedFat100?: number;
+  fiber100?: number;
+  salt100?: number;
   imageURL?: string;
   fetchedAt?: string;
 }
@@ -47,18 +51,30 @@ export function productFromRow(row: Row): Product {
     kcal100: number(row.kcal_100),
     protein100: number(row.protein_100),
     carbs100: number(row.carbs_100),
+    sugars100: number(row.sugars_100),
     fat100: number(row.fat_100),
+    saturatedFat100: number(row.saturated_fat_100),
+    fiber100: number(row.fiber_100),
+    salt100: number(row.salt_100),
     imageURL: optional(row.image_url),
     fetchedAt: optional(row.fetched_at),
   };
 }
 
+/** Ids per request: hundreds of them in one query string would be more than the server takes. */
+const idsPerRequest = 50;
+
 /** The products with these ids, in the same order, without deleted ones. */
 export async function productsByID(client: SupabaseClient, ids: string[]): Promise<Product[]> {
-  if (ids.length === 0) return [];
-  const { data, error } = await client.from("products").select("*").in("id", ids).is("deleted_at", null);
-  if (error) throw failure(error);
-  const byID = new Map((data as Row[]).map((row) => [row.id as string, productFromRow(row)]));
+  const batches = Array.from({ length: Math.ceil(ids.length / idsPerRequest) }, (_, index) =>
+    ids.slice(index * idsPerRequest, (index + 1) * idsPerRequest),
+  );
+  const answers = await Promise.all(batches.map((batch) => client.from("products").select("*").in("id", batch).is("deleted_at", null)));
+  const byID = new Map<string, Product>();
+  for (const { data, error } of answers) {
+    if (error) throw failure(error);
+    for (const row of data as Row[]) byID.set(row.id as string, productFromRow(row));
+  }
   return ids.flatMap((id) => byID.get(id) ?? []);
 }
 
@@ -140,33 +156,46 @@ export async function addOwnProduct(client: SupabaseClient, userID: string, fiel
   return productFromRow(row);
 }
 
+/** The row of the user's own copy of a product: every value of the package, with the kcal the user read on it. */
+export function ownCopyRow(userID: string, product: Product, kcal100: number, now: Date) {
+  return {
+    id: crypto.randomUUID(),
+    owner_id: userID,
+    source: "user",
+    name: product.name,
+    brand: product.brand ?? null,
+    gtin: product.gtin ?? null,
+    search_name: product.searchName,
+    quantity_unit: product.quantityUnit,
+    serving_size: product.servingSize ?? null,
+    serving_label: product.servingLabel ?? null,
+    kcal_100: kcal100,
+    protein_100: product.protein100 ?? null,
+    carbs_100: product.carbs100 ?? null,
+    sugars_100: product.sugars100 ?? null,
+    fat_100: product.fat100 ?? null,
+    saturated_fat_100: product.saturatedFat100 ?? null,
+    fiber_100: product.fiber100 ?? null,
+    salt_100: product.salt100 ?? null,
+    image_url: product.imageURL ?? null,
+    updated_at: now.toISOString(),
+  };
+}
+
 /**
  * For a product the source gave no kcal for: the user's own copy with the kcal they read on the package. The shared
- * row stays as it is (FoodDiary.ownCopy, ARCHITECTURE §5.2).
+ * row stays as it is (FoodDiary.ownCopy, ARCHITECTURE section 5.2).
  */
 export async function ownCopy(client: SupabaseClient, userID: string, product: Product, kcal100: number, now: Date): Promise<Product> {
-  const row = {
-    ...ownRow(
-      userID,
-      {
-        name: "",
-        brand: product.brand,
-        gtin: product.gtin,
-        quantityUnit: product.quantityUnit,
-        servingSize: product.servingSize,
-        kcal100,
-        protein100: product.protein100,
-        carbs100: product.carbs100,
-        fat100: product.fat100,
-        searchName: product.searchName,
-      },
-      product.name,
-      now,
-    ),
-    serving_label: product.servingLabel ?? null,
-    image_url: product.imageURL ?? null,
-  };
+  const row = ownCopyRow(userID, product, kcal100, now);
   const { error } = await client.from("products").insert(row);
   if (error) throw failure(error);
   return productFromRow(row);
+}
+
+/** A corrected kcal on the user's own copy, when logging it failed the first time and the user changed the number. */
+export async function setOwnKcal(client: SupabaseClient, product: Product, kcal100: number, now: Date): Promise<Product> {
+  const { error } = await client.from("products").update({ kcal_100: kcal100, updated_at: now.toISOString() }).eq("id", product.id);
+  if (error) throw failure(error);
+  return { ...product, kcal100 };
 }
