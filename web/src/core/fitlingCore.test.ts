@@ -217,3 +217,37 @@ test("training from the same TrainingRecords as the iPhone (web phase 4)", async
   expect(core.trainingChoices().durations).toContain(60);
   expect(core.measurementStored({ value: 176, kind: "weight", usesMetric: false }).value).toBe(79.8);
 });
+
+test("the week menu from the same MenuBook as the iPhone (web phase 5)", async () => {
+  const core = await loadCore(wasm);
+  const recipes = ["breakfast", "lunch", "dinner"].flatMap((slot, group) =>
+    [1, 2, 3].map((number) => ({
+      id: `00000000-0000-4000-8000-0000000001${group}${number}`,
+      title: { nl: `${slot} ${number}` },
+      servings: 2,
+      cookMinutes: 20,
+      kcalPerServing: 700,
+      proteinGPerServing: 35,
+      carbsGPerServing: 70,
+      fatGPerServing: 20,
+      keepsWell: false,
+      mealSlots: [slot],
+      tags: [],
+      productIDs: [],
+    })),
+  );
+  const menu = {
+    userID: "00000000-0000-4000-8000-0000000000ff",
+    today: "2026-11-18",
+    languages: ["nl"],
+    recipes,
+    entries: [],
+    settings: { excludedTags: [], mealPrep: false, mealSlots: ["breakfast", "lunch", "dinner"] },
+    excludedProductIDs: [],
+  };
+  const change = core.menuGenerate({ menu, days: 3, seed: "42", targets: { kcal: 2200, proteinG: 120, carbsG: 250, fatG: 70 } });
+  expect(change.removed).toEqual([]);
+  expect(change.added).toHaveLength(9);
+  expect(new Set(change.added.map((meal) => meal.day))).toEqual(new Set(["2026-11-18", "2026-11-19", "2026-11-20"]));
+  expect(core.ownRecipeComplete({ title: "Soep", servings: 2, cookMinutes: 30, kcal: 300, protein: 12, carbs: 30, fat: 10, mealSlots: ["lunch"] }).complete).toBe(true);
+});
