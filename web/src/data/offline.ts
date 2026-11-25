@@ -98,10 +98,20 @@ function offline(error: unknown): boolean {
   return error instanceof Error && error.message === "error.network";
 }
 
+/**
+ * The browser knows there is no network (flight mode, no signal). Then the server is not asked at all: supabase-js
+ * would first try to refresh an expired token, again and again for half a minute, before the request fails.
+ */
+export function noNetwork(): boolean {
+  return typeof navigator !== "undefined" && navigator.onLine === false;
+}
+
+const unreachable = () => Promise.reject(new Error("error.network"));
+
 /** The answer of `read`, kept; without a connection the last answer kept, when there is one. */
 export async function kept<T>(name: string, read: () => Promise<T>): Promise<T> {
   try {
-    const value = await read();
+    const value = await (noNetwork() ? unreachable() : read());
     keep(name, value);
     return value;
   } catch (error) {
@@ -169,6 +179,7 @@ export function flush(client: SupabaseClient): Promise<void> {
 }
 
 async function sendWaiting(client: SupabaseClient): Promise<void> {
+  if (noNetwork()) return;
   const owner = user;
   // Each write once per round, also when the browser cannot store that it was sent.
   const tried = new Set<string>();
@@ -206,6 +217,7 @@ export async function send(client: SupabaseClient, write: Write): Promise<void> 
     return;
   }
   applyToDays(write);
+  if (noNetwork()) return;
   await flush(client);
   const refusal = refusals.get(key);
   refusals.delete(key);
@@ -268,7 +280,7 @@ export async function rowsBetween(table: Table, first: IsoDay, last: IsoDay, fet
   const started = Date.now();
   let fetched: Row[];
   try {
-    fetched = await fetch();
+    fetched = await (noNetwork() ? unreachable() : fetch());
   } catch (error) {
     if (!offline(error) || !user) throw error;
     const kept = daysOf(table);

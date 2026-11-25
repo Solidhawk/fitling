@@ -3,7 +3,7 @@ import { AuthService, type AuthState } from "./data/auth";
 import { useCoreFailure } from "./core/useCore";
 import { deleteAccount } from "./data/account";
 import { keepPhotosFor } from "./data/photoOwner";
-import { flush, setOfflineUser } from "./data/offline";
+import { flush, noNetwork, setOfflineUser } from "./data/offline";
 import { lookUp } from "./data/profile";
 import { sessionKey, storedUser, supabase } from "./data/supabase";
 import { Home } from "./Home";
@@ -17,7 +17,13 @@ import { type Lookup, type Screen, screenFor } from "./screens/route";
 import { VerifyEmail } from "./screens/VerifyEmail";
 import { Welcome } from "./screens/Welcome";
 
-const auth = new AuthService(supabase, `${location.origin}${import.meta.env.BASE_URL}`, () => localStorage.removeItem(sessionKey), storedUser);
+const auth = new AuthService(
+  supabase,
+  `${location.origin}${import.meta.env.BASE_URL}`,
+  () => localStorage.removeItem(sessionKey),
+  storedUser,
+  noNetwork,
+);
 
 /** Picks the screen from the session and what the server has, as RootView and RootViewModel on iOS. */
 export function App() {

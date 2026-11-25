@@ -4,7 +4,7 @@ import { addDays } from "../day";
 import type { Species } from "../partner/species";
 import { entriesBetween, workoutDaysBetween } from "./diary";
 import { failure } from "./failure";
-import { keep, kept } from "./offline";
+import { keep, kept, noNetwork } from "./offline";
 import { loadProfile, loadTargetPeriods } from "./profileStore";
 
 /** The user's partner as stored: what FitlingCore needs for its mood, plus its name and what it wears. */
@@ -59,6 +59,7 @@ export async function advancePartner(
 ): Promise<{ partner?: Partner; events: PartnerEvent[] }> {
   const partner = await loadPartner(client, userID);
   if (!partner) return { events: [] };
+  if (noNetwork()) return { partner, events: [] };
   try {
     return await fold(client, core, userID, partner, today, now);
   } catch (error) {
