@@ -61,6 +61,8 @@ export function Menu({ userID }: { userID: string }) {
   const push = (route: Route) => setPath((shown) => [...shown, route]);
   // One change of the menu at a time: a double tap makes one menu, not two on top of each other.
   const busy = useRef(false);
+  // Preferences are stored one after the other, so a quick second change never lands before the first.
+  const storing = useRef<Promise<void>>(Promise.resolve());
 
   const reload = useCallback(async () => {
     try {
@@ -154,7 +156,9 @@ export function Menu({ userID }: { userID: string }) {
     if (!loaded) return;
     // Shown and used at once; stored in the background, as each change is saved on iOS.
     setLoaded({ ...loaded, rows: { ...loaded.rows, settings: preferences } });
-    savePreferences(supabase, userID, preferences, new Date()).catch((error: unknown) => setFailed(error instanceof Error ? error.message : "error.server"));
+    storing.current = storing.current
+      .then(() => savePreferences(supabase, userID, preferences, new Date()))
+      .catch((error: unknown) => setFailed(error instanceof Error ? error.message : "error.server"));
   }
 
   const route = path.at(-1);

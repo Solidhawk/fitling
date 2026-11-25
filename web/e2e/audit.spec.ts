@@ -227,12 +227,12 @@ for (const mode of modes) {
       await page.getByTestId(`menu.entry.${planned[1].id}`).click({ button: "right" });
       await expect(page.getByRole("alertdialog")).toBeVisible();
       await check(page, mode, "32-menu-acties", info.project.name);
-      await page.getByRole("button", { name: nl("menu.swap") }).click();
+      await page.getByRole("alertdialog").getByRole("button", { name: nl("menu.swap") }).click();
       await expect(page.getByTestId("menu.picker.search")).toBeVisible();
       await check(page, mode, "33-ander-recept", info.project.name);
       await page.getByRole("button", { name: nl("common.cancel") }).click();
       await page.getByTestId(`menu.entry.${planned[0].id}`).click();
-      await expect(page.getByText(nl("menu.recipe.steps"))).toBeVisible({ timeout: 15_000 });
+      await expect(page.getByRole("heading", { name: nl("menu.recipe.steps") })).toBeVisible({ timeout: 15_000 });
       await check(page, mode, "34-recept", info.project.name);
     });
 

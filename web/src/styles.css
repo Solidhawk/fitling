@@ -2343,6 +2343,11 @@ span.labeled-row {
   justify-content: space-between;
 }
 
+.stepper-label.heavy {
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
 .menu-empty {
   display: flex;
   flex-direction: column;

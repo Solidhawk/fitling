@@ -66,14 +66,14 @@ test("aSwappedMealIsPinned", async ({ page }, info) => {
   await page.getByTestId(`menu.entry.${lunch.id}`).click({ button: "right" });
   await expect(page.getByRole("alertdialog", { name: lunch.recipe.title })).toBeVisible();
   await page.screenshot({ path: `test-results/screens/${info.project.name}-menu-acties.png` });
-  await page.getByRole("button", { name: nl("menu.swap") }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: nl("menu.swap") }).click();
   await page.getByTestId("menu.picker.search").fill(other.title.slice(0, 6));
   await page.getByTestId(`menu.picker.recipe.${other.id}`).click();
   await expect(page.getByTestId(`menu.entry.${lunch.id}`)).toContainText(other.title, { timeout: 15_000 });
   await expect(page.getByTestId(`menu.pinned.${lunch.id}`)).toBeVisible();
   // Removing it from the menu (Weghalen).
   await page.getByTestId(`menu.entry.${lunch.id}`).click({ button: "right" });
-  await page.getByRole("button", { name: nl("menu.remove") }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: nl("menu.remove") }).click();
   await expect(page.getByTestId(`menu.entry.${lunch.id}`)).toHaveCount(0, { timeout: 15_000 });
 });
 
@@ -101,7 +101,7 @@ test("aRecipeShowsItsPhotoAndCredit", async ({ page }, info) => {
   await expect(page.getByTestId("menu.recipe.kcal")).toContainText(`${Math.round(breakfast.recipe.kcal)} kcal`);
   await expect(page.getByText(/Wikimedia Commons/)).toBeVisible();
   await expect.poll(() => page.locator("img.recipe-photo").evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0);
-  await expect(page.getByText(nl("menu.recipe.steps"))).toBeVisible();
+  await expect(page.getByRole("heading", { name: nl("menu.recipe.steps") })).toBeVisible();
   await page.screenshot({ path: `test-results/screens/${info.project.name}-recept.png`, fullPage: true });
   // Back to the menu through the browser's history, as swiping back.
   await page.goBack();

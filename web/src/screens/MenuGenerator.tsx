@@ -141,25 +141,28 @@ export function MenuGenerator({
 
   return (
     <FormSheet title={t("menu.generator.title")} onSave={onCancel} onCancel={onCancel}>
-      <ListSection header={t("menu.generator.days.title")} footer={t("menu.generator.days.footer")}>
-        <ListRow>
-          <Stepper
-            label={t("menu.generator.days %lld", days)}
-            value={days}
-            min={1}
-            max={menuDays}
-            onChange={setDays}
-            testID="menu.generator.days"
-          />
-        </ListRow>
-      </ListSection>
-      <ListSection header={t("menu.generator.goal")}>
-        <div role="radiogroup" aria-label={t("menu.generator.goal")}>
-          {goalRow(undefined)}
-          {goals.map(goalRow)}
-        </div>
-      </ListSection>
-      <MenuPreferenceSections preferences={preferences} onChange={onPreferences} />
+      <div className="sheet-bottom-space">
+        <ListSection header={t("menu.generator.days.title")} footer={t("menu.generator.days.footer")}>
+          <ListRow>
+            <Stepper
+              label={t("menu.generator.days %lld", days)}
+              value={days}
+              min={1}
+              max={menuDays}
+              onChange={setDays}
+              testID="menu.generator.days"
+              heavy
+            />
+          </ListRow>
+        </ListSection>
+        <ListSection header={t("menu.generator.goal")}>
+          <div role="radiogroup" aria-label={t("menu.generator.goal")}>
+            {goalRow(undefined)}
+            {goals.map(goalRow)}
+          </div>
+        </ListSection>
+        <MenuPreferenceSections preferences={preferences} onChange={onPreferences} />
+      </div>
       <div className="bottom-bar">
         <PrimaryButton onClick={() => onMake(goal ? { days, goal } : { days })} data-testid="menu.generator.make">
           {t("menu.generator.make %lld", days)}
