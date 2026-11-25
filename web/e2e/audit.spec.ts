@@ -254,6 +254,8 @@ for (const mode of modes) {
       await page.getByTestId(`shopping.shop.${shop}`).check();
       await page.getByRole("button", { name: nl("common.ok"), exact: true }).click();
       await expect(page.getByTestId("shopping.offer.Halfvolle melk")).toBeVisible({ timeout: 15_000 });
+      await expect(page.getByTestId("shopping.question")).toBeVisible();
+      await check(page, mode, "37a-aanbiedingen", info.project.name);
       await page.getByTestId("shopping.item.Tomaat").click();
       await expect(page.getByTestId("shopping.item.Tomaat")).toHaveAttribute("aria-pressed", "true", { timeout: 15_000 });
       await check(page, mode, "37-boodschappen", info.project.name);

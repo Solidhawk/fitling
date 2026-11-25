@@ -57,9 +57,14 @@ describe.skipIf(!url || !key || !serviceKey)("the shopping list on the server", 
     const code = await createInvite(owner.client, list.id);
     expect(code).toMatch(/^[0-9A-F]{12}$/);
 
+    // The guest opened the list screen before, so they have a list of their own, here one that sorts first.
     const guest = await user();
-    expect(await joinList(guest.client, code.toLowerCase(), "Bram")).toBe(list.id);
-    const seen = await loadShopping(guest.client, (await ensureList(guest.client, guest.id, "Boodschappen", "Bram", new Date())).id, today, new Date());
+    const own = await ensureList(guest.client, guest.id, "Aaa eigen lijst", "Bram", new Date());
+    const joined = await joinList(guest.client, code.toLowerCase(), "Bram");
+    expect(joined).toBe(list.id);
+    expect((await ensureList(guest.client, guest.id, "Boodschappen", "Bram", new Date())).id).toBe(own.id);
+    // The list of the code, which the screen remembers, comes first.
+    const seen = await loadShopping(guest.client, (await ensureList(guest.client, guest.id, "Boodschappen", "Bram", new Date(), joined)).id, today, new Date());
     expect(seen.list.id).toBe(list.id);
     expect(seen.items.map((item) => item.name)).toEqual(["Melk"]);
     expect(seen.members.map((member) => [member.displayName, member.role])).toEqual([

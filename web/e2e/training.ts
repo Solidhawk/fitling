@@ -86,4 +86,3 @@ export async function tapRow(page: Page, name: string) {
   await row.evaluate((element) => element.scrollIntoView({ block: "center" }));
   await row.click();
 }
-

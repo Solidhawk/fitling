@@ -17,8 +17,16 @@ test("addingCheckingAndClearing", async ({ page }, info) => {
   await expect(page.getByTestId("shopping.item.Brood")).toBeVisible({ timeout: 15_000 });
   // Nothing to add while the field is empty.
   await expect(page.getByRole("button", { name: nl("shopping.add"), exact: true })).toBeDisabled();
+  // Ticking an item reads the list again, not the supermarkets and their offers (thousands of rows per shop).
+  const offerReads: string[] = [];
+  const countOfferReads = (request: { url: () => string }) => {
+    if (/\/rest\/v1\/(offers|supermarkets|favorite_supermarkets)/.test(request.url())) offerReads.push(request.url());
+  };
+  page.on("request", countOfferReads);
   await page.getByTestId("shopping.item.Melk").click();
   await expect(page.getByTestId("shopping.item.Melk")).toHaveAttribute("aria-pressed", "true", { timeout: 15_000 });
+  page.off("request", countOfferReads);
+  expect(offerReads).toEqual([]);
   await page.screenshot({ path: `test-results/screens/${info.project.name}-boodschappen.png`, fullPage: true });
   const axe = await new AxeBuilder({ page }).analyze();
   expect(axe.violations.map((violation) => violation.id)).toEqual([]);
@@ -43,10 +51,13 @@ test("theMenuFillsTheList", async ({ page }) => {
   const lines = page.getByTestId(`shopping.item.${ingredient}`);
   await expect(lines.first()).toBeVisible({ timeout: 15_000 });
   const sameName = await lines.count();
-  const count = await page.locator('[data-testid^="shopping.item."]').count();
-  // A second time replaces what the menu put there: the same lines, not twice.
+  const rows = page.locator('[data-testid^="shopping.item."]');
+  const count = await rows.count();
+  const firstID = await rows.first().getAttribute("data-id");
+  // A second time replaces what the menu put there: new rows (new ids), the same lines, not twice.
   await page.getByTestId("shopping.fromMenu").click();
-  await expect(page.locator('[data-testid^="shopping.item."]')).toHaveCount(count, { timeout: 15_000 });
+  await expect.poll(() => rows.first().getAttribute("data-id"), { timeout: 15_000 }).not.toBe(firstID);
+  await expect(rows).toHaveCount(count);
   await expect(lines).toHaveCount(sameName);
 });
 
@@ -81,8 +92,8 @@ test("offersShowWithTheirValidity", async ({ page }, info) => {
 });
 
 test("inviteAndJoin", async ({ page }, info) => {
-  // A list that sorts before the user's own, so it is the one shown after joining (ShoppingStore.lists()).
-  const { code } = await sharedList("Alles in huis", "Anna", "Koffie");
+  // Named as the user's own list is: after joining, the list of the code is shown all the same.
+  const { code } = await sharedList("Boodschappen", "Anna", "Koffie");
   await openShopping(page);
   await page.getByTestId("shopping.invite").click();
   await expect(page.getByRole("alertdialog", { name: nl("shopping.invite.title") })).toContainText(/[0-9A-F]{12}/, { timeout: 15_000 });
@@ -91,13 +102,12 @@ test("inviteAndJoin", async ({ page }, info) => {
   await page.getByTestId("shopping.join.code").fill("000000000000");
   await page.getByTestId("shopping.join.name").fill("Bram");
   await page.getByRole("button", { name: nl("shopping.join.confirm") }).click();
-  // A wrong code says so, under the members.
-  await expect(page.getByText(nl("shopping.error.invalidInvite"))).toBeVisible({ timeout: 15_000 });
+  // A wrong code says so, in the sheet where it was typed.
+  await expect(page.getByRole("dialog").getByText(nl("shopping.error.invalidInvite"))).toBeVisible({ timeout: 15_000 });
   await page.getByTestId("shopping.join.code").fill(code.toLowerCase());
   await page.screenshot({ path: `test-results/screens/${info.project.name}-meedoen.png` });
   await page.getByRole("button", { name: nl("shopping.join.confirm") }).click();
-  await expect(page.getByRole("heading", { name: "Alles in huis" })).toBeVisible({ timeout: 15_000 });
-  await expect(page.getByTestId("shopping.item.Koffie")).toBeVisible();
+  await expect(page.getByTestId("shopping.item.Koffie")).toBeVisible({ timeout: 15_000 });
   await expect(page.getByTestId("shopping.member")).toHaveText([new RegExp(`Anna\\s*${nl("shopping.owner")}`), "Bram"]);
   // Leaving goes back to the user's own list.
   await page.getByTestId("shopping.leave").click();

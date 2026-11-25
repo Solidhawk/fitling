@@ -29,10 +29,13 @@ test("the shops of a possible offer", () => {
 test("confirmed offers are remembered", () => {
   const stored = new Map<string, string>();
   vi.stubGlobal("localStorage", { getItem: (key: string) => stored.get(key) ?? null, setItem: (key: string, value: string) => stored.set(key, value) });
+  const [a, b, c] = ["00000000-0000-4000-8000-00000000000a", "00000000-0000-4000-8000-00000000000b", "00000000-0000-4000-8000-00000000000c"];
   expect(confirmedOffers()).toEqual([]);
-  confirmOffers(["b", "a"]);
-  confirmOffers(["a", "c"]);
-  expect(confirmedOffers()).toEqual(["a", "b", "c"]);
+  confirmOffers([b, a]);
+  confirmOffers([a, c]);
+  expect(confirmedOffers()).toEqual([a, b, c]);
+  stored.set("fitling.confirmedOffers", JSON.stringify([a, "not-an-id", 7]));
+  expect(confirmedOffers()).toEqual([a]);
   stored.set("fitling.confirmedOffers", "{broken");
   expect(confirmedOffers()).toEqual([]);
 });
