@@ -1670,6 +1670,7 @@ input.picker[type="date"] {
 }
 
 .segment {
+  position: relative;
   flex: 1;
   min-height: 2.25rem;
   border: 0;
@@ -1680,6 +1681,13 @@ input.picker[type="date"] {
   font-size: 0.8125rem;
   font-weight: 600;
   cursor: pointer;
+}
+
+/* Drawn at 36 px, as on iOS; tapped over 44 px, as Apple asks of every control (S40). */
+.segment::before {
+  content: "";
+  position: absolute;
+  inset: -4px 0;
 }
 
 .segment[aria-checked="true"] {
