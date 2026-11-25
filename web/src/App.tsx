@@ -3,8 +3,9 @@ import { AuthService, type AuthState } from "./data/auth";
 import { useCoreFailure } from "./core/useCore";
 import { deleteAccount } from "./data/account";
 import { keepPhotosFor } from "./data/photoOwner";
+import { flush, setOfflineUser } from "./data/offline";
 import { lookUp } from "./data/profile";
-import { sessionKey, supabase } from "./data/supabase";
+import { sessionKey, storedUser, supabase } from "./data/supabase";
 import { Home } from "./Home";
 import { t } from "./i18n";
 import { Alert } from "./ui/Alert";
@@ -16,7 +17,7 @@ import { type Lookup, type Screen, screenFor } from "./screens/route";
 import { VerifyEmail } from "./screens/VerifyEmail";
 import { Welcome } from "./screens/Welcome";
 
-const auth = new AuthService(supabase, `${location.origin}${import.meta.env.BASE_URL}`, () => localStorage.removeItem(sessionKey));
+const auth = new AuthService(supabase, `${location.origin}${import.meta.env.BASE_URL}`, () => localStorage.removeItem(sessionKey), storedUser);
 
 /** Picks the screen from the session and what the server has, as RootView and RootViewModel on iOS. */
 export function App() {
@@ -41,9 +42,22 @@ export function App() {
 
   const userID = authState.kind === "signedIn" ? authState.userID : undefined;
 
-  // Progress photos live in this browser alone and belong to the user who took them (RootViewModel.eraseLocalData).
+  // Progress photos and what is kept for without a connection live in this browser alone and belong to the user who
+  // made them (RootViewModel.eraseLocalData). What waits is sent at sign-in, when the connection comes back and when
+  // the app comes to the front.
   useEffect(() => {
-    if (userID) void keepPhotosFor(userID);
+    setOfflineUser(userID);
+    if (!userID) return;
+    void keepPhotosFor(userID);
+    const send = () => void flush(supabase).catch(() => undefined);
+    const visible = () => document.visibilityState === "visible" && send();
+    send();
+    window.addEventListener("online", send);
+    document.addEventListener("visibilitychange", visible);
+    return () => {
+      window.removeEventListener("online", send);
+      document.removeEventListener("visibilitychange", visible);
+    };
   }, [userID]);
   const currentUser = useRef(userID);
   currentUser.current = userID;

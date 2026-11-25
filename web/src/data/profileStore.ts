@@ -1,5 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Activity, DailyPlanInput, Goal, ProfileRules, Sex, Targets } from "../core/fitlingCore";
+import { failure } from "./failure";
+import { kept } from "./offline";
 
 export type Body = Omit<DailyPlanInput, "today">;
 
@@ -29,9 +31,15 @@ interface Row {
   targets_are_manual: boolean;
 }
 
+/** The profile; without a connection the one this browser last read. */
 export async function loadProfile(client: SupabaseClient, userID: string): Promise<Profile> {
-  const { data, error } = await client.from("profiles").select(columns).eq("id", userID).single<Row>();
-  if (error || !data) throw new Error("error.server");
+  return kept("profile", () => profileFromServer(client, userID));
+}
+
+async function profileFromServer(client: SupabaseClient, userID: string): Promise<Profile> {
+  const { data, error } = await client.from("profiles").select(columns).eq("id", userID).maybeSingle<Row>();
+  if (error) throw failure(error);
+  if (!data) throw new Error("error.server");
   return {
     id: data.id,
     body: {
@@ -93,7 +101,7 @@ async function recordTargets(client: SupabaseClient, userID: string, targets: Ta
     .is("deleted_at", null)
     .order("updated_at", { ascending: false })
     .limit(1);
-  if (existing.error) throw new Error("error.server");
+  if (existing.error) throw failure(existing.error);
   const values = {
     kcal_target: targets.kcal,
     protein_target_g: targets.proteinG,
@@ -105,7 +113,7 @@ async function recordTargets(client: SupabaseClient, userID: string, targets: Ta
   const write = period
     ? await client.from("target_history").update(values).eq("id", period.id)
     : await client.from("target_history").insert({ id: crypto.randomUUID(), user_id: userID, effective_on: today, ...values });
-  if (write.error) throw new Error("error.server");
+  if (write.error) throw failure(write.error);
 }
 
 /** Stores the profile as it is now. New targets go into their period first, as onboarding does. */
@@ -129,16 +137,23 @@ export async function saveProfile(client: SupabaseClient, profile: Profile, chan
       updated_at: moment,
     })
     .eq("id", profile.id);
-  if (error) throw new Error("error.server");
+  if (error) throw failure(error);
 }
 
-/** The target periods, for the target that applied on a day (TargetPeriods in FitlingCore). */
+/**
+ * The target periods, for the target that applied on a day (TargetPeriods in FitlingCore); without a connection the
+ * ones this browser last read.
+ */
 export async function loadTargetPeriods(client: SupabaseClient): Promise<{ effectiveOn: string; updatedAtMs: number; targets: Targets }[]> {
+  return kept("periods", () => periodsFromServer(client));
+}
+
+async function periodsFromServer(client: SupabaseClient): Promise<{ effectiveOn: string; updatedAtMs: number; targets: Targets }[]> {
   const { data, error } = await client
     .from("target_history")
     .select("effective_on, updated_at, kcal_target, protein_target_g, carbs_target_g, fat_target_g")
     .is("deleted_at", null);
-  if (error) throw new Error("error.server");
+  if (error) throw failure(error);
   return (data as Record<string, unknown>[]).map((row) => ({
     effectiveOn: row.effective_on as string,
     updatedAtMs: Date.parse(row.updated_at as string),

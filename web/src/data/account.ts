@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { AuthService } from "./auth";
+import { forgetOffline } from "./offline";
 import { removeAllPhotos } from "./photos";
 
 /**
@@ -10,5 +11,6 @@ export async function deleteAccount(client: SupabaseClient, auth: AuthService): 
   const { error } = await client.functions.invoke("delete-account", { method: "POST" });
   if (error) throw new Error("error.server");
   await auth.signOut().catch(() => undefined);
+  forgetOffline();
   await removeAllPhotos();
 }

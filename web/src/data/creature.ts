@@ -4,6 +4,7 @@ import { addDays } from "../day";
 import type { Species } from "../partner/species";
 import { entriesBetween, workoutDaysBetween } from "./diary";
 import { failure } from "./failure";
+import { keep, kept } from "./offline";
 import { loadProfile, loadTargetPeriods } from "./profileStore";
 
 /** The user's partner as stored: what FitlingCore needs for its mood, plus its name and what it wears. */
@@ -14,7 +15,12 @@ export interface Partner {
   items: string[];
 }
 
+/** The partner; without a connection the one this browser last knew. */
 export async function loadPartner(client: SupabaseClient, userID: string): Promise<Partner | undefined> {
+  return kept("partner", () => partnerFromServer(client, userID));
+}
+
+async function partnerFromServer(client: SupabaseClient, userID: string): Promise<Partner | undefined> {
   const { data, error } = await client
     .from("creatures")
     .select("species, name, color_index, tone, created_on, body_shape, xp, last_processed_on, off_target_days, equipped_items")
@@ -42,6 +48,7 @@ export async function loadPartner(client: SupabaseClient, userID: string): Promi
 /**
  * Folds every finished day into the partner's shape and XP, as CreatureHistory.update on iOS, and writes only when that
  * changed something. The same row and days give the same result, so a phone that folds the same days writes the same.
+ * Without a connection nothing is folded: the partner stays as it was, and the days are folded once it is back.
  */
 export async function advancePartner(
   client: SupabaseClient,
@@ -52,6 +59,22 @@ export async function advancePartner(
 ): Promise<{ partner?: Partner; events: PartnerEvent[] }> {
   const partner = await loadPartner(client, userID);
   if (!partner) return { events: [] };
+  try {
+    return await fold(client, core, userID, partner, today, now);
+  } catch (error) {
+    if (error instanceof Error && error.message === "error.network") return { partner, events: [] };
+    throw error;
+  }
+}
+
+async function fold(
+  client: SupabaseClient,
+  core: FitlingCore,
+  userID: string,
+  partner: Partner,
+  today: IsoDay,
+  now: Date,
+): Promise<{ partner?: Partner; events: PartnerEvent[] }> {
   const { firstDay } = core.advanceFrom({ creature: partner.state });
   const [entries, workoutDays, periods, profile] = await Promise.all([
     entriesBetween(client, firstDay, today),
@@ -84,7 +107,9 @@ export async function advancePartner(
   // The server sets an update aside when another device wrote later (last writer wins): then nothing was folded
   // here, and the news would come again with the next fold.
   if (!data || data.length === 0) return { partner, events: [] };
-  return { partner: { ...partner, state }, events: result.events };
+  const folded = { ...partner, state };
+  keep("partner", folded);
+  return { partner: folded, events: result.events };
 }
 
 /** A change the user made on the partner tab: colour, name, voice or what it wears. */
@@ -106,11 +131,16 @@ export async function savePartner(
 /** The days partnerSnapshot is given: more than the eight it looks at, which it picks itself. */
 const weekDays = 14;
 
-/** What the partner did the last two weeks, for its mood today. */
+/**
+ * What the partner did the last two weeks, for its mood today. Without a connection: what was eaten as this browser
+ * knows it, and the workouts of the last two weeks it read.
+ */
 export async function partnerWeek(client: SupabaseClient, today: IsoDay): Promise<Pick<PartnerDays, "entries" | "workoutDays">> {
-  const [entries, workoutDays] = await Promise.all([
-    entriesBetween(client, addDays(today, -weekDays), today),
-    workoutDaysBetween(client, addDays(today, -weekDays), today),
+  const first = addDays(today, -weekDays);
+  const [entries, workouts] = await Promise.all([
+    entriesBetween(client, first, today),
+    kept("weekWorkouts", () => workoutDaysBetween(client, first, today)),
   ]);
+  const workoutDays = workouts.filter((day) => day >= first && day <= today);
   return { entries: entries.map((entry) => ({ day: entry.consumedOn, kcal: entry.kcal, proteinG: entry.proteinG })), workoutDays };
 }

@@ -35,10 +35,16 @@ export class AuthService {
     readonly redirectTo: string,
     /** Removes the session stored in this browser, for signing out without a connection. */
     private readonly forgetSession: () => void = () => undefined,
+    /** The user of the session stored in this browser, if there is one. */
+    private readonly storedUser: () => { id: string; email?: string } | undefined = () => undefined,
   ) {
-    client.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        this.set({ kind: "signedIn", userID: session.user.id, email: session.user.email ?? "" });
+    client.auth.onAuthStateChange((event, session) => {
+      // Opening the app without a connection after its token ran out: the token cannot be refreshed, but the session
+      // is still there and is refreshed once the connection is back. The user stays signed in, as on the iPhone; a
+      // session the server turned down is removed first, so that one does not count.
+      const user = session?.user ?? (event === "INITIAL_SESSION" ? this.storedUser() : undefined);
+      if (user) {
+        this.set({ kind: "signedIn", userID: user.id, email: user.email ?? "" });
       } else if (this.state.kind !== "awaitingEmailVerification") {
         this.set({ kind: "signedOut" });
       }

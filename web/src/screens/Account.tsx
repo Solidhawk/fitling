@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { deleteAccount } from "../data/account";
+import { forgetOffline } from "../data/offline";
 import { removeAllPhotos } from "../data/photos";
 import type { AuthService } from "../data/auth";
 import { deliver, exportFiles, exportTables, fetchTables, type Table } from "../data/export";
@@ -53,7 +54,8 @@ export function Account({ auth, onBack, onOpen }: { auth: AuthService; onBack: (
     setMessageKey(undefined);
     try {
       await auth.signOut();
-      // Signing out on request removes the progress photos of this browser, as on iOS.
+      // Signing out on request removes the progress photos and everything kept for without a connection, as on iOS.
+      forgetOffline();
       await removeAllPhotos();
     } catch (error) {
       setMessageKey(error instanceof Error ? error.message : "error.server");
