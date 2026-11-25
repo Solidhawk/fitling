@@ -24,11 +24,13 @@ test("theStepIsSaved", async ({ page }) => {
   const user = await openTraining(page, (userID) => finishedWorkout(userID, bench.id, 2, [[60, 8]]).then(() => undefined));
   await page.getByRole("button", { name: nl("training.progress.exercises") }).click();
   await page.getByTestId(`progress.exercise.${bench.id}`).click();
-  await page.getByTestId("progress.step").getByRole("button", { name: nl("common.increase") }).click();
-  await expect(page.getByTestId("progress.step")).toContainText(/2,75\s?kg/);
+  // Quick taps are stored one after the other: one setting, with the last step (bug-echo of the menu preferences).
+  const increase = page.getByTestId("progress.step").getByRole("button", { name: nl("common.increase") });
+  await Promise.all([increase.click(), increase.click(), increase.click()]);
+  await expect(page.getByTestId("progress.step")).toContainText(/3,25\s?kg/);
   await expect
     .poll(async () => (await admin.from("exercise_settings").select("step_kg").eq("user_id", user.id).eq("exercise_id", bench.id)).data?.map((row) => Number(row.step_kg)))
-    .toEqual([2.75]);
+    .toEqual([3.25]);
 });
 
 test("volumeCountsTheWeek", async ({ page }, info) => {
