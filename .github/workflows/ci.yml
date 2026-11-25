@@ -79,6 +79,7 @@ jobs:
           done
           db="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
           psql "$db" -v ON_ERROR_STOP=1 -q -f supabase/schema.sql
+          psql "$db" -v ON_ERROR_STOP=1 -q -f supabase/web-push.sql
           psql "$db" -v ON_ERROR_STOP=1 -q -f supabase/seed/sport.sql
           psql "$db" -v ON_ERROR_STOP=1 -q -f supabase/seed/recipes.sql
           eval "$(supabase status -o env)"
@@ -158,6 +159,7 @@ jobs:
             sleep 10
           done
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -q -f supabase/schema.sql
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -q -f supabase/web-push.sql
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -q -f supabase/seed/sport.sql
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -q -f supabase/seed/recipes.sql
           supabase test db
@@ -179,6 +181,9 @@ jobs:
             exit 1
           fi
           psql "$db" -v ON_ERROR_STOP=1 -q -f supabase/schema.sql
+          # Twee keer: op een project dat al draait, kan het opnieuw (docs/web-push.md).
+          psql "$db" -v ON_ERROR_STOP=1 -q -f supabase/web-push.sql
+          psql "$db" -v ON_ERROR_STOP=1 -q -f supabase/web-push.sql
           psql "$db" -v ON_ERROR_STOP=1 -q -f supabase/seed/sport.sql
           psql "$db" -v ON_ERROR_STOP=1 -q -f supabase/seed/recipes.sql
           supabase test db

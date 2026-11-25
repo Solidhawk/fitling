@@ -2,7 +2,8 @@
 --
 -- Dit bestand is de enige bron van het schema zolang er geen productiedatabase is
 -- (docs/ARCHITECTURE.md, beslissing D-07). CI zet het op een lege database en draait de
--- pgTAP-tests in supabase/tests/.
+-- pgTAP-tests in supabase/tests/. Alleen Web Push (web fase 7) staat in web-push.sql, zodat dat los
+-- op een project kan dat al draait; CI zet het er direct bovenop.
 --
 -- Vaste regels:
 --   * Elke tabel heeft RLS. Wat van een gebruiker is, kan alleen die gebruiker lezen en schrijven.

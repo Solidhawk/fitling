@@ -39,6 +39,8 @@ drop table if exists
   public.supermarkets,
   public.offers,
   public.favorite_supermarkets,
+  public.push_subscriptions,
+  public.push_reminders,
   private.rate_limits
   cascade;
 
@@ -47,6 +49,8 @@ drop function if exists
   public.store_shared_product(jsonb),
   public.create_shopping_list_invite(uuid),
   public.join_shopping_list(text, text),
+  public.save_push_subscription(text, text, text),
+  public.replace_push_reminders(uuid, jsonb),
   private.apply_sync_rules(),
   private.is_list_member(uuid),
   private.is_list_owner(uuid),
