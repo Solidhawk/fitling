@@ -9,18 +9,6 @@ struct ShoppingServices {
     let offers: any OfferSource
 }
 
-/// A possible offer the user can say is right: asked once per item name and offer title, with the shops
-/// that have that offer. Saying yes confirms the offer in each of them.
-struct OfferQuestion: Identifiable, Equatable {
-    let itemName: String
-    let offerTitle: String
-    /// By shop name.
-    let supermarketIDs: [String]
-    let offerIDs: Set<UUID>
-
-    var id: String { itemName.lowercased() + "|" + offerTitle }
-}
-
 /// The shopping list: items in the order of the shop, what the menu needs, sharing with an
 /// invitation code, and the offers of the favourite supermarkets.
 @Observable
@@ -78,35 +66,10 @@ final class ShoppingViewModel {
         self.list = list
         items = store.items(of: list)
         members = store.members(of: list)
-        let summary = store.offerSummary(for: list, confirmed: confirmed)
-        cheapest = summary.perItem
+        let summary = store.offers(for: list, confirmed: confirmed)
+        cheapest = summary.cheapest
         totals = summary.totals
-        questions = questions(from: summary.matches, titles: summary.titles, accepted: summary.perItem)
-    }
-
-    /// Uncertain matches for items without a price yet, grouped by item name and offer title in the order the
-    /// matcher ranked them.
-    private func questions(from matches: [OfferMatch], titles: [UUID: String], accepted: [UUID: OfferMatch]) -> [OfferQuestion] {
-        let alreadyConfirmed = confirmed
-        let names = Dictionary(uniqueKeysWithValues: items.map { ($0.id, $0.name) })
-        let shopNames = Dictionary(uniqueKeysWithValues: store.supermarkets().map { ($0.id, $0.name) })
-        var order: [String] = []
-        var groups: [String: (itemName: String, title: String, shops: Set<String>, offers: Set<UUID>)] = [:]
-        for match in matches where match.confidence == .uncertain && !alreadyConfirmed.contains(match.offerID) && accepted[match.itemID] == nil {
-            guard let itemName = names[match.itemID], let title = titles[match.offerID] else { continue }
-            let key = itemName.lowercased() + "|" + title
-            if groups[key] == nil {
-                order.append(key)
-                groups[key] = (itemName, title, [], [])
-            }
-            groups[key]?.shops.insert(match.supermarketID)
-            groups[key]?.offers.insert(match.offerID)
-        }
-        return order.compactMap { key in
-            guard let group = groups[key] else { return nil }
-            let shops = group.shops.sorted { (shopNames[$0] ?? $0).localizedStandardCompare(shopNames[$1] ?? $1) == .orderedAscending }
-            return OfferQuestion(itemName: group.itemName, offerTitle: group.title, supermarketIDs: shops, offerIDs: group.offers)
-        }
+        questions = summary.questions
     }
 
     /// Sends and fetches the list, then the members and the offers.
@@ -179,7 +142,7 @@ final class ShoppingViewModel {
     /// What this week's menu needs.
     func fillFromMenu() {
         guard let list else { return }
-        store.fill(list, from: menu.entries(), menu: menu)
+        store.fill(list, menu: menu)
         reload()
     }
 
