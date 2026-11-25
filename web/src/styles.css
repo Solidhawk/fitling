@@ -2445,8 +2445,14 @@ span.labeled-row {
   font-weight: 800;
 }
 
+/* At the largest text the field goes under its label rather than out of the row. */
+label.labeled:has(.value-input) {
+  flex-wrap: wrap;
+}
+
 .value-input {
   display: flex;
+  margin-left: auto;
   align-items: baseline;
   gap: var(--space-s);
 }

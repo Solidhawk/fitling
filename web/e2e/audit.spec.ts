@@ -210,7 +210,7 @@ for (const mode of modes) {
       await check(page, mode, "28-weekmenu", info.project.name);
       await page.getByTestId("menu.preferences").click();
       await check(page, mode, "29-menu-voorkeuren", info.project.name);
-      await page.getByRole("button", { name: nl("common.ok") }).click();
+      await page.getByRole("button", { name: nl("common.ok"), exact: true }).click();
       await page.getByTestId("menu.recipes").click();
       await expect(page.getByTestId("menu.recipe.new")).toBeVisible();
       await check(page, mode, "30-recepten", info.project.name);

@@ -55,8 +55,6 @@ export function SwipeRow({
         onMenu();
       }, longPress);
     }
-    // The row keeps getting the moves while the finger or mouse slides past its edge.
-    event.currentTarget.setPointerCapture?.(event.pointerId);
   }
 
   function move(event: PointerEvent) {
@@ -66,7 +64,12 @@ export function SwipeRow({
     const dy = event.clientY - begun.y;
     if (Math.abs(dx) > 8 || Math.abs(dy) > 8) window.clearTimeout(timer.current);
     // A swipe that starts mostly up or down is the list scrolling, not this row.
-    begun.horizontal ??= Math.abs(dx) > 8 ? Math.abs(dx) > Math.abs(dy) : undefined;
+    if (begun.horizontal === undefined && Math.abs(dx) > 8) {
+      begun.horizontal = Math.abs(dx) > Math.abs(dy);
+      // Once it is a swipe, the row keeps getting the moves while the finger or mouse slides past its edge. Not
+      // before: a tap whose pointer is captured is clicked on the row, not on the button in it (Chrome).
+      if (begun.horizontal) event.currentTarget.setPointerCapture?.(event.pointerId);
+    }
     if (!begun.horizontal) return;
     handled.current = true;
     const { left, right } = widths();

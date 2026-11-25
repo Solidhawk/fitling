@@ -139,7 +139,7 @@ test("preferencesAreSavedAtOnce", async ({ page }) => {
   await page.getByTestId("menu.preferences").click();
   await page.getByTestId("menu.prefs.tag.fish").check();
   await page.getByTestId("menu.prefs.slot.breakfast").uncheck();
-  await page.getByRole("button", { name: nl("common.ok") }).click();
+  await page.getByRole("button", { name: nl("common.ok"), exact: true }).click();
   await expect
     .poll(async () => (await admin.from("menu_preferences").select("excluded_tags, meal_slots").eq("user_id", user.id)).data)
     .toEqual([{ excluded_tags: ["fish"], meal_slots: ["lunch", "dinner"] }]);
