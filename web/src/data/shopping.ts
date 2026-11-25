@@ -52,13 +52,16 @@ export async function ensureList(client: SupabaseClient, userID: string, name: s
   return list;
 }
 
-/** The maker of a list as its owner, once (SupabaseListSharing.addOwner). */
+/**
+ * The maker of a list as its owner, once (SupabaseListSharing.addOwner). A plain insert, and "already a member" (23505)
+ * is fine: an upsert (ON CONFLICT) also needs the read policy to let the new row through, and that policy asks for the
+ * membership this row is only now giving.
+ */
 async function addOwner(client: SupabaseClient, userID: string, listID: string, ownerName: string) {
-  await write(
-    client
-      .from("shopping_list_members")
-      .upsert({ list_id: listID, user_id: userID, role: "owner", display_name: ownerName.slice(0, 40) }, { onConflict: "list_id,user_id", ignoreDuplicates: true }),
-  );
+  const { error } = await client
+    .from("shopping_list_members")
+    .insert({ list_id: listID, user_id: userID, role: "owner", display_name: ownerName.slice(0, 40) });
+  if (error && error.code !== "23505") throw failure(error);
 }
 
 /**

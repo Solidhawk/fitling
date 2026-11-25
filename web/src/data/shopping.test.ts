@@ -94,6 +94,7 @@ describe.skipIf(!url || !key || !serviceKey)("the shopping list on the server", 
     if (stored.error) throw stored.error;
     const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
     const week = new Date(Date.now() + 6 * 86_400_000).toISOString().slice(0, 10);
+    // Every row with the same columns: in a bulk insert, a column one row leaves out becomes null, not its default.
     const offer = (title: string, values: Record<string, unknown>) => ({
       supermarket_id: shop,
       external_id: crypto.randomUUID(),
@@ -101,6 +102,7 @@ describe.skipIf(!url || !key || !serviceKey)("the shopping list on the server", 
       price_cents: 99,
       valid_from: today,
       valid_to: week,
+      fetched_at: new Date().toISOString(),
       ...values,
     });
     const offers = await admin.from("offers").insert([

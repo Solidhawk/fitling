@@ -41,8 +41,15 @@ enum SharingError: Error, Equatable {
 struct SupabaseListSharing: ListSharing {
     let client: SupabaseClient
 
+    /// A plain insert, and "already a member" (23505) is fine: an upsert (ON CONFLICT) also needs the read policy to let
+    /// the new row through, and that policy asks for the membership this row is only now giving. Found by the web's
+    /// tests against a real Supabase (web phase 6).
     func addOwner(_ member: ListMemberRecord) async throws {
-        _ = try await run { try await client.from("shopping_list_members").upsert(member, onConflict: "list_id,user_id", ignoreDuplicates: true).execute() }
+        _ = try await run {
+            do {
+                try await client.from("shopping_list_members").insert(member, returning: .minimal).execute()
+            } catch let error as PostgrestError where error.code == "23505" {}
+        }
     }
 
     func members(of listID: UUID) async throws -> [ListMemberRecord] {
