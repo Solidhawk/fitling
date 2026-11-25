@@ -202,6 +202,21 @@ jobs:
             echo "Verwacht 25 jobs op 25 tijden, één voor Albert Heijn deel 4; kreeg: $got"
             exit 1
           fi
+      # De herinneringen van de webversie (fase 7): twee keer draaien geeft één job, elke minuut. De opdracht
+      # zelf moet ook kloppen; zonder herinnering die klaarstaat, roept hij niets aan.
+      - name: Herinneringen versturen (send-reminders-cron.sql)
+        run: |
+          db="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
+          psql "$db" -v ON_ERROR_STOP=1 -q -o /dev/null -f supabase/send-reminders-cron.sql
+          psql "$db" -v ON_ERROR_STOP=1 -q -o /dev/null -f supabase/send-reminders-cron.sql
+          got=$(psql "$db" -v ON_ERROR_STOP=1 -tA -c "
+            select count(*) || ' ' || min(schedule) from cron.job where jobname = 'send-reminders'")
+          if [ "$got" != "1 * * * * *" ]; then
+            echo "Verwacht één job, elke minuut; kreeg: $got"
+            exit 1
+          fi
+          command=$(psql "$db" -v ON_ERROR_STOP=1 -tA -c "select command from cron.job where jobname = 'send-reminders'")
+          psql "$db" -v ON_ERROR_STOP=1 -q -o /dev/null -c "$command"
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.9.8
