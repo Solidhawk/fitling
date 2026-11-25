@@ -144,3 +144,34 @@ test("preferencesAreSavedAtOnce", async ({ page }) => {
     .poll(async () => (await admin.from("menu_preferences").select("excluded_tags, meal_slots").eq("user_id", user.id)).data)
     .toEqual([{ excluded_tags: ["fish"], meal_slots: ["lunch", "dinner"] }]);
 });
+
+test("aMealWhoseRecipeIsGoneStillShows", async ({ page }) => {
+  // An own recipe on the menu, removed on another device afterwards: the menu still opens, the meal stays to swap.
+  const entryID = crypto.randomUUID();
+  await openMenu(page, async (userID) => {
+    const recipeID = crypto.randomUUID();
+    const now = new Date().toISOString();
+    const recipe = await admin.from("recipes").insert({
+      id: recipeID,
+      owner_id: userID,
+      title: { nl: "Weggehaald gerecht" },
+      servings: 1,
+      cook_minutes: 10,
+      kcal_per_serving: 500,
+      protein_g_per_serving: 20,
+      carbs_g_per_serving: 50,
+      fat_g_per_serving: 20,
+      meal_slots: ["dinner"],
+      updated_at: now,
+      deleted_at: now,
+    });
+    if (recipe.error) throw recipe.error;
+    const entry = await admin
+      .from("meal_plan_entries")
+      .insert({ id: entryID, user_id: userID, planned_on: localDay(), meal: "dinner", recipe_id: recipeID, servings: 1, updated_at: now });
+    if (entry.error) throw entry.error;
+  });
+  await expect(page.getByTestId(`menu.entry.${entryID}`)).toContainText(nl("meal.dinner"), { timeout: 15_000 });
+  await expect(page.getByText("Weggehaald gerecht")).toHaveCount(0);
+  await expect(page.getByTestId(`menu.swap.${entryID}`)).toBeAttached();
+});
