@@ -66,6 +66,8 @@ export function Menu({ userID }: { userID: string }) {
 
   const reload = useCallback(async () => {
     try {
+      // Preferences still on their way would otherwise be read back as they were.
+      await storing.current;
       const [rows, profile, periods] = await Promise.all([loadMenu(supabase, today()), loadProfile(supabase, userID), loadTargetPeriods(supabase)]);
       setLoaded({ rows, profile, periods });
     } catch (error) {
