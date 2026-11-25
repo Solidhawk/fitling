@@ -33,6 +33,10 @@ async function fixture(strings) {
   await write("ExerciseAnimations/abc.webp", "webp");
   await write("ExerciseAnimations/ExerciseAnimations.json", { fps: 12, frames: 24, columns: 6, animations: {} });
   await write("Assets.xcassets/Recipes/0f25.imageset/photo.jpg", "jpg");
+  await write("RecipeCatalog.json", {
+    version: 1,
+    recipes: [{ id: "0F25", photoCredit: { author: "Luca", licence: "CC BY 2.0", page: "https://commons.wikimedia.org/wiki/File:x.jpg" } }, { id: "own" }],
+  });
   await write("PartnerAnchors.json", { "owl/1": {} });
   const out = await mkdtemp(join(tmpdir(), "fitling-web-"));
   return { resources: root, out };
@@ -85,8 +89,11 @@ test("copiesImages", async () => {
   await generate(dirs);
   expect(await readdir(join(dirs.out, "public/partners"))).toEqual(["partner-owl-1-body.png"]);
   expect((await readdir(join(dirs.out, "public/exercises"))).sort()).toEqual(["ExerciseAnimations.json", "abc.webp"]);
-  // The recipe photos are partly CC BY: they go online only with the recipe screen that credits them (phase 5).
-  await expect(readdir(join(dirs.out, "public/recipes"))).rejects.toThrow();
+  // The recipe photos go online with the recipe screen that credits them (phase 5): each photo and its credit.
+  expect(await readdir(join(dirs.out, "public/recipes"))).toEqual(["0f25.jpg"]);
+  expect(JSON.parse(await readFile(join(dirs.out, "src/generated/recipeCredits.json"), "utf8"))).toEqual({
+    "0f25": { author: "Luca", licence: "CC BY 2.0", page: "https://commons.wikimedia.org/wiki/File:x.jpg" },
+  });
   expect(JSON.parse(await readFile(join(dirs.out, "src/generated/partnerAnchors.json"), "utf8"))).toEqual({ "owl/1": {} });
 });
 
@@ -96,5 +103,6 @@ test("copiesEveryLayerOnTheRealResources", async () => {
   await generate({ resources, out });
   expect((await readdir(join(out, "public/partners"))).length).toBe(1344);
   expect((await readdir(join(out, "public/exercises"))).length).toBe(114);
+  expect((await readdir(join(out, "public/recipes"))).length).toBe(24);
 
 }, 60_000);
