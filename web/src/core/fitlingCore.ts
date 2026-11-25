@@ -531,6 +531,8 @@ export interface FitlingCore {
   shoppingNewItem(input: { text: string }): { item?: NewShoppingItem };
   /** The reminders for today and tomorrow (ReminderPlanner), each with what the partner would say that day. */
   remindersPlan(input: { settings: ReminderSettings; minutesNow: number; days: PartnerDays }): { reminders: PlannedReminder[] };
+  /** No reminders from `quietFrom` until `quietUntil`, minutes after midnight (ReminderSettings). */
+  reminderRules(): { quietFrom: number; quietUntil: number; maximumPerDay: number };
 }
 
 interface Exports {
@@ -613,6 +615,7 @@ export async function loadCore(wasm: ArrayBuffer): Promise<FitlingCore> {
     shoppingRefill: (input) => call("shoppingRefill", input) as { removed: string[]; added: NewShoppingItem[] },
     shoppingNewItem: (input) => call("shoppingNewItem", input) as { item?: NewShoppingItem },
     remindersPlan: (input) => call("remindersPlan", input) as { reminders: PlannedReminder[] },
+    reminderRules: () => call("reminderRules", {}) as { quietFrom: number; quietUntil: number; maximumPerDay: number },
     localizedText: (input) => call("localizedText", input) as { text: string },
   };
 }

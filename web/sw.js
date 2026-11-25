@@ -52,3 +52,28 @@ self.addEventListener("fetch", (event) => {
   }
   event.respondWith(fromCache(request, media.test(url.pathname) ? mediaCache : shellCache, media.test(url.pathname)));
 });
+
+// A reminder of the partner (send-reminders): its name as the title, what it says as the text.
+self.addEventListener("push", (event) => {
+  let message;
+  try {
+    message = event.data ? event.data.json() : undefined;
+  } catch {
+    message = undefined;
+  }
+  if (typeof message?.title !== "string" || typeof message?.body !== "string") return;
+  event.waitUntil(self.registration.showNotification(message.title, { body: message.body, icon: "icons/icon-192.png" }));
+});
+
+// Tapping it opens the app, or brings it to the front when it is open.
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  event.waitUntil(
+    (async () => {
+      const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+      const open = windows.find((client) => client.url.startsWith(self.registration.scope));
+      if (open) await open.focus();
+      else await self.clients.openWindow(self.registration.scope);
+    })(),
+  );
+});

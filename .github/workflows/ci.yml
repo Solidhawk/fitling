@@ -94,6 +94,10 @@ jobs:
           npm test
       - name: Webapp bouwen
         working-directory: web
+        env:
+          # The public key of the example in RFC 8291, so the build has the reminders section; the browser tests fake
+          # the push service (reminders.spec.ts). Not the project's key: that one is the GitHub variable below.
+          VITE_VAPID_PUBLIC_KEY: BP4z9KsN6nGRTbVYI_c7VJSPQTBtkgcy27mlmlMoZIIgDll6e3vCYLocInmYWAmS6TlzAC8wEqKK6PBru3jl7A8
         run: npm run build
       - name: Webapp in Safari (WebKit) en Chrome
         working-directory: web
@@ -114,6 +118,8 @@ jobs:
         env:
           VITE_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
+          # Optional (docs/web-push.md): without it the site has no reminders.
+          VITE_VAPID_PUBLIC_KEY: ${{ vars.VAPID_PUBLIC_KEY }}
         run: |
           if [ -z "$VITE_SUPABASE_URL" ] || [ -z "$VITE_SUPABASE_PUBLISHABLE_KEY" ]; then
             echo "::error::Zet de GitHub-variabelen SUPABASE_URL en SUPABASE_PUBLISHABLE_KEY (S34) voordat de site live gaat."

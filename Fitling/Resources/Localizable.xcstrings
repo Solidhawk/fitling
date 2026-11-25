@@ -13899,6 +13899,29 @@
           }
         }
       }
+    },
+    "partner.reminders.homeScreen": {
+      "comment": "Web: reminders need Fitling on the Home Screen (iPhone, iOS 16.4 and later); Safari and Share are the names iOS uses.",
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Herinneringen komen als Fitling op je beginscherm staat. Tik in Safari op Delen en kies Zet op beginscherm."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reminders come once Fitling is on your Home Screen. In Safari, tap Share and choose Add to Home Screen."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erinnerungen kommen, wenn Fitling auf deinem Home-Bildschirm ist. Tippe in Safari auf Teilen und wähle Zum Home-Bildschirm."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

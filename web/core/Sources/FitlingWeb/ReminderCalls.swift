@@ -27,6 +27,20 @@ struct RemindersAnswer: Encodable {
     let reminders: [ReminderOutput]
 }
 
+struct ReminderRules: Encodable {
+    /// Minutes after midnight: no reminders from `quietFrom` until `quietUntil`.
+    let quietFrom: Int
+    let quietUntil: Int
+    let maximumPerDay: Int
+}
+
+/// The quiet hours, for the time pickers on the partner tab (ReminderTime.allowedRange on iOS).
+func reminderRules() -> ReminderRules {
+    ReminderRules(
+        quietFrom: ReminderSettings.quietFrom, quietUntil: ReminderSettings.quietUntil, maximumPerDay: ReminderSettings.maximumPerDay
+    )
+}
+
 /// The reminders as PartnerViewModel plans them: the topic of each day from its snapshot (CreatureHistory.snapshot).
 func remindersPlan(_ request: RemindersRequest) throws -> RemindersAnswer {
     let today = try day(request.days.today, "today")

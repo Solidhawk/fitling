@@ -645,6 +645,15 @@ p {
   outline-offset: 2px;
 }
 
+.switch:disabled,
+.toggle-row:has(.switch:disabled) {
+  cursor: default;
+}
+
+.switch:disabled {
+  opacity: 0.45;
+}
+
 /* The bar at the bottom of an onboarding step: progress pills and the next step. */
 .with-bottom-bar {
   padding-bottom: calc(9rem + env(safe-area-inset-bottom));

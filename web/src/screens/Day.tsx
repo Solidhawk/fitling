@@ -5,6 +5,7 @@ import { useCore } from "../core/useCore";
 import { type Partner, partnerWeek } from "../data/creature";
 import { addWater, deleteEntry, entriesOn, type FoodEntry, type Meal, meals, waterOn } from "../data/diary";
 import { loadProfile, loadTargetPeriods } from "../data/profileStore";
+import { loadReminderSettings, planReminders } from "../data/push";
 import { supabase } from "../data/supabase";
 import { addDays, today } from "../day";
 import { decimal, kcal, millilitres } from "../format";
@@ -40,8 +41,11 @@ async function load(core: FitlingCore, userID: string, day: string, advance: Adv
   // The target that applied on that day; earlier days keep theirs.
   const targets = core.targetsOnDay({ day, fallback: profile.targets, periods });
   const totals = core.dayTotals({ entries });
-  // The partner as it is today, also when an earlier day is shown, as the iPhone shows it.
-  const snapshot = partner ? core.partnerSnapshot({ creature: partner.state, ...week, periods, fallback: profile.targets, today: now }) : undefined;
+  // The partner as it is today, also when an earlier day is shown, as the iPhone shows it; its reminders are planned
+  // from the same days, as HomeView does when the app opens or comes back.
+  const days = partner ? { creature: partner.state, ...week, periods, fallback: profile.targets, today: now } : undefined;
+  const snapshot = partner && days ? core.partnerSnapshot(days) : undefined;
+  if (partner && days) void planReminders(supabase, core, { settings: loadReminderSettings(), name: partner.name, days }).catch(() => undefined);
   return { entries, water, totals, targets, partner, snapshot };
 }
 

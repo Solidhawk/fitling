@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { deleteAccount } from "../data/account";
 import { forgetOffline } from "../data/offline";
 import { removeAllPhotos } from "../data/photos";
+import { forgetPush } from "../data/push";
 import type { AuthService } from "../data/auth";
 import { deliver, exportFiles, exportTables, fetchTables, type Table } from "../data/export";
 import { supabase } from "../data/supabase";
@@ -53,6 +54,8 @@ export function Account({ auth, onBack, onOpen }: { auth: AuthService; onBack: (
     setWorking(true);
     setMessageKey(undefined);
     try {
+      // The reminders carry the partner's name and mood: they go first, while the session can still remove them.
+      await forgetPush(supabase).catch(() => undefined);
       await auth.signOut();
       // Signing out on request removes the progress photos and everything kept for without a connection, as on iOS.
       forgetOffline();
