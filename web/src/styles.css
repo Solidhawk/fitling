@@ -2535,6 +2535,17 @@ label.labeled:has(.value-input) {
   flex: 1;
 }
 
+/* A shop's total: at the largest text the price goes under the shop's name, and its note may wrap. */
+.labeled:has(> .shopping-price) {
+  flex-wrap: wrap;
+}
+
+.labeled > .shopping-price {
+  flex-shrink: 1;
+  min-width: 0;
+  margin-left: auto;
+}
+
 .list-footer .source-link {
   font-weight: 600;
 }

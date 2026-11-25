@@ -101,12 +101,12 @@ test("inviteAndJoin", async ({ page }, info) => {
   await page.getByTestId("shopping.join").click();
   await page.getByTestId("shopping.join.code").fill("000000000000");
   await page.getByTestId("shopping.join.name").fill("Bram");
-  await page.getByRole("button", { name: nl("shopping.join.confirm") }).click();
+  await page.getByRole("dialog").getByRole("button", { name: nl("shopping.join.confirm"), exact: true }).click();
   // A wrong code says so, in the sheet where it was typed.
   await expect(page.getByRole("dialog").getByText(nl("shopping.error.invalidInvite"))).toBeVisible({ timeout: 15_000 });
   await page.getByTestId("shopping.join.code").fill(code.toLowerCase());
   await page.screenshot({ path: `test-results/screens/${info.project.name}-meedoen.png` });
-  await page.getByRole("button", { name: nl("shopping.join.confirm") }).click();
+  await page.getByRole("dialog").getByRole("button", { name: nl("shopping.join.confirm"), exact: true }).click();
   await expect(page.getByTestId("shopping.item.Koffie")).toBeVisible({ timeout: 15_000 });
   await expect(page.getByTestId("shopping.member")).toHaveText([new RegExp(`Anna\\s*${nl("shopping.owner")}`), "Bram"]);
   // Leaving goes back to the user's own list.
