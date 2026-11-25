@@ -1,4 +1,5 @@
 import { expect, type Page, test } from "./fixtures";
+import { fakePush } from "./push";
 import { admin, createUser, nl, signIn } from "./users";
 
 // The partner's reminders on the web (phase 7), as ReminderTests on iOS: turned on from the partner tab, planned with
@@ -7,79 +8,6 @@ import { admin, createUser, nl, signIn } from "./users";
 // screen). The build has the public test key of the CI job (VITE_VAPID_PUBLIC_KEY).
 
 test.use({ timezoneId: "Europe/Amsterdam" });
-
-type Fake = { refuse?: boolean; noPush?: boolean };
-
-/**
- * A push service in the page. What the browser would keep, the permission and the subscription, survives a reload
- * (sessionStorage), as it does in a real browser.
- */
-async function fakePush(page: Page, fake: Fake = {}) {
-  await page.addInitScript((fake: Fake) => {
-    if (fake.noPush) {
-      delete (window as { PushManager?: unknown }).PushManager;
-      return;
-    }
-    type Kept = { permission: NotificationPermission; endpoint?: string; key?: number[] };
-    const read = (): Kept => JSON.parse(sessionStorage.getItem("e2e.push") ?? '{"permission":"default"}') as Kept;
-    const write = (kept: Kept) => sessionStorage.setItem("e2e.push", JSON.stringify(kept));
-    const subscription = (kept: Kept) =>
-      kept.endpoint === undefined
-        ? null
-        : {
-          endpoint: kept.endpoint,
-          options: { applicationServerKey: new Uint8Array(kept.key ?? []).buffer },
-          // The browser keys of RFC 8291's example: valid, and never used to send anything here.
-          toJSON: () => ({
-            endpoint: kept.endpoint,
-            keys: {
-              p256dh: "BCVxsr7N_eNgVRqvHtD0zTZsEc6-VV-JvLexhqUzORcxaOzi6-AYWXvTBHm4bjyPjs7Vd8pZGH6SRpkNtoIAiw4",
-              auth: "BTBZMqHH6r4Tts7J_aSIgg",
-            },
-          }),
-          unsubscribe: async () => {
-            write({ permission: read().permission });
-            return true;
-          },
-        };
-    const pushManager = {
-      getSubscription: async () => subscription(read()),
-      subscribe: async (options: { applicationServerKey: Uint8Array }) => {
-        if (fake.refuse) {
-          write({ permission: "denied" });
-          throw new DOMException("Notifications are not allowed", "NotAllowedError");
-        }
-        const kept: Kept = {
-          permission: "granted",
-          endpoint: `https://web.push.apple.com/e2e-${crypto.randomUUID()}`,
-          key: [...options.applicationServerKey],
-        };
-        write(kept);
-        return subscription(kept);
-      },
-    };
-    const registration = { pushManager, scope: `${location.origin}/fitling/` };
-    Object.defineProperty(navigator, "serviceWorker", {
-      configurable: true,
-      value: {
-        ready: Promise.resolve(registration),
-        register: async () => registration,
-        getRegistration: async () => registration,
-        controller: null,
-      },
-    });
-    Object.defineProperty(window, "PushManager", { configurable: true, value: function PushManager() {} });
-    Object.defineProperty(window, "Notification", {
-      configurable: true,
-      value: {
-        get permission() {
-          return read().permission;
-        },
-        requestPermission: async () => read().permission,
-      },
-    });
-  }, fake);
-}
 
 async function openPartner(page: Page) {
   const user = await createUser({ profile: true, creature: true });

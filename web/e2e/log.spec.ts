@@ -45,6 +45,26 @@ test("servingsUseTheServingSize", async ({ page }) => {
   expect(data).toEqual({ kcal: 112.5, quantity_unit: "serving" });
 });
 
+// S40: a segment looks as on iOS (36 px), but can be tapped over 44 px, as Apple asks of every control.
+test("segmentsAreBigEnoughToTap", async ({ page }) => {
+  await start(page);
+  const product = await sharedProduct("Cruesli", { serving_size: 45 });
+  await search(page, product.name);
+  await page.getByRole("button", { name: new RegExp(product.name) }).click();
+  const segments = await page.getByRole("radio").all();
+  expect(segments.length).toBeGreaterThan(1);
+  for (const segment of segments) {
+    const box = await segment.boundingBox();
+    if (!box) throw new Error("segment not shown");
+    const middle = box.x + box.width / 2;
+    // Tapping 4 px above or below the drawn segment still hits it: 36 + 2 × 4 = 44.
+    for (const y of [box.y - 3.5, box.y + box.height + 3.5]) {
+      const hit = await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.closest('[role="radio"]')?.textContent, { x: middle, y });
+      expect(hit).toBe(await segment.textContent());
+    }
+  }
+});
+
 test("productWithoutKcalAsksForIt", async ({ page }) => {
   const user = await start(page);
   const product = await sharedProduct("Kruidenthee", { kcal_100: null });

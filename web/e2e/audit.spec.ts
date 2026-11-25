@@ -2,6 +2,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "./fixtures";
 import { exercise, finishedWorkout, firstProgramme, openTraining, tapRow } from "./training";
 import { openMenu, todaysMenu } from "./menu";
+import { fakePush } from "./push";
 import { openShopping, shopWithOffers } from "./shopping";
 import { admin, createUser, foodEntry, localDay, nl, sharedProduct, signIn } from "./users";
 
@@ -140,6 +141,22 @@ for (const mode of modes) {
       await page.getByRole("button", { name: nl("partner.edit") }).click();
       await expect(page.getByRole("dialog", { name: nl("partner.edit") })).toBeVisible();
       await check(page, mode, "24-partner-aanpassen", info.project.name);
+    });
+
+    // Phase 7: the reminders with their times, the partner's long name in the line under them.
+    test("Partner reminders", async ({ page }, info) => {
+      await fakePush(page);
+      const user = await createUser({ profile: true, creature: true });
+      const { error } = await admin.from("creatures").update({ name: "Wollige Wervelwind Pip" }).eq("user_id", user.id);
+      if (error) throw error;
+      await signIn(page, user.email);
+      await expect(page.getByTestId("day.progress")).toBeVisible({ timeout: 15_000 });
+      await page.getByRole("tab", { name: nl("partner.title") }).click();
+      await expect(page.getByTestId("partner.hero")).toBeVisible({ timeout: 15_000 });
+      await page.getByTestId("partner.reminders.toggle").click();
+      await expect(page.getByTestId("partner.reminders.time.1")).toBeVisible();
+      await page.getByTestId("partner.reminders.time.1").scrollIntoViewIfNeeded();
+      await check(page, mode, "26-partner-herinneringen", info.project.name);
     });
 
     test("Partner with everything unlocked", async ({ page }, info) => {
