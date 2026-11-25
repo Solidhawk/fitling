@@ -6,6 +6,7 @@ import { supabase } from "./data/supabase";
 import { today } from "./day";
 import { t } from "./i18n";
 import { Day } from "./screens/Day";
+import { Menu } from "./screens/Menu";
 import { Partner } from "./screens/Partner";
 import { Profile } from "./screens/Profile";
 import { Training } from "./screens/Training";
@@ -43,6 +44,8 @@ export function Home({ userID, auth }: { userID: string; auth: AuthService }) {
             <Day userID={userID} advance={advance} />
           ) : tab === "training" ? (
             <Training userID={userID} />
+          ) : tab === "menu" ? (
+            <Menu userID={userID} />
           ) : tab === "partner" ? (
             <Partner userID={userID} advance={advance} news={news} onNewsSeen={() => setNews([])} />
           ) : tab === "target" ? (
