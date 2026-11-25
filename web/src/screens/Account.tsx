@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { deleteAccount } from "../data/account";
-import { forgetOffline } from "../data/offline";
+import { flush, forgetOffline, waiting } from "../data/offline";
 import { removeAllPhotos } from "../data/photos";
 import { forgetPush } from "../data/push";
 import type { AuthService } from "../data/auth";
@@ -8,6 +8,7 @@ import { deliver, exportFiles, exportTables, fetchTables, type Table } from "../
 import { supabase } from "../data/supabase";
 import { t } from "../i18n";
 import { ActionSheet } from "../ui/ActionSheet";
+import { Alert } from "../ui/Alert";
 import { List, ListRow, ListSection } from "../ui/List";
 import { NavBar } from "../ui/NavBar";
 
@@ -24,6 +25,7 @@ export function Account({ auth, onBack, onOpen }: { auth: AuthService; onBack: (
   const [prepared, setPrepared] = useState<Table[]>();
   const [working, setWorking] = useState(false);
   const [messageKey, setMessageKey] = useState<string>();
+  const [unsynced, setUnsynced] = useState(false);
 
   // Read when the screen opens: Safari opens the share sheet only straight from a tap, not after a minute of loading.
   useEffect(() => {
@@ -50,9 +52,21 @@ export function Account({ auth, onBack, onOpen }: { auth: AuthService; onBack: (
     }
   }
 
-  async function signOut() {
+  /**
+   * What still waits is sent first; when that does not work, the user is asked, because signing out erases it
+   * (AccountViewModel.signOut on iOS).
+   */
+  async function signOut(force = false) {
     setWorking(true);
     setMessageKey(undefined);
+    if (!force) {
+      await flush(supabase).catch(() => undefined);
+      if (waiting().length > 0) {
+        setUnsynced(true);
+        setWorking(false);
+        return;
+      }
+    }
     try {
       // The reminders carry the partner's name and mood: they go first, while the session can still remove them.
       await forgetPush(supabase).catch(() => undefined);
@@ -91,6 +105,23 @@ export function Account({ auth, onBack, onOpen }: { auth: AuthService; onBack: (
           </ListRow>
         </ListSection>
       </List>
+      {unsynced && (
+        <Alert
+          title={t("account.unsynced.title")}
+          message={t("account.unsynced.body.web")}
+          actions={[
+            {
+              label: t("account.unsynced.force"),
+              destructive: true,
+              onSelect: () => {
+                setUnsynced(false);
+                void signOut(true);
+              },
+            },
+          ]}
+          onClose={() => setUnsynced(false)}
+        />
+      )}
     </div>
   );
 }

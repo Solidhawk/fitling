@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { FitlingCore, IsoDay, PartnerDays, ReminderSettings } from "../core/fitlingCore";
 import { t } from "../i18n";
 import { failure } from "./failure";
+import { noNetwork } from "./offline";
 
 /**
  * The partner's reminders on the web (phase 7), as PartnerViewModel plans them on the iPhone: the browser plans today
@@ -80,19 +81,21 @@ async function subscription(): Promise<PushSubscription> {
 
 /**
  * Turning reminders on, from a tap: the browser asks for permission once, afterwards it answers without asking again;
- * then this browser subscribes with its push service. False when it says no (PartnerViewModel.setRemindersOn).
+ * then this browser subscribes with its push service (PartnerViewModel.setRemindersOn). "refused" when the user or the
+ * browser says no; "failed" when subscribing did not work, for example without a connection.
  */
-export async function turnOn(): Promise<boolean> {
-  if (pushSupport() !== "ready") return false;
+export async function turnOn(): Promise<"on" | "refused" | "failed"> {
+  if (pushSupport() !== "ready") return "refused";
   // The question first, straight from the tap: Safari asks only while the tap is being handled.
   const answer = Notification.permission === "default" ? Notification.requestPermission() : Promise.resolve(Notification.permission);
-  if ((await answer) !== "granted") return false;
+  if ((await answer) !== "granted") return "refused";
+  if (noNetwork()) return "failed";
   try {
     await subscription();
   } catch {
-    return false;
+    return "failed";
   }
-  return true;
+  return "on";
 }
 
 /** The moment `minutes` after midnight on `day` where the user is, also on a day the clocks change. */
@@ -114,7 +117,8 @@ export async function planReminders(
   plan: { settings: ReminderSettings; name: string; days: PartnerDays },
   now = new Date(),
 ): Promise<void> {
-  if (pushSupport() !== "ready" || Notification.permission !== "granted") return;
+  // Without a network the plan waits for the next visit: supabase-js would first spend half a minute on the token.
+  if (pushSupport() !== "ready" || Notification.permission !== "granted" || noNetwork()) return;
   // Turned off, a browser that never subscribed stays that way; one that did gets an empty plan.
   const current = plan.settings.isOn ? await subscription() : await (await navigator.serviceWorker.ready).pushManager.getSubscription();
   if (!current) return;
@@ -148,17 +152,28 @@ export async function planReminders(
   handed = { endpoint, id, plan: planned };
 }
 
+async function currentSubscription(): Promise<PushSubscription | null | undefined> {
+  if (pushSupport() !== "ready") return undefined;
+  return (await navigator.serviceWorker.getRegistration())?.pushManager.getSubscription();
+}
+
 /**
  * Signing out or deleting the account: this browser's subscription goes, and with it the reminders, which carry the
  * partner's name and mood (RootViewModel on iOS empties them too). Needs the session, so it runs before signing out.
  */
 export async function forgetPush(client: SupabaseClient): Promise<void> {
   handed = undefined;
-  if (pushSupport() !== "ready") return;
-  const registration = await navigator.serviceWorker.getRegistration();
-  const current = await registration?.pushManager.getSubscription();
+  const current = await currentSubscription();
   if (!current) return;
-  await client.from("push_subscriptions").delete().eq("endpoint", current.endpoint);
-  // Without the server, the push service answers 410 from now on and send-reminders removes the rest.
+  if (!noNetwork()) await client.from("push_subscriptions").delete().eq("endpoint", current.endpoint);
   await current.unsubscribe();
+}
+
+/**
+ * Nobody signed in, also after a session that ended by itself: this browser stops listening. The push service then
+ * answers 410 to the server, and send-reminders removes the subscription with its reminders.
+ */
+export async function stopPushHere(): Promise<void> {
+  handed = undefined;
+  await (await currentSubscription())?.unsubscribe();
 }

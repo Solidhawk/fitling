@@ -5,6 +5,7 @@ import { useCore } from "../core/useCore";
 import { type Partner, partnerWeek } from "../data/creature";
 import { addWater, deleteEntry, entriesOn, type FoodEntry, type Meal, meals, waterOn } from "../data/diary";
 import { loadProfile, loadTargetPeriods } from "../data/profileStore";
+import { notSaved, takeRefused, toldEvent } from "../data/offline";
 import { loadReminderSettings, planReminders } from "../data/push";
 import { supabase } from "../data/supabase";
 import { addDays, today } from "../day";
@@ -72,6 +73,7 @@ export function Day({ userID, advance }: { userID: string; advance: Advance }) {
   const [shown, setShown] = useState<Shown>();
   const [logging, setLogging] = useState<Meal>();
   const [failed, setFailed] = useState<string>();
+  const [unsaved, setUnsaved] = useState(false);
   const request = useRef(0);
 
   // An answer that a newer request overtook is dropped: tapping back twice quickly shows the second day, not
@@ -82,6 +84,10 @@ export function Day({ userID, advance }: { userID: string; advance: Advance }) {
     try {
       const next = await load(core, userID, day, advance);
       if (mine === request.current) setShown(next);
+      // What waited in this browser and was sent later: a write the server turned down is told once, and one that
+      // keeps waiting although the server answers gets a line.
+      if (takeRefused() > 0) setFailed("offline.refused");
+      setUnsaved(notSaved());
     } catch (error) {
       if (mine === request.current) setFailed(error instanceof Error ? error.message : "error.server");
     }
@@ -95,8 +101,14 @@ export function Day({ userID, advance }: { userID: string; advance: Advance }) {
   useEffect(() => {
     void reload();
     const again = () => document.visibilityState === "visible" && void reload();
+    // Sending what waited turned up something to tell (offline.ts): shown at once, not at the next visit.
+    const told = () => void reload();
     document.addEventListener("visibilitychange", again);
-    return () => document.removeEventListener("visibilitychange", again);
+    window.addEventListener(toldEvent, told);
+    return () => {
+      document.removeEventListener("visibilitychange", again);
+      window.removeEventListener(toldEvent, told);
+    };
   }, [reload]);
 
   async function change(work: () => Promise<void>) {
@@ -199,6 +211,7 @@ export function Day({ userID, advance }: { userID: string; advance: Advance }) {
               </ListSection>
             );
           })}
+          {unsaved && <ListSection footer={<span data-testid="day.unsaved">{t("account.unsynced.title")}</span>} />}
         </List>
       )}
       {logging && core && (

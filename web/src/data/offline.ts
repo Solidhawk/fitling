@@ -89,8 +89,12 @@ export function setOfflineUser(userID: string | undefined): void {
   for (const key of keys()) if (!key.startsWith(`${prefix}${userID}.`)) remove(key);
 }
 
-/** Signing out or deleting the account on purpose erases everything kept in this browser, as on iOS. */
+/**
+ * Signing out or deleting the account on purpose erases everything kept in this browser, as on iOS; a read that
+ * comes back afterwards is no longer kept for that user.
+ */
 export function forgetOffline(): void {
+  user = undefined;
   for (const key of keys()) remove(key);
 }
 
@@ -167,6 +171,23 @@ function rewrite(change: (writes: Stored[]) => Stored[]) {
 let sending: Promise<void> = Promise.resolve();
 /** Writes the server refused for good, by key, for the `send` that made them to report. */
 const refusals = new Map<string, Error>();
+/** The writes a `send` is waiting on; a refusal of any other is counted for Vandaag to tell (takeRefused). */
+const awaited = new Set<string>();
+
+/** How many writes the server refused for good since Vandaag last asked; asking clears it. */
+export function takeRefused(): number {
+  const count = load<number>("refused") ?? 0;
+  if (count > 0) store("refused", 0);
+  return count;
+}
+
+/**
+ * True when the oldest waiting write did not go through although the server answered (a token that ran out, a
+ * policy): Vandaag then says that not everything is saved. A missing connection is not this.
+ */
+export function notSaved(): boolean {
+  return (load<boolean>("stuck") ?? false) && waiting().length > 0;
+}
 
 /**
  * Sends the waiting writes, oldest first, one round at a time. Without a connection, or when the server cannot take
@@ -178,20 +199,42 @@ export function flush(client: SupabaseClient): Promise<void> {
   return round;
 }
 
+/** Fired on `window` when a round has something new for Vandaag to tell (a refusal, or writes stuck or no longer). */
+export const toldEvent = "fitling-offline-told";
+
 async function sendWaiting(client: SupabaseClient): Promise<void> {
   if (noNetwork()) return;
+  const before = { refused: load<number>("refused") ?? 0, stuck: load<boolean>("stuck") ?? false };
+  try {
+    await sendRound(client);
+  } finally {
+    const after = { refused: load<number>("refused") ?? 0, stuck: load<boolean>("stuck") ?? false };
+    if ((after.refused > before.refused || after.stuck !== before.stuck) && typeof window !== "undefined") {
+      window.dispatchEvent(new Event(toldEvent));
+    }
+  }
+}
+
+async function sendRound(client: SupabaseClient): Promise<void> {
   const owner = user;
   // Each write once per round, also when the browser cannot store that it was sent.
   const tried = new Set<string>();
   while (owner && user === owner) {
     const next = stored().find((write) => write.sentAt === undefined && !tried.has(write.key));
-    if (!next) return;
+    if (!next) {
+      store("stuck", false);
+      return;
+    }
     tried.add(next.key);
     const error = await deliver(client, next);
     if (user !== owner) return;
-    if (error && !refused(error)) return;
+    if (error && !refused(error)) {
+      if (!offline(failure(error))) store("stuck", true);
+      return;
+    }
     if (error) {
-      refusals.set(next.key, failure(error));
+      if (awaited.has(next.key)) refusals.set(next.key, failure(error));
+      else store("refused", (load<number>("refused") ?? 0) + 1);
       rewrite((writes) => writes.filter((write) => write.key !== next.key));
       if (next.kind === "insert") forgetRow(next.table, next.row.id);
     } else {
@@ -218,7 +261,12 @@ export async function send(client: SupabaseClient, write: Write): Promise<void> 
   }
   applyToDays(write);
   if (noNetwork()) return;
-  await flush(client);
+  awaited.add(key);
+  try {
+    await flush(client);
+  } finally {
+    awaited.delete(key);
+  }
   const refusal = refusals.get(key);
   refusals.delete(key);
   if (refusal) throw refusal;

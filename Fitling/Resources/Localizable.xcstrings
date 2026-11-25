@@ -13922,6 +13922,52 @@
           }
         }
       }
+    },
+    "account.unsynced.body.web": {
+      "comment": "Web: signing out while something logged without a connection still waits in this browser (account.unsynced.body says iPhone, UNFORGET S38).",
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sommige wijzigingen staan nog alleen in deze browser. Als je nu uitlogt, gaan ze verloren."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Some changes are only in this browser. If you sign out now, they’ll be lost."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Einige Änderungen sind nur in diesem Browser. Wenn du dich jetzt abmeldest, gehen sie verloren."
+          }
+        }
+      }
+    },
+    "offline.refused": {
+      "comment": "Web: something logged without a connection was refused by the server when it was sent later.",
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Iets wat je zonder verbinding logde, kon niet worden opgeslagen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Something you logged without a connection couldn’t be saved."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Etwas, das du ohne Verbindung eingetragen hast, konnte nicht gespeichert werden."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

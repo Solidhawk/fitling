@@ -30,8 +30,6 @@ const batch = 200;
  * one that falls past 21:00 would break the quiet hours (ReminderSettings).
  */
 const lateMs = 30 * 60 * 1000;
-/** The push service keeps a message this long for a phone that is off, then drops it: it would come too late too. */
-const ttlSeconds = lateMs / 1000;
 
 /**
  * The push services of Safari, Chrome, Firefox and Edge. Only these are called: an endpoint is whatever a browser
@@ -62,6 +60,8 @@ async function deliver(reminder: Due, vapid: VapidKeys & { subject: string }, de
     await deps.removeReminders([reminder.id]);
     return 'dropped';
   }
+  // The push service keeps it for a phone that is off only until it would be too late: never into the quiet hours.
+  const ttlSeconds = Math.max(1, Math.floor((lateMs - (now.getTime() - Date.parse(reminder.fireAt))) / 1000));
   let request: Request;
   try {
     const message = new TextEncoder().encode(JSON.stringify({ title: reminder.title, body: reminder.body }));
@@ -76,6 +76,10 @@ async function deliver(reminder: Due, vapid: VapidKeys & { subject: string }, de
         Urgency: 'normal',
       },
       body,
+      // An endpoint is whatever a browser sent: a redirect is not followed past the allow-list, and a push service
+      // that does not answer does not hold up the others.
+      redirect: 'manual',
+      signal: AbortSignal.timeout(15_000),
     });
   } catch (error) {
     deps.log(`send-reminders: cannot encrypt for subscription ${reminder.subscriptionID}: ${String(error)}`);

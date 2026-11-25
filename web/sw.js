@@ -11,18 +11,23 @@ const media = /\/(partners|exercises|recipes)\//;
 self.addEventListener("install", (event) => {
   event.waitUntil(
     (async () => {
-      await (await caches.open(shellCache)).addAll(shell);
+      // Past the browser's own cache: a page from before a deploy would otherwise be kept as this build's page.
+      await (await caches.open(shellCache)).addAll(shell.map((file) => new Request(file, { cache: "reload" })));
       await self.skipWaiting();
     })(),
   );
 });
 
-// A new build takes over at once and the caches of earlier builds go: old rules never meet new code.
+// A new build takes over at once. The shell of the build before stays one round longer, for a page that is still open
+// on it and has yet to load a part (the scanner); older shells and the media of earlier builds go. Every file of a
+// build has its build in its name or address, so old rules never meet new code.
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     (async () => {
-      for (const name of await caches.keys()) {
-        if (name.startsWith("fitling-") && name !== shellCache && name !== mediaCache) await caches.delete(name);
+      const names = await caches.keys();
+      const before = names.filter((name) => name.startsWith("fitling-shell-") && name !== shellCache).at(-1);
+      for (const name of names) {
+        if (name.startsWith("fitling-") && name !== shellCache && name !== mediaCache && name !== before) await caches.delete(name);
       }
       await self.clients.claim();
     })(),
@@ -31,7 +36,8 @@ self.addEventListener("activate", (event) => {
 
 async function fromCache(request, cacheName, keep) {
   const cache = await caches.open(cacheName);
-  const kept = await cache.match(request);
+  // This build first; a page still on the build before finds its own files in that one.
+  const kept = (await cache.match(request)) ?? (await caches.match(request));
   if (kept) return kept;
   const response = await fetch(request);
   if (keep && response.ok) await cache.put(request, response.clone());
@@ -44,16 +50,20 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin || !url.href.startsWith(self.registration.scope)) return;
   if (request.mode === "navigate") {
-    // The page from the server when there is one, so a new build shows; without a connection the one kept.
+    // The page from the server when there is one, checked past the browser's cache so a new build shows at once;
+    // without a connection the one kept.
     event.respondWith(
-      fetch(request).catch(async () => (await caches.match(self.registration.scope, { cacheName: shellCache })) ?? Response.error()),
+      fetch(request, { cache: "no-cache" }).catch(
+        async () => (await caches.match(self.registration.scope, { cacheName: shellCache })) ?? Response.error(),
+      ),
     );
     return;
   }
   event.respondWith(fromCache(request, media.test(url.pathname) ? mediaCache : shellCache, media.test(url.pathname)));
 });
 
-// A reminder of the partner (send-reminders): its name as the title, what it says as the text.
+// A reminder of the partner (send-reminders): its name as the title, what it says as the text. Every push shows
+// something: a browser that gets pushes it never sees may stop sending them.
 self.addEventListener("push", (event) => {
   let message;
   try {
@@ -61,8 +71,13 @@ self.addEventListener("push", (event) => {
   } catch {
     message = undefined;
   }
-  if (typeof message?.title !== "string" || typeof message?.body !== "string") return;
-  event.waitUntil(self.registration.showNotification(message.title, { body: message.body, icon: "icons/icon-192.png" }));
+  const icon = "icons/icon-192.png";
+  const readable = typeof message?.title === "string" && typeof message?.body === "string";
+  event.waitUntil(
+    readable
+      ? self.registration.showNotification(message.title, { body: message.body, icon })
+      : self.registration.showNotification("Fitling", { icon }),
+  );
 });
 
 // Tapping it opens the app, or brings it to the front when it is open.

@@ -470,6 +470,16 @@ Ontwerp: `docs/superpowers/specs/2026-11-24-fitling-web-design.md`. Werkplan per
 - **Teksten, kleuren en beelden:** uit de iOS-bestanden via `web/scripts/generate.mjs`. Receptfoto's gaan pas online met het receptscherm, vanwege de bronvermelding.
 - **De app:** een lege app met de vijf tabbladen, getest in WebKit en Chromium met axe.
 
+### Web, fases 1 tot 6 — gebouwd
+
+Elke fase een eigen PR, op elkaar gestapeld: welkom en onboarding (#26), Vandaag en loggen (#27), Partner (#28), Training (#29), Menu (#30), Boodschappen (#31). Rekenregels die de schermen nodig hadden, verhuisden eerst naar FitlingCore.
+
+### Web, fase 7 – Beginscherm en afronden — gebouwd
+
+- **Beginscherm:** icoon (voorlopig, UNFORGET S37) en manifest; een service worker houdt de app en de rekenregels van dezelfde bouw op het toestel.
+- **Zonder verbinding:** openen, loggen, water en verwijderen werken; wat wacht, gaat later precies zo naar de server (`web/src/data/offline.ts`).
+- **Herinneringen:** `ReminderPlanner` in FitlingCore; Web Push via `supabase/web-push.sql` en de Edge Function `send-reminders`. Aanzetten op het echte project: `docs/web-push.md` (UNFORGET S49).
+
 ## Fase 7 – Afronden
 
 | Nr | Wat |

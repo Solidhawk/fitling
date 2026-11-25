@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { FitlingCore, PartnerDays, PartnerEvent, PartnerSnapshot, ReminderSettings } from "../core/fitlingCore";
 import { useCore } from "../core/useCore";
 import { partnerWeek, savePartner, type Partner as StoredPartner } from "../data/creature";
+import { noNetwork } from "../data/offline";
 import { loadProfile, loadTargetPeriods } from "../data/profileStore";
 import { loadReminderSettings, notificationsRefused, planReminders, pushSupport, saveReminderSettings, turnOn } from "../data/push";
 import type { Tone } from "../data/saveCreature";
@@ -156,9 +157,11 @@ export function Partner({
   /** Turning them on asks the browser first; when it says no, they stay off (PartnerViewModel.setRemindersOn). */
   async function setRemindersOn(isOn: boolean) {
     setRefused(false);
-    if (isOn && !(await turnOn())) {
-      setRefused(true);
-      return;
+    if (isOn) {
+      const answer = await turnOn();
+      if (answer === "refused") setRefused(true);
+      if (answer === "failed") setFailed(noNetwork() ? "error.network" : "error.server");
+      if (answer !== "on") return;
     }
     const next = { ...reminders, isOn };
     setReminders(next);

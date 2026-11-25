@@ -49,7 +49,8 @@ create policy "push_reminders: eigen rijen lezen" on public.push_reminders
   for select to authenticated using ((select auth.uid()) = user_id);
 
 -- Het abonnement van deze browser voor wie er nu ingelogd is. Logde eerder een ander in op dezelfde browser, dan
--- gaat diens abonnement (met de herinneringen) eraf. Hoogstens vijf browsers per gebruiker: de oudste gaat.
+-- gaat diens abonnement (met de herinneringen) eraf. Hoogstens vijf browsers per gebruiker: die het langst niet
+-- gebruikt is, gaat (created_at is het laatste gebruik).
 create or replace function public.save_push_subscription(p_endpoint text, p_p256dh text, p_auth text)
 returns uuid
 language plpgsql
@@ -67,9 +68,9 @@ begin
     raise exception 'a push endpoint is an https address' using errcode = '22023';
   end if;
   delete from public.push_subscriptions where endpoint = p_endpoint and user_id <> me;
-  insert into public.push_subscriptions (user_id, endpoint, p256dh, auth)
-  values (me, p_endpoint, p_p256dh, p_auth)
-  on conflict (endpoint) do update set p256dh = excluded.p256dh, auth = excluded.auth
+  insert into public.push_subscriptions (user_id, endpoint, p256dh, auth, created_at)
+  values (me, p_endpoint, p_p256dh, p_auth, clock_timestamp())
+  on conflict (endpoint) do update set p256dh = excluded.p256dh, auth = excluded.auth, created_at = excluded.created_at
   returning id into saved;
   delete from public.push_subscriptions
   where id in (select id from public.push_subscriptions where user_id = me order by created_at desc, id offset 5);

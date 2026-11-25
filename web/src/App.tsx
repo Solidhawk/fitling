@@ -5,6 +5,7 @@ import { deleteAccount } from "./data/account";
 import { keepPhotosFor } from "./data/photoOwner";
 import { flush, noNetwork, setOfflineUser } from "./data/offline";
 import { lookUp } from "./data/profile";
+import { stopPushHere } from "./data/push";
 import { sessionKey, storedUser, supabase } from "./data/supabase";
 import { Home } from "./Home";
 import { t } from "./i18n";
@@ -47,6 +48,12 @@ export function App() {
   }, []);
 
   const userID = authState.kind === "signedIn" ? authState.userID : undefined;
+
+  // Nobody signed in, also after a session that ended by itself: no reminders with a partner's name and mood come to
+  // this browser any more, as RootViewModel empties them on iOS.
+  useEffect(() => {
+    if (authState.kind === "signedOut") void stopPushHere().catch(() => undefined);
+  }, [authState.kind]);
 
   // Progress photos and what is kept for without a connection live in this browser alone and belong to the user who
   // made them (RootViewModel.eraseLocalData). What waits is sent at sign-in, when the connection comes back and when
