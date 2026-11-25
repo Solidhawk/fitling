@@ -115,8 +115,9 @@ test("addAnOwnProductAndLogIt", async ({ page }, info) => {
   expect(data).toEqual({ kcal_100: 280.4, search_name: "oma's appeltaart", owner_id: user.id });
 });
 
-// Review Focus: without a connection nothing is stored and the portion stays as it was typed.
-test("loggingWithoutAConnectionKeepsThePortion", async ({ page }) => {
+// Phase 7: without a connection the portion is logged all the same and waits in this browser, as on the iPhone; it
+// arrives once the app can send it.
+test("loggingWithoutAConnectionWaitsForIt", async ({ page }) => {
   const user = await start(page);
   const product = await sharedProduct("Banaan");
   await search(page, product.name);
@@ -124,10 +125,14 @@ test("loggingWithoutAConnectionKeepsThePortion", async ({ page }) => {
   await page.getByTestId("portion.quantity").fill("120");
   await page.route("**/rest/v1/food_entries*", (route) => route.abort("internetdisconnected"));
   await page.getByTestId("portion.save").click();
-  await expect(page.getByText(nl("error.network"))).toBeVisible();
-  await expect(page.getByTestId("portion.quantity")).toHaveValue("120");
+  await expect(page.locator('[data-screen="logFood"]')).toHaveCount(0);
+  await expect(page.getByTestId("day.kcal.breakfast")).toHaveText(/300\s?kcal/);
   const { data } = await admin.from("food_entries").select("id").eq("user_id", user.id);
   expect(data).toEqual([]);
+  await page.unroute("**/rest/v1/food_entries*");
+  await page.reload();
+  await expect(page.getByTestId("day.kcal.breakfast")).toHaveText(/300\s?kcal/, { timeout: 15_000 });
+  await expect.poll(async () => (await admin.from("food_entries").select("kcal").eq("user_id", user.id)).data).toEqual([{ kcal: 300 }]);
 });
 
 // Review: a failed first try must not leave an own copy behind for every retry (FoodDiary keeps its copy).
@@ -137,14 +142,26 @@ test("aRetryUsesTheOwnCopyMadeTheFirstTime", async ({ page }) => {
   await search(page, product.name);
   await page.getByRole("button", { name: new RegExp(product.name) }).click();
   await page.getByTestId("portion.kcal").fill("2");
-  await page.route("**/rest/v1/food_entries*", (route) => route.abort("internetdisconnected"));
+  // The server turns the entry down once, for a rule it breaks: that never passes later, so the portion stays to try
+  // again and the entry is not kept to be sent.
+  await page.route("**/rest/v1/food_entries*", (route) =>
+    route.request().method() === "POST"
+      ? route.fulfill({
+          status: 400,
+          contentType: "application/json",
+          body: JSON.stringify({ code: "23514", message: "new row violates check constraint", details: null, hint: null }),
+        })
+      : route.continue(),
+  );
   await page.getByTestId("portion.save").click();
-  await expect(page.getByText(nl("error.network"))).toBeVisible();
+  await expect(page.getByText(nl("error.server"))).toBeVisible();
   await page.unroute("**/rest/v1/food_entries*");
   await page.getByTestId("portion.save").click();
   await expect(page.locator('[data-screen="logFood"]')).toHaveCount(0);
   const { data } = await admin.from("products").select("id").eq("owner_id", user.id);
   expect(data).toHaveLength(1);
+  const { data: entries } = await admin.from("food_entries").select("id").eq("user_id", user.id);
+  expect(entries).toHaveLength(1);
 });
 
 // PortionView: without an amount there is nothing to add and nothing to save.

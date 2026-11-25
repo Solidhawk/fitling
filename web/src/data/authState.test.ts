@@ -3,7 +3,7 @@ import { expect, test } from "vitest";
 import { AuthService, type AuthState } from "./auth";
 
 /** Just enough of the Supabase client to drive the auth state, without a server. */
-function fake(offline = false) {
+function fake(offline = false, stored?: { id: string; email?: string }) {
   const listeners: ((event: string, session: unknown) => void)[] = [];
   const signOuts: unknown[] = [];
   let forgotten = false;
@@ -24,9 +24,14 @@ function fake(offline = false) {
     },
   } as unknown as SupabaseClient;
   const emit = (event: string, session: unknown) => listeners.forEach((listener) => listener(event, session));
-  const auth = new AuthService(client, "http://localhost/", () => {
-    forgotten = true;
-  });
+  const auth = new AuthService(
+    client,
+    "http://localhost/",
+    () => {
+      forgotten = true;
+    },
+    () => stored,
+  );
   return { auth, emit, signOuts, forgotten: () => forgotten, refreshing: () => refreshing };
 }
 
@@ -61,4 +66,28 @@ test("signing out without a connection still signs out", async () => {
   expect(auth.state).toEqual({ kind: "signedOut" });
   expect(forgotten()).toBe(true);
   expect(refreshing()).toBe(false);
+});
+
+// Opening the app without a connection after the token ran out: supabase-js cannot refresh it and reports no session,
+// but keeps it. The user stays signed in, as on the iPhone, and the token is refreshed once the connection is back.
+test("an expired session without a connection stays signed in", () => {
+  const { auth, emit } = fake(true, { id: "u1", email: "a@b.nl" });
+  emit("INITIAL_SESSION", null);
+  expect(auth.state).toEqual({ kind: "signedIn", userID: "u1", email: "a@b.nl" });
+  // Once back, the refreshed token is the same user: no change for the screens.
+  const seen: AuthState[] = [];
+  auth.subscribe((state) => seen.push(state));
+  emit("TOKEN_REFRESHED", session);
+  expect(seen).toEqual([]);
+});
+
+// Without a stored session, or after the server turned it down (supabase-js removes it), there is nobody to keep.
+test("no stored session is signed out", () => {
+  const { auth, emit } = fake(true);
+  emit("INITIAL_SESSION", null);
+  expect(auth.state).toEqual({ kind: "signedOut" });
+  const later = fake(true, { id: "u1" });
+  later.emit("INITIAL_SESSION", session);
+  later.emit("SIGNED_OUT", null);
+  expect(later.auth.state).toEqual({ kind: "signedOut" });
 });
