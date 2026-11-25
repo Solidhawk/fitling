@@ -2,6 +2,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "./fixtures";
 import { exercise, finishedWorkout, firstProgramme, openTraining } from "./training";
 import { openMenu, todaysMenu } from "./menu";
+import { openShopping, shopWithOffers } from "./shopping";
 import { admin, createUser, foodEntry, localDay, nl, sharedProduct, signIn } from "./users";
 
 // Every screen of phase 1 in light, dark and at 200 % text (the largest text on iOS is about that): no axe
@@ -234,6 +235,34 @@ for (const mode of modes) {
       await page.getByTestId(`menu.entry.${planned[0].id}`).click();
       await expect(page.getByRole("heading", { name: nl("menu.recipe.steps") })).toBeVisible({ timeout: 15_000 });
       await check(page, mode, "34-recept", info.project.name);
+    });
+
+    test("Shopping list", async ({ page }, info) => {
+      const shop = await shopWithOffers("Proefmarkt", [
+        { title: "Halfvolle melk 1 l", cents: 99 },
+        { title: "Tomatenblokjes 400 g", cents: 69 },
+      ]);
+      await openShopping(page);
+      await check(page, mode, "35-boodschappen-leeg", info.project.name);
+      for (const name of ["Halfvolle melk", "Tomaat", "Volkoren brood van de bakker op de hoek"]) {
+        await page.getByTestId("shopping.add.field").fill(name);
+        await page.keyboard.press("Enter");
+        await expect(page.getByTestId(`shopping.item.${name}`)).toBeVisible({ timeout: 15_000 });
+      }
+      await page.getByTestId("shopping.shops").click();
+      await check(page, mode, "36-supermarkten", info.project.name);
+      await page.getByTestId(`shopping.shop.${shop}`).check();
+      await page.getByRole("button", { name: nl("common.ok"), exact: true }).click();
+      await expect(page.getByTestId("shopping.offer.Halfvolle melk")).toBeVisible({ timeout: 15_000 });
+      await page.getByTestId("shopping.item.Tomaat").click();
+      await expect(page.getByTestId("shopping.item.Tomaat")).toHaveAttribute("aria-pressed", "true", { timeout: 15_000 });
+      await check(page, mode, "37-boodschappen", info.project.name);
+      await page.getByTestId("shopping.join").click();
+      await check(page, mode, "38-meedoen", info.project.name);
+      await page.getByRole("button", { name: nl("common.cancel") }).click();
+      await page.getByTestId("shopping.invite").click();
+      await expect(page.getByRole("alertdialog")).toContainText(/[0-9A-F]{12}/, { timeout: 15_000 });
+      await check(page, mode, "39-uitnodiging", info.project.name);
     });
 
     test("Dagdoel and account", async ({ page }, info) => {
