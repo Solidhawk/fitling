@@ -42,6 +42,7 @@ test("remindersAreHandedToTheServer", async ({ page }, info) => {
   const user = await openPartner(page);
   await page.getByTestId("partner.reminders.toggle").scrollIntoViewIfNeeded();
   await page.screenshot({ path: `test-results/screens/${info.project.name}-herinneringen.png` });
+  const before = Date.now();
   await page.getByTestId("partner.reminders.toggle").click();
   await expect(page.getByTestId("partner.reminders.toggle")).toBeChecked();
   // Today what is still to come, tomorrow both: lunch and dinner, with the partner's name and what it would say.
@@ -50,7 +51,8 @@ test("remindersAreHandedToTheServer", async ({ page }, info) => {
     expect([12 * 60 + 30, 18 * 60 + 30]).toContain(minutes(reminder.fire_at));
     expect(reminder.title).toBe("Uiltje");
     expect(sweetMessages).toContain(reminder.body);
-    expect(Date.parse(reminder.fire_at)).toBeGreaterThan(Date.now());
+    // Only what was still to come when it was planned.
+    expect(Date.parse(reminder.fire_at)).toBeGreaterThan(before);
   }
   await page.screenshot({ path: `test-results/screens/${info.project.name}-herinneringen-aan.png` });
 
@@ -100,4 +102,24 @@ test("signingOutRemovesTheReminders", async ({ page }) => {
   const { data } = await admin.from("push_subscriptions").select("id").eq("user_id", user.id);
   expect(data).toEqual([]);
   expect(await planned(user.id)).toEqual([]);
+});
+
+// Fable's review of phase 7: a session that ends by itself (here: revoked elsewhere, and the token ran out) stops the
+// reminders in this browser too, as RootViewModel empties them on iOS; the push service then turns the server away.
+test("aSessionThatEndsByItselfStopsTheReminders", async ({ page }) => {
+  await fakePush(page);
+  const user = await openPartner(page);
+  await page.getByTestId("partner.reminders.toggle").click();
+  await expect.poll(async () => (await planned(user.id)).length, { timeout: 15_000 }).toBeGreaterThanOrEqual(2);
+  const token = await page.evaluate(() => (JSON.parse(localStorage.getItem("fitling-session") ?? "{}") as { access_token?: string }).access_token ?? "");
+  const { error } = await admin.auth.admin.signOut(token, "global");
+  if (error) throw error;
+  await page.evaluate(() => {
+    const session = JSON.parse(localStorage.getItem("fitling-session") ?? "{}") as { expires_at?: number };
+    session.expires_at = Math.floor(Date.now() / 1000) - 3600;
+    localStorage.setItem("fitling-session", JSON.stringify(session));
+  });
+  await page.reload();
+  await expect(page.locator('[data-screen="welcome"]')).toBeAttached({ timeout: 15_000 });
+  await expect.poll(() => page.evaluate(() => (JSON.parse(sessionStorage.getItem("e2e.push") ?? "{}") as { endpoint?: string }).endpoint ?? null)).toBeNull();
 });

@@ -92,7 +92,8 @@ test("lockedItemsShowTheirLevel", async ({ page }, info) => {
   const locked = page.getByTestId("partner.item.crown");
   await expect(locked).toContainText(nl("partner.locked %lld").replace("%lld", "15"));
   await expect(page.getByRole("switch", { name: nl("partner.item.crown") })).toHaveCount(0);
-  await expect(page.getByRole("switch")).toHaveCount(0);
+  // No accessory to put on yet; the switch of the reminders (phase 7) is no accessory.
+  await expect(page.locator('[role="switch"][data-testid^="partner.item."]')).toHaveCount(0);
   await page.getByTestId("partner.item.crown").scrollIntoViewIfNeeded();
   await page.screenshot({ path: `test-results/screens/${info.project.name}-partner-accessoires.png` });
 });

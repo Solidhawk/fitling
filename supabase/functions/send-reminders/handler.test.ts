@@ -75,6 +75,8 @@ Deno.test('a reminder that is due goes to its push service, encrypted, and is th
   assertEquals(sent[0].method, 'POST');
   assertEquals(sent[0].headers.get('Content-Encoding'), 'aes128gcm');
   assertEquals(sent[0].headers.get('TTL'), '1800');
+  // An endpoint is whatever a browser sent: a redirect is not followed to another host.
+  assertEquals(sent[0].redirect, 'manual');
   assertEquals(sent[0].headers.get('Authorization')?.startsWith('vapid t='), true);
   // 86 octets of header, then the record: the message, its delimiter and the 16-octet tag.
   assertEquals((await sent[0].arrayBuffer()).byteLength > 86 + 16, true);
@@ -105,6 +107,13 @@ Deno.test('a reminder that comes too late is not sent: never a lunch message at 
   assertEquals(await (await call(d)).json(), { sent: 1, dropped: 1, waiting: 0 });
   assertEquals(sent.map((request) => request.url), ['https://web.push.apple.com/ok']);
   assertEquals(removed.sort(), ['late', 'ok']);
+});
+
+Deno.test('a late reminder lives at the push service only until it would be too late', async () => {
+  // 20 minutes late: a phone that is off gets it within the 30 minutes, never later (so never in the quiet hours).
+  const { d, sent } = deps([due('a', { fireAt: '2026-11-25T11:10:00Z' })]);
+  assertEquals(await (await call(d)).json(), { sent: 1, dropped: 0, waiting: 0 });
+  assertEquals(sent[0].headers.get('TTL'), '600');
 });
 
 Deno.test('only the known push services are called', async () => {

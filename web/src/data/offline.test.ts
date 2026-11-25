@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import { flush, forgetOffline, kept, rowsBetween, send, setOfflineUser, waiting } from "./offline";
+import { flush, forgetOffline, kept, notSaved, rowsBetween, send, setOfflineUser, takeRefused, waiting } from "./offline";
 
 // Without a connection (web phase 7): the last answer to each read, the days of the diary and the writes still to be
 // sent, per user, as the iPhone keeps its own database. diary.test.ts sends the same rows to a real server.
@@ -204,4 +204,27 @@ test("withoutANetworkTheServerIsNotAsked", async () => {
   expect(asked.sent).toEqual([]);
   expect(waiting().map((write) => write.row.id)).toEqual(["b"]);
   expect(await rowsBetween("food_entries", day, day, never)).toEqual([eaten, logged]);
+});
+
+// Fable's review of phase 7: what the server turns down later, in a round nobody waits for, is told once on Vandaag.
+test("aWriteRefusedLaterIsToldOnce", async () => {
+  await send(down(), { table: "food_entries", kind: "insert", row: { id: "a", consumed_on: day } });
+  await flush(server([{ error: { message: "numeric field overflow", code: "22003" } }]).client);
+  expect(waiting()).toEqual([]);
+  expect(takeRefused()).toBe(1);
+  expect(takeRefused()).toBe(0);
+});
+
+// A write the server keeps turning down for another reason (a token, a policy) waits, and Vandaag says that not
+// everything is saved; once it goes through, that is over.
+test("aWriteThatKeepsWaitingIsShown", async () => {
+  await send(down(), { table: "food_entries", kind: "insert", row: { id: "a", consumed_on: day } });
+  expect(notSaved()).toBe(false);
+  await flush(server([], { error: { message: "permission denied", code: "42501" } }).client);
+  expect(notSaved()).toBe(true);
+  await flush(down());
+  expect(notSaved()).toBe(true);
+  await flush(server([]).client);
+  expect(notSaved()).toBe(false);
+  expect(waiting()).toEqual([]);
 });

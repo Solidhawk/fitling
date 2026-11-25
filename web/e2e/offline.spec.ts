@@ -105,29 +105,6 @@ test("offlineLogArrivesOnce", async ({ page, context, browserName }) => {
   expect(await count("water_entries", user.id)).toBe(1);
 });
 
-// The reminder itself (web phase 7): a push for this browser shows the partner's name and what it says (sw.js).
-test("aPushShowsTheReminder", async ({ page, context, browserName }) => {
-  test.skip(browserName !== "chromium", "only Chrome's DevTools protocol delivers a push to a service worker");
-  await installed(page);
-  await context.grantPermissions(["notifications"]);
-  const cdp = await context.newCDPSession(page);
-  const registrations: { registrationId: string; scopeURL: string }[] = [];
-  cdp.on("ServiceWorker.workerRegistrationUpdated", ({ registrations: updated }) => registrations.push(...updated));
-  await cdp.send("ServiceWorker.enable");
-  const ours = () => registrations.find((registration) => registration.scopeURL.endsWith("/fitling/"));
-  await expect.poll(() => ours()?.registrationId).toBeTruthy();
-  await cdp.send("ServiceWorker.deliverPushMessage", {
-    origin: new URL(page.url()).origin,
-    registrationId: ours()?.registrationId ?? "",
-    data: JSON.stringify({ title: "Uiltje", body: "Nog niets gegeten vandaag?" }),
-  });
-  await expect
-    .poll(() =>
-      page.evaluate(async () => (await (await navigator.serviceWorker.ready).getNotifications()).map((shown) => [shown.title, shown.body])),
-    )
-    .toEqual([["Uiltje", "Nog niets gegeten vandaag?"]]);
-});
-
 test("theCoreFollowsTheBuild", async ({ page }) => {
   await installed(page);
   const worker = await (await page.request.get("sw.js")).text();

@@ -89,6 +89,24 @@ select lives_ok($$ delete from public.push_subscriptions where id = (select id f
 reset role;
 select is((select count(*)::int from public.push_subscriptions), 0, 'en dat is weg');
 
+-- Hoogstens vijf browsers: de browser die het langst niet gebruikt is, gaat; opnieuw opslaan telt als gebruik.
+set local request.jwt.claims = '{"sub": "70000000-0000-0000-0000-000000000002", "role": "authenticated"}';
+set local role authenticated;
+select lives_ok($$
+  select public.save_push_subscription('https://fcm.googleapis.com/fcm/send/b' || n, repeat('B', 87), repeat('a', 22))
+  from generate_series(1, 5) n
+$$, 'vijf browsers');
+select lives_ok($$ select public.save_push_subscription('https://fcm.googleapis.com/fcm/send/b1', repeat('B', 87), repeat('a', 22)) $$,
+  'de eerste weer gebruikt');
+select lives_ok($$ select public.save_push_subscription('https://fcm.googleapis.com/fcm/send/b6', repeat('B', 87), repeat('a', 22)) $$,
+  'een zesde');
+select is(
+  (select array_agg(endpoint order by endpoint) from public.push_subscriptions),
+  array['https://fcm.googleapis.com/fcm/send/b1', 'https://fcm.googleapis.com/fcm/send/b3', 'https://fcm.googleapis.com/fcm/send/b4',
+        'https://fcm.googleapis.com/fcm/send/b5', 'https://fcm.googleapis.com/fcm/send/b6'],
+  'de tweede ging, niet de eerste die net nog gebruikt werd');
+reset role;
+
 set local role anon;
 select throws_ok($$
   select public.save_push_subscription('https://web.push.apple.com/x', repeat('B', 87), repeat('a', 22))
