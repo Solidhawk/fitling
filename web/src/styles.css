@@ -278,8 +278,18 @@ body {
   color: var(--ink);
 }
 
-.list-row + .list-row {
-  box-shadow: inset var(--space-l) 1px 0 0 var(--card), inset 0 1px 0 0 var(--track);
+/* The hairline above each row after the first, from where the text starts to the right edge, as in a List on iOS.
+   A background image, not an inset shadow: a shadow's offset also paints the whole top edge and hid the line.
+   Rows whose text starts further in set --hairline-start. */
+.list-row + .list-row,
+.swipe-row + .list-row,
+.swipe-row + .swipe-row > .swipe-content,
+.list-row + .swipe-row > .swipe-content,
+.xp-row + .xp-row {
+  background-image: linear-gradient(var(--track), var(--track));
+  background-repeat: no-repeat;
+  background-position: right top;
+  background-size: calc(100% - var(--hairline-start, var(--space-l))) 1px;
 }
 
 .list-row-button:disabled {
@@ -921,11 +931,8 @@ p {
 /* What today earns: a filled check once a part is earned, with its XP on the right. The hairline starts at the
    text, past the check, as on iOS. */
 .xp-row {
+  --hairline-start: calc(var(--space-l) + 20px + var(--space-s));
   gap: var(--space-s);
-}
-
-.xp-row + .xp-row {
-  box-shadow: inset calc(var(--space-l) + 20px + var(--space-s)) 1px 0 0 var(--card), inset 0 1px 0 0 var(--track);
 }
 
 .xp-row-open .symbol {
@@ -1530,12 +1537,6 @@ input.picker[type="date"] {
   overflow: hidden;
 }
 
-/* The hairline above a swiping row is drawn on what slides: the row's ground would cover it. */
-.swipe-row + .list-row,
-.swipe-row + .swipe-row > .swipe-content,
-.list-row + .swipe-row > .swipe-content {
-  box-shadow: inset var(--space-l) 1px 0 0 var(--card), inset 0 1px 0 0 var(--track);
-}
 
 .swipe-content {
   position: relative;
@@ -2417,12 +2418,9 @@ span.labeled-row {
   display: inline-flex;
 }
 
-/* Rows with a photo: the hairline starts under the text, as in a List on iOS. */
-.list-rows:has(.thumbnail) > .list-row + .list-row,
-.list-rows:has(.thumbnail) > .swipe-row + .list-row,
-.list-rows:has(.thumbnail) > .swipe-row + .swipe-row > .swipe-content,
-.list-rows:has(.thumbnail) > .list-row + .swipe-row > .swipe-content {
-  box-shadow: inset calc(var(--space-l) + 56px + var(--space-m)) 1px 0 0 var(--card), inset 0 1px 0 0 var(--track);
+/* Rows with a photo: the hairline starts under the text. */
+.list-rows:has(.thumbnail) {
+  --hairline-start: calc(var(--space-l) + 56px + var(--space-m));
 }
 
 .recipe-photo {
