@@ -69,6 +69,8 @@ for (const scheme of ["light", "dark"] as const) {
   });
 
   test(`screenshots ${scheme}`, async ({ page }, info) => {
+    // Five tabs, each drawn in full: more than the default 30 s on a busy runner (WebKit, CI run 45707606229).
+    test.setTimeout(90_000);
     await page.emulateMedia({ colorScheme: scheme });
     for (const name of tabs) {
       await page.getByRole("tab", { name }).click();
