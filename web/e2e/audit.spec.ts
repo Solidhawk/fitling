@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "./fixtures";
-import { exercise, finishedWorkout, firstProgramme, openTraining } from "./training";
+import { exercise, finishedWorkout, firstProgramme, openTraining, tapRow } from "./training";
 import { openMenu, todaysMenu } from "./menu";
 import { openShopping, shopWithOffers } from "./shopping";
 import { admin, createUser, foodEntry, localDay, nl, sharedProduct, signIn } from "./users";
@@ -173,7 +173,7 @@ for (const mode of modes) {
       await page.getByRole("menuitem", { name: nl("training.workout.later") }).click();
       await page.goBack();
       await expect(page.getByTestId("training.resume")).toBeVisible({ timeout: 15_000 });
-      await page.getByRole("button", { name: nl("training.progress.exercises") }).click();
+      await tapRow(page, nl("training.progress.exercises"));
       await page.getByTestId(`progress.exercise.${bench.id}`).click();
       await expect(page.getByRole("heading", { name: bench.name })).toBeVisible();
       await check(page, mode, "07-per-oefening", info.project.name);

@@ -76,3 +76,14 @@ export async function openTraining(page: Page, prepare?: (userID: string) => Pro
   await expect(page.getByTestId("training.compose")).toBeVisible({ timeout: 15_000 });
   return user;
 }
+
+/**
+ * Taps a row of the training tab by its name, first scrolled to the middle of the screen: scrolled only into view, a
+ * low row lies under the tab bar, which takes the tap.
+ */
+export async function tapRow(page: Page, name: string) {
+  const row = page.getByRole("button", { name });
+  await row.evaluate((element) => element.scrollIntoView({ block: "center" }));
+  await row.click();
+}
+
