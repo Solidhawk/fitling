@@ -1,6 +1,6 @@
 import { BookOpen, Check, CircleCheck, Pin, PinOff, RefreshCw, SlidersHorizontal, TriangleAlert } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import type { FitlingCore, Goal, MenuChange, MenuInput, MenuIssue, MenuOverview, MenuPreferences, Targets } from "../core/fitlingCore";
+import type { FitlingCore, Goal, MenuChange, MenuInput, MenuIssue, MenuOverview, MenuPreferences, RecipeSummary, Targets } from "../core/fitlingCore";
 import { useCore } from "../core/useCore";
 import {
   applyMenuChange,
@@ -23,6 +23,7 @@ import { ActionSheet } from "../ui/ActionSheet";
 import { Alert } from "../ui/Alert";
 import { PrimaryButton } from "../ui/Buttons";
 import { List, ListRow, ListSection } from "../ui/List";
+import { NavBar } from "../ui/NavBar";
 import { SwipeRow } from "../ui/SwipeRow";
 import { MenuGenerator, MenuPreferencesSheet } from "./MenuGenerator";
 import { OwnRecipeForm, RecipeDetail, RecipeList, RecipePicker, RecipeThumbnail } from "./Recipes";
@@ -175,12 +176,15 @@ export function Menu({ userID }: { userID: string }) {
       </div>
     );
   } else if (route?.kind === "recipe") {
-    const recipe = overview.recipes.find((candidate) => candidate.id === route.id);
+    const recipe = overview.recipes.find((candidate) => candidate.id === route.id) ?? removedSummary(core, input, route.id);
+    const backLabel = path.length > 1 ? t("menu.recipes") : t("menu.title");
     screen = recipe ? (
-      <RecipeDetail key={recipe.id} rows={loaded.rows} recipe={recipe} back={path.length > 1 ? t("menu.recipes") : t("menu.title")} onBack={back} />
+      <RecipeDetail key={recipe.id} rows={loaded.rows} recipe={recipe} back={backLabel} onBack={back} />
     ) : (
-      // A recipe removed on another device, or a meal whose recipe is gone.
-      <div className="tab-page pushed" data-page="recipe" />
+      // Gone while it was open (removed on another device, then read back): only the way back.
+      <div className="tab-page pushed" data-page="recipe">
+        <NavBar title="" back={backLabel} onBack={back} />
+      </div>
     );
   } else if (route?.kind === "recipes") {
     screen = (
@@ -266,6 +270,20 @@ export function Menu({ userID }: { userID: string }) {
       {failed && <Alert title={t(failed)} onClose={() => setFailed(undefined)} />}
     </>
   );
+}
+
+/** A recipe removed after it was planned, for its meal's recipe screen, as on iOS (MenuStore.recipe finds it too). */
+function removedSummary(core: FitlingCore, input: MenuInput, id: string): RecipeSummary | undefined {
+  const recipe = input.removedRecipes.find((candidate) => candidate.id === id);
+  if (!recipe) return undefined;
+  return {
+    id: recipe.id,
+    title: core.localizedText({ values: recipe.title, languages: input.languages }).text,
+    kcalPerServing: recipe.kcalPerServing,
+    cookMinutes: recipe.cookMinutes,
+    own: recipe.ownerID === input.userID,
+    mealSlots: recipe.mealSlots,
+  };
 }
 
 /** The rows FitlingCore reads; the steps are for the recipe screen only. */

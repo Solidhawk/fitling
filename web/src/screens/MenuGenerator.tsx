@@ -88,7 +88,7 @@ export function MenuPreferencesSheet({
   onDone: () => void;
 }) {
   return (
-    <FormSheet title={t("menu.preferences")} saveLabel={t("common.ok")} onSave={onDone} onCancel={onDone}>
+    <FormSheet title={t("menu.preferences")} saveLabel={t("common.ok")} onSave={onDone} onCancel={onDone} cancel={false}>
       <MenuPreferenceSections preferences={preferences} onChange={onChange} />
     </FormSheet>
   );

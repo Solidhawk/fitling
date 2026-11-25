@@ -241,6 +241,7 @@ test("the week menu from the same MenuBook as the iPhone (web phase 5)", async (
     today: "2026-11-18",
     languages: ["nl"],
     recipes,
+    removedRecipes: [],
     entries: [],
     settings: { excludedTags: [], mealPrep: false, mealSlots: ["breakfast", "lunch", "dinner"] },
     excludedProductIDs: [],

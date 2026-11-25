@@ -7,7 +7,7 @@ import Foundation
 // The recipes and week menu of one user, and what the app and the web read and decide from them: the order of
 // recipes and meals, which recipes fit a meal, what a new menu or a renewed day keeps and adds, and what a meal
 // logged with one tap holds. The app builds this from SwiftData, the web from Supabase; both write their own rows.
-// Only rows that are not deleted.
+// Only rows that are not deleted, plus the removed recipes that planned meals still name.
 
 /// A shared recipe or one of the user's own, with the products in it (for what the user leaves out).
 public struct MenuRecipe: Sendable, Equatable, Codable {
@@ -135,15 +135,19 @@ public struct MenuBook: Sendable {
     public let languages: [String]
     public let settings: MenuSettings
     private let recipeRows: [MenuRecipe]
+    /// Removed on another device after they were planned: their meals keep name and values and can be logged, but
+    /// they are no longer offered or planned.
+    private let removedRows: [MenuRecipe]
     private let entryRows: [MenuEntry]
     private let excludedProductIDs: Set<UUID>
 
     public init(
-        userID: UUID, recipes: [MenuRecipe], entries: [MenuEntry], settings: MenuSettings, excludedProductIDs: Set<UUID>, today: Day,
-        languages: [String]
+        userID: UUID, recipes: [MenuRecipe], removedRecipes: [MenuRecipe] = [], entries: [MenuEntry], settings: MenuSettings,
+        excludedProductIDs: Set<UUID>, today: Day, languages: [String]
     ) {
         self.userID = userID
         recipeRows = recipes.filter { $0.ownerID == nil || $0.ownerID == userID }
+        removedRows = removedRecipes.filter { $0.ownerID == nil || $0.ownerID == userID }
         entryRows = entries
         self.settings = settings
         self.excludedProductIDs = excludedProductIDs
@@ -160,8 +164,9 @@ public struct MenuBook: Sendable {
         recipeRows.sorted { TrainingRecords.inOrder($0.title.text(preferring: languages), $1.title.text(preferring: languages)) }
     }
 
+    /// A recipe by id, also one that was removed after it was planned.
     public func recipe(_ id: UUID) -> MenuRecipe? {
-        recipeRows.first { $0.id == id }
+        recipeRows.first { $0.id == id } ?? removedRows.first { $0.id == id }
     }
 
     /// The week menu from today, by day and in the order of the meals.

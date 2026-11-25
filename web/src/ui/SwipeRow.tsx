@@ -128,6 +128,11 @@ export function SwipeRow({
         onPointerUp={up}
         onPointerCancel={up}
         onClickCapture={click}
+        // After a long press iOS Safari still sends a click when the finger lifts, to whatever is under it by then:
+        // the menu that just opened. Cancelling the touch's end keeps that click from happening.
+        onTouchEnd={(event) => {
+          if (handled.current) event.preventDefault();
+        }}
         onContextMenu={
           onMenu &&
           ((event) => {

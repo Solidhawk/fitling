@@ -254,27 +254,32 @@ export interface ExerciseProgress {
 export type MeasurementKind = "weight" | "waist" | "chest" | "hips" | "arm" | "thigh" | "neck";
 
 /** The recipes, week menu and preferences of the user and the shared recipes, as MenuBook in FitlingCore reads them. */
+/** A shared recipe or one of the user's own, as MenuBook reads it (MenuRecipe). */
+export interface MenuRecipe {
+  id: string;
+  ownerID?: string;
+  title: Localized;
+  servings: number;
+  cookMinutes: number;
+  kcalPerServing: number;
+  proteinGPerServing: number;
+  carbsGPerServing: number;
+  fatGPerServing: number;
+  costCentsPerServing?: number;
+  keepsWell: boolean;
+  mealSlots: string[];
+  tags: string[];
+  /** The products in it, for what the user leaves out. */
+  productIDs: string[];
+}
+
 export interface MenuInput {
   userID: string;
   today: IsoDay;
   languages: string[];
-  recipes: {
-    id: string;
-    ownerID?: string;
-    title: Localized;
-    servings: number;
-    cookMinutes: number;
-    kcalPerServing: number;
-    proteinGPerServing: number;
-    carbsGPerServing: number;
-    fatGPerServing: number;
-    costCentsPerServing?: number;
-    keepsWell: boolean;
-    mealSlots: string[];
-    tags: string[];
-    /** The products in it, for what the user leaves out. */
-    productIDs: string[];
-  }[];
+  recipes: MenuRecipe[];
+  /** Removed after they were planned: their meals keep name and values, but they are no longer offered or planned. */
+  removedRecipes: MenuRecipe[];
   entries: {
     id: string;
     plannedOn: IsoDay;

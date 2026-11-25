@@ -14,14 +14,16 @@ struct MenuInput: Decodable {
     let today: String
     let languages: [String]
     let recipes: [MenuRecipe]
+    /// Removed after they were planned: their meals keep name and values (MenuBook.recipe).
+    let removedRecipes: [MenuRecipe]
     let entries: [MenuEntry]
     let settings: MenuSettings
     let excludedProductIDs: [UUID]
 
     func book() throws -> MenuBook {
         MenuBook(
-            userID: userID, recipes: recipes, entries: entries, settings: settings, excludedProductIDs: Set(excludedProductIDs),
-            today: try day(today, "today"), languages: languages
+            userID: userID, recipes: recipes, removedRecipes: removedRecipes, entries: entries, settings: settings,
+            excludedProductIDs: Set(excludedProductIDs), today: try day(today, "today"), languages: languages
         )
     }
 }

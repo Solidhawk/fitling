@@ -169,7 +169,7 @@ function Labeled({ label, children }: { label: string; children: ReactNode }) {
 
 /** One recipe: its photo with the maker's credit, energy and macros per serving, ingredients and steps (RecipeDetailView). */
 export function RecipeDetail({ rows, recipe, back, onBack }: { rows: MenuRows; recipe: RecipeSummary; back: string; onBack: () => void }) {
-  const values = rows.recipes.find((candidate) => candidate.id === recipe.id);
+  const values = [...rows.recipes, ...rows.removedRecipes].find((candidate) => candidate.id === recipe.id);
   const [ingredients, setIngredients] = useState<Ingredient[]>();
   const [photoShown, setPhotoShown] = useState(!recipe.own);
   const credit = recipe.own ? undefined : photoCredits[recipe.id];

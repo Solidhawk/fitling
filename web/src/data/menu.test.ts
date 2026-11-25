@@ -46,7 +46,8 @@ describe.skipIf(!url || !key || !serviceKey)("the week menu on the server", () =
   }
 
   function input(userID: string, rows: MenuRows): MenuInput {
-    return { userID, today, languages: ["nl"], recipes: rows.recipes, entries: rows.entries, settings: rows.settings, excludedProductIDs: rows.excludedProductIDs };
+    const { steps: _, ...book } = rows;
+    return { userID, today, languages: ["nl"], ...book };
   }
 
   test("aNewMenuIsStoredAndPinnedMealsStay", async () => {

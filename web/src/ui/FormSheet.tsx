@@ -11,6 +11,7 @@ export function FormSheet({
   canSave = true,
   onSave,
   onCancel,
+  cancel = true,
   children,
 }: {
   title: string;
@@ -19,6 +20,8 @@ export function FormSheet({
   canSave?: boolean;
   onSave: () => void;
   onCancel: () => void;
+  /** Without Cancel, as a sheet whose changes are saved at once (MenuPreferencesView has only OK). */
+  cancel?: boolean;
   children: ReactNode;
 }) {
   const sheet = useRef<HTMLDivElement>(null);
@@ -28,9 +31,11 @@ export function FormSheet({
       <NavBar
         title={title}
         leading={
-          <button type="button" className="nav-back nav-action" onClick={onCancel}>
-            {t("common.cancel")}
-          </button>
+          cancel && (
+            <button type="button" className="nav-back nav-action" onClick={onCancel}>
+              {t("common.cancel")}
+            </button>
+          )
         }
         trailing={
           saveLabel && (

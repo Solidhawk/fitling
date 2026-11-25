@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { IsoDay, Localized, LoggedMeal, MenuChange, MenuInput, MenuPreferences } from "../core/fitlingCore";
+import type { IsoDay, Localized, LoggedMeal, MenuChange, MenuInput, MenuPreferences, MenuRecipe } from "../core/fitlingCore";
 import { failure } from "./failure";
 import { allRows, type Row } from "./pages";
 
@@ -24,6 +24,28 @@ export const mealSlots = ["breakfast", "lunch", "dinner", "snack"] as const;
 export const defaultPreferences: MenuPreferences = { excludedTags: [], mealPrep: false, mealSlots: ["breakfast", "lunch", "dinner"] };
 
 const optional = <T>(value: unknown) => (value === null || value === undefined ? undefined : (value as T));
+
+const recipeColumns =
+  "id, owner_id, title, steps, servings, cook_minutes, kcal_per_serving, protein_g_per_serving, carbs_g_per_serving, fat_g_per_serving, cost_cents_per_serving, keeps_well, meal_slots, tags";
+
+function recipeFromRow(row: Row, productIDs: string[]): MenuRecipe {
+  return {
+    id: row.id as string,
+    ownerID: optional<string>(row.owner_id),
+    title: row.title as Localized,
+    servings: row.servings as number,
+    cookMinutes: row.cook_minutes as number,
+    kcalPerServing: Number(row.kcal_per_serving),
+    proteinGPerServing: Number(row.protein_g_per_serving),
+    carbsGPerServing: Number(row.carbs_g_per_serving),
+    fatGPerServing: Number(row.fat_g_per_serving),
+    costCentsPerServing: optional<number>(row.cost_cents_per_serving),
+    keepsWell: row.keeps_well as boolean,
+    mealSlots: row.meal_slots as string[],
+    tags: row.tags as string[],
+    productIDs,
+  };
+}
 
 type Page = PromiseLike<{ data: Row[] | null; error: { message: string } | null }>;
 
@@ -51,11 +73,7 @@ async function write(work: PromiseLike<{ error: { message: string } | null }>) {
  */
 export async function loadMenu(client: SupabaseClient, today: IsoDay): Promise<MenuRows> {
   const [recipes, ingredients, entries, excluded, preferences] = await Promise.all([
-    rows(
-      client,
-      "recipes",
-      "id, owner_id, title, steps, servings, cook_minutes, kcal_per_serving, protein_g_per_serving, carbs_g_per_serving, fat_g_per_serving, cost_cents_per_serving, keeps_well, meal_slots, tags",
-    ),
+    rows(client, "recipes", recipeColumns),
     rows(client, "recipe_ingredients", "id, recipe_id, product_id", (query) => query.not("product_id", "is", null)),
     rows(client, "meal_plan_entries", "id, planned_on, meal, recipe_id, servings, is_leftover, is_pinned, logged_entry_id", (query) =>
       query.gte("planned_on", today),
@@ -70,24 +88,21 @@ export async function loadMenu(client: SupabaseClient, today: IsoDay): Promise<M
     products.set(recipeID, [...(products.get(recipeID) ?? []), row.product_id as string]);
   }
   const saved = preferences.data as Row | null;
+  // Recipes removed after they were planned (on another device): their meals keep name and values (MenuBook.recipe).
+  const alive = new Set(recipes.map((row) => row.id as string));
+  const missing = [...new Set(entries.map((row) => row.recipe_id as string))].filter((id) => !alive.has(id));
+  let removed: Row[] = [];
+  if (missing.length > 0) {
+    const found = await client.from("recipes").select(recipeColumns).in("id", missing);
+    if (found.error) throw failure(found.error);
+    removed = (found.data ?? []) as unknown as Row[];
+  }
   return {
-    recipes: recipes.map((row) => ({
-      id: row.id as string,
-      ownerID: optional<string>(row.owner_id),
-      title: row.title as Localized,
-      servings: row.servings as number,
-      cookMinutes: row.cook_minutes as number,
-      kcalPerServing: Number(row.kcal_per_serving),
-      proteinGPerServing: Number(row.protein_g_per_serving),
-      carbsGPerServing: Number(row.carbs_g_per_serving),
-      fatGPerServing: Number(row.fat_g_per_serving),
-      costCentsPerServing: optional<number>(row.cost_cents_per_serving),
-      keepsWell: row.keeps_well as boolean,
-      mealSlots: row.meal_slots as string[],
-      tags: row.tags as string[],
-      productIDs: products.get(row.id as string) ?? [],
-    })),
-    steps: Object.fromEntries(recipes.map((row) => [row.id as string, (row.steps as Record<string, string[]> | null) ?? {}])),
+    recipes: recipes.map((row) => recipeFromRow(row, products.get(row.id as string) ?? [])),
+    removedRecipes: removed.map((row) => recipeFromRow(row, [])),
+    steps: Object.fromEntries(
+      [...recipes, ...removed].map((row) => [row.id as string, (row.steps as Record<string, string[]> | null) ?? {}]),
+    ),
     entries: entries.map((row) => ({
       id: row.id as string,
       plannedOn: row.planned_on as IsoDay,
