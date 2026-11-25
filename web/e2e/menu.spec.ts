@@ -25,9 +25,16 @@ test("aWeekMenuIsMade", async ({ page }, info) => {
   expect(new Set(data!.map((row) => row.planned_on)).size).toBe(5);
   const axe = await new AxeBuilder({ page }).analyze();
   expect(axe.violations.map((violation) => violation.id)).toEqual([]);
-  // The next menu opens with these choices.
+  // The next menu opens with these choices; another goal plans for its own kcal and is remembered too.
   await page.getByTestId("menu.generate").click();
   await expect(page.getByTestId("menu.generator.days")).toContainText(nlCount("menu.generator.days %lld", 5));
+  const kcalOf = async (goal: string) => Number((await page.getByTestId(`menu.generator.goal.${goal}`).innerText()).replace(/\D/g, ""));
+  expect(await kcalOf("lose")).toBeLessThan(await kcalOf("daily"));
+  await page.getByTestId("menu.generator.goal.lose").click();
+  await page.getByTestId("menu.generator.make").click();
+  await expect(page.getByTestId("menu.generate")).toBeVisible({ timeout: 15_000 });
+  await page.getByTestId("menu.generate").click();
+  await expect(page.getByTestId("menu.generator.goal.lose")).toHaveAttribute("aria-checked", "true");
 });
 
 test("aMealIsLoggedOnce", async ({ page }) => {
@@ -137,6 +144,8 @@ test("anOwnRecipeIsMadeAndRemoved", async ({ page }, info) => {
 test("preferencesAreSavedAtOnce", async ({ page }) => {
   const user = await openMenu(page);
   await page.getByTestId("menu.preferences").click();
+  // Every change is saved at once, so there is only OK, as on iOS.
+  await expect(page.getByRole("dialog").getByRole("button", { name: nl("common.cancel"), exact: true })).toHaveCount(0);
   await page.getByTestId("menu.prefs.tag.fish").check();
   await page.getByTestId("menu.prefs.slot.breakfast").uncheck();
   await page.getByRole("button", { name: nl("common.ok"), exact: true }).click();
@@ -171,7 +180,17 @@ test("aMealWhoseRecipeIsGoneStillShows", async ({ page }) => {
       .insert({ id: entryID, user_id: userID, planned_on: localDay(), meal: "dinner", recipe_id: recipeID, servings: 1, updated_at: now });
     if (entry.error) throw entry.error;
   });
-  await expect(page.getByTestId(`menu.entry.${entryID}`)).toContainText(nl("meal.dinner"), { timeout: 15_000 });
+  // It keeps its name and opens its recipe, as on iOS; it is no longer offered in the recipe list.
+  await expect(page.getByTestId(`menu.entry.${entryID}`)).toContainText("Weggehaald gerecht", { timeout: 15_000 });
+  await page.getByTestId(`menu.entry.${entryID}`).click();
+  await expect(page.getByRole("heading", { name: "Weggehaald gerecht" })).toBeVisible();
+  await page.goBack();
+  await page.getByTestId("menu.recipes").click();
+  await expect(page.getByTestId("menu.recipe.new")).toBeVisible();
   await expect(page.getByText("Weggehaald gerecht")).toHaveCount(0);
-  await expect(page.getByTestId(`menu.swap.${entryID}`)).toBeAttached();
+  await page.goBack();
+  // And it can still be logged.
+  await page.getByTestId(`menu.log.${entryID}`).focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByTestId(`menu.logged.${entryID}`)).toBeVisible({ timeout: 15_000 });
 });

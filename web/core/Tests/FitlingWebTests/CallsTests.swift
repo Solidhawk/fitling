@@ -405,6 +405,7 @@ import FitlingCore
         var today = "2026-11-18"
         var languages = ["nl"]
         var recipes: [MenuRecipe] = []
+        var removedRecipes: [MenuRecipe] = []
         var entries: [MenuEntry] = []
         var settings = MenuSettings()
         var excludedProductIDs: [UUID] = []
@@ -452,6 +453,23 @@ import FitlingCore
         let meal = try #require(result["meal"] as? [String: Any])
         #expect(number(meal["kcal"]) == 1050 && meal["day"] as? String == "2026-11-19" && meal["slot"] as? String == "lunch")
         #expect(meal["recipeID"] as? String == json.recipes[3].id.uuidString.lowercased())
+    }
+
+    @Test func aMealWhoseRecipeWasRemovedKeepsItsName() throws {
+        var json = MenuJSON(recipes: menuRecipes())
+        let removed = MenuRecipe(
+            id: UUID(), ownerID: json.userID, title: LocalizedText(["nl": "Weggehaald"]), servings: 1, cookMinutes: 10, kcalPerServing: 500,
+            proteinGPerServing: 20, carbsGPerServing: 50, fatGPerServing: 20, mealSlots: ["dinner"]
+        )
+        let entry = MenuEntry(id: UUID(), plannedOn: Day(isoString: "2026-11-18")!, meal: "dinner", recipeID: removed.id, servings: 1)
+        json.removedRecipes = [removed]
+        json.entries = [entry]
+        let overview = try answer("menuOverview", try json.with(""))
+        let shown = try #require(((overview["days"] as? [[String: Any]])?.first?["entries"] as? [[String: Any]])?.first)
+        #expect(shown["title"] as? String == "Weggehaald" && number(shown["kcal"]) == 500)
+        #expect(!((overview["recipes"] as? [[String: Any]]) ?? []).contains { $0["title"] as? String == "Weggehaald" })
+        let logged = try answer("menuLoggedMeal", try json.with(#""entryID":"\#(entry.id)""#))
+        #expect((logged["meal"] as? [String: Any])?["name"] as? String == "Weggehaald")
     }
 
     @Test func ownRecipeCompleteFollowsTheCore() throws {

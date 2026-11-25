@@ -82,6 +82,32 @@ import Testing
         #expect(book([recipe], [planned]).loggedMeal(planned.id) == nil)
     }
 
+    /// A recipe removed on another device after it was planned: the meal keeps its name and values and can be logged,
+    /// but the recipe is no longer offered or planned (MenuStore.recipe finds removed recipes too).
+    @Test func aMealWhoseRecipeWasRemovedKeepsItAndCanBeLogged() throws {
+        let all = recipes
+        let removed = MenuRecipe(
+            id: UUID(), ownerID: user, title: LocalizedText(["nl": "Weggehaald"]), servings: 1, cookMinutes: 10, kcalPerServing: 500,
+            proteinGPerServing: 20, carbsGPerServing: 50, fatGPerServing: 20, mealSlots: ["dinner"]
+        )
+        let planned = entry(0, "dinner", removed)
+        let book = MenuBook(
+            userID: user, recipes: all, removedRecipes: [removed], entries: [planned], settings: MenuSettings(), excludedProductIDs: [],
+            today: today, languages: ["nl"]
+        )
+        #expect(book.entries().map(\.id) == [planned.id])
+        #expect(book.recipe(removed.id)?.title.text(preferring: ["nl"]) == "Weggehaald")
+        #expect(try #require(book.loggedMeal(planned.id)).kcal == 500)
+        #expect(!book.recipes().contains { $0.id == removed.id })
+        #expect(!book.generate(days: 7, seed: 1, targets: targets).added.contains { $0.recipeID == removed.id })
+        let other = entry(0, "lunch", all[3])
+        let withOther = MenuBook(
+            userID: user, recipes: all, removedRecipes: [removed], entries: [planned, other], settings: MenuSettings(),
+            excludedProductIDs: [], today: today, languages: ["nl"]
+        )
+        #expect(!withOther.recipes(for: other.id).contains { $0.id == removed.id })
+    }
+
     @Test func recipesForAMealAreThoseOfItsMeal() {
         let all = recipes
         let planned = entry(0, "dinner", all[6])
