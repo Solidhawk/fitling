@@ -253,6 +253,96 @@ export interface ExerciseProgress {
 
 export type MeasurementKind = "weight" | "waist" | "chest" | "hips" | "arm" | "thigh" | "neck";
 
+/** The recipes, week menu and preferences of the user and the shared recipes, as MenuBook in FitlingCore reads them. */
+export interface MenuInput {
+  userID: string;
+  today: IsoDay;
+  languages: string[];
+  recipes: {
+    id: string;
+    ownerID?: string;
+    title: Localized;
+    servings: number;
+    cookMinutes: number;
+    kcalPerServing: number;
+    proteinGPerServing: number;
+    carbsGPerServing: number;
+    fatGPerServing: number;
+    costCentsPerServing?: number;
+    keepsWell: boolean;
+    mealSlots: string[];
+    tags: string[];
+    /** The products in it, for what the user leaves out. */
+    productIDs: string[];
+  }[];
+  entries: {
+    id: string;
+    plannedOn: IsoDay;
+    meal: string;
+    recipeID: string;
+    servings: number;
+    isLeftover: boolean;
+    isPinned: boolean;
+    loggedEntryID?: string;
+  }[];
+  settings: MenuPreferences;
+  excludedProductIDs: string[];
+}
+
+/** What the user wants in a menu (menu_preferences). */
+export interface MenuPreferences {
+  excludedTags: string[];
+  maxCookMinutes?: number;
+  budgetCents?: number;
+  mealPrep: boolean;
+  mealSlots: string[];
+}
+
+export interface RecipeSummary {
+  id: string;
+  title: string;
+  kcalPerServing: number;
+  cookMinutes: number;
+  own: boolean;
+  mealSlots: string[];
+}
+
+export interface MenuOverview {
+  days: {
+    day: IsoDay;
+    entries: { id: string; slot: string; recipeID: string; title: string; servings: number; kcal: number; isPinned: boolean; logged: boolean }[];
+  }[];
+  recipes: RecipeSummary[];
+}
+
+/** What the planner could not solve (MenuIssue). */
+export interface MenuIssue {
+  kind: "noRecipes" | "kcalOutOfRange" | "proteinShort" | "overBudget";
+  slot?: string;
+  day?: IsoDay;
+  kcal?: number;
+  missingG?: number;
+  byCents?: number;
+}
+
+export interface MenuChange {
+  removed: string[];
+  added: { day: IsoDay; slot: string; recipeID: string; servings: number; isLeftover: boolean }[];
+  issues: MenuIssue[];
+}
+
+export interface LoggedMeal {
+  recipeID: string;
+  name: string;
+  day: IsoDay;
+  slot: string;
+  servings: number;
+  kcal: number;
+  proteinG: number;
+  carbsG: number;
+  fatG: number;
+}
+
 export interface PartnerDays {
   creature: CreatureStateInput;
   entries: { day: IsoDay; kcal: number; proteinG?: number }[];
@@ -327,6 +417,22 @@ export interface FitlingCore {
   weeklyVolume(input: { training: TrainingInput; lastWeek: boolean }): { muscle: string; sets: number }[];
   measurementStored(input: { value: number; kind: MeasurementKind; usesMetric: boolean }): { value?: number };
   measurementShown(input: { value: number; kind: MeasurementKind; usesMetric: boolean }): { value?: number };
+  menuOverview(input: { menu: MenuInput }): MenuOverview;
+  /** `seed` is a UInt64 as text. */
+  menuGenerate(input: { menu: MenuInput; days: number; seed: string; targets: Targets }): MenuChange;
+  menuRenew(input: { menu: MenuInput; day: IsoDay; seed: string; targets: Targets }): MenuChange;
+  menuLoggedMeal(input: { menu: MenuInput; entryID: string }): { meal?: LoggedMeal };
+  menuRecipesFor(input: { menu: MenuInput; entryID: string }): RecipeSummary[];
+  ownRecipeComplete(input: {
+    title: string;
+    servings: number;
+    cookMinutes: number;
+    kcal?: number;
+    protein?: number;
+    carbs?: number;
+    fat?: number;
+    mealSlots: string[];
+  }): { complete: boolean };
 }
 
 interface Exports {
@@ -399,6 +505,12 @@ export async function loadCore(wasm: ArrayBuffer): Promise<FitlingCore> {
     weeklyVolume: (input) => call("weeklyVolume", input) as ReturnType<FitlingCore["weeklyVolume"]>,
     measurementStored: (input) => call("measurementStored", input) as { value?: number },
     measurementShown: (input) => call("measurementShown", input) as { value?: number },
+    menuOverview: (input) => call("menuOverview", input) as MenuOverview,
+    menuGenerate: (input) => call("menuGenerate", input) as MenuChange,
+    menuRenew: (input) => call("menuRenew", input) as MenuChange,
+    menuLoggedMeal: (input) => call("menuLoggedMeal", input) as { meal?: LoggedMeal },
+    menuRecipesFor: (input) => call("menuRecipesFor", input) as RecipeSummary[],
+    ownRecipeComplete: (input) => call("ownRecipeComplete", input) as { complete: boolean },
     localizedText: (input) => call("localizedText", input) as { text: string },
   };
 }
