@@ -27,14 +27,25 @@ struct MenuStore {
 
     // MARK: Recipes
 
-    /// Shared and own recipes, by title in the user's language.
+    /// Shared and own recipes, by title in the user's language (MenuBook.recipes).
     func recipes() -> [Recipe] {
+        let all = recipeModels()
+        let byID = Dictionary(all.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        return menuBook(recipes: all.map { $0.menuRecipe(productIDs: []) }).recipes().compactMap { byID[$0.id] }
+    }
+
+    /// Recipes that fit this meal, for swapping (MenuBook.recipes(for:)).
+    func recipes(for entry: MealPlanEntry) -> [Recipe] {
+        let all = recipeModels()
+        let byID = Dictionary(all.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        return menuBook(recipes: all.map { $0.menuRecipe(productIDs: []) }, entries: [entry].compactMap(\.menuEntry)).recipes(for: entry.id).compactMap { byID[$0.id] }
+    }
+
+    private func recipeModels() -> [Recipe] {
         let owner: UUID? = userID
-        let all = (try? context.fetch(FetchDescriptor<Recipe>(
+        return (try? context.fetch(FetchDescriptor<Recipe>(
             predicate: #Predicate<Recipe> { $0.deletedAt == nil && ($0.ownerID == nil || $0.ownerID == owner) }
         ))) ?? []
-        let languages = Locale.preferredLanguages
-        return all.sorted { $0.title.text(preferring: languages).localizedStandardCompare($1.title.text(preferring: languages)) == .orderedAscending }
     }
 
     func recipe(_ id: UUID) -> Recipe? {
@@ -64,11 +75,12 @@ struct MenuStore {
         var ingredients: [(name: String, quantity: Double, unit: String)] = []
         var steps: [String] = []
 
+        /// The same rule as on the web (MenuBook.ownRecipeIsComplete).
         var isComplete: Bool {
-            guard let kcal, let protein, let carbs, let fat else { return false }
-            return !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !slots.isEmpty
-                && (1...20).contains(servings) && (0...600).contains(cookMinutes)
-                && (0...5000).contains(kcal) && (0...500).contains(protein) && (0...1000).contains(carbs) && (0...500).contains(fat)
+            MenuBook.ownRecipeIsComplete(
+                title: title, servings: servings, cookMinutes: cookMinutes, kcal: kcal, protein: protein, carbs: carbs, fat: fat,
+                mealSlots: MealSlot.allCases.filter(slots.contains).map(\.rawValue)
+            )
         }
     }
 
@@ -123,17 +135,18 @@ struct MenuStore {
 
     // MARK: Week menu
 
-    /// The week menu from today, by day and in the order of the meals.
+    /// The week menu from today, by day and in the order of the meals (MenuBook.entries).
     func entries() -> [MealPlanEntry] {
+        let all = entryModels()
+        let byID = Dictionary(all.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        return menuBook(entries: all.compactMap(\.menuEntry)).entries().compactMap { byID[$0.id] }
+    }
+
+    private func entryModels() -> [MealPlanEntry] {
         let userID = userID
-        let first = today.isoString
-        let last = today.adding(Self.menuDays - 1).isoString
-        let slotOrder = Dictionary(uniqueKeysWithValues: MealSlot.allCases.enumerated().map { ($1.rawValue, $0) })
-        return ((try? context.fetch(FetchDescriptor<MealPlanEntry>(
-            predicate: #Predicate<MealPlanEntry> {
-                $0.userID == userID && $0.deletedAt == nil && $0.plannedOn >= first && $0.plannedOn <= last
-            }
-        ))) ?? []).sorted { ($0.plannedOn, slotOrder[$0.meal] ?? 9) < ($1.plannedOn, slotOrder[$1.meal] ?? 9) }
+        return (try? context.fetch(FetchDescriptor<MealPlanEntry>(
+            predicate: #Predicate<MealPlanEntry> { $0.userID == userID && $0.deletedAt == nil }
+        ))) ?? []
     }
 
     /// The targets a menu plans for: the day's own target, or what the formulas give for `goal`.
@@ -147,46 +160,28 @@ struct MenuStore {
     /// is replaced. A different `seed` gives a different menu from the same recipes.
     @discardableResult
     func generate(seed: UInt64, options: MenuOptions = MenuOptions()) -> [MenuIssue] {
-        let count = min(max(options.days, 1), Self.menuDays)
-        return plan(days: (0..<count).map { today.adding($0) }, replacing: entries(), seed: seed, goal: options.goal)
+        apply(book().generate(days: options.days, seed: seed, targets: targets(for: options.goal)))
     }
 
     /// New meals for one day; the other days stay as they are.
     @discardableResult
     func renew(_ day: Day, seed: UInt64, goal: Goal?) -> [MenuIssue] {
-        plan(days: [day], replacing: entries().filter { $0.plannedOn == day.isoString }, seed: seed, goal: goal)
+        apply(book().renew(day, seed: seed, targets: targets(for: goal)))
     }
 
-    private func plan(days: [Day], replacing existing: [MealPlanEntry], seed: UInt64, goal: Goal?) -> [MenuIssue] {
-        let preferences = preferences()
-        let kept = existing.filter { $0.isPinned || $0.loggedEntryID != nil }
-        let targets = targets(for: goal)
-        let request = MenuRequest(
-            days: days, kcalTarget: targets.kcal, proteinTargetG: targets.proteinG,
-            slots: preferences.mealSlots.compactMap(MealSlot.init(rawValue:)),
-            excludedIngredientIDs: excludedProductIDs(), excludedTags: Set(preferences.excludedTags),
-            maxCookMinutes: preferences.maxCookMinutes, budgetCents: preferences.budgetCents, mealPrep: preferences.mealPrep,
-            pinned: kept.compactMap(\.plannedMeal).map { meal in
-                var meal = meal
-                meal.isPinned = true
-                return meal
-            },
-            seed: seed
-        )
-        let plan = WeekMenuPlanner.plan(request, recipes: plannerRecipes())
-        for entry in existing where !kept.contains(where: { $0.id == entry.id }) {
+    /// What FitlingCore decided: the meals that go are removed, those that come are stored.
+    private func apply(_ change: MenuChange) -> [MenuIssue] {
+        let removed = Set(change.removed)
+        for entry in entryModels() where removed.contains(entry.id) {
             entry.deletedAt = now()
             entry.updatedAt = now()
             entry.needsPush = true
         }
-        let keptSlots = Set(kept.map { "\($0.plannedOn)|\($0.meal)" })
-        for meal in plan.meals where !keptSlots.contains("\(meal.day.isoString)|\(meal.slot.rawValue)") {
-            var meal = meal
-            meal.isPinned = false
+        for meal in change.added {
             context.insert(MealPlanEntry(id: UUID(), userID: userID, meal: meal, updatedAt: now()))
         }
         try? context.save()
-        return plan.issues
+        return change.issues
     }
 
     func togglePin(_ entry: MealPlanEntry) {
@@ -212,29 +207,46 @@ struct MenuStore {
     /// servings. A second tap does nothing.
     @discardableResult
     func log(_ entry: MealPlanEntry) -> FoodEntry? {
-        guard entry.loggedEntryID == nil, let recipe = recipe(entry.recipeID), let meal = entry.plannedMeal else { return nil }
+        guard let meal = book().loggedMeal(entry.id) else { return nil }
         let food = FoodEntry(
-            id: UUID(), userID: userID, consumedOn: meal.day, meal: meal.slot,
-            name: recipe.title.text(preferring: Locale.preferredLanguages), quantity: entry.servings, quantityUnit: "serving",
-            kcal: (recipe.kcalPerServing * entry.servings * 10).rounded() / 10, updatedAt: now()
+            id: UUID(), userID: userID, consumedOn: meal.day, meal: meal.slot, name: meal.name, quantity: meal.servings,
+            quantityUnit: "serving", kcal: meal.kcal, updatedAt: now()
         )
-        food.recipeID = recipe.id
-        food.proteinG = (recipe.proteinGPerServing * entry.servings * 10).rounded() / 10
-        food.carbsG = (recipe.carbsGPerServing * entry.servings * 10).rounded() / 10
-        food.fatG = (recipe.fatGPerServing * entry.servings * 10).rounded() / 10
+        food.recipeID = meal.recipeID
+        food.proteinG = meal.proteinG
+        food.carbsG = meal.carbsG
+        food.fatG = meal.fatG
         context.insert(food)
         entry.loggedEntryID = food.id
         touch(entry)
         return food
     }
 
-    // MARK: Helpers
+    // MARK: MenuBook
 
-    private func plannerRecipes() -> [PlannerRecipe] {
-        recipes().compactMap { recipe in
-            recipe.plannerRecipe(ingredientIDs: Set(ingredients(of: recipe).compactMap(\.productID)))
-        }
+    /// Everything on this device that FitlingCore reads for the menu: recipes with their products, the week menu, the
+    /// preferences and what the user leaves out.
+    func book() -> MenuBook {
+        let ingredients = (try? context.fetch(FetchDescriptor<RecipeIngredient>(predicate: #Predicate<RecipeIngredient> { $0.deletedAt == nil }))) ?? []
+        let products = Dictionary(grouping: ingredients.filter { $0.productID != nil }, by: \.recipeID).mapValues { $0.compactMap(\.productID) }
+        return menuBook(
+            recipes: recipeModels().map { $0.menuRecipe(productIDs: products[$0.id] ?? []) },
+            entries: entryModels().compactMap(\.menuEntry),
+            settings: preferences().menuSettings,
+            excluded: excludedProductIDs()
+        )
     }
+
+    private func menuBook(
+        recipes: [MenuRecipe] = [], entries: [MenuEntry] = [], settings: MenuSettings = MenuSettings(), excluded: Set<UUID> = []
+    ) -> MenuBook {
+        MenuBook(
+            userID: userID, recipes: recipes, entries: entries, settings: settings, excludedProductIDs: excluded, today: today,
+            languages: [language] + Locale.preferredLanguages
+        )
+    }
+
+    // MARK: Helpers
 
     private func excludedProductIDs() -> Set<UUID> {
         let userID = userID
@@ -254,4 +266,34 @@ struct MenuStore {
 struct MenuOptions: Equatable, Codable {
     var days = MenuStore.menuDays
     var goal: Goal?
+}
+
+// The SwiftData rows as FitlingCore reads them.
+
+extension Recipe {
+    func menuRecipe(productIDs: [UUID]) -> MenuRecipe {
+        MenuRecipe(
+            id: id, ownerID: ownerID, title: title, servings: servings, cookMinutes: cookMinutes, kcalPerServing: kcalPerServing,
+            proteinGPerServing: proteinGPerServing, carbsGPerServing: carbsGPerServing, fatGPerServing: fatGPerServing,
+            costCentsPerServing: costCentsPerServing, keepsWell: keepsWell, mealSlots: mealSlots, tags: tags, productIDs: productIDs
+        )
+    }
+}
+
+extension MealPlanEntry {
+    /// Nil for an entry whose day cannot be read; it never counts.
+    var menuEntry: MenuEntry? {
+        Day(isoString: plannedOn).map {
+            MenuEntry(
+                id: id, plannedOn: $0, meal: meal, recipeID: recipeID, servings: servings, isLeftover: isLeftover, isPinned: isPinned,
+                loggedEntryID: loggedEntryID
+            )
+        }
+    }
+}
+
+extension MenuPreferences {
+    var menuSettings: MenuSettings {
+        MenuSettings(excludedTags: excludedTags, maxCookMinutes: maxCookMinutes, budgetCents: budgetCents, mealPrep: mealPrep, mealSlots: mealSlots)
+    }
 }

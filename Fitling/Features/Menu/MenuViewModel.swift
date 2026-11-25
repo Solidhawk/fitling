@@ -89,7 +89,7 @@ final class MenuViewModel {
 
     /// Recipes that fit this meal, for swapping.
     func recipes(for entry: MealPlanEntry) -> [Recipe] {
-        recipes.filter { $0.mealSlots.contains(entry.meal) && $0.id != entry.recipeID }
+        store.recipes(for: entry)
     }
 
     func create(_ own: MenuStore.OwnRecipe) -> Recipe? {
