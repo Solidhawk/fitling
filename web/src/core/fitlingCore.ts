@@ -428,6 +428,20 @@ export interface PartnerDays {
   today: IsoDay;
 }
 
+/** When the partner may send a reminder, kept per browser (ReminderSettings): minutes after midnight. */
+export interface ReminderSettings {
+  isOn: boolean;
+  times: number[];
+}
+
+/** One reminder: on `day` at `minutes` after midnight where the user is, with the catalog key of its text. */
+export interface PlannedReminder {
+  identifier: string;
+  day: IsoDay;
+  minutes: number;
+  messageKey: string;
+}
+
 export interface ProfileRules {
   activityFactors: Record<Activity, number>;
   proteinPerKg: Record<Goal, number>;
@@ -515,6 +529,8 @@ export interface FitlingCore {
     added: NewShoppingItem[];
   };
   shoppingNewItem(input: { text: string }): { item?: NewShoppingItem };
+  /** The reminders for today and tomorrow (ReminderPlanner), each with what the partner would say that day. */
+  remindersPlan(input: { settings: ReminderSettings; minutesNow: number; days: PartnerDays }): { reminders: PlannedReminder[] };
 }
 
 interface Exports {
@@ -596,6 +612,7 @@ export async function loadCore(wasm: ArrayBuffer): Promise<FitlingCore> {
     shoppingOverview: (input) => call("shoppingOverview", input) as ShoppingOverview,
     shoppingRefill: (input) => call("shoppingRefill", input) as { removed: string[]; added: NewShoppingItem[] },
     shoppingNewItem: (input) => call("shoppingNewItem", input) as { item?: NewShoppingItem },
+    remindersPlan: (input) => call("remindersPlan", input) as { reminders: PlannedReminder[] },
     localizedText: (input) => call("localizedText", input) as { text: string },
   };
 }

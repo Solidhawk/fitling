@@ -1,5 +1,6 @@
 #if DEBUG
 import Foundation
+import FitlingCore
 
 /// Keeps the reminders in memory instead of handing them to the system, and answers the
 /// permission question without a system alert.
