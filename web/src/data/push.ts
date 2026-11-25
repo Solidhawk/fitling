@@ -79,17 +79,20 @@ async function subscription(): Promise<PushSubscription> {
 }
 
 /**
- * Turning reminders on, from a tap: subscribing asks the browser for permission, once; afterwards it answers without
- * asking again. False when it says no (PartnerViewModel.setRemindersOn).
+ * Turning reminders on, from a tap: the browser asks for permission once, afterwards it answers without asking again;
+ * then this browser subscribes with its push service. False when it says no (PartnerViewModel.setRemindersOn).
  */
 export async function turnOn(): Promise<boolean> {
   if (pushSupport() !== "ready") return false;
+  // The question first, straight from the tap: Safari asks only while the tap is being handled.
+  const answer = Notification.permission === "default" ? Notification.requestPermission() : Promise.resolve(Notification.permission);
+  if ((await answer) !== "granted") return false;
   try {
     await subscription();
   } catch {
     return false;
   }
-  return Notification.permission === "granted";
+  return true;
 }
 
 /** The moment `minutes` after midnight on `day` where the user is, also on a day the clocks change. */

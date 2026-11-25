@@ -39,10 +39,7 @@ export async function fakePush(page: Page, fake: Fake = {}) {
     const pushManager = {
       getSubscription: async () => subscription(read()),
       subscribe: async (options: { applicationServerKey: Uint8Array }) => {
-        if (fake.refuse) {
-          write({ permission: "denied" });
-          throw new DOMException("Notifications are not allowed", "NotAllowedError");
-        }
+        if (read().permission !== "granted") throw new DOMException("Notifications are not allowed", "NotAllowedError");
         const kept: Kept = {
           permission: "granted",
           endpoint: `https://web.push.apple.com/e2e-${crypto.randomUUID()}`,
@@ -69,7 +66,12 @@ export async function fakePush(page: Page, fake: Fake = {}) {
         get permission() {
           return read().permission;
         },
-        requestPermission: async () => read().permission,
+        // The question the browser asks once: yes, or no when the test says so.
+        requestPermission: async () => {
+          const kept = read();
+          if (kept.permission === "default") write({ ...kept, permission: fake.refuse ? "denied" : "granted" });
+          return read().permission;
+        },
       },
     });
   }, fake);
