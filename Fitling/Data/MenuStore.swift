@@ -142,10 +142,12 @@ struct MenuStore {
         return menuBook(entries: all.compactMap(\.menuEntry)).entries().compactMap { byID[$0.id] }
     }
 
+    /// From today on: MenuBook only looks at today and the days after it, and earlier weeks keep growing.
     private func entryModels() -> [MealPlanEntry] {
         let userID = userID
+        let first = today.isoString
         return (try? context.fetch(FetchDescriptor<MealPlanEntry>(
-            predicate: #Predicate<MealPlanEntry> { $0.userID == userID && $0.deletedAt == nil }
+            predicate: #Predicate<MealPlanEntry> { $0.userID == userID && $0.deletedAt == nil && $0.plannedOn >= first }
         ))) ?? []
     }
 
@@ -229,20 +231,26 @@ struct MenuStore {
     func book() -> MenuBook {
         let ingredients = (try? context.fetch(FetchDescriptor<RecipeIngredient>(predicate: #Predicate<RecipeIngredient> { $0.deletedAt == nil }))) ?? []
         let products = Dictionary(grouping: ingredients.filter { $0.productID != nil }, by: \.recipeID).mapValues { $0.compactMap(\.productID) }
+        let alive = recipeModels()
+        let entries = entryModels().compactMap(\.menuEntry)
+        // Removed after they were planned (on another device): their meals keep name and values (MenuBook.recipe).
+        let removed = Set(entries.map(\.recipeID)).subtracting(alive.map(\.id)).compactMap { recipe($0) }
         return menuBook(
-            recipes: recipeModels().map { $0.menuRecipe(productIDs: products[$0.id] ?? []) },
-            entries: entryModels().compactMap(\.menuEntry),
+            recipes: alive.map { $0.menuRecipe(productIDs: products[$0.id] ?? []) },
+            removed: removed.map { $0.menuRecipe(productIDs: []) },
+            entries: entries,
             settings: preferences().menuSettings,
             excluded: excludedProductIDs()
         )
     }
 
     private func menuBook(
-        recipes: [MenuRecipe] = [], entries: [MenuEntry] = [], settings: MenuSettings = MenuSettings(), excluded: Set<UUID> = []
+        recipes: [MenuRecipe] = [], removed: [MenuRecipe] = [], entries: [MenuEntry] = [], settings: MenuSettings = MenuSettings(),
+        excluded: Set<UUID> = []
     ) -> MenuBook {
         MenuBook(
-            userID: userID, recipes: recipes, entries: entries, settings: settings, excludedProductIDs: excluded, today: today,
-            languages: [language] + Locale.preferredLanguages
+            userID: userID, recipes: recipes, removedRecipes: removed, entries: entries, settings: settings, excludedProductIDs: excluded,
+            today: today, languages: [language] + Locale.preferredLanguages
         )
     }
 
