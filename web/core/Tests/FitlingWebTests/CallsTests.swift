@@ -550,4 +550,11 @@ import FitlingCore
         let off = try answer("remindersPlan", #"{"settings":{"isOn":false,"times":[540]},"minutesNow":600,"days":\#(days)}"#)
         #expect((off["reminders"] as? [Any])?.isEmpty == true)
     }
+
+    @Test func theQuietHoursAreTheCoresOwn() throws {
+        let rules = try answer("reminderRules", "{}")
+        #expect(number(rules["quietFrom"]) == Double(ReminderSettings.quietFrom))
+        #expect(number(rules["quietUntil"]) == Double(ReminderSettings.quietUntil))
+        #expect(number(rules["maximumPerDay"]) == Double(ReminderSettings.maximumPerDay))
+    }
 }
