@@ -39,12 +39,15 @@ test("theMenuFillsTheList", async ({ page }) => {
   const { data } = await admin.from("recipe_ingredients").select("name").eq("recipe_id", planned[2].recipe.id).order("position").limit(1);
   const ingredient = (data![0].name as { nl: string }).nl;
   await page.getByTestId("shopping.fromMenu").click();
-  await expect(page.getByTestId(`shopping.item.${ingredient}`)).toBeVisible({ timeout: 15_000 });
+  // One line per product and kind of unit, so the same name can stand there twice (grams and pieces).
+  const lines = page.getByTestId(`shopping.item.${ingredient}`);
+  await expect(lines.first()).toBeVisible({ timeout: 15_000 });
+  const sameName = await lines.count();
   const count = await page.locator('[data-testid^="shopping.item."]').count();
   // A second time replaces what the menu put there: the same lines, not twice.
   await page.getByTestId("shopping.fromMenu").click();
-  await expect(page.getByTestId(`shopping.item.${ingredient}`)).toHaveCount(1, { timeout: 15_000 });
-  await expect(page.locator('[data-testid^="shopping.item."]')).toHaveCount(count);
+  await expect(page.locator('[data-testid^="shopping.item."]')).toHaveCount(count, { timeout: 15_000 });
+  await expect(lines).toHaveCount(sameName);
 });
 
 test("offersShowWithTheirValidity", async ({ page }, info) => {
