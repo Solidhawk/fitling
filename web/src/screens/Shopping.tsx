@@ -50,19 +50,27 @@ export function Shopping({ core, userID, menu, onBack }: { core: FitlingCore; us
   const [confirmingLeave, setConfirmingLeave] = useState(false);
   // One fill from the menu at a time: a double tap puts the week on the list once.
   const filling = useRef(false);
+  const listID = useRef<string>(undefined);
 
-  const reload = useCallback(async () => {
-    try {
-      const list = await ensureList(supabase, userID, t("shopping.title"), t("shopping.member.default"), new Date());
-      setRows(await loadShopping(supabase, list.id, today(), new Date()));
-    } catch (error) {
-      setFailed(error instanceof Error ? error.message : "error.server");
-    }
-  }, [userID]);
+  /** The list again; which list it is is asked again only when it may have changed (opening, joining, leaving). */
+  const reload = useCallback(
+    async (findList = false) => {
+      try {
+        if (findList || !listID.current) {
+          listID.current = (await ensureList(supabase, userID, t("shopping.title"), t("shopping.member.default"), new Date())).id;
+        }
+        setRows(await loadShopping(supabase, listID.current, today(), new Date()));
+      } catch (error) {
+        setFailed(error instanceof Error ? error.message : "error.server");
+      }
+    },
+    [userID],
+  );
 
   useEffect(() => {
-    void reload();
-    const again = () => document.visibilityState === "visible" && void reload();
+    void reload(true);
+    // Back in the app: another device may have changed the list, or who is on it.
+    const again = () => document.visibilityState === "visible" && void reload(true);
     document.addEventListener("visibilitychange", again);
     return () => document.removeEventListener("visibilitychange", again);
   }, [reload]);
@@ -83,13 +91,13 @@ export function Shopping({ core, userID, menu, onBack }: { core: FitlingCore; us
     [core, rows, confirmed],
   );
 
-  async function act(work: () => Promise<void>) {
+  async function act(work: () => Promise<void>, findList = false) {
     try {
       await work();
     } catch (error) {
       setFailed(error instanceof Error ? error.message : "error.server");
     }
-    await reload();
+    await reload(findList);
   }
 
   function add() {
@@ -130,7 +138,7 @@ export function Shopping({ core, userID, menu, onBack }: { core: FitlingCore; us
     setSharingProblem(undefined);
     try {
       await joinList(supabase, code, name.trim() === "" ? t("shopping.member.default") : name);
-      await reload();
+      await reload(true);
       return true;
     } catch (error) {
       setSharingProblem(error instanceof Error ? error.message : "error.server");
@@ -147,7 +155,7 @@ export function Shopping({ core, userID, menu, onBack }: { core: FitlingCore; us
       } catch (error) {
         setSharingProblem(error instanceof Error ? error.message : "error.server");
       }
-    });
+    }, true);
   }
 
   if (!rows || !overview) {
