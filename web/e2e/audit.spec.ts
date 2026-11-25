@@ -310,3 +310,29 @@ for (const mode of modes) {
     });
   });
 }
+
+// The longest words are German, the shortest English: every tab at 200 % text in both, with nothing that only a
+// sideways scroll reaches, and the reminders under the partner (phase 7).
+for (const locale of ["de-DE", "en-US"] as const) {
+  test.describe(locale, () => {
+    test.use({ locale });
+    test.beforeEach(({ page }) => prepare(page, "groot"));
+
+    test("every tab", async ({ page }, info) => {
+      await fakePush(page);
+      const user = await createUser({ profile: true, creature: true });
+      await signIn(page, user.email);
+      await expect(page.getByTestId("day.progress")).toBeVisible({ timeout: 15_000 });
+      await check(page, "groot", `taal-${locale}-vandaag`, info.project.name);
+      for (const tab of ["training", "menu", "partner", "target"]) {
+        await page.locator(`#tab-${tab}`).click();
+        await expect(page.locator(`#panel-${tab} .spinner`)).toHaveCount(0, { timeout: 15_000 });
+        await check(page, "groot", `taal-${locale}-${tab}`, info.project.name);
+      }
+      await page.locator("#tab-partner").click();
+      await page.getByTestId("partner.reminders.toggle").click();
+      await page.getByTestId("partner.reminders.time.1").scrollIntoViewIfNeeded();
+      await check(page, "groot", `taal-${locale}-herinneringen`, info.project.name);
+    });
+  });
+}
