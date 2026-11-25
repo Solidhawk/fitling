@@ -1,5 +1,5 @@
 import { FunctionsFetchError, FunctionsHttpError, type SupabaseClient } from "@supabase/supabase-js";
-import { expect, test } from "vitest";
+import { expect, test, vi } from "vitest";
 import type { FitlingCore } from "../core/fitlingCore";
 import { lookUp } from "./lookup";
 
@@ -94,4 +94,16 @@ test("theUsersOwnProductComesFirstAndNeverExpires", async () => {
   const { client, asked } = server([shared(daysAgo(1)), own], fromServer);
   expect(await lookUp(client, core, gtin, now)).toMatchObject({ kind: "found", product: { id: "own" } });
   expect(asked.invoked).toBe(0);
+});
+
+// Flight mode: the scan says "no connection" at once, without first waiting on supabase-js (web phase 7).
+test("withoutANetworkAScanSaysSoAtOnce", async () => {
+  const { client, asked } = server([shared(daysAgo(1))], fromServer);
+  vi.stubGlobal("navigator", { onLine: false });
+  try {
+    expect(await lookUp(client, core, gtin, now)).toEqual({ kind: "unavailable", gtin });
+    expect(asked).toMatchObject({ invoked: 0, read: 0 });
+  } finally {
+    vi.unstubAllGlobals();
+  }
 });

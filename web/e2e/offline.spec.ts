@@ -17,20 +17,13 @@ async function installed(page: Page) {
   return user;
 }
 
-const supabase = `${process.env.VITE_SUPABASE_URL ?? ""}/**`;
-
 /**
- * Without a connection, or back. Chromium cuts the whole network, so the page itself has to come from the service
- * worker. Playwright's WebKit stops such a reload with "WebKit encountered an internal error" (CI run 45695264777), so
- * there only the server is cut off: everything the app does without Supabase is tested the same, the page from the
- * worker in Chromium.
+ * Playwright's WebKit cannot take a page that its service worker controls offline: setOffline stops the reload with
+ * "WebKit encountered an internal error", and routes do not see the page's requests (CI runs 45695264777 and
+ * 45698281434). There the offline behaviour is tested without the worker: log.spec and day.spec cut the server off
+ * with page.route.
  */
-async function setOffline(page: Page, offline: boolean) {
-  const context = page.context();
-  if (context.browser()?.browserType().name() !== "webkit") return context.setOffline(offline);
-  if (offline) await context.route(supabase, (route) => route.abort("internetdisconnected"));
-  else await context.unroute(supabase);
-}
+const withoutWorkerOffline = "Playwright's WebKit cannot go offline with a service worker in charge";
 
 /** The access token as if it ran out an hour ago: the next start has to refresh it, which needs the server. */
 async function expireToken(page: Page) {
@@ -56,19 +49,22 @@ test("theManifestAndIconsAreServed", async ({ page }) => {
 
 // The next morning in the tram: the token ran out overnight and cannot be refreshed, and Vandaag opens all the same,
 // as the iPhone does.
-test("theAppOpensWithoutAConnection", async ({ page }) => {
+test("theAppOpensWithoutAConnection", async ({ page, context, browserName }) => {
+  test.skip(browserName === "webkit", withoutWorkerOffline);
   await installed(page);
   await expireToken(page);
-  await setOffline(page, true);
+  await context.setOffline(true);
   await page.reload();
-  await expect(page.getByTestId("day.progress")).toBeVisible({ timeout: 15_000 });
+  // At once: supabase-js would first spend half a minute trying to refresh the token.
+  await expect(page.getByTestId("day.progress")).toBeVisible({ timeout: 10_000 });
   await expect(page.getByText(nl("common.connection.title"))).toHaveCount(0);
-  await setOffline(page, false);
+  await context.setOffline(false);
 });
 
 // Review Focus: a meal logged without a connection is there exactly once once the connection is back, also when the
 // page is reloaded while it is being sent.
-test("offlineLogArrivesOnce", async ({ page }) => {
+test("offlineLogArrivesOnce", async ({ page, context, browserName }) => {
+  test.skip(browserName === "webkit", withoutWorkerOffline);
   const user = await installed(page);
   const product = await sharedProduct("Appel");
   // Logged once with a connection, so it is among the recent products this browser keeps.
@@ -81,7 +77,7 @@ test("offlineLogArrivesOnce", async ({ page }) => {
   await expect(page.getByRole("button", { name: new RegExp(product.name) })).toBeVisible();
   await page.getByRole("button", { name: nl("common.cancel") }).click();
 
-  await setOffline(page, true);
+  await context.setOffline(true);
   await page.reload();
   await expect(page.getByTestId("day.kcal.breakfast")).toHaveText(/250\s?kcal/, { timeout: 15_000 });
   await page.getByTestId("day.add.breakfast").click();
@@ -98,7 +94,7 @@ test("offlineLogArrivesOnce", async ({ page }) => {
   expect(await count("water_entries", user.id)).toBe(0);
 
   // Back online, and reloaded straight away: what is being sent is sent again, and still arrives once.
-  await setOffline(page, false);
+  await context.setOffline(false);
   await page.reload();
   await expect(page.getByTestId("day.kcal.breakfast")).toHaveText(/500\s?kcal/, { timeout: 15_000 });
   await expect.poll(() => count("food_entries", user.id)).toBe(2);

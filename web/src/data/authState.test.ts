@@ -91,3 +91,13 @@ test("no stored session is signed out", () => {
   later.emit("SIGNED_OUT", null);
   expect(later.auth.state).toEqual({ kind: "signedOut" });
 });
+
+// Flight mode at start: supabase-js reports the stored session only after it gave up refreshing, half a minute or
+// more. The app opens on it straight away.
+test("without a network the stored session counts at once", () => {
+  const client = { auth: { onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }) } } as unknown as SupabaseClient;
+  const offline = new AuthService(client, "http://localhost/", undefined, () => ({ id: "u1", email: "a@b.nl" }), () => true);
+  expect(offline.state).toEqual({ kind: "signedIn", userID: "u1", email: "a@b.nl" });
+  const online = new AuthService(client, "http://localhost/", undefined, () => ({ id: "u1", email: "a@b.nl" }), () => false);
+  expect(online.state).toEqual({ kind: "loading" });
+});

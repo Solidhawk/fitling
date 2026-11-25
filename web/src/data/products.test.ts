@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { expect, test } from "vitest";
-import { ownCopyRow, productFromRow, productsByID } from "./products";
+import { expect, test, vi } from "vitest";
+import type { FitlingCore } from "../core/fitlingCore";
+import { ownCopyRow, productFromRow, productsByID, searchProducts } from "./products";
 
 // FoodDiary.ownCopy: every value of the package comes along, only the kcal are the user's.
 test("anOwnCopyKeepsEveryNutrient", () => {
@@ -59,4 +60,27 @@ test("manyProductsAreAskedForInBatches", async () => {
   const products = await productsByID(client, ids);
   expect(products.map((product) => product.id)).toEqual(ids);
   expect(Math.max(...asked)).toBeLessThanOrEqual(50);
+});
+
+// Flight mode: searching shows the products this browser knows (favourites and recent ones), as the iPhone searches
+// its own copy; nothing online, and no wait on supabase-js (web phase 7).
+test("withoutANetworkTheSearchShowsWhatThisBrowserKnows", async () => {
+  const core = { searchKey: ({ text }: { text: string }) => ({ key: text.toLowerCase() }) } as unknown as FitlingCore;
+  const known = [
+    productFromRow({ id: "a", owner_id: null, source: "off", name: { nl: "Appel" }, search_name: "appel", quantity_unit: "g" }),
+    productFromRow({ id: "b", owner_id: null, source: "off", name: { nl: "Brood" }, search_name: "brood", quantity_unit: "g" }),
+  ];
+  const client = {
+    from() {
+      throw new Error("the server was asked");
+    },
+  } as unknown as SupabaseClient;
+  vi.stubGlobal("navigator", { onLine: false });
+  try {
+    const found = await searchProducts(client, core, "App", known);
+    expect(found.own.map((product) => product.id)).toEqual(["a"]);
+    expect(found.online).toEqual([]);
+  } finally {
+    vi.unstubAllGlobals();
+  }
 });

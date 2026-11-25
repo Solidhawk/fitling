@@ -188,3 +188,20 @@ test("aBrowserThatKeepsNothingSendsStraightAway", async () => {
   expect(up.sent).toHaveLength(1);
   await expect(send(down(), { table: "water_entries", kind: "insert", row: { id: "b", consumed_on: day } })).rejects.toThrow("error.network");
 });
+
+// Flight mode: the browser knows there is no network. supabase-js would first spend half a minute trying to refresh an
+// expired token; the server is not asked at all, and what this browser has comes at once.
+test("withoutANetworkTheServerIsNotAsked", async () => {
+  await kept("profile", async () => ({ kcal: 2000 }));
+  await rowsBetween("food_entries", day, day, async () => [eaten]);
+  vi.stubGlobal("navigator", { onLine: false });
+  const never = () => Promise.reject(new Error("the server was asked"));
+  expect(await kept("profile", never)).toEqual({ kcal: 2000 });
+  expect(await rowsBetween("food_entries", day, day, never)).toEqual([eaten]);
+  const asked = server([]);
+  await send(asked.client, { table: "food_entries", kind: "insert", row: logged });
+  await flush(asked.client);
+  expect(asked.sent).toEqual([]);
+  expect(waiting().map((write) => write.row.id)).toEqual(["b"]);
+  expect(await rowsBetween("food_entries", day, day, never)).toEqual([eaten, logged]);
+});
