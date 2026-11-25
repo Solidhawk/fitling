@@ -35,11 +35,27 @@ async function write(work: PromiseLike<{ error: { message: string } | null }>) {
 }
 
 /**
- * The user's list: the first by name (ShoppingStore.ensureList), or a new one with the user as its owner. A list the
- * user made elsewhere without becoming its member yet (offline on the iPhone) gets its owner here too.
+ * The user's list: `preferred` while the user can still see it (the list they joined, remembered on this device), else
+ * the first by name (ShoppingStore.ensureList), or a new one with the user as its owner. A list the user made
+ * elsewhere without becoming its member yet (offline on the iPhone) gets its owner here too.
  */
-export async function ensureList(client: SupabaseClient, userID: string, name: string, ownerName: string, now: Date): Promise<ShoppingList> {
-  const found = await client.from("shopping_lists").select("id, name, created_by").is("deleted_at", null).order("name").order("id").limit(1);
+export async function ensureList(
+  client: SupabaseClient,
+  userID: string,
+  name: string,
+  ownerName: string,
+  now: Date,
+  preferred?: string,
+): Promise<ShoppingList> {
+  let query = client.from("shopping_lists").select("id, name, created_by").is("deleted_at", null);
+  if (preferred) {
+    const kept = await query.eq("id", preferred).limit(1);
+    if (kept.error) throw failure(kept.error);
+    const row = (kept.data as Row[])[0];
+    if (row) return { id: row.id as string, name: row.name as string };
+    query = client.from("shopping_lists").select("id, name, created_by").is("deleted_at", null);
+  }
+  const found = await query.order("name").order("id").limit(1);
   if (found.error) throw failure(found.error);
   const first = (found.data as Row[])[0];
   if (first) {
@@ -64,12 +80,12 @@ async function addOwner(client: SupabaseClient, userID: string, listID: string, 
   if (error && error.code !== "23505") throw failure(error);
 }
 
-/**
- * Everything the list screen reads: the items, the members in the order they joined, the supermarkets, the user's
- * favourites, and the offers of those still valid from `today` and at most 26 hours old.
- */
-export async function loadShopping(client: SupabaseClient, listID: string, today: IsoDay, now: Date): Promise<ShoppingRows> {
-  const [list, items, members, supermarkets, favorites] = await Promise.all([
+export type ListRows = Pick<ShoppingRows, "list" | "items" | "members">;
+export type OfferRows = Pick<ShoppingRows, "supermarkets" | "favoriteSupermarketIDs" | "offers">;
+
+/** The list, its items and its members in the order they joined: what changes when someone ticks or adds an item. */
+export async function loadList(client: SupabaseClient, listID: string): Promise<ListRows> {
+  const [list, items, members] = await Promise.all([
     client.from("shopping_lists").select("id, name").eq("id", listID).single(),
     allRows(
       (from, to) =>
@@ -82,25 +98,8 @@ export async function loadShopping(client: SupabaseClient, listID: string, today
           .range(from, to) as unknown as Page,
     ),
     client.from("shopping_list_members").select("user_id, role, display_name").eq("list_id", listID).order("joined_at").order("user_id"),
-    client.from("supermarkets").select("id, name").order("name"),
-    client.from("favorite_supermarkets").select("supermarket_id").is("deleted_at", null),
   ]);
-  for (const answer of [list, members, supermarkets, favorites]) if (answer.error) throw failure(answer.error);
-  const favoriteIDs = [...new Set((favorites.data as Row[]).map((row) => row.supermarket_id as string))].sort();
-  const offers =
-    favoriteIDs.length === 0
-      ? []
-      : await allRows(
-          (from, to) =>
-            client
-              .from("offers")
-              .select("id, supermarket_id, title, brand, gtin, quantity_value, quantity_unit, price_cents, valid_from, valid_to")
-              .in("supermarket_id", favoriteIDs)
-              .gte("valid_to", today)
-              .gte("fetched_at", new Date(now.getTime() - offerLifetimeMs).toISOString())
-              .order("id")
-              .range(from, to) as unknown as Page,
-        );
+  for (const answer of [list, members]) if (answer.error) throw failure(answer.error);
   const listRow = list.data as Row;
   return {
     list: { id: listRow.id as string, name: listRow.name as string },
@@ -121,6 +120,35 @@ export async function loadShopping(client: SupabaseClient, listID: string, today
       role: row.role as ListMember["role"],
       displayName: row.display_name as string,
     })),
+  };
+}
+
+/**
+ * The supermarkets, the user's favourites, and the offers of those still valid from `today` and at most 26 hours old.
+ * Thousands of rows per shop: read when the list opens and when the favourites change, not after every tick.
+ */
+export async function loadOffers(client: SupabaseClient, today: IsoDay, now: Date): Promise<OfferRows> {
+  const [supermarkets, favorites] = await Promise.all([
+    client.from("supermarkets").select("id, name").order("name"),
+    client.from("favorite_supermarkets").select("supermarket_id").is("deleted_at", null),
+  ]);
+  for (const answer of [supermarkets, favorites]) if (answer.error) throw failure(answer.error);
+  const favoriteIDs = [...new Set((favorites.data as Row[]).map((row) => row.supermarket_id as string))].sort();
+  const offers =
+    favoriteIDs.length === 0
+      ? []
+      : await allRows(
+          (from, to) =>
+            client
+              .from("offers")
+              .select("id, supermarket_id, title, brand, gtin, quantity_value, quantity_unit, price_cents, valid_from, valid_to")
+              .in("supermarket_id", favoriteIDs)
+              .gte("valid_to", today)
+              .gte("fetched_at", new Date(now.getTime() - offerLifetimeMs).toISOString())
+              .order("id")
+              .range(from, to) as unknown as Page,
+        );
+  return {
     supermarkets: (supermarkets.data as Row[]).map((row) => ({ id: row.id as string, name: row.name as string })),
     favoriteSupermarketIDs: favoriteIDs,
     offers: offers.map(
@@ -138,6 +166,12 @@ export async function loadShopping(client: SupabaseClient, listID: string, today
       }),
     ),
   };
+}
+
+/** Everything the list screen reads (loadList and loadOffers together). */
+export async function loadShopping(client: SupabaseClient, listID: string, today: IsoDay, now: Date): Promise<ShoppingRows> {
+  const [list, offers] = await Promise.all([loadList(client, listID), loadOffers(client, today, now)]);
+  return { ...list, ...offers };
 }
 
 /** The lines of the recipes the menu plans, for what it needs on the list. */

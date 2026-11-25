@@ -19,12 +19,16 @@ export function shopList(names: string[]): string {
 }
 
 const confirmedKey = "fitling.confirmedOffers";
+const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/** Uncertain offers the user said are right, kept on this device only (ShoppingViewModel.confirmed). */
+/**
+ * Uncertain offers the user said are right, kept on this device only (ShoppingViewModel.confirmed). Anything that is no
+ * id is left out, as compactMap(UUID.init) on iOS: the rules would refuse the whole list for it.
+ */
 export function confirmedOffers(): string[] {
   try {
     const stored: unknown = JSON.parse(localStorage.getItem(confirmedKey) ?? "[]");
-    return Array.isArray(stored) ? stored.filter((id): id is string => typeof id === "string") : [];
+    return Array.isArray(stored) ? stored.filter((id): id is string => typeof id === "string" && uuid.test(id)) : [];
   } catch {
     return [];
   }
@@ -35,5 +39,29 @@ export function confirmOffers(ids: string[]) {
     localStorage.setItem(confirmedKey, JSON.stringify([...new Set([...confirmedOffers(), ...ids])].sort()));
   } catch {
     // Private mode: the answer holds for this visit only.
+  }
+}
+
+/** The list the user last had open on this device: the list they joined shows, not their own empty one (UNFORGET S47). */
+function openListKey(userID: string): string {
+  return `fitling.shoppingList.${userID}`;
+}
+
+export function rememberedList(userID: string): string | undefined {
+  try {
+    const stored = localStorage.getItem(openListKey(userID)) ?? "";
+    return uuid.test(stored) ? stored : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/** Without a list, the next opening takes the first by name again (after leaving). */
+export function rememberList(userID: string, listID?: string) {
+  try {
+    if (listID) localStorage.setItem(openListKey(userID), listID);
+    else localStorage.removeItem(openListKey(userID));
+  } catch {
+    // Private mode: the list holds for this visit only.
   }
 }

@@ -9,18 +9,20 @@ import {
   ensureList,
   joinList,
   leaveList,
+  type ListRows,
+  loadList,
+  loadOffers,
   loadRecipeIngredients,
-  loadShopping,
+  type OfferRows,
   removeItem,
   setFavoriteSupermarket,
-  type ShoppingRows,
   toggleItem,
 } from "../data/shopping";
 import { supabase } from "../data/supabase";
 import { today } from "../day";
 import { t } from "../i18n";
 import { amountText } from "../menu/texts";
-import { confirmedOffers, confirmOffers, euros, shopList, validUntil } from "../shopping/texts";
+import { confirmedOffers, confirmOffers, euros, rememberedList, rememberList, shopList, validUntil } from "../shopping/texts";
 import { ActionSheet } from "../ui/ActionSheet";
 import { Alert } from "../ui/Alert";
 import { FormSheet } from "../ui/FormSheet";
@@ -36,10 +38,12 @@ type Item = ShoppingOverview["items"][number];
 /**
  * The shopping list, opened from the menu tab (ShoppingListView.swift): the items in the order of a walk through the
  * shop, what the week menu needs, the offers of the user's supermarkets, and sharing the list with a code. It reads
- * the list again when it opens and when the app comes back, as the iPhone syncs then.
+ * the list again when it opens and when the app comes back, as the iPhone syncs then; the offers (thousands of rows)
+ * only then and when the supermarkets change.
  */
 export function Shopping({ core, userID, menu, onBack }: { core: FitlingCore; userID: string; menu: MenuInput; onBack: () => void }) {
-  const [rows, setRows] = useState<ShoppingRows>();
+  const [list, setList] = useState<ListRows>();
+  const [offers, setOffers] = useState<OfferRows>();
   const [confirmed, setConfirmed] = useState(confirmedOffers);
   const [failed, setFailed] = useState<string>();
   const [sharingProblem, setSharingProblem] = useState<string>();
@@ -48,116 +52,159 @@ export function Shopping({ core, userID, menu, onBack }: { core: FitlingCore; us
   const [joining, setJoining] = useState(false);
   const [choosingShops, setChoosingShops] = useState(false);
   const [confirmingLeave, setConfirmingLeave] = useState(false);
+  const [joinProblem, setJoinProblem] = useState<string>();
   // One fill from the menu at a time: a double tap puts the week on the list once.
   const filling = useRef(false);
   const listID = useRef<string>(undefined);
+  // One search for the list at a time: two at the first opening would each make a list.
+  const finding = useRef<Promise<string>>(undefined);
+  // Only the newest read is shown: an older answer that arrives later never overwrites it.
+  const reads = useRef(0);
+
+  /** Which list it is: the one remembered on this device while the user can see it, else the first (ensureList). */
+  const findList = useCallback(() => {
+    finding.current ??= ensureList(supabase, userID, t("shopping.title"), t("shopping.member.default"), new Date(), rememberedList(userID))
+      .then((found) => {
+        rememberList(userID, found.id);
+        listID.current = found.id;
+        return found.id;
+      })
+      .finally(() => {
+        finding.current = undefined;
+      });
+    return finding.current;
+  }, [userID]);
 
   /** The list again; which list it is is asked again only when it may have changed (opening, joining, leaving). */
-  const reload = useCallback(
-    async (findList = false) => {
+  const reloadList = useCallback(
+    async (findAgain = false) => {
+      const read = ++reads.current;
       try {
-        if (findList || !listID.current) {
-          listID.current = (await ensureList(supabase, userID, t("shopping.title"), t("shopping.member.default"), new Date())).id;
-        }
-        setRows(await loadShopping(supabase, listID.current, today(), new Date()));
+        const id = findAgain || !listID.current ? await findList() : listID.current;
+        const rows = await loadList(supabase, id);
+        if (read === reads.current) setList(rows);
       } catch (error) {
         setFailed(error instanceof Error ? error.message : "error.server");
       }
     },
-    [userID],
+    [findList],
   );
 
+  const reloadOffers = useCallback(async () => {
+    try {
+      setOffers(await loadOffers(supabase, today(), new Date()));
+    } catch (error) {
+      setFailed(error instanceof Error ? error.message : "error.server");
+    }
+  }, []);
+
   useEffect(() => {
-    void reload(true);
+    void reloadList(true);
+    void reloadOffers();
     // Back in the app: another device may have changed the list, or who is on it.
-    const again = () => document.visibilityState === "visible" && void reload(true);
+    const again = () => {
+      if (document.visibilityState !== "visible") return;
+      void reloadList(true);
+      void reloadOffers();
+    };
     document.addEventListener("visibilitychange", again);
     return () => document.removeEventListener("visibilitychange", again);
-  }, [reload]);
+  }, [reloadList, reloadOffers]);
 
   const overview = useMemo(
     () =>
-      rows &&
+      list &&
+      offers &&
       core.shoppingOverview({
         shopping: {
           today: today(),
-          items: rows.items,
-          offers: rows.offers,
-          supermarkets: rows.supermarkets,
-          favoriteSupermarketIDs: rows.favoriteSupermarketIDs,
+          items: list.items,
+          offers: offers.offers,
+          supermarkets: offers.supermarkets,
+          favoriteSupermarketIDs: offers.favoriteSupermarketIDs,
           confirmedOfferIDs: confirmed,
         },
       }),
-    [core, rows, confirmed],
+    [core, list, offers, confirmed],
   );
 
-  async function act(work: () => Promise<void>, findList = false) {
+  async function act(work: () => Promise<void>, findAgain = false) {
     try {
       await work();
     } catch (error) {
       setFailed(error instanceof Error ? error.message : "error.server");
     }
-    await reload(findList);
+    await reloadList(findAgain);
   }
 
   function add() {
     const item = core.shoppingNewItem({ text: newItem }).item;
-    if (!item || !rows) return;
+    if (!item || !list) return;
     setNewItem("");
-    void act(() => addItem(supabase, userID, rows.list.id, item, "manual", new Date()));
+    void act(() => addItem(supabase, userID, list.list.id, item, "manual", new Date()));
+  }
+
+  /** Ticked at once, as on iOS; the list is read again once the server has it. */
+  function toggle(item: Item) {
+    setList((shown) => shown && { ...shown, items: shown.items.map((row) => (row.id === item.id ? { ...row, isChecked: !item.isChecked } : row)) });
+    void act(() => toggleItem(supabase, userID, item, new Date()));
   }
 
   /** What this week's menu needs (ShoppingViewModel.fillFromMenu). */
   function fillFromMenu() {
-    if (!rows || filling.current) return;
+    if (!list || filling.current) return;
     filling.current = true;
     void act(async () => {
       const ingredients = await loadRecipeIngredients(supabase, menu.entries.map((entry) => entry.recipeID));
       const change = core.shoppingRefill({
-        shopping: { today: today(), items: rows.items, offers: [], supermarkets: [], favoriteSupermarketIDs: [], confirmedOfferIDs: [] },
+        shopping: { today: today(), items: list.items, offers: [], supermarkets: [], favoriteSupermarketIDs: [], confirmedOfferIDs: [] },
         menu,
         ingredients,
       });
-      await applyRefill(supabase, userID, rows.list.id, change, new Date());
+      await applyRefill(supabase, userID, list.list.id, change, new Date());
     }).finally(() => {
       filling.current = false;
     });
   }
 
   async function invite() {
-    if (!rows) return;
+    if (!list) return;
     setSharingProblem(undefined);
     try {
-      setInviteCode(await createInvite(supabase, rows.list.id));
+      setInviteCode(await createInvite(supabase, list.list.id));
     } catch (error) {
       setSharingProblem(error instanceof Error ? error.message : "error.server");
     }
   }
 
+  /** Joins with a code; the list of the code shows from then on. A problem shows in the sheet where the code was typed. */
   async function join(code: string, name: string): Promise<boolean> {
-    setSharingProblem(undefined);
+    setJoinProblem(undefined);
     try {
-      await joinList(supabase, code, name.trim() === "" ? t("shopping.member.default") : name);
-      await reload(true);
+      const joined = await joinList(supabase, code, name.trim() === "" ? t("shopping.member.default") : name);
+      rememberList(userID, joined);
+      await reloadList(true);
       return true;
     } catch (error) {
-      setSharingProblem(error instanceof Error ? error.message : "error.server");
+      setJoinProblem(error instanceof Error ? error.message : "error.server");
       return false;
     }
   }
 
   function leave() {
     setConfirmingLeave(false);
-    if (!rows) return;
+    if (!list) return;
     void act(async () => {
       try {
-        await leaveList(supabase, rows.list.id, userID);
+        await leaveList(supabase, list.list.id, userID);
+        rememberList(userID);
       } catch (error) {
         setSharingProblem(error instanceof Error ? error.message : "error.server");
       }
     }, true);
   }
 
+  const rows = list && offers && { ...list, ...offers };
   if (!rows || !overview) {
     return (
       <div className="tab-page pushed" data-page="shopping">
@@ -214,7 +261,7 @@ export function Shopping({ core, userID, menu, onBack }: { core: FitlingCore; us
           <ListSection>
             {overview.items.map((item) => (
               <SwipeRow key={item.id} bare deleteLabel={t("day.delete")} onDelete={() => void act(() => removeItem(supabase, userID, item.id, new Date()))}>
-                <ItemRow item={item} onToggle={() => void act(() => toggleItem(supabase, userID, item, new Date()))} />
+                <ItemRow item={item} onToggle={() => toggle(item)} />
               </SwipeRow>
             ))}
             {overview.items.some((item) => item.isChecked) && (
@@ -323,11 +370,24 @@ export function Shopping({ core, userID, menu, onBack }: { core: FitlingCore; us
           ]}
         />
       )}
-      {joining && <JoinSheet onJoin={join} onClose={() => setJoining(false)} />}
+      {joining && (
+        <JoinSheet
+          problem={joinProblem}
+          onJoin={join}
+          onClose={() => {
+            setJoining(false);
+            setJoinProblem(undefined);
+          }}
+        />
+      )}
       {choosingShops && (
         <SupermarketPicker
           rows={rows}
-          onChange={(supermarketID, favorite) => void act(() => setFavoriteSupermarket(supabase, userID, supermarketID, favorite, new Date()))}
+          onChange={(supermarketID, favorite) =>
+            void setFavoriteSupermarket(supabase, userID, supermarketID, favorite, new Date()).then(reloadOffers, (error: unknown) =>
+              setFailed(error instanceof Error ? error.message : "error.server"),
+            )
+          }
           onDone={() => setChoosingShops(false)}
         />
       )}
@@ -350,6 +410,7 @@ function ItemRow({ item, onToggle }: { item: Item; onToggle: () => void }) {
       type="button"
       className="list-row list-row-button shopping-item"
       aria-pressed={item.isChecked}
+      data-id={item.id}
       data-testid={`shopping.item.${item.name}`}
       onClick={onToggle}
     >
@@ -373,8 +434,16 @@ function ItemRow({ item, onToggle }: { item: Item; onToggle: () => void }) {
   );
 }
 
-/** A code from someone else, and the name the other members will see (JoinListSheet). */
-function JoinSheet({ onJoin, onClose }: { onJoin: (code: string, name: string) => Promise<boolean>; onClose: () => void }) {
+/** A code from someone else, and the name the other members will see (JoinListSheet); what went wrong shows below them. */
+function JoinSheet({
+  problem,
+  onJoin,
+  onClose,
+}: {
+  problem?: string;
+  onJoin: (code: string, name: string) => Promise<boolean>;
+  onClose: () => void;
+}) {
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
   const [working, setWorking] = useState(false);
@@ -393,7 +462,7 @@ function JoinSheet({ onJoin, onClose }: { onJoin: (code: string, name: string) =
         });
       }}
     >
-      <ListSection footer={t("shopping.join.footer")}>
+      <ListSection footer={problem ? t(problem === "error.network" ? "common.connection.body" : problem) : t("shopping.join.footer")}>
         <ListRow>
           <input
             className="text-field"
@@ -428,7 +497,7 @@ function SupermarketPicker({
   onChange,
   onDone,
 }: {
-  rows: ShoppingRows;
+  rows: OfferRows;
   onChange: (supermarketID: string, favorite: boolean) => void;
   onDone: () => void;
 }) {
