@@ -81,10 +81,13 @@ export function ExerciseProgress({
   const [step, setStep] = useState(progress.stepKg);
   const [failed, setFailed] = useState<string>();
   const toUnit = (kg: number) => (pounds ? kg / 0.45359237 : kg);
+  // Steps are stored one after the other (as Partner.change): quick taps leave one setting, with the last step.
+  const saving = useRef<Promise<void>>(Promise.resolve());
 
   function changeStep(value: number) {
     setStep(value);
-    void saveStep(supabase, userID, exerciseID, value, new Date())
+    saving.current = saving.current
+      .then(() => saveStep(supabase, userID, exerciseID, value, new Date()))
       .then(onChanged)
       .catch((error: unknown) => setFailed(error instanceof Error ? error.message : "error.server"));
   }
