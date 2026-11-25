@@ -2470,3 +2470,72 @@ label.labeled:has(.value-input) {
   flex: none;
   width: 4.5rem;
 }
+
+/* Shopping list (ShoppingListView). */
+.caption {
+  font-size: 0.75rem;
+}
+
+.shopping-add {
+  display: flex;
+  align-items: center;
+  gap: var(--space-s);
+  width: 100%;
+}
+
+.shopping-add-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.shopping-add-button:disabled {
+  color: var(--ink-soft);
+  cursor: default;
+}
+
+.shopping-empty {
+  margin-top: 0;
+  font-size: 1rem;
+}
+
+.shopping-item {
+  gap: var(--space-m);
+}
+
+.shopping-check {
+  flex: none;
+}
+
+.shopping-item-text {
+  flex: 1;
+}
+
+/* In the basket: struck through, in soft ink. */
+.shopping-done {
+  color: var(--ink-soft);
+  text-decoration: line-through;
+}
+
+.shopping-price {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-xs);
+  text-align: right;
+}
+
+.shopping-question {
+  flex: 1;
+}
+
+.list-footer .source-link {
+  font-weight: 600;
+}
+

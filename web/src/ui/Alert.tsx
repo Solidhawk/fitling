@@ -20,6 +20,7 @@ export function Alert({
   actions,
   onClose,
   field,
+  cancelLabel = t("common.cancel"),
 }: {
   title: string;
   message?: string;
@@ -27,6 +28,8 @@ export function Alert({
   onClose: () => void;
   /** A text field in the alert, as a TextField in .alert on iOS. */
   field?: ReactNode;
+  /** The button beside the actions that only closes: Cancel, or OK where nothing is undone (the invitation code). */
+  cancelLabel?: string;
 }) {
   const alert = useRef<HTMLDivElement>(null);
   useDialogFocus(alert, onClose);
@@ -39,7 +42,7 @@ export function Alert({
         {actions ? (
           <div className="alert-buttons">
             <button type="button" className="alert-button" onClick={onClose}>
-              {t("common.cancel")}
+              {cancelLabel}
             </button>
             {actions.map((action) => (
               <button
