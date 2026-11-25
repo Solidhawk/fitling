@@ -117,8 +117,19 @@ export async function generate({ resources, out }) {
     await copyFile(join(resources, "ExerciseAnimations", name), join(exercises, name));
   }
 
-  // Recipe photos are partly CC BY (docs/BRONNEN.md): they go online with the recipe screen that credits
-  // them (phase 5), not before.
+  // Recipe photos are partly CC BY (docs/BRONNEN.md): each goes online with its credit, which the recipe
+  // screen shows under it.
+  const recipes = join(out, "public/recipes");
+  await fresh(recipes);
+  for (const file of await imagesetFiles(join(resources, "Assets.xcassets/Recipes"), ".jpg")) {
+    const id = basename(join(file, "..")).replace(/\.imageset$/, "").toLowerCase();
+    await copyFile(file, join(recipes, `${id}.jpg`));
+  }
+  const catalogRecipes = JSON.parse(await readFile(join(resources, "RecipeCatalog.json"), "utf8")).recipes;
+  const credits = Object.fromEntries(
+    catalogRecipes.filter((recipe) => recipe.photoCredit).map((recipe) => [recipe.id.toLowerCase(), recipe.photoCredit]),
+  );
+  await writeFile(join(generated, "recipeCredits.json"), JSON.stringify(credits));
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
