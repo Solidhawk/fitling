@@ -50,7 +50,11 @@ async function pushIn(onLine: boolean) {
     unsubscribe: async () => unsubscribed.push(true),
   };
   const registration = { pushManager: { getSubscription: async () => subscription, subscribe: async () => subscription } };
-  vi.stubGlobal("navigator", { onLine, serviceWorker: { ready: Promise.resolve(registration), getRegistration: async () => registration } });
+  vi.stubGlobal("navigator", {
+    onLine,
+    languages: ["nl-NL"],
+    serviceWorker: { ready: Promise.resolve(registration), getRegistration: async () => registration },
+  });
   vi.stubGlobal("window", { PushManager: function PushManager() {}, Notification: { permission: "granted" } });
   vi.stubGlobal("Notification", { permission: "granted" });
   const asked: string[] = [];
@@ -76,6 +80,32 @@ test("withoutANetworkNothingIsPlanned", async () => {
   const online = await pushIn(true);
   await online.push.planReminders(online.client, core, { settings: { isOn: true, times: [750, 1110] }, name: "Pip", days });
   expect(online.asked).toEqual(["save_push_subscription", "replace_push_reminders"]);
+});
+
+// Vandaag, the partner tab and every change plan; a plan that started earlier and is slow to arrive must not land after
+// a later one: turned off, they stay off (S51, seen in CI run 45796982295 with Chrome 157).
+test("theLastPlanIsTheOneThatStays", async () => {
+  const { push } = await pushIn(true);
+  let release = () => {};
+  const slow = new Promise<void>((resolve) => (release = resolve));
+  let stored: unknown[] = [];
+  const client = {
+    rpc: async (name: string, args: { p_reminders?: unknown[] }) => {
+      if (name === "save_push_subscription") return { data: "id", error: null };
+      // The plan with reminders is the slow one, whichever arrives first.
+      if ((args.p_reminders ?? []).length > 0) await slow;
+      stored = args.p_reminders ?? [];
+      return { data: null, error: null };
+    },
+  } as unknown as SupabaseClient;
+  const planning = {
+    remindersPlan: () => ({ reminders: [{ day: "2026-11-26", minutes: 750, messageKey: "creature.message.fit.sweet.1" }] }),
+  } as unknown as FitlingCore;
+  const on = push.planReminders(client, planning, { settings: { isOn: true, times: [750, 1110] }, name: "Pip", days });
+  const off = push.planReminders(client, planning, { settings: { isOn: false, times: [750, 1110] }, name: "Pip", days });
+  setTimeout(release, 20);
+  await Promise.all([on, off]);
+  expect(stored).toEqual([]);
 });
 
 // Signing out without a network still stops the reminders here; the server is not asked.
