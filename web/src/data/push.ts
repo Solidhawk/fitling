@@ -109,12 +109,17 @@ let handed: { endpoint: string; id: string; plan: string } | undefined;
 
 /** The plans asked for so far, one after the other. */
 let planning: Promise<void> = Promise.resolve();
+/** Raised by every plan asked for and by signing out: a plan that is no longer the newest leaves the server alone. */
+let newest = 0;
+/** A plan whose connection never answers holds the next one back this long at most. */
+const planWaitMs = 30_000;
 
 /**
  * Plans the reminders of today and tomorrow and hands them to the server, replacing what it had for this browser
  * (PartnerViewModel.planReminders). Turned off, the plan is empty. Without permission nothing is subscribed.
- * Vandaag, the partner tab and every change ask for a plan: they run one at a time, in the order asked, so a plan
- * that started earlier never lands after a later one (turned off, they stay off).
+ * Vandaag, the partner tab and every change ask for a plan: they run one at a time, in the order asked, and only the
+ * newest writes, so a plan that started earlier never lands after a later one (turned off, they stay off), and none
+ * lands after signing out.
  */
 export function planReminders(
   client: SupabaseClient,
@@ -122,9 +127,24 @@ export function planReminders(
   plan: { settings: ReminderSettings; name: string; days: PartnerDays },
   now = new Date(),
 ): Promise<void> {
-  const next = planning.then(() => planNow(client, core, plan, now));
-  planning = next.catch(() => undefined);
+  const mine = ++newest;
+  const stillNewest = () => mine === newest;
+  const next = planning.then(() => (stillNewest() ? planNow(client, core, plan, now, stillNewest) : undefined));
+  planning = doneOrLate(next);
   return next;
+}
+
+/** Once `work` is done, or after planWaitMs, whichever comes first. */
+function doneOrLate(work: Promise<void>): Promise<void> {
+  return new Promise((resolve) => {
+    const late = setTimeout(resolve, planWaitMs);
+    void work
+      .catch(() => undefined)
+      .then(() => {
+        clearTimeout(late);
+        resolve();
+      });
+  });
 }
 
 async function planNow(
@@ -132,12 +152,13 @@ async function planNow(
   core: FitlingCore,
   plan: { settings: ReminderSettings; name: string; days: PartnerDays },
   now: Date,
+  stillNewest: () => boolean,
 ): Promise<void> {
   // Without a network the plan waits for the next visit: supabase-js would first spend half a minute on the token.
   if (pushSupport() !== "ready" || Notification.permission !== "granted" || noNetwork()) return;
   // Turned off, a browser that never subscribed stays that way; one that did gets an empty plan.
   const current = plan.settings.isOn ? await subscription() : await (await navigator.serviceWorker.ready).pushManager.getSubscription();
-  if (!current) return;
+  if (!current || !stillNewest()) return;
   const browser = current.toJSON();
   const endpoint = browser.endpoint ?? "";
   let id = handed?.endpoint === endpoint ? handed.id : undefined;
@@ -149,6 +170,7 @@ async function planNow(
     });
     if (error) throw failure(error);
     id = data as string;
+    if (!stillNewest()) return;
   }
   const { reminders } = plan.settings.isOn
     ? core.remindersPlan({ settings: plan.settings, minutesNow: now.getHours() * 60 + now.getMinutes(), days: plan.days })
@@ -178,6 +200,7 @@ async function currentSubscription(): Promise<PushSubscription | null | undefine
  * partner's name and mood (RootViewModel on iOS empties them too). Needs the session, so it runs before signing out.
  */
 export async function forgetPush(client: SupabaseClient): Promise<void> {
+  newest += 1;
   handed = undefined;
   const current = await currentSubscription();
   if (!current) return;
@@ -190,6 +213,7 @@ export async function forgetPush(client: SupabaseClient): Promise<void> {
  * answers 410 to the server, and send-reminders removes the subscription with its reminders.
  */
 export async function stopPushHere(): Promise<void> {
+  newest += 1;
   handed = undefined;
   await (await currentSubscription())?.unsubscribe();
 }
