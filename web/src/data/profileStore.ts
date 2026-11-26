@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Activity, DailyPlanInput, Goal, ProfileRules, Sex, Targets } from "../core/fitlingCore";
 import { failure } from "./failure";
-import { kept } from "./offline";
+import { keep, kept } from "./offline";
 
 export type Body = Omit<DailyPlanInput, "today">;
 
@@ -138,6 +138,8 @@ export async function saveProfile(client: SupabaseClient, profile: Profile, chan
     })
     .eq("id", profile.id);
   if (error) throw failure(error);
+  // What this browser shows without a connection is what was just saved, not the read before it.
+  keep("profile", profile);
 }
 
 /**
