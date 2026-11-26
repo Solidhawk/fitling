@@ -66,6 +66,26 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      # Een lokale Supabase met het schema, zodat inloggen en opslaan echt getest worden; nooit het echte project.
+      - uses: supabase/setup-cli@v3
+        with:
+          version: 3.2.0
+      - name: Lokale Supabase voor de webtests
+        run: |
+          for attempt in 1 2 3; do
+            supabase start -x studio,imgproxy,vector,logflare,realtime,storage-api,postgres-meta,supavisor && break
+            supabase stop --no-backup || true
+            sleep 10
+          done
+          db="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
+          psql "$db" -v ON_ERROR_STOP=1 -q -f supabase/schema.sql
+          psql "$db" -v ON_ERROR_STOP=1 -q -f supabase/seed/sport.sql
+          psql "$db" -v ON_ERROR_STOP=1 -q -f supabase/seed/recipes.sql
+          eval "$(supabase status -o env)"
+          echo "VITE_SUPABASE_URL=$API_URL" >> "$GITHUB_ENV"
+          echo "VITE_SUPABASE_PUBLISHABLE_KEY=${PUBLISHABLE_KEY:-$ANON_KEY}" >> "$GITHUB_ENV"
+          # Only for the browser tests, to make test users: the fixed development key of this local Supabase.
+          echo "LOCAL_SUPABASE_SERVICE_KEY=${SECRET_KEY:-$SERVICE_ROLE_KEY}" >> "$GITHUB_ENV"
       - name: Webapp testen
         working-directory: web
         run: |
@@ -85,7 +105,20 @@ jobs:
           name: web-screenshots
           path: web/test-results/
           if-no-files-found: ignore
-      # Alleen main gaat live, op https://solidhawk.github.io/fitling/ (D-24).
+      # Alleen main gaat live, op https://solidhawk.github.io/fitling/ (D-24). De geteste bouw praat met de lokale
+      # Supabase van deze job; de site wordt opnieuw gebouwd tegen het echte project, uit de GitHub-variabelen (S34).
+      - name: Webapp bouwen voor de site
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        working-directory: web
+        env:
+          VITE_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          if [ -z "$VITE_SUPABASE_URL" ] || [ -z "$VITE_SUPABASE_PUBLISHABLE_KEY" ]; then
+            echo "::error::Zet de GitHub-variabelen SUPABASE_URL en SUPABASE_PUBLISHABLE_KEY (S34) voordat de site live gaat."
+            exit 1
+          fi
+          npm run build
       - uses: actions/upload-pages-artifact@v3
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         with:

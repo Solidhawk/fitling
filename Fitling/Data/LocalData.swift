@@ -30,12 +30,14 @@ extension ModelContext {
     func targets(on day: Day, for profile: UserProfile) -> NutritionTargets {
         let userID = profile.id
         let dayString = day.isoString
-        var descriptor = FetchDescriptor<TargetPeriod>(
-            predicate: #Predicate<TargetPeriod> { $0.userID == userID && $0.deletedAt == nil && $0.effectiveOn <= dayString },
-            sortBy: [SortDescriptor(\.effectiveOn, order: .reverse), SortDescriptor(\.updatedAt, order: .reverse)]
+        let descriptor = FetchDescriptor<TargetPeriod>(
+            predicate: #Predicate<TargetPeriod> { $0.userID == userID && $0.deletedAt == nil && $0.effectiveOn <= dayString }
         )
-        descriptor.fetchLimit = 1
-        let base = (try? fetch(descriptor).first)?.targets ?? profile.targets
+        // The rule itself is in FitlingCore, so the web app picks the same target (D-24).
+        let periods = ((try? fetch(descriptor)) ?? []).compactMap { period in
+            Day(isoString: period.effectiveOn).map { TargetPeriodEntry(effectiveOn: $0, updatedAt: period.updatedAt, targets: period.targets) }
+        }
+        let base = TargetPeriods.targets(on: day, periods: periods, fallback: profile.targets)
         return NutritionEngine.dayTargets(base: base, workoutKcal: workoutKcal(on: day), countsWorkouts: profile.countsWorkoutEnergy)
     }
 

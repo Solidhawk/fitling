@@ -128,3 +128,29 @@ Deno.test('a misconfigured function answers 500 misconfigured', async () => {
   assertEquals(response.status, 500);
   assertEquals(await response.json(), { error: 'misconfigured' });
 });
+
+// The web app calls from its own origin, so the browser asks first with OPTIONS (UNFORGET S35).
+Deno.test('the browser preflight is answered without a token', async () => {
+  const d = deps(emailUser);
+  const response = await handle(new Request('http://localhost/delete-account', { method: 'OPTIONS' }), d);
+  assertEquals(response.status, 204);
+  assertEquals(response.headers.get('Access-Control-Allow-Origin'), '*');
+  assertEquals(response.headers.get('Access-Control-Allow-Methods'), 'POST, OPTIONS');
+  assertEquals(
+    response.headers.get('Access-Control-Allow-Headers'),
+    'authorization, x-client-info, apikey, content-type',
+  );
+  assertEquals(d.deleted, []);
+});
+
+Deno.test('every answer can be read by the web app', async () => {
+  for (
+    const response of [
+      await handle(request({}, null), deps(emailUser)),
+      await handle(request(), deps(emailUser)),
+      misconfigured(),
+    ]
+  ) {
+    assertEquals(response.headers.get('Access-Control-Allow-Origin'), '*');
+  }
+});

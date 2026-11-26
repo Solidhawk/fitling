@@ -21,9 +21,53 @@ export interface DailyPlan {
   warnings: string[];
 }
 
+export interface Targets {
+  kcal: number;
+  proteinG: number;
+  carbsG: number;
+  fatG: number;
+}
+
+export interface BodyFields {
+  centimetres?: number;
+  feet?: number;
+  inches?: number;
+  /** Kilograms or pounds, following usesMetric. */
+  weight?: number;
+}
+
+export interface BodyInputAnswer {
+  fields: BodyFields;
+  heightCm?: number;
+  weightKg?: number;
+  heightValid: boolean;
+  weightValid: boolean;
+  isValid: boolean;
+}
+
+export type Sex = DailyPlanInput["sex"];
+export type Goal = DailyPlanInput["goal"];
+export type Activity = DailyPlanInput["activityLevel"];
+
+export interface ProfileRules {
+  activityFactors: Record<Activity, number>;
+  proteinPerKg: Record<Goal, number>;
+  /** Lowest and highest value of each target the user may type. */
+  targetLimits: Record<keyof Targets, [number, number]>;
+}
+
 /** The rules of FitlingCore, the same code as in the iOS app (D-24). */
 export interface FitlingCore {
   dailyPlan(input: DailyPlanInput): DailyPlan;
+  bodyInput(input: { usesMetric: boolean; stored?: { heightCm: number; weightKg: number }; fields?: BodyFields }): BodyInputAnswer;
+  birthDay(input: { birthDay: IsoDay; today: IsoDay }): { age: number; isAdult: boolean; isValid: boolean };
+  macros(input: { kcal: number; weightKg: number; goal: Goal }): Targets;
+  kcalShares(targets: Targets): { protein: number; carbs: number; fat: number };
+  warnings(input: { kcal: number; bmr: number; tdee: number; sex: Sex }): { warnings: string[]; commonMinimumKcal: number };
+  targetsOnDay(input: { day: IsoDay; fallback: Targets; periods: { effectiveOn: IsoDay; updatedAtMs: number; targets: Targets }[] }): Targets;
+  creature(input: { level: number }): { startShape: number; colorCount: number; growthStage: number };
+  goalFactors(): Record<Goal, number>;
+  profileRules(): ProfileRules;
 }
 
 interface Exports {
@@ -62,5 +106,14 @@ export async function loadCore(wasm: ArrayBuffer): Promise<FitlingCore> {
 
   return {
     dailyPlan: (input) => call("dailyPlan", input) as DailyPlan,
+    bodyInput: (input) => call("bodyInput", input) as BodyInputAnswer,
+    birthDay: (input) => call("birthDay", input) as ReturnType<FitlingCore["birthDay"]>,
+    macros: (input) => call("macros", input) as Targets,
+    kcalShares: (targets) => call("kcalShares", targets) as ReturnType<FitlingCore["kcalShares"]>,
+    warnings: (input) => call("warnings", input) as ReturnType<FitlingCore["warnings"]>,
+    targetsOnDay: (input) => call("targetsOnDay", input) as Targets,
+    creature: (input) => call("creature", input) as ReturnType<FitlingCore["creature"]>,
+    goalFactors: () => call("goalFactors", {}) as Record<Goal, number>,
+    profileRules: () => call("profileRules", {}) as ProfileRules,
   };
 }

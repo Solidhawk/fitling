@@ -16,6 +16,8 @@ body {
   /* The whole iOS app uses the rounded system font; SF Rounded on Apple devices, never shipped as a file. */
   font-family: ui-rounded, system-ui, -apple-system, sans-serif;
   font-size: 1.0625rem;
+  /* A word longer than its line breaks, as Text does on iOS, instead of sticking out at very large text. */
+  overflow-wrap: anywhere;
 }
 
 .app {
@@ -62,14 +64,15 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 0.125rem;
-  min-width: 2.75rem;
-  min-height: 3.125rem;
+  /* The tab bar does not grow with the text, as on iOS, where a long press shows the label larger. */
+  min-width: 44px;
+  min-height: 50px;
   padding: 0.25rem 0;
   border: 0;
   background: none;
   color: var(--ink-soft);
   font: inherit;
-  font-size: 0.625rem;
+  font-size: min(0.625rem, 11px);
   font-weight: 600;
   cursor: pointer;
 }
@@ -89,4 +92,1128 @@ body {
     transition: none !important;
     animation: none !important;
   }
+}
+
+/* Spacing and radii of Spacing.swift (in points, here in rem of 16 px). */
+:root {
+  --space-xs: 0.25rem;
+  --space-s: 0.5rem;
+  --space-m: 0.75rem;
+  --space-l: 1rem;
+  --space-xl: 1.5rem;
+  --space-xxl: 2rem;
+  --radius-card: 1.5rem;
+  --radius-ribbon: 1.375rem;
+  --button-height: 3.375rem;
+}
+
+/* Buttons.swift: capsules of 54 pt, headline bold. */
+.button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-s);
+  width: 100%;
+  min-height: var(--button-height);
+  padding: 0 var(--space-l);
+  border-radius: 999px;
+  font: inherit;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.15s ease-out;
+}
+
+.button:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.button-primary {
+  border: 0;
+  background-color: var(--ink);
+  color: var(--card);
+}
+
+.button-primary:disabled {
+  background-color: var(--track);
+  color: var(--ink-soft);
+  cursor: default;
+}
+
+.button-secondary {
+  border: 1px solid var(--track);
+  background-color: var(--card);
+  color: var(--ink);
+  box-shadow: 0 2px 6px var(--card-shadow);
+}
+
+.button-secondary:disabled {
+  color: var(--ink-soft);
+  cursor: default;
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+/* NamePlate.swift: heavy lettering on the ribbon, a white sticker edge. */
+.name-plate {
+  display: inline-block;
+  padding: var(--space-xs) var(--space-m);
+  border-radius: 999px;
+  color: var(--on-ribbon);
+  font-size: 1.0625rem;
+  font-weight: 800;
+}
+
+.name-plate-edge {
+  box-shadow: 0 0 0 2px #fff;
+}
+
+/* PartnerCanvas: a square; the render is zoomed and moved so the feet stand on one ground line. */
+.partner-canvas {
+  position: relative;
+  aspect-ratio: 1;
+  width: 100%;
+  overflow: hidden;
+}
+
+.partner-canvas-body {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 93%;
+}
+
+.partner-canvas-render {
+  position: absolute;
+}
+
+.partner-canvas-render img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  user-select: none;
+}
+
+/* FigureTile: the partner on its pastel tint. */
+.figure-tile {
+  padding: var(--space-xs);
+  border-radius: calc(var(--radius-card) * 0.6);
+}
+
+/* Grouped lists (Form/List with groundBackground): white rows, rounded sections, soft-ink footnotes. */
+.list {
+  padding: 0 var(--space-l) var(--space-xl);
+}
+
+.list-section {
+  margin-top: var(--space-xl);
+}
+
+.list-header {
+  margin: 0 var(--space-l) var(--space-s);
+  color: var(--ink-soft);
+  font-size: 0.8125rem;
+  font-weight: 400;
+  text-transform: uppercase;
+}
+
+.list-rows {
+  overflow: hidden;
+  border-radius: 0.625rem;
+  background-color: var(--card);
+}
+
+.list-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-m);
+  min-height: 2.75rem;
+  padding: var(--space-m) var(--space-l);
+  color: var(--ink);
+}
+
+.list-row + .list-row {
+  box-shadow: inset var(--space-l) 1px 0 0 var(--card), inset 0 1px 0 0 var(--track);
+}
+
+.list-row-button:disabled {
+  color: var(--ink-soft);
+  cursor: default;
+}
+
+.list-row-button {
+  width: 100%;
+  border: 0;
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.list-row-content {
+  flex: 1;
+}
+
+.list-chevron {
+  width: 0.5rem;
+  height: 0.875rem;
+  color: var(--ink-soft);
+}
+
+.list-footer {
+  margin: var(--space-s) var(--space-l) 0;
+  color: var(--ink-soft);
+  font-size: 0.8125rem;
+}
+
+/* The inline navigation bar of a pushed screen. */
+.nav-bar {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: grid;
+  /* Cancel and Save of a sheet keep their full width; the title in the middle gives way. */
+  grid-template-columns: minmax(max-content, 1fr) minmax(0, max-content) minmax(max-content, 1fr);
+  align-items: center;
+  min-height: 2.75rem;
+  padding: env(safe-area-inset-top) var(--space-s) 0;
+  background-color: var(--ground);
+}
+
+/* A pushed screen: the title stays in the middle; when space runs out the title and the back label are cut short,
+   as UIKit does, and the chevron always stays. */
+.nav-bar-pushed {
+  grid-template-columns: minmax(2.75rem, 1fr) minmax(0, max-content) minmax(2.75rem, 1fr);
+}
+
+.nav-bar-side {
+  display: flex;
+  min-width: 0;
+}
+
+/* The bar's text does not grow with the text size, as UINavigationBar on iOS; the toolbar above a large title neither. */
+.nav-bar .nav-back,
+.toolbar .nav-back {
+  font-size: min(1.0625rem, 17px);
+}
+
+.nav-title {
+  overflow: hidden;
+  margin: 0;
+  font-size: min(1.0625rem, 17px);
+  font-weight: 700;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Focused from code for screen readers; it is no control, so no ring. */
+.nav-title:focus {
+  outline: none;
+}
+
+.nav-back-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nav-bar-trailing {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.nav-back {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  min-height: 2.75rem;
+  white-space: nowrap;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+
+.text-field {
+  width: 100%;
+  min-height: 2.75rem;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+}
+
+.text-field::placeholder {
+  color: var(--ink-soft);
+}
+
+/* In ink, as everything else that shows focus; the browser's blue would be the only blue in the app. */
+.text-field:focus-visible {
+  border-radius: 0.25rem;
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+/* Screens outside the tabs: the same column on the pastel ground. */
+.screen {
+  max-width: 30rem;
+  min-height: 100dvh;
+  margin: 0 auto;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.padded {
+  padding: max(var(--space-l), env(safe-area-inset-top)) var(--space-l) var(--space-l);
+}
+
+.stack-s > * + * { margin-top: var(--space-s); }
+.stack-l > * + * { margin-top: var(--space-l); }
+.stack-xl > * + * { margin-top: var(--space-xl); }
+
+.flush {
+  margin: 0;
+}
+
+p {
+  margin: 0;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.375rem;
+  font-weight: 700;
+}
+
+.title3 {
+  font-size: 1.25rem;
+}
+
+.footnote {
+  font-size: 0.8125rem;
+}
+
+.secondary {
+  color: var(--ink-soft);
+}
+
+.message {
+  color: var(--ink);
+}
+
+/* The catalog: four in a row, two when the text is very large (the column then holds fewer tiles). */
+.catalog {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(max(4.5rem, 22%), 1fr));
+  gap: var(--space-s);
+}
+
+/* The sign-in actions at the bottom, within thumb reach. */
+.welcome {
+  display: flex;
+  flex-direction: column;
+}
+
+.welcome > .padded {
+  flex: 1;
+}
+
+.welcome-actions {
+  position: sticky;
+  bottom: 0;
+  padding: var(--space-l) var(--space-l) max(var(--space-l), env(safe-area-inset-bottom));
+  background-color: var(--ground);
+}
+
+.button-row {
+  padding: 0;
+}
+
+.list-section > .button-row {
+  margin: 0;
+}
+
+.text-button {
+  display: block;
+  width: 100%;
+  min-height: 2.75rem;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+
+/* A round badge in a partner colour with a white edge (VerifyEmailView). */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 4.5rem;
+  height: 4.5rem;
+  border-radius: 50%;
+  color: var(--on-ribbon);
+  box-shadow: 0 0 0 3px #fff;
+}
+
+/* ContentUnavailableView: centred icon, title, explanation and an action. */
+.unavailable {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-m);
+  text-align: center;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.spinner {
+  display: inline-block;
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2px solid var(--track);
+  border-top-color: var(--ink-soft);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* A sheet over the app, as .sheet on iOS. */
+.sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  overflow-y: auto;
+  background-color: var(--ground);
+}
+
+/* Inline pickers: one row per choice, a checkmark on the chosen one (pickerStyle(.inline)). */
+.choice {
+  display: flex;
+  align-items: center;
+  gap: var(--space-m);
+  width: 100%;
+}
+
+.choice-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.choice-detail {
+  color: var(--ink-soft);
+  font-size: 0.8125rem;
+}
+
+.checkmark {
+  width: 0.875rem;
+  height: 0.75rem;
+  color: var(--ink);
+}
+
+.number-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-s);
+  width: 100%;
+}
+
+/* The unit stays whole beside its number. */
+.number-row > .secondary {
+  flex: none;
+}
+
+.number-field {
+  font-size: 1.25rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* A Toggle with the Sprout tint, as consent.agree on iOS. */
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-m);
+  width: 100%;
+  cursor: pointer;
+}
+
+.switch {
+  appearance: none;
+  position: relative;
+  flex: none;
+  width: 3.1875rem;
+  height: 1.9375rem;
+  margin: 0;
+  border-radius: 999px;
+  background-color: var(--track);
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.switch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 1.6875rem;
+  height: 1.6875rem;
+  border-radius: 50%;
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgb(0 0 0 / 0.2);
+  transition: transform 0.2s;
+}
+
+.switch:checked {
+  background-color: var(--sprout);
+}
+
+.switch:checked::after {
+  transform: translateX(1.25rem);
+}
+
+.switch:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+/* The bar at the bottom of an onboarding step: progress pills and the next step. */
+.with-bottom-bar {
+  padding-bottom: calc(9rem + env(safe-area-inset-bottom));
+}
+
+.bottom-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-m);
+  max-width: 30rem;
+  margin: 0 auto;
+  padding: var(--space-l) var(--space-l) max(var(--space-l), env(safe-area-inset-bottom));
+  background-color: var(--ground);
+}
+
+.progress {
+  display: flex;
+  gap: var(--space-xs);
+}
+
+.progress span {
+  flex: 1;
+  height: 0.5rem;
+  border-radius: 999px;
+  background-color: var(--track);
+}
+
+.progress .progress-done {
+  background-color: var(--ink);
+}
+
+/* A white card with a soft shadow (Radius.card). */
+.card {
+  padding: var(--space-l);
+  border-radius: var(--radius-card);
+  background-color: var(--card);
+  box-shadow: 0 4px 12px var(--card-shadow);
+}
+
+.targets-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-m);
+  text-transform: none;
+}
+
+.list-header:has(.targets-card) {
+  margin: 0 0 var(--space-l);
+  color: var(--ink);
+  font-size: inherit;
+}
+
+.kcal-total {
+  font-size: 2.125rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+/* MacroBlocks: three toy blocks side by side, each in its own colour; stacked at very large text. */
+.macro-blocks {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(max(6rem, 30%), 1fr));
+  gap: var(--space-s);
+}
+
+.macro-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  min-height: 7rem;
+  padding: var(--space-m);
+  border-radius: var(--radius-ribbon);
+  color: var(--on-ribbon);
+}
+
+.macro-title {
+  overflow: hidden;
+  max-width: 100%;
+  font-size: calc(0.9375rem * var(--fit, 1));
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.macro-value {
+  margin-top: auto;
+  font-size: 1.375rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.macro-detail {
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+/* A system alert. */
+.alert-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgb(0 0 0 / 0.3);
+}
+
+.alert {
+  width: min(17rem, 80vw);
+  overflow: hidden;
+  border-radius: 0.875rem;
+  background-color: var(--card);
+  text-align: center;
+}
+
+.alert-title {
+  padding: var(--space-l) var(--space-l) var(--space-xs);
+  font-weight: 700;
+}
+
+.alert-message {
+  padding: 0 var(--space-l) var(--space-l);
+  font-size: 0.8125rem;
+}
+
+.alert-button {
+  width: 100%;
+  min-height: 2.75rem;
+  border: 0;
+  border-top: 1px solid var(--track);
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* PartnerSetupView: the intro as the first header, in ink and at body size. */
+.list-header:has(.setup-intro) {
+  color: var(--ink);
+  font-size: 1.0625rem;
+  text-transform: none;
+}
+
+/* Three species in a row so nearly all sixteen can be compared; two at very large text. */
+.species-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(max(4.5rem, 30%), 1fr));
+  gap: var(--space-s);
+}
+
+.species-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-xs);
+  min-width: 0;
+  padding: var(--space-s);
+  border: 0;
+  border-radius: calc(var(--radius-card) * 0.6);
+  color: var(--on-ribbon);
+  font: inherit;
+  cursor: pointer;
+}
+
+.species-tile[aria-pressed="true"] {
+  box-shadow: inset 0 0 0 3px var(--ink);
+}
+
+.species-tile:focus-visible,
+.swatch:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.species-name {
+  max-width: 100%;
+  overflow: hidden;
+  padding: 2px var(--space-s);
+  border-radius: 999px;
+  font-size: calc(0.8125rem * var(--fit, 1));
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* At very large text a name may take two lines, hyphenated where the language allows. */
+.species-name[data-two-lines] {
+  display: -webkit-box;
+  border-radius: 0.75rem;
+  white-space: normal;
+  text-align: center;
+  hyphens: auto;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+/* The preview in the species' tint, as wide as the rows. */
+.partner-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-s);
+  margin-bottom: var(--space-m);
+  padding: var(--space-l);
+  border-radius: var(--radius-card);
+}
+
+.partner-preview-figure {
+  width: 140px;
+}
+
+.name-field {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+/* ColorSwatches: round body colours, the chosen one ringed in ink. */
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-m);
+  padding: var(--space-xs) 0;
+}
+
+.swatch {
+  width: calc(2.5rem + 6px);
+  height: calc(2.5rem + 6px);
+  padding: 3px;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  cursor: pointer;
+}
+
+.swatch[aria-checked="true"] {
+  box-shadow: inset 0 0 0 3px var(--ink);
+}
+
+.swatch-fill {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+}
+
+/* The system red of a destructive action, in its higher-contrast form so it reads on a card. */
+:root {
+  --destructive: #d70015;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --destructive: #ff6961;
+  }
+}
+
+.destructive {
+  color: var(--destructive);
+}
+
+/* A tab's own screens inside the page column: the list takes the column's width, a pushed screen starts at the top. */
+.tab-page .list {
+  padding-right: 0;
+  padding-left: 0;
+}
+
+/* A pushed screen starts at the top edge with its own bar, so the page column drops its margins for it. */
+.page:has(.tab-page.pushed) {
+  padding-top: 0;
+  padding-right: 0;
+  padding-left: 0;
+}
+
+.tab-page.pushed .large-title {
+  margin: 0 var(--space-l) var(--space-s);
+}
+
+.tab-page.pushed .list {
+  padding: 0 var(--space-l) var(--space-xl);
+}
+
+.tab-loading,
+.tab-page.unavailable {
+  min-height: 60dvh;
+}
+
+/* The bar above a large title, with its action on the right (toolbar on iOS). */
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 2.75rem;
+}
+
+.toolbar + .large-title {
+  margin-top: 0;
+}
+
+.nav-action {
+  padding: 0 var(--space-s);
+}
+
+.nav-confirm {
+  font-weight: 700;
+}
+
+.nav-back:disabled {
+  color: var(--ink-soft);
+  cursor: default;
+}
+
+/* Menu: a short list of actions under its button. */
+.menu {
+  position: relative;
+}
+
+.menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 14;
+}
+
+.menu-items {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 15;
+  min-width: min(15rem, calc(100vw - 2rem));
+  overflow: hidden;
+  border-radius: 0.875rem;
+  background-color: var(--card);
+  box-shadow: 0 8px 30px rgb(0 0 0 / 0.2);
+}
+
+.menu-item {
+  display: block;
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0 var(--space-l);
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.menu-item + .menu-item {
+  border-top: 1px solid var(--track);
+}
+
+/* confirmationDialog: the question and its actions in one group, Cancel apart below them. */
+.action-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background-color: rgb(0 0 0 / 0.3);
+}
+
+.action-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-s);
+  width: min(30rem, 100%);
+  padding: var(--space-s) var(--space-s) max(var(--space-s), env(safe-area-inset-bottom));
+}
+
+.action-sheet-group {
+  overflow: hidden;
+  border-radius: 0.875rem;
+  background-color: var(--card);
+  text-align: center;
+}
+
+.action-sheet-title {
+  margin: 0;
+  padding: var(--space-m) var(--space-l) var(--space-s);
+  color: var(--ink-soft);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.action-sheet-message {
+  margin: 0;
+  padding: 0 var(--space-l) var(--space-m);
+  color: var(--ink-soft);
+  font-size: 0.8125rem;
+}
+
+.action-sheet-button {
+  width: 100%;
+  min-height: 3.5rem;
+  border: 0;
+  border-top: 1px solid var(--track);
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 1.25rem;
+  cursor: pointer;
+}
+
+.action-sheet-button.destructive {
+  color: var(--destructive);
+}
+
+.action-sheet-cancel {
+  border: 0;
+  border-radius: 0.875rem;
+  background-color: var(--card);
+  font-weight: 600;
+}
+
+/* ProfileView: the build-up card as wide as the rows, its notes under it in footnote. */
+.profile-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-m);
+  margin-bottom: var(--space-m);
+}
+
+.note {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-xs);
+  margin: 0 var(--space-l);
+  color: var(--ink);
+  font-size: 0.8125rem;
+}
+
+.note svg {
+  flex: none;
+  margin-top: 1px;
+}
+
+/* TargetBuildUp: steps as wide as their share of the largest number; at large text each takes the full width. */
+.build-up {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-s);
+}
+
+.build-step-width {
+  width: max(calc(var(--share) * 100%), min(100%, 10rem));
+}
+
+.build-step {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-xs);
+  min-height: 2.75rem;
+  padding: var(--space-s) var(--space-l);
+  border-radius: var(--radius-ribbon);
+  background-color: var(--track);
+}
+
+.build-step-label {
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.build-step-value {
+  font-size: 1.25rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The arrow grows with its line, as an SF Symbol does. */
+.build-factor svg {
+  flex: none;
+  width: 1.15em;
+  height: 1.15em;
+}
+
+.build-factor {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  margin: 0;
+  padding-left: var(--space-l);
+  color: var(--ink-soft);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.build-target {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: center;
+  align-items: baseline;
+  justify-content: space-between;
+  column-gap: var(--space-s);
+  min-height: 56px;
+  padding: var(--space-m) var(--space-l);
+  border-radius: var(--radius-ribbon);
+  background-color: var(--ink);
+  color: var(--card);
+}
+
+.build-target-label {
+  font-size: 0.9375rem;
+  font-weight: 700;
+}
+
+.build-target-value {
+  font-size: 1.75rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.build-up .macro-blocks {
+  margin-top: var(--space-s);
+}
+
+/* Label in a list: the symbol before the text, in ink. */
+.label-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-m);
+}
+
+.label-row svg {
+  flex: none;
+  margin-top: 0.125rem;
+}
+
+/* LabeledContent: the label on the left, the value on the right. */
+.labeled {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-m);
+  width: 100%;
+}
+
+.value {
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+/* A Picker or DatePicker in a Form: the chosen value in soft ink on the right, under the label when there is no
+   room beside it (LabeledContent at the accessibility sizes). */
+.picker-row {
+  flex-wrap: wrap;
+}
+
+.picker-value {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  min-width: 0;
+  margin-left: auto;
+  color: var(--ink-soft);
+}
+
+.picker {
+  max-width: 100%;
+  min-width: 0;
+  min-height: 2.75rem;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: right;
+  cursor: pointer;
+  appearance: none;
+}
+
+/* The menu-style Picker: the chosen value with the up-and-down chevrons after it. */
+select.picker {
+  padding-right: 1.125rem;
+}
+
+.picker-chevrons {
+  position: absolute;
+  right: 0;
+  pointer-events: none;
+}
+
+/* The compact DatePicker: the date in a pale capsule, in ink. */
+input.picker[type="date"] {
+  min-height: auto;
+  padding: 0.25rem 0.625rem;
+  border-radius: 0.5rem;
+  background-color: var(--track);
+  color: var(--ink);
+}
+
+/* A Form row with a field is as low as on iOS; the field itself stays 44 px tall. */
+.sheet .list-row:has(input, select) {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+/* AboutView: a source and its website, the link tall enough for a finger. */
+.source {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.source-link {
+  display: flex;
+  align-items: center;
+  min-height: 2.75rem;
+  color: var(--ink);
+  font-size: 0.8125rem;
+  text-decoration: none;
+}
+
+.source-link:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
 }
