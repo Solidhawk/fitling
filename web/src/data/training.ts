@@ -167,9 +167,14 @@ export async function copyProgram(
   };
   const id = newID(programID);
   const updated = now.toISOString();
-  await write(client.from("programs").upsert({ id, owner_id: userID, name: { [copy.language]: copy.name }, days_per_week: source.daysPerWeek, updated_at: updated }));
+  await write(
+    client.from("programs").upsert({ id, owner_id: userID, name: { [copy.language]: copy.name }, days_per_week: source.daysPerWeek, deleted_at: null, updated_at: updated }),
+  );
   const days = training.days.filter((day) => day.programID === programID && !day.deleted);
-  const newDays = days.map((day) => ({ old: day.id, row: { id: newID(day.id), program_id: id, owner_id: userID, name: day.name, position: day.position, updated_at: updated } }));
+  const newDays = days.map((day) => ({
+    old: day.id,
+    row: { id: newID(day.id), program_id: id, owner_id: userID, name: day.name, position: day.position, deleted_at: null, updated_at: updated },
+  }));
   if (newDays.length > 0) await write(client.from("program_days").upsert(newDays.map((day) => day.row)));
   const items = newDays.flatMap((day) =>
     training.items
@@ -184,6 +189,7 @@ export async function copyProgram(
         rep_min: item.repMin,
         rep_max: item.repMax,
         rest_seconds: item.restSeconds,
+        deleted_at: null,
         updated_at: updated,
       })),
   );
