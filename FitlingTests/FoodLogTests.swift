@@ -298,8 +298,18 @@ struct FoodFixture {
         let clock = TestClock(fixture.now)
         let viewModel = DayViewModel(profile: fixture.profile(), context: fixture.context, timeZone: .gmt, now: { clock.now })
         clock.now = clock.now.addingTimeInterval(86_400)
-        viewModel.dateChanged()
+        #expect(viewModel.dateChanged())
         #expect(viewModel.day == fixture.today.adding(1))
+        #expect(viewModel.isToday)
+    }
+
+    @Test func backToTodayFollowsTheDateAgain() {
+        let clock = TestClock(fixture.now)
+        let viewModel = DayViewModel(profile: fixture.profile(), context: fixture.context, timeZone: .gmt, now: { clock.now })
+        viewModel.show(fixture.today.adding(-1))
+        viewModel.show(fixture.today)
+        clock.now = clock.now.addingTimeInterval(86_400)
+        #expect(viewModel.dateChanged())
         #expect(viewModel.isToday)
     }
 
@@ -308,7 +318,7 @@ struct FoodFixture {
         let viewModel = DayViewModel(profile: fixture.profile(), context: fixture.context, timeZone: .gmt, now: { clock.now })
         viewModel.show(fixture.today.adding(-1))
         clock.now = clock.now.addingTimeInterval(86_400)
-        viewModel.dateChanged()
+        #expect(viewModel.dateChanged() == false)
         #expect(viewModel.day == fixture.today.adding(-1))
     }
 

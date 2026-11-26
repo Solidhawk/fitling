@@ -138,17 +138,28 @@ test.describe("around midnight in Tokyo", () => {
   // Without summer time, so 23.59 is the same offset all year.
   test.use({ timezoneId: "Asia/Tokyo" });
 
+  /**
+   * Yesterday in Tokyo. A fake clock set to that evening is never ahead of the real one, so the session from signing in
+   * never looks expired to supabase-js, which would otherwise refresh it before every request.
+   */
+  function tokyoYesterday(): string {
+    return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Tokyo" }).format(new Date(Date.now() - 86_400_000));
+  }
+
+  function dayAfter(day: string, count: number): string {
+    const [year, month, date] = day.split("-").map(Number);
+    return new Date(Date.UTC(year, month - 1, date + count)).toISOString().slice(0, 10);
+  }
+
   // A meal logged at 23.59 belongs to that day; at 00.01 the next day starts empty (Review Focus).
   test("dayFollowsTheBrowsersDate", async ({ page }) => {
     const user = await start(page);
-    const day = localDay();
+    const day = tokyoYesterday();
     await foodEntry(user.id, { consumed_on: day, meal: "dinner", name: "Laat avondeten", kcal: 400 });
     await page.clock.setFixedTime(new Date(`${day}T23:59:00+09:00`));
     await page.reload();
     await expect(page.getByText("Laat avondeten")).toBeVisible({ timeout: 15_000 });
-    const [year, month, date] = day.split("-").map(Number);
-    const next = new Date(Date.UTC(year, month - 1, date + 1)).toISOString().slice(0, 10);
-    await page.clock.setFixedTime(new Date(`${next}T00:01:00+09:00`));
+    await page.clock.setFixedTime(new Date(`${dayAfter(day, 1)}T00:01:00+09:00`));
     await page.reload();
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(nl("day.today"), { timeout: 15_000 });
     await expect(page.getByTestId("day.progress")).toBeVisible();
@@ -156,11 +167,6 @@ test.describe("around midnight in Tokyo", () => {
     await page.getByRole("button", { name: nl("day.previous") }).click();
     await expect(page.getByText("Laat avondeten")).toBeVisible();
   });
-
-  function dayAfter(day: string, count: number): string {
-    const [year, month, date] = day.split("-").map(Number);
-    return new Date(Date.UTC(year, month - 1, date + count)).toISOString().slice(0, 10);
-  }
 
   /** Signed in on `day` at 23.57 in Tokyo, with a dinner logged that evening. */
   async function eveningOf(page: Page, day: string, setClock: (time: Date) => Promise<void>) {
@@ -175,35 +181,62 @@ test.describe("around midnight in Tokyo", () => {
   // Open since the evening: past midnight Vandaag moves on to the new day by itself, so breakfast does not land on
   // yesterday (UNFORGET S40).
   test("vandaagMovesOnAtMidnight", async ({ page }) => {
-    await eveningOf(page, localDay(), (time) => page.clock.install({ time }));
+    await eveningOf(page, tokyoYesterday(), (time) => page.clock.install({ time }));
     await page.clock.fastForward("05:00");
     await expect(page.getByText("Laat avondeten")).toHaveCount(0, { timeout: 15_000 });
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(nl("day.today"));
     await expect(page.getByRole("button", { name: nl("day.next") })).toBeDisabled();
   });
 
-  // A laptop that slept past midnight: its timer comes late, so coming back to the tab is enough. The fixed clock keeps
-  // the midnight timer out of it (real timers, a minute away).
-  test("backInTheTabTheNextMorningShowsThatDay", async ({ page }) => {
-    const day = localDay();
+  // Coming back to the tab after midnight is enough. The fixed clock keeps the timers out of it.
+  test("backInTheTabAfterMidnightShowsTheNewDay", async ({ page }) => {
+    const day = tokyoYesterday();
     await eveningOf(page, day, (time) => page.clock.setFixedTime(time));
-    await page.clock.setFixedTime(new Date(`${dayAfter(day, 1)}T08:00:00+09:00`));
+    await page.clock.setFixedTime(new Date(`${dayAfter(day, 1)}T00:01:00+09:00`));
     await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
     await expect(page.getByText("Laat avondeten")).toHaveCount(0, { timeout: 15_000 });
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(nl("day.today"));
   });
 
+  // A log sheet open at midnight closes when Vandaag moves on: what was being logged would otherwise land on a day the
+  // screen no longer shows.
+  test("aLogSheetOpenAtMidnightCloses", async ({ page }) => {
+    await eveningOf(page, tokyoYesterday(), (time) => page.clock.install({ time }));
+    await page.getByTestId("day.add.dinner").click();
+    await expect(page.getByTestId("log.search")).toBeVisible();
+    await page.clock.fastForward("05:00");
+    await expect(page.getByTestId("log.search")).toHaveCount(0, { timeout: 15_000 });
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(nl("day.today"));
+  });
+
+  // Woken past midnight with the tab in front, before any timer or event: the first tap moves on, and nothing is
+  // written on yesterday.
+  test("aTapPastMidnightDoesNotLogOnYesterday", async ({ page }) => {
+    const day = tokyoYesterday();
+    const user = await eveningOf(page, day, (time) => page.clock.setFixedTime(time));
+    await page.clock.setFixedTime(new Date(`${dayAfter(day, 1)}T00:01:00+09:00`));
+    await page.getByTestId("water.add").click();
+    await expect(page.getByText("Laat avondeten")).toHaveCount(0, { timeout: 15_000 });
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(nl("day.today"));
+    const { data, error } = await admin.from("water_entries").select("id").eq("user_id", user.id).eq("consumed_on", day);
+    expect(error).toBeNull();
+    expect(data).toEqual([]);
+  });
+
   // Looking back on purpose: that day stays when the date moves on.
   test("aDayLookedBackAtStaysPastMidnight", async ({ page }) => {
-    const day = localDay();
+    const day = tokyoYesterday();
     const user = await eveningOf(page, day, (time) => page.clock.install({ time }));
     await foodEntry(user.id, { consumed_on: dayAfter(day, -1), meal: "lunch", name: "De dag ervoor gegeten", kcal: 300 });
     await page.getByRole("button", { name: nl("day.previous") }).click();
     await expect(page.getByText("De dag ervoor gegeten")).toBeVisible({ timeout: 15_000 });
     await page.clock.fastForward("05:00");
     await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
+    // Room for a wrong move to land before looking.
+    await page.waitForTimeout(1000);
     await expect(page.getByText("De dag ervoor gegeten")).toBeVisible();
     await expect(page.getByRole("heading", { level: 1 })).not.toHaveText(nl("day.today"));
+    await expect(page.getByRole("button", { name: nl("day.next") })).toBeEnabled();
   });
 });
 
