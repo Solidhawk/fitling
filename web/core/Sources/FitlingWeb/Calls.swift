@@ -55,6 +55,8 @@ public func handle(_ request: Data) -> Data {
         case "shoppingOverview": return try encode(shoppingOverview(try input(request)))
         case "shoppingRefill": return try encode(shoppingRefill(try input(request)))
         case "shoppingNewItem": return try encode(shoppingNewItem(try input(request)))
+        case "remindersPlan": return try encode(remindersPlan(try input(request)))
+        case "reminderRules": return try encode(reminderRules())
         default:
             return failure("unknown function \(call.fn)")
         }

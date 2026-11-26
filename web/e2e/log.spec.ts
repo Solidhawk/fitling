@@ -45,6 +45,26 @@ test("servingsUseTheServingSize", async ({ page }) => {
   expect(data).toEqual({ kcal: 112.5, quantity_unit: "serving" });
 });
 
+// S40: a segment looks as on iOS (36 px), but can be tapped over 44 px, as Apple asks of every control.
+test("segmentsAreBigEnoughToTap", async ({ page }) => {
+  await start(page);
+  const product = await sharedProduct("Cruesli", { serving_size: 45 });
+  await search(page, product.name);
+  await page.getByRole("button", { name: new RegExp(product.name) }).click();
+  const segments = await page.getByRole("radio").all();
+  expect(segments.length).toBeGreaterThan(1);
+  for (const segment of segments) {
+    const box = await segment.boundingBox();
+    if (!box) throw new Error("segment not shown");
+    const middle = box.x + box.width / 2;
+    // Tapping 4 px above or below the drawn segment still hits it: 36 + 2 × 4 = 44.
+    for (const y of [box.y - 3.5, box.y + box.height + 3.5]) {
+      const hit = await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.closest('[role="radio"]')?.textContent, { x: middle, y });
+      expect(hit).toBe(await segment.textContent());
+    }
+  }
+});
+
 test("productWithoutKcalAsksForIt", async ({ page }) => {
   const user = await start(page);
   const product = await sharedProduct("Kruidenthee", { kcal_100: null });
@@ -115,8 +135,9 @@ test("addAnOwnProductAndLogIt", async ({ page }, info) => {
   expect(data).toEqual({ kcal_100: 280.4, search_name: "oma's appeltaart", owner_id: user.id });
 });
 
-// Review Focus: without a connection nothing is stored and the portion stays as it was typed.
-test("loggingWithoutAConnectionKeepsThePortion", async ({ page }) => {
+// Phase 7: without a connection the portion is logged all the same and waits in this browser, as on the iPhone; it
+// arrives once the app can send it.
+test("loggingWithoutAConnectionWaitsForIt", async ({ page }) => {
   const user = await start(page);
   const product = await sharedProduct("Banaan");
   await search(page, product.name);
@@ -124,10 +145,89 @@ test("loggingWithoutAConnectionKeepsThePortion", async ({ page }) => {
   await page.getByTestId("portion.quantity").fill("120");
   await page.route("**/rest/v1/food_entries*", (route) => route.abort("internetdisconnected"));
   await page.getByTestId("portion.save").click();
-  await expect(page.getByText(nl("error.network"))).toBeVisible();
-  await expect(page.getByTestId("portion.quantity")).toHaveValue("120");
+  await expect(page.locator('[data-screen="logFood"]')).toHaveCount(0);
+  await expect(page.getByTestId("day.kcal.breakfast")).toHaveText(/300\s?kcal/);
   const { data } = await admin.from("food_entries").select("id").eq("user_id", user.id);
   expect(data).toEqual([]);
+  await page.unroute("**/rest/v1/food_entries*");
+  await page.reload();
+  await expect(page.getByTestId("day.kcal.breakfast")).toHaveText(/300\s?kcal/, { timeout: 15_000 });
+  await expect.poll(async () => (await admin.from("food_entries").select("kcal").eq("user_id", user.id)).data).toEqual([{ kcal: 300 }]);
+});
+
+/** Logs a fresh product with the server's answers to writing food entries replaced by `answer`. */
+async function logWith(page: Page, name: string, answer: Parameters<Page["route"]>[1]) {
+  const product = await sharedProduct(name);
+  await search(page, product.name);
+  await page.getByRole("button", { name: new RegExp(product.name) }).click();
+  await page.route("**/rest/v1/food_entries*", answer);
+  await page.getByTestId("portion.save").click();
+  await expect(page.locator('[data-screen="logFood"]')).toHaveCount(0);
+}
+
+const waitingWrites = (page: Page, userID: string) =>
+  page.evaluate(
+    (key) => (JSON.parse(localStorage.getItem(key) ?? "[]") as { sentAt?: number }[]).filter((write) => write.sentAt === undefined).length,
+    `fitling.offline.${userID}.writes`,
+  );
+
+// Signing out erases what still waits, so it asks first, as AccountView does on the iPhone.
+test("signingOutWithAWaitingLogAsksFirst", async ({ page }) => {
+  await start(page);
+  await logWith(page, "Peer", (route) => route.abort("internetdisconnected"));
+  await page.getByRole("tab", { name: nl("profile.title") }).click();
+  await page.getByRole("button", { name: nl("account.title") }).click();
+  await page.getByRole("button", { name: nl("account.signOut") }).click();
+  await expect(page.getByRole("alertdialog", { name: nl("account.unsynced.title") })).toBeVisible();
+  await expect(page.getByText(nl("account.unsynced.body.web"))).toBeVisible();
+  await page.getByRole("button", { name: nl("common.cancel") }).click();
+  await expect(page.locator('[data-page="account"]')).toBeVisible();
+  await page.getByRole("button", { name: nl("account.signOut") }).click();
+  await page.getByRole("button", { name: nl("account.unsynced.force") }).click();
+  await expect(page.locator('[data-screen="welcome"]')).toBeAttached();
+});
+
+// Fable's review of phase 7: a log the server keeps turning down although it answers (a token, a policy) waits, and
+// Vandaag says that not everything is saved, until it goes through.
+test("aLogTheServerKeepsTurningDownSaysSo", async ({ page }) => {
+  const user = await start(page);
+  await logWith(page, "Kiwi", (route) =>
+    route.request().method() === "POST"
+      ? route.fulfill({
+          status: 401,
+          contentType: "application/json",
+          body: JSON.stringify({ code: "PGRST301", message: "JWT expired", details: null, hint: null }),
+        })
+      : route.continue(),
+  );
+  await expect(page.getByTestId("day.unsaved")).toHaveText(nl("account.unsynced.title"));
+  await page.unroute("**/rest/v1/food_entries*");
+  await page.reload();
+  await expect.poll(async () => (await admin.from("food_entries").select("id").eq("user_id", user.id)).data?.length, { timeout: 15_000 }).toBe(1);
+  await expect(page.getByTestId("day.kcal.breakfast")).toHaveText(/250\s?kcal/, { timeout: 15_000 });
+  await expect(page.getByTestId("day.unsaved")).toHaveCount(0);
+});
+
+// A log that waited and is refused for good when it is sent later is told once, not dropped in silence.
+test("aWaitingLogRefusedLaterIsTold", async ({ page }) => {
+  const user = await start(page);
+  await logWith(page, "Mango", (route) => route.abort("internetdisconnected"));
+  await page.unroute("**/rest/v1/food_entries*");
+  await page.route("**/rest/v1/food_entries*", (route) =>
+    route.request().method() === "POST"
+      ? route.fulfill({
+          status: 400,
+          contentType: "application/json",
+          body: JSON.stringify({ code: "23514", message: "new row violates check constraint", details: null, hint: null }),
+        })
+      : route.continue(),
+  );
+  await page.reload();
+  // Sent at sign-in and refused: Vandaag says so at once, without another visit.
+  await expect(page.getByRole("alertdialog", { name: nl("offline.refused") })).toBeVisible({ timeout: 15_000 });
+  expect(await waitingWrites(page, user.id)).toBe(0);
+  await page.getByRole("button", { name: nl("common.ok") }).click();
+  await expect(page.getByTestId("day.kcal.breakfast")).toHaveText(/0\s?kcal/);
 });
 
 // Review: a failed first try must not leave an own copy behind for every retry (FoodDiary keeps its copy).
@@ -137,14 +237,26 @@ test("aRetryUsesTheOwnCopyMadeTheFirstTime", async ({ page }) => {
   await search(page, product.name);
   await page.getByRole("button", { name: new RegExp(product.name) }).click();
   await page.getByTestId("portion.kcal").fill("2");
-  await page.route("**/rest/v1/food_entries*", (route) => route.abort("internetdisconnected"));
+  // The server turns the entry down once, for a rule it breaks: that never passes later, so the portion stays to try
+  // again and the entry is not kept to be sent.
+  await page.route("**/rest/v1/food_entries*", (route) =>
+    route.request().method() === "POST"
+      ? route.fulfill({
+          status: 400,
+          contentType: "application/json",
+          body: JSON.stringify({ code: "23514", message: "new row violates check constraint", details: null, hint: null }),
+        })
+      : route.continue(),
+  );
   await page.getByTestId("portion.save").click();
-  await expect(page.getByText(nl("error.network"))).toBeVisible();
+  await expect(page.getByText(nl("error.server"))).toBeVisible();
   await page.unroute("**/rest/v1/food_entries*");
   await page.getByTestId("portion.save").click();
   await expect(page.locator('[data-screen="logFood"]')).toHaveCount(0);
   const { data } = await admin.from("products").select("id").eq("owner_id", user.id);
   expect(data).toHaveLength(1);
+  const { data: entries } = await admin.from("food_entries").select("id").eq("user_id", user.id);
+  expect(entries).toHaveLength(1);
 });
 
 // PortionView: without an amount there is nothing to add and nothing to save.

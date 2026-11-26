@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { FitlingCore, IsoDay, QuantityUnit } from "../core/fitlingCore";
 import { failure } from "./failure";
+import { kept, rowsBetween, send } from "./offline";
 import { allRows } from "./pages";
 import { type Product, productName, productsByID } from "./products";
 
@@ -24,6 +25,7 @@ export interface FoodEntry {
 }
 
 type Row = Record<string, unknown>;
+type KeptRow = Row & { id: string };
 
 function maybe(value: unknown): number | undefined {
   return value === null || value === undefined ? undefined : Number(value);
@@ -46,11 +48,21 @@ function entryFromRow(row: Row): FoodEntry {
   };
 }
 
-/** What was logged on a day, in the order it was logged (FoodDiary.entries). */
+function inOrder(rows: Row[]): FoodEntry[] {
+  return rows.map(entryFromRow).sort((a, b) => Date.parse(a.updatedAt) - Date.parse(b.updatedAt));
+}
+
+/**
+ * What was logged on a day, in the order it was logged (FoodDiary.entries); without a connection as this browser last
+ * knew it, with what was logged here since.
+ */
 export async function entriesOn(client: SupabaseClient, day: IsoDay): Promise<FoodEntry[]> {
-  const { data, error } = await client.from("food_entries").select("*").eq("consumed_on", day).is("deleted_at", null).order("updated_at");
-  if (error) throw failure(error);
-  return (data as Row[]).map(entryFromRow);
+  const rows = await rowsBetween("food_entries", day, day, async () => {
+    const { data, error } = await client.from("food_entries").select("*").eq("consumed_on", day).is("deleted_at", null).order("updated_at");
+    if (error) throw failure(error);
+    return data as KeptRow[];
+  });
+  return inOrder(rows);
 }
 
 /**
@@ -58,17 +70,23 @@ export async function entriesOn(client: SupabaseClient, day: IsoDay): Promise<Fo
  * reads every entry since.
  */
 export async function entriesBetween(client: SupabaseClient, first: IsoDay, last: IsoDay): Promise<FoodEntry[]> {
-  const rows = await allRows((from, to) =>
-    client
-      .from("food_entries")
-      .select("*")
-      .gte("consumed_on", first)
-      .lte("consumed_on", last)
-      .is("deleted_at", null)
-      .order("id")
-      .range(from, to),
+  const rows = await rowsBetween(
+    "food_entries",
+    first,
+    last,
+    async () =>
+      (await allRows((from, to) =>
+        client
+          .from("food_entries")
+          .select("*")
+          .gte("consumed_on", first)
+          .lte("consumed_on", last)
+          .is("deleted_at", null)
+          .order("id")
+          .range(from, to),
+      )) as KeptRow[],
   );
-  return rows.map(entryFromRow);
+  return inOrder(rows);
 }
 
 /** Days with a finished workout from `first` through `last`. */
@@ -91,29 +109,39 @@ export async function workoutDaysBetween(client: SupabaseClient, first: IsoDay, 
 export const glassMl = 250;
 
 export async function waterOn(client: SupabaseClient, day: IsoDay): Promise<number> {
-  const { data, error } = await client.from("water_entries").select("amount_ml").eq("consumed_on", day).is("deleted_at", null);
-  if (error) throw failure(error);
-  return (data as Row[]).reduce((total, row) => total + Number(row.amount_ml), 0);
-}
-
-/** One glass at a time, so two devices that log water add up instead of colliding (FoodDiary.addWater). */
-export async function addWater(client: SupabaseClient, userID: string, day: IsoDay, now: Date, amountMl = glassMl): Promise<void> {
-  const { error } = await client
-    .from("water_entries")
-    .insert({ id: crypto.randomUUID(), user_id: userID, consumed_on: day, amount_ml: amountMl, updated_at: now.toISOString() });
-  if (error) throw failure(error);
-}
-
-/** A deletion is a marker; the iPhone's sync removes the row there too. */
-export async function deleteEntry(client: SupabaseClient, id: string, now: Date): Promise<void> {
-  const moment = now.toISOString();
-  const { error } = await client.from("food_entries").update({ deleted_at: moment, updated_at: moment }).eq("id", id);
-  if (error) throw failure(error);
+  const rows = await rowsBetween("water_entries", day, day, async () => {
+    const { data, error } = await client
+      .from("water_entries")
+      .select("id, consumed_on, amount_ml, updated_at")
+      .eq("consumed_on", day)
+      .is("deleted_at", null);
+    if (error) throw failure(error);
+    return data as KeptRow[];
+  });
+  return rows.reduce((total, row) => total + Number(row.amount_ml), 0);
 }
 
 /**
- * Stores what `quantity` of the product adds to the day, as it is now (FoodDiary.log). Throws when the product has no
- * kcal or the amount cannot be worked out.
+ * One glass at a time, so two devices that log water add up instead of colliding (FoodDiary.addWater). Without a
+ * connection the glass waits in this browser and is sent later.
+ */
+export async function addWater(client: SupabaseClient, userID: string, day: IsoDay, now: Date, amountMl = glassMl): Promise<void> {
+  await send(client, {
+    table: "water_entries",
+    kind: "insert",
+    row: { id: crypto.randomUUID(), user_id: userID, consumed_on: day, amount_ml: amountMl, updated_at: now.toISOString() },
+  });
+}
+
+/** A deletion is a marker; the iPhone's sync removes the row there too. Without a connection it waits, as a log does. */
+export async function deleteEntry(client: SupabaseClient, id: string, now: Date): Promise<void> {
+  const moment = now.toISOString();
+  await send(client, { table: "food_entries", kind: "update", row: { id, deleted_at: moment, updated_at: moment } });
+}
+
+/**
+ * Stores what `quantity` of the product adds to the day, as it is now (FoodDiary.log); without a connection it waits in
+ * this browser and is sent later. Throws when the product has no kcal or the amount cannot be worked out.
  */
 export async function logProduct(
   client: SupabaseClient,
@@ -144,13 +172,16 @@ export async function logProduct(
     fat_g: stored.nutrients.fatG ?? null,
     updated_at: entry.now.toISOString(),
   };
-  const { error } = await client.from("food_entries").insert(row);
-  if (error) throw failure(error);
+  await send(client, { table: "food_entries", kind: "insert", row });
   return entryFromRow(row);
 }
 
 /** The last different products the user logged, newest first (FoodDiary.recentProducts). */
 export async function recentProducts(client: SupabaseClient, core: FitlingCore): Promise<Product[]> {
+  return kept("recents", () => recentFromServer(client, core));
+}
+
+async function recentFromServer(client: SupabaseClient, core: FitlingCore): Promise<Product[]> {
   const { data, error } = await client
     .from("food_entries")
     .select("product_id, updated_at")
@@ -173,12 +204,15 @@ async function favoriteRows(client: SupabaseClient, productID?: string): Promise
 }
 
 export async function favoriteProducts(client: SupabaseClient): Promise<Product[]> {
-  const ids = [...new Set((await favoriteRows(client)).map((row) => row.product_id as string))];
-  return productsByID(client, ids);
+  return kept("favorites", async () => {
+    const ids = [...new Set((await favoriteRows(client)).map((row) => row.product_id as string))];
+    return productsByID(client, ids);
+  });
 }
 
 export async function isFavorite(client: SupabaseClient, productID: string): Promise<boolean> {
-  return (await favoriteRows(client, productID)).length > 0;
+  const ids = await kept("favoriteIDs", async () => (await favoriteRows(client)).map((row) => row.product_id as string));
+  return ids.includes(productID);
 }
 
 /** On: one row; off: every row for the product gets deleted_at (FoodDiary.setFavorite). */

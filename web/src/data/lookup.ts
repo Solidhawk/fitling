@@ -1,6 +1,7 @@
 import { FunctionsHttpError, type SupabaseClient } from "@supabase/supabase-js";
 import type { FitlingCore } from "../core/fitlingCore";
 import { failure } from "./failure";
+import { noNetwork } from "./offline";
 import { type Product, productFromRow } from "./products";
 
 /** What a scanned or typed barcode led to (ProductLookupResult and LogFoodViewModel.ScanOutcome). */
@@ -28,6 +29,7 @@ function isFresh(product: Product, now: Date): boolean {
 export async function lookUp(client: SupabaseClient, core: FitlingCore, scanned: string, now: Date): Promise<LookupResult> {
   const { gtin } = core.barcode({ text: scanned });
   if (!gtin) return { kind: "invalid" };
+  if (noNetwork()) return { kind: "unavailable", gtin };
 
   let local: Product | undefined;
   const stored = await client.from("products").select("*").eq("gtin", gtin).is("deleted_at", null);

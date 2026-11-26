@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { FitlingCore, PartnerEvent, PartnerSnapshot } from "../core/fitlingCore";
+import type { FitlingCore, PartnerDays, PartnerEvent, PartnerSnapshot, ReminderSettings } from "../core/fitlingCore";
 import { useCore } from "../core/useCore";
 import { partnerWeek, savePartner, type Partner as StoredPartner } from "../data/creature";
+import { noNetwork } from "../data/offline";
 import { loadProfile, loadTargetPeriods } from "../data/profileStore";
+import { loadReminderSettings, notificationsRefused, planReminders, pushSupport, saveReminderSettings, turnOn } from "../data/push";
 import type { Tone } from "../data/saveCreature";
 import { supabase } from "../data/supabase";
 import { today } from "../day";
@@ -21,6 +23,8 @@ import { PartnerEdit } from "./PartnerEdit";
 interface Shown {
   partner: StoredPartner;
   snapshot: PartnerSnapshot;
+  /** What the snapshot was made from; the reminders are planned from the same. */
+  days: PartnerDays;
 }
 
 /** The four ways a day earns XP, in the order of the iPhone, with the part of today's XP each one shows. */
@@ -40,8 +44,13 @@ async function load(core: FitlingCore, userID: string, advance: Advance): Promis
     partnerWeek(supabase, now),
   ]);
   if (!partner) return undefined;
-  const snapshot = core.partnerSnapshot({ creature: partner.state, ...week, periods, fallback: profile.targets, today: now });
-  return { partner, snapshot };
+  const days = { creature: partner.state, ...week, periods, fallback: profile.targets, today: now };
+  return { partner, snapshot: core.partnerSnapshot(days), days };
+}
+
+/** "12:30" for 750 minutes after midnight, as a time field writes it. */
+function timeText(minutes: number): string {
+  return `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
 }
 
 function newsLine(event: PartnerEvent): string {
@@ -60,7 +69,8 @@ function newsLine(event: PartnerEvent): string {
 /**
  * The partner tab: how the partner is doing, what today earns, what it wears and its colour (PartnerTabView.swift).
  * Finished days are folded in when it opens and when the app comes back; what that brought shows as news once.
- * Reminders come with Web Push in a later phase.
+ * Reminders go with Web Push, when this build has the key for it (push.ts); planned again when the tab opens and when
+ * the name or the times change.
  */
 export function Partner({
   userID,
@@ -77,8 +87,11 @@ export function Partner({
   const [shown, setShown] = useState<Shown>();
   const [editing, setEditing] = useState(false);
   const [failed, setFailed] = useState<string>();
+  const [reminders, setReminders] = useState<ReminderSettings>(loadReminderSettings);
+  const [refused, setRefused] = useState(notificationsRefused);
   const request = useRef(0);
   const saving = useRef<Promise<void>>(Promise.resolve());
+  const support = pushSupport();
 
   const reload = useCallback(async () => {
     if (!core) return;
@@ -86,6 +99,7 @@ export function Partner({
     try {
       const next = await load(core, userID, advance);
       if (mine === request.current) setShown(next);
+      if (next) void planReminders(supabase, core, { settings: loadReminderSettings(), name: next.partner.name, days: next.days }).catch(() => undefined);
     } catch (error) {
       if (mine === request.current) setFailed(error instanceof Error ? error.message : "error.server");
     }
@@ -128,19 +142,54 @@ export function Partner({
     );
   }
 
-  const { partner, snapshot } = shown;
+  const { partner, snapshot, days } = shown;
   const species = partner.species;
+  const rules = core.reminderRules();
+
+  /** Plans for the server; a failure is shown only when the user just changed something. */
+  function plan(settings: ReminderSettings, name: string, said: boolean) {
+    if (!core) return;
+    void planReminders(supabase, core, { settings, name, days }).catch((error: unknown) => {
+      if (said) setFailed(error instanceof Error ? error.message : "error.server");
+    });
+  }
+
+  /** Turning them on asks the browser first; when it says no, they stay off (PartnerViewModel.setRemindersOn). */
+  async function setRemindersOn(isOn: boolean) {
+    setRefused(false);
+    if (isOn) {
+      const answer = await turnOn();
+      if (answer === "refused") setRefused(true);
+      if (answer === "failed") setFailed(noNetwork() ? "error.network" : "error.server");
+      if (answer !== "on") return;
+    }
+    const next = { ...reminders, isOn };
+    setReminders(next);
+    saveReminderSettings(next);
+    plan(next, partner.name, true);
+  }
+
+  /** Only a time outside the quiet hours is kept (PartnerViewModel.setReminderTime). */
+  function setReminderTime(index: number, text: string) {
+    const [hours, minutes] = text.split(":").map(Number);
+    const value = hours * 60 + minutes;
+    if (!Number.isInteger(value) || value < rules.quietUntil || value >= rules.quietFrom) return;
+    const next = { ...reminders, times: reminders.times.map((time, at) => (at === index ? value : time)) };
+    setReminders(next);
+    saveReminderSettings(next);
+    plan(next, partner.name, true);
+  }
 
   function toggle(item: string) {
     if (!core || !snapshot.unlockedItems.includes(item)) return;
     const { worn } = core.wearing({ worn: partner.items, item, unlocked: snapshot.unlockedItems });
-    void change({ partner: { ...partner, items: worn }, snapshot }, { items: worn });
+    void change({ partner: { ...partner, items: worn }, snapshot, days }, { items: worn });
   }
 
   function setColor(index: number) {
     if (index < 0 || index >= snapshot.unlockedColorCount || index === partner.state.colorIndex) return;
     void change(
-      { partner: { ...partner, state: { ...partner.state, colorIndex: index } }, snapshot: { ...snapshot, colorIndex: index } },
+      { partner: { ...partner, state: { ...partner.state, colorIndex: index } }, snapshot: { ...snapshot, colorIndex: index }, days },
       { colorIndex: index },
     );
   }
@@ -152,8 +201,24 @@ export function Partner({
     if (cleaned !== "" && cleaned !== partner.name) stored.name = cleaned;
     if (tone !== partner.state.tone) stored.tone = tone;
     if (Object.keys(stored).length === 0) return;
-    void change({ partner: { ...partner, name: stored.name ?? partner.name, state: { ...partner.state, tone } }, snapshot }, stored);
+    const next = { partner: { ...partner, name: stored.name ?? partner.name, state: { ...partner.state, tone } }, snapshot, days };
+    void change(next, stored);
+    // The reminders carry the name and speak in the voice: planned again with both (PartnerViewModel.rename, setTone).
+    if (core) {
+      void planReminders(supabase, core, {
+        settings: reminders,
+        name: next.partner.name,
+        days: { ...days, creature: next.partner.state },
+      }).catch(() => undefined);
+    }
   }
+
+  const remindersFooter =
+    support === "homeScreen"
+      ? t("partner.reminders.homeScreen")
+      : refused
+        ? t("partner.reminders.refused")
+        : t("partner.reminders.footer %@", partner.name);
 
   return (
     <div className="tab-page" data-page="partner">
@@ -239,6 +304,43 @@ export function Partner({
             />
           </ListRow>
         </ListSection>
+        {support !== "off" && (
+          <ListSection header={t("partner.reminders.title")} footer={remindersFooter}>
+            <ListRow>
+              <label className="toggle-row">
+                <span>{t("partner.reminders.toggle")}</span>
+                <input
+                  type="checkbox"
+                  role="switch"
+                  className="switch"
+                  data-testid="partner.reminders.toggle"
+                  checked={support === "ready" && reminders.isOn}
+                  disabled={support !== "ready"}
+                  onChange={(event) => void setRemindersOn(event.target.checked)}
+                />
+              </label>
+            </ListRow>
+            {support === "ready" &&
+              reminders.isOn &&
+              reminders.times.map((time, index) => (
+                <ListRow key={index}>
+                  <label className="labeled picker-row">
+                    <span>{t(index === 0 ? "partner.reminders.first" : "partner.reminders.second")}</span>
+                    <input
+                      className="picker"
+                      type="time"
+                      step={60}
+                      min={timeText(rules.quietUntil)}
+                      max={timeText(rules.quietFrom - 1)}
+                      value={timeText(time)}
+                      data-testid={`partner.reminders.time.${index}`}
+                      onChange={(event) => setReminderTime(index, event.target.value)}
+                    />
+                  </label>
+                </ListRow>
+              ))}
+          </ListSection>
+        )}
       </List>
       {editing && <PartnerEdit name={partner.name} tone={partner.state.tone as Tone} onSave={edit} onCancel={() => setEditing(false)} />}
       {news.length > 0 && !editing && <Alert title={t("partner.news.title")} message={news.map(newsLine).join("\n")} onClose={onNewsSeen} />}

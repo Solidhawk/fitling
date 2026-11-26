@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { FitlingCore, OwnProductFields } from "../core/fitlingCore";
 import { failure } from "./failure";
+import { noNetwork } from "./offline";
 
 /** A product as the app keeps it (Product on iOS): shared (`ownerID` nil) or the user's own. */
 export interface Product {
@@ -99,6 +100,8 @@ export async function searchProducts(
 ): Promise<{ own: Product[]; online: Product[] }> {
   const term = core.searchKey({ text: query }).key;
   if (term === "") return { own: [], online: [] };
+  // Without a network: what this browser knows, as the iPhone searches its own copy.
+  if (noNetwork()) return { own: known.filter((product) => product.searchName.includes(term)).slice(0, searchLimit), online: [] };
   const mine = await client
     .from("products")
     .select("*")

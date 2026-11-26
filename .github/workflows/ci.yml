@@ -79,6 +79,7 @@ jobs:
           done
           db="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
           psql "$db" -v ON_ERROR_STOP=1 -q -f supabase/schema.sql
+          psql "$db" -v ON_ERROR_STOP=1 -q -f supabase/web-push.sql
           psql "$db" -v ON_ERROR_STOP=1 -q -f supabase/seed/sport.sql
           psql "$db" -v ON_ERROR_STOP=1 -q -f supabase/seed/recipes.sql
           eval "$(supabase status -o env)"
@@ -93,6 +94,10 @@ jobs:
           npm test
       - name: Webapp bouwen
         working-directory: web
+        env:
+          # The public key of the example in RFC 8291, so the build has the reminders section; the browser tests fake
+          # the push service (reminders.spec.ts). Not the project's key: that one is the GitHub variable below.
+          VITE_VAPID_PUBLIC_KEY: BP4z9KsN6nGRTbVYI_c7VJSPQTBtkgcy27mlmlMoZIIgDll6e3vCYLocInmYWAmS6TlzAC8wEqKK6PBru3jl7A8
         run: npm run build
       - name: Webapp in Safari (WebKit) en Chrome
         working-directory: web
@@ -113,6 +118,8 @@ jobs:
         env:
           VITE_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
+          # Optional (docs/web-push.md): without it the site has no reminders.
+          VITE_VAPID_PUBLIC_KEY: ${{ vars.VAPID_PUBLIC_KEY }}
         run: |
           if [ -z "$VITE_SUPABASE_URL" ] || [ -z "$VITE_SUPABASE_PUBLISHABLE_KEY" ]; then
             echo "::error::Zet de GitHub-variabelen SUPABASE_URL en SUPABASE_PUBLISHABLE_KEY (S34) voordat de site live gaat."
@@ -158,6 +165,7 @@ jobs:
             sleep 10
           done
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -q -f supabase/schema.sql
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -q -f supabase/web-push.sql
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -q -f supabase/seed/sport.sql
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -q -f supabase/seed/recipes.sql
           supabase test db
@@ -179,6 +187,9 @@ jobs:
             exit 1
           fi
           psql "$db" -v ON_ERROR_STOP=1 -q -f supabase/schema.sql
+          # Twee keer: op een project dat al draait, kan het opnieuw (docs/web-push.md).
+          psql "$db" -v ON_ERROR_STOP=1 -q -f supabase/web-push.sql
+          psql "$db" -v ON_ERROR_STOP=1 -q -f supabase/web-push.sql
           psql "$db" -v ON_ERROR_STOP=1 -q -f supabase/seed/sport.sql
           psql "$db" -v ON_ERROR_STOP=1 -q -f supabase/seed/recipes.sql
           supabase test db
@@ -197,6 +208,21 @@ jobs:
             echo "Verwacht 25 jobs op 25 tijden, één voor Albert Heijn deel 4; kreeg: $got"
             exit 1
           fi
+      # De herinneringen van de webversie (fase 7): twee keer draaien geeft één job, elke minuut. De opdracht
+      # zelf moet ook kloppen; zonder herinnering die klaarstaat, roept hij niets aan.
+      - name: Herinneringen versturen (send-reminders-cron.sql)
+        run: |
+          db="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
+          psql "$db" -v ON_ERROR_STOP=1 -q -o /dev/null -f supabase/send-reminders-cron.sql
+          psql "$db" -v ON_ERROR_STOP=1 -q -o /dev/null -f supabase/send-reminders-cron.sql
+          got=$(psql "$db" -v ON_ERROR_STOP=1 -tA -c "
+            select count(*) || ' ' || min(schedule) from cron.job where jobname = 'send-reminders'")
+          if [ "$got" != "1 * * * * *" ]; then
+            echo "Verwacht één job, elke minuut; kreeg: $got"
+            exit 1
+          fi
+          command=$(psql "$db" -v ON_ERROR_STOP=1 -tA -c "select command from cron.job where jobname = 'send-reminders'")
+          psql "$db" -v ON_ERROR_STOP=1 -q -o /dev/null -c "$command"
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.9.8

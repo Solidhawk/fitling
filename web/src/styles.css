@@ -645,6 +645,15 @@ p {
   outline-offset: 2px;
 }
 
+.switch:disabled,
+.toggle-row:has(.switch:disabled) {
+  cursor: default;
+}
+
+.switch:disabled {
+  opacity: 0.45;
+}
+
 /* The bar at the bottom of an onboarding step: progress pills and the next step. */
 .with-bottom-bar {
   padding-bottom: calc(9rem + env(safe-area-inset-bottom));
@@ -1661,6 +1670,7 @@ input.picker[type="date"] {
 }
 
 .segment {
+  position: relative;
   flex: 1;
   min-height: 2.25rem;
   border: 0;
@@ -1671,6 +1681,13 @@ input.picker[type="date"] {
   font-size: 0.8125rem;
   font-weight: 600;
   cursor: pointer;
+}
+
+/* Drawn at 36 px, as on iOS; tapped over 44 px, as Apple asks of every control (S40). */
+.segment::before {
+  content: "";
+  position: absolute;
+  inset: -4px 0;
 }
 
 .segment[aria-checked="true"] {

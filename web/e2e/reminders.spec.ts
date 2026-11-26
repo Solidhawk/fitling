@@ -1,0 +1,125 @@
+import { expect, type Page, test } from "./fixtures";
+import { fakePush } from "./push";
+import { admin, createUser, nl, signIn } from "./users";
+
+// The partner's reminders on the web (phase 7), as ReminderTests on iOS: turned on from the partner tab, planned with
+// the rules of the app and handed to the server, which sends them with Web Push. Playwright has no push service, so
+// the browser's is faked: the subscription, the permission, and a browser without push (Safari outside the home
+// screen). The build has the public test key of the CI job (VITE_VAPID_PUBLIC_KEY).
+
+test.use({ timezoneId: "Europe/Amsterdam" });
+
+async function openPartner(page: Page) {
+  const user = await createUser({ profile: true, creature: true });
+  await signIn(page, user.email);
+  await expect(page.getByTestId("day.progress")).toBeVisible({ timeout: 15_000 });
+  await page.getByRole("tab", { name: nl("partner.title") }).click();
+  await expect(page.getByTestId("partner.hero")).toBeVisible({ timeout: 15_000 });
+  return user;
+}
+
+async function planned(userID: string) {
+  const { data, error } = await admin.from("push_reminders").select("fire_at, title, body").eq("user_id", userID).order("fire_at");
+  if (error) throw error;
+  return data;
+}
+
+/** Minutes after midnight in Amsterdam, where the browser of these tests is. */
+function minutes(moment: string): number {
+  const parts = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Amsterdam", hour: "2-digit", minute: "2-digit", hourCycle: "h23" })
+    .formatToParts(new Date(moment))
+    .reduce<Record<string, string>>((all, part) => ({ ...all, [part.type]: part.value }), {});
+  return Number(parts.hour) * 60 + Number(parts.minute);
+}
+
+/** What an owl with the sweet voice can say (CreatureEngine.messageKeys), in Dutch. */
+const sweetMessages = ["fit", "normal", "tooMuch", "tooLittle", "asleep", "hungry"].flatMap((topic) =>
+  [1, 2, 3].map((variant) => nl(`creature.message.${topic}.sweet.${variant}`)),
+);
+
+test("remindersAreHandedToTheServer", async ({ page }, info) => {
+  await fakePush(page);
+  const user = await openPartner(page);
+  await page.getByTestId("partner.reminders.toggle").scrollIntoViewIfNeeded();
+  await page.screenshot({ path: `test-results/screens/${info.project.name}-herinneringen.png` });
+  const before = Date.now();
+  await page.getByTestId("partner.reminders.toggle").click();
+  await expect(page.getByTestId("partner.reminders.toggle")).toBeChecked();
+  // Today what is still to come, tomorrow both: lunch and dinner, with the partner's name and what it would say.
+  await expect.poll(async () => (await planned(user.id)).length, { timeout: 15_000 }).toBeGreaterThanOrEqual(2);
+  for (const reminder of await planned(user.id)) {
+    expect([12 * 60 + 30, 18 * 60 + 30]).toContain(minutes(reminder.fire_at));
+    expect(reminder.title).toBe("Uiltje");
+    expect(sweetMessages).toContain(reminder.body);
+    // Only what was still to come when it was planned.
+    expect(Date.parse(reminder.fire_at)).toBeGreaterThan(before);
+  }
+  await page.screenshot({ path: `test-results/screens/${info.project.name}-herinneringen-aan.png` });
+
+  // Another time is planned again; the settings stay in this browser.
+  await page.getByTestId("partner.reminders.time.1").fill("19:00");
+  await expect.poll(async () => (await planned(user.id)).map((reminder) => minutes(reminder.fire_at))).toContain(19 * 60);
+  await page.reload();
+  await page.getByRole("tab", { name: nl("partner.title") }).click();
+  await expect(page.getByTestId("partner.reminders.time.1")).toHaveValue("19:00", { timeout: 15_000 });
+
+  // A time in the quiet hours is not taken (ReminderSettings.isAllowed).
+  await page.getByTestId("partner.reminders.time.0").fill("22:00");
+  await expect(page.getByTestId("partner.reminders.time.0")).toHaveValue("12:30");
+
+  await page.getByTestId("partner.reminders.toggle").click();
+  await expect(page.getByTestId("partner.reminders.toggle")).not.toBeChecked();
+  await expect.poll(async () => (await planned(user.id)).length).toBe(0);
+});
+
+test("refusedNotificationsKeepRemindersOff", async ({ page }) => {
+  await fakePush(page, { refuse: true });
+  const user = await openPartner(page);
+  await page.getByTestId("partner.reminders.toggle").click();
+  await expect(page.getByText(nl("partner.reminders.refused"))).toBeVisible();
+  await expect(page.getByTestId("partner.reminders.toggle")).not.toBeChecked();
+  const { data } = await admin.from("push_subscriptions").select("id").eq("user_id", user.id);
+  expect(data).toEqual([]);
+});
+
+test("withoutTheHomeScreenRemindersSayHow", async ({ page }) => {
+  await fakePush(page, { noPush: true });
+  await openPartner(page);
+  await expect(page.getByText(nl("partner.reminders.homeScreen"))).toBeVisible();
+  await expect(page.getByTestId("partner.reminders.toggle")).toBeDisabled();
+});
+
+// RootViewModel on iOS empties the reminders at sign-out: they carry the partner's name and mood.
+test("signingOutRemovesTheReminders", async ({ page }) => {
+  await fakePush(page);
+  const user = await openPartner(page);
+  await page.getByTestId("partner.reminders.toggle").click();
+  await expect.poll(async () => (await planned(user.id)).length, { timeout: 15_000 }).toBeGreaterThanOrEqual(2);
+  await page.getByRole("tab", { name: nl("profile.title") }).click();
+  await page.getByRole("button", { name: nl("account.title") }).click();
+  await page.getByRole("button", { name: nl("account.signOut") }).click();
+  await expect(page.locator('[data-screen="welcome"]')).toBeAttached();
+  const { data } = await admin.from("push_subscriptions").select("id").eq("user_id", user.id);
+  expect(data).toEqual([]);
+  expect(await planned(user.id)).toEqual([]);
+});
+
+// Fable's review of phase 7: a session that ends by itself (here: revoked elsewhere, and the token ran out) stops the
+// reminders in this browser too, as RootViewModel empties them on iOS; the push service then turns the server away.
+test("aSessionThatEndsByItselfStopsTheReminders", async ({ page }) => {
+  await fakePush(page);
+  const user = await openPartner(page);
+  await page.getByTestId("partner.reminders.toggle").click();
+  await expect.poll(async () => (await planned(user.id)).length, { timeout: 15_000 }).toBeGreaterThanOrEqual(2);
+  const token = await page.evaluate(() => (JSON.parse(localStorage.getItem("fitling-session") ?? "{}") as { access_token?: string }).access_token ?? "");
+  const { error } = await admin.auth.admin.signOut(token, "global");
+  if (error) throw error;
+  await page.evaluate(() => {
+    const session = JSON.parse(localStorage.getItem("fitling-session") ?? "{}") as { expires_at?: number };
+    session.expires_at = Math.floor(Date.now() / 1000) - 3600;
+    localStorage.setItem("fitling-session", JSON.stringify(session));
+  });
+  await page.reload();
+  await expect(page.locator('[data-screen="welcome"]')).toBeAttached({ timeout: 15_000 });
+  await expect.poll(() => page.evaluate(() => (JSON.parse(sessionStorage.getItem("e2e.push") ?? "{}") as { endpoint?: string }).endpoint ?? null)).toBeNull();
+});

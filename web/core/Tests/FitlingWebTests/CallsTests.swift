@@ -528,4 +528,33 @@ import FitlingCore
         let typed = try answer("shoppingNewItem", #"{"text":"  Melk  "}"#)
         #expect((typed["item"] as? [String: Any])?["name"] as? String == "Melk")
     }
+
+    // Web phase 7: the partner's reminders, as ReminderPlanner plans them for the app, each day with its own topic.
+    @Test func remindersFollowTheCore() throws {
+        let logged = ["2026-11-21", "2026-11-22", "2026-11-23"]
+        let days = partnerDays(xp: 0, lastProcessed: nil, entries: logged, today: "2026-11-24")
+        let result = try answer("remindersPlan", #"{"settings":{"isOn":true,"times":[540,750]},"minutesNow":600,"days":\#(days)}"#)
+        let reminders = try #require(result["reminders"] as? [[String: Any]])
+        let state = CreatureState(species: .owl, colorIndex: 0, tone: .sweet, createdOn: Day(isoString: "2026-11-14")!, bodyShape: 0.3)
+        let history = records(logged)
+        let expected = ReminderPlanner.plan(
+            ReminderSettings(isOn: true, times: [540, 750]), tone: .sweet, today: Day(isoString: "2026-11-24")!, minutesNow: 600
+        ) { day in
+            CreatureEngine.topic(for: CreatureEngine.snapshot(of: state, records: history.filter { $0.day <= day }, today: day))
+        }
+        #expect(expected.count == 3)
+        #expect(reminders.map { $0["identifier"] as? String } == expected.map(\.identifier))
+        #expect(reminders.map { $0["day"] as? String } == expected.map(\.day.isoString))
+        #expect(reminders.map { number($0["minutes"]) } == expected.map { Double($0.minutes) })
+        #expect(reminders.map { $0["messageKey"] as? String } == expected.map(\.messageKey))
+        let off = try answer("remindersPlan", #"{"settings":{"isOn":false,"times":[540]},"minutesNow":600,"days":\#(days)}"#)
+        #expect((off["reminders"] as? [Any])?.isEmpty == true)
+    }
+
+    @Test func theQuietHoursAreTheCoresOwn() throws {
+        let rules = try answer("reminderRules", "{}")
+        #expect(number(rules["quietFrom"]) == Double(ReminderSettings.quietFrom))
+        #expect(number(rules["quietUntil"]) == Double(ReminderSettings.quietUntil))
+        #expect(number(rules["maximumPerDay"]) == Double(ReminderSettings.maximumPerDay))
+    }
 }

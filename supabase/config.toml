@@ -21,3 +21,6 @@ verify_jwt = false
 [functions.sync-offers]
 # Called by pg_cron with the secret key, which is no JWT; the function checks the key itself.
 verify_jwt = false
+[functions.send-reminders]
+# Called by pg_cron with the secret key, like sync-offers; the function checks the key itself.
+verify_jwt = false

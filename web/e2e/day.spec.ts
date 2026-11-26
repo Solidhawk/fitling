@@ -68,6 +68,27 @@ test("mealsAreKeptApartAndDeletedEntriesDisappear", async ({ page }, info) => {
   expect(data?.deleted_at).not.toBeNull();
 });
 
+// Phase 7: without a connection a deletion waits, as a log does; the entry is gone here, and later on the server too.
+test("aDeletionWithoutAConnectionWaits", async ({ page }) => {
+  const user = await start(page);
+  await foodEntry(user.id, { consumed_on: localDay(), meal: "breakfast", name: "Havermout", kcal: 300 });
+  await page.reload();
+  await expect(page.getByTestId("day.kcal.breakfast")).toHaveText(/300\s?kcal/, { timeout: 15_000 });
+  await page.route("**/rest/v1/food_entries*", (route) => route.abort("internetdisconnected"));
+  await page.getByRole("button", { name: nl("day.delete") }).first().focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByText("Havermout")).toHaveCount(0);
+  await expect(page.getByTestId("day.kcal.breakfast")).toHaveText(/0\s?kcal/);
+  const waiting = await admin.from("food_entries").select("deleted_at").eq("user_id", user.id).single();
+  expect(waiting.data?.deleted_at).toBeNull();
+  await page.unroute("**/rest/v1/food_entries*");
+  await page.reload();
+  await expect(page.getByTestId("day.kcal.breakfast")).toHaveText(/0\s?kcal/, { timeout: 15_000 });
+  await expect
+    .poll(async () => (await admin.from("food_entries").select("deleted_at").eq("user_id", user.id).single()).data?.deleted_at ?? null)
+    .not.toBeNull();
+});
+
 test("swipingAnEntryLeftShowsDelete", async ({ page }) => {
   const user = await start(page);
   await foodEntry(user.id, { consumed_on: localDay(), meal: "snack", name: "Appel", kcal: 52 });

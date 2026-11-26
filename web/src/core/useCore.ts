@@ -9,7 +9,8 @@ let loading: Promise<FitlingCore> | undefined;
  */
 export function core(): Promise<FitlingCore> {
   loading ??= (async () => {
-    const response = await fetch(`${import.meta.env.BASE_URL}fitling-core.wasm.gz`);
+    // The rules of this build: their version in the address, the copy the service worker keeps for it.
+    const response = await fetch(`${import.meta.env.BASE_URL}fitling-core.wasm.gz?v=${__CORE_VERSION__}`);
     if (!response.ok) throw new Error(`fitling-core: ${response.status}`);
     const bytes = new Uint8Array(await response.arrayBuffer());
     const isGzip = bytes[0] === 0x1f && bytes[1] === 0x8b;
