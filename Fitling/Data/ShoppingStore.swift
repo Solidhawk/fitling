@@ -24,9 +24,12 @@ struct ShoppingStore {
         ))) ?? []
     }
 
-    /// The first list, made on the device (also offline) with the user as its owner when there is none.
-    func ensureList(named name: String, ownerName: String) -> ShoppingList {
-        if let first = lists().first { return first }
+    /// The list to show: `preferred` while it is on the device (the list the user joined), else the first by name, made
+    /// on the device (also offline) with the user as its owner when there is none.
+    func ensureList(named name: String, ownerName: String, preferred: UUID? = nil) -> ShoppingList {
+        let existing = lists()
+        if let preferred, let kept = existing.first(where: { $0.id == preferred }) { return kept }
+        if let first = existing.first { return first }
         let list = ShoppingList(id: UUID(), name: String(name.prefix(60)), createdBy: userID, updatedAt: now())
         context.insert(list)
         context.insert(ShoppingListMember(listID: list.id, userID: userID, role: "owner", displayName: String(ownerName.prefix(40)), joinedAt: now()))

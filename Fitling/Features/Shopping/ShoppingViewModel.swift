@@ -22,6 +22,8 @@ final class ShoppingViewModel {
     private(set) var questions: [OfferQuestion] = []
     private(set) var inviteCode: String?
     private(set) var sharingProblem: SharingError?
+    /// Why a code did not work, shown in the sheet it was typed in (UNFORGET S48).
+    private(set) var joinProblem: SharingError?
 
     let store: ShoppingStore
     private let menu: MenuStore
@@ -55,6 +57,14 @@ final class ShoppingViewModel {
     private var confirmedKey: String { "fitling.confirmedOffers" }
     /// The supermarkets the offers on the device were fetched for.
     private var offerShopsKey: String { "fitling.offerShops" }
+    /// The list this user joined last on this device. It shows instead of the first by name, which with two lists
+    /// called the same is either (UNFORGET S47). Kept until the user leaves it: while it is not on the device yet, the
+    /// first list shows.
+    private var joinedListKey: String { "fitling.shoppingList.\(store.userID.uuidString)" }
+
+    private var joinedList: UUID? {
+        defaults.string(forKey: joinedListKey).flatMap(UUID.init(uuidString:))
+    }
 
     /// Uncertain offers the user said are right; kept on this device only.
     var confirmed: Set<UUID> {
@@ -62,7 +72,7 @@ final class ShoppingViewModel {
     }
 
     func reload() {
-        let list = store.ensureList(named: listName, ownerName: ownerName)
+        let list = store.ensureList(named: listName, ownerName: ownerName, preferred: joinedList)
         self.list = list
         items = store.items(of: list)
         members = store.members(of: list)
@@ -172,24 +182,36 @@ final class ShoppingViewModel {
         }
     }
 
-    /// `name` is how the other members see this user, 1 to 40 characters.
+    /// `name` is how the other members see this user, 1 to 40 characters. The list of the code shows from then on.
     func join(code: String, name: String) async -> Bool {
         sharingProblem = nil
+        joinProblem = nil
         let memberName = String(name.trimmingCharacters(in: .whitespacesAndNewlines).prefix(40))
         do {
-            _ = try await services.sharing.join(code: code.trimmingCharacters(in: .whitespacesAndNewlines), name: memberName.isEmpty ? ownerName : memberName)
+            let listID = try await services.sharing.join(
+                code: code.trimmingCharacters(in: .whitespacesAndNewlines), name: memberName.isEmpty ? ownerName : memberName
+            )
+            defaults.set(listID.uuidString, forKey: joinedListKey)
+            // The list and its items can be older than what this device last fetched.
+            sync.pullWhole([ShoppingList.tableName, ShoppingItem.tableName])
             await refresh()
             return true
         } catch {
-            sharingProblem = error as? SharingError ?? .rejected
+            joinProblem = error as? SharingError ?? .rejected
             return false
         }
+    }
+
+    /// The sheet closed: its problem goes with it.
+    func dismissJoinProblem() {
+        joinProblem = nil
     }
 
     func leave() async {
         guard let list else { return }
         do {
             try await services.sharing.leave(list.id, userID: store.userID)
+            if joinedList == list.id { defaults.removeObject(forKey: joinedListKey) }
             store.forget(list)
             self.list = nil
             reload()

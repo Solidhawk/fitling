@@ -389,6 +389,39 @@ import FitlingCore
         #expect(remote.fetches.filter { $0.table == periods }.count == 2)
     }
 
+    /// Rows that become visible all at once, like a shopping list joined with a code, can be older than the cursor.
+    @Test func aTableAskedForWholeIsFetchedFromTheStartOnce() async throws {
+        let remote = FakeRemoteStore()
+        try remote.serve(makeProfile().record, table: "profiles", syncedAt: now)
+        let engine = try makeEngine(remote)
+        #expect(await engine.sync() == .completed)
+
+        engine.pullWhole(["profiles"])
+        #expect(await engine.sync() == .completed)
+        #expect(remote.fetches.last { $0.table == "profiles" }?.since == nil)
+        #expect(await engine.sync() == .completed)
+        #expect(remote.fetches.last { $0.table == "profiles" }?.since != nil)
+    }
+
+    /// Asked for while that table is being fetched: the round under way does not put its cursor back.
+    @Test func askingForAWholeTableDuringItsFetchHoldsForTheNextRound() async throws {
+        let remote = FakeRemoteStore()
+        try remote.serve(makeProfile().record, table: "profiles", syncedAt: now)
+        let engine = try makeEngine(remote)
+        #expect(await engine.sync() == .completed)
+        remote.holdsNextRequest = true
+
+        let round = Task { await engine.sync() }
+        try #require(await remote.requestArrived())
+        #expect(remote.fetches.last?.table == "profiles")
+        engine.pullWhole(["profiles"])
+        remote.releaseRequest()
+        #expect(await round.value == .completed)
+
+        #expect(await engine.sync() == .completed)
+        #expect(remote.fetches.last { $0.table == "profiles" }?.since == nil)
+    }
+
     @Test func erasingDuringARoundKeepsNothingFromIt() async throws {
         let remote = FakeRemoteStore()
         try remote.serve(record(kcal: 1800, updatedAt: now), table: periods, syncedAt: now)

@@ -94,6 +94,16 @@ final class SyncEngine {
         problemKey = nil
     }
 
+    /// The next round fetches these tables whole, as a new device would. For rows that become visible all at once and
+    /// can be older than the cursor: a shopping list joined with a code, with its items (UNFORGET S47). Kept on the
+    /// device, so it also holds when the app closes before that round.
+    func pullWhole(_ tableNames: Set<String>) {
+        for cursor in (try? context.fetch(FetchDescriptor<SyncCursor>())) ?? [] where tableNames.contains(cursor.table) {
+            cursor.syncedAt = nil
+        }
+        try? context.save()
+    }
+
     // Per object rather than `delete(model:)`: that batch delete misses objects not yet saved.
     private func erase<Model: PersistentModel>(_ type: Model.Type) {
         for object in (try? context.fetch(FetchDescriptor<Model>())) ?? [] {

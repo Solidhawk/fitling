@@ -140,7 +140,9 @@ func manyOffers(_ count: Int, in shop: String, today: Day) -> [OfferRecord] {
         #expect(await viewModel.join(code: "WRONGCODE123", name: "Sam") == false)
         // The sheet the code was typed in shows why; the list behind it stays as it was (UNFORGET S48).
         #expect(viewModel.sharingProblem == nil)
+        #expect(viewModel.joinProblem == .invalidInvite)
         #expect(await viewModel.join(code: code, name: "Sam"))
+        #expect(viewModel.joinProblem == nil)
     }
 
     @Test func aListThatExistedLongBeforeArrivesWithItsItems() async throws {

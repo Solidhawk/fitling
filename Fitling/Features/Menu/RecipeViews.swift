@@ -201,7 +201,7 @@ struct OwnRecipeForm: View {
                 .listRowBackground(Color.card)
                 Section("menu.recipe.ingredients.title") {
                     ForEach(Array(recipe.ingredients.enumerated()), id: \.offset) { item in
-                        Text(verbatim: "\(item.element.quantity.formatted()) \(item.element.unit) \(item.element.name)")
+                        Text(verbatim: "\(ShoppingAmount.text(item.element.quantity, item.element.unit)) \(item.element.name)")
                     }
                     .onDelete { recipe.ingredients.remove(atOffsets: $0) }
                     HStack {

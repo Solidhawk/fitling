@@ -95,8 +95,8 @@ struct ShoppingListView: View {
         .refreshable { await viewModel.refresh(force: true) }
         .onAppear { viewModel.reload() }
         .task { await viewModel.refresh() }
-        .sheet(isPresented: $joining) {
-            JoinListSheet { code, name in await viewModel.join(code: code, name: name) }
+        .sheet(isPresented: $joining, onDismiss: { viewModel.dismissJoinProblem() }) {
+            JoinListSheet(problem: viewModel.joinProblem) { code, name in await viewModel.join(code: code, name: name) }
         }
         .sheet(isPresented: $choosingShops) {
             SupermarketPicker(viewModel: viewModel)
@@ -242,15 +242,18 @@ enum ShoppingAmount {
     }
 }
 
-/// A code from someone else, and the name the other members will see.
+/// A code from someone else, and the name the other members will see. Why a code did not work shows here, where it was
+/// typed.
 private struct JoinListSheet: View {
+    let problem: SharingError?
     let onJoin: (String, String) async -> Bool
     @State private var code = ""
     @State private var name = ""
     @State private var working = false
     @Environment(\.dismiss) private var dismiss
 
-    init(onJoin: @escaping (String, String) async -> Bool) {
+    init(problem: SharingError?, onJoin: @escaping (String, String) async -> Bool) {
+        self.problem = problem
         self.onJoin = onJoin
     }
 
@@ -263,7 +266,7 @@ private struct JoinListSheet: View {
                         .autocorrectionDisabled()
                     TextField("shopping.join.name", text: $name)
                 } footer: {
-                    Text("shopping.join.footer").footerStyle()
+                    Text(problem?.messageKey ?? "shopping.join.footer").footerStyle()
                 }
                 .listRowBackground(Color.card)
             }
