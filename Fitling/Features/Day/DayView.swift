@@ -10,6 +10,7 @@ struct MealChoice: Identifiable {
 struct DayView: View {
     @State private var viewModel: DayViewModel
     @State private var logging: MealChoice?
+    @Environment(\.scenePhase) private var scenePhase
     private let food: FoodServices
     private let sync: SyncEngine
     private let partner: PartnerViewModel
@@ -76,6 +77,12 @@ struct DayView: View {
                 await sync.sync()
                 viewModel.reload()
             }
+            .onChange(of: scenePhase) { _, phase in
+                if phase == .active { dateChanged() }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged).receive(on: RunLoop.main)) { _ in
+                dateChanged()
+            }
             .sheet(item: $logging, onDismiss: {
                 viewModel.reload()
                 // The partner's mood follows what is logged.
@@ -95,6 +102,11 @@ struct DayView: View {
                 )
             }
         }
+    }
+
+    /// A log sheet that was open closes when the screen moves on, so nothing lands on a day it no longer shows.
+    private func dateChanged() {
+        if viewModel.dateChanged() { logging = nil }
     }
 
     private var title: Text {

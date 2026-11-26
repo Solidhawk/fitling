@@ -75,6 +75,9 @@ export function Day({ userID, advance }: { userID: string; advance: Advance }) {
   const [failed, setFailed] = useState<string>();
   const [unsaved, setUnsaved] = useState(false);
   const request = useRef(0);
+  // Looking at today: the screen moves on with the date, so what is logged the next morning lands on that day. A day the
+  // user went back to stays (DayViewModel.dateChanged).
+  const followsToday = useRef(true);
 
   // An answer that a newer request overtook is dropped: tapping back twice quickly shows the second day, not
   // whichever answer came in last.
@@ -94,9 +97,36 @@ export function Day({ userID, advance }: { userID: string; advance: Advance }) {
   }, [core, userID, day, advance]);
 
   function show(next: string) {
+    followsToday.current = next >= today();
     setShown(undefined);
     setDay(next);
   }
+
+  /**
+   * The date moved on while the user looked at today: the screen follows, and a log sheet that was open closes, so
+   * nothing lands on a day the screen no longer shows. True when it moved.
+   */
+  function moveOn(): boolean {
+    const now = today();
+    if (!followsToday.current || day === now) return false;
+    setLogging(undefined);
+    show(now);
+    return true;
+  }
+
+  useEffect(() => {
+    // Every minute, and when the page or the window comes back: a timer stops while a laptop sleeps, and a window that
+    // stayed in front gets no visibilitychange.
+    const timer = setInterval(moveOn, 60_000);
+    const back = () => document.visibilityState === "visible" && moveOn();
+    document.addEventListener("visibilitychange", back);
+    window.addEventListener("focus", moveOn);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", back);
+      window.removeEventListener("focus", moveOn);
+    };
+  }, [day]);
 
   useEffect(() => {
     void reload();
@@ -167,7 +197,8 @@ export function Day({ userID, advance }: { userID: string; advance: Advance }) {
                   type="button"
                   className="inline-action"
                   data-testid="water.add"
-                  onClick={() => void change(() => addWater(supabase, userID, day, new Date()))}
+                  // Past midnight before any check came: the first tap moves on and writes nothing on yesterday.
+                  onClick={() => moveOn() || void change(() => addWater(supabase, userID, day, new Date()))}
                 >
                   <Droplet aria-hidden="true" size={18} strokeWidth={2.2} fill="currentColor" />
                   <span>{t("water.add")}</span>
@@ -202,7 +233,7 @@ export function Day({ userID, advance }: { userID: string; advance: Advance }) {
                     </span>
                   </SwipeRow>
                 ))}
-                <ListRow onClick={() => setLogging(meal)}>
+                <ListRow onClick={() => moveOn() || setLogging(meal)}>
                   <span className="inline-action" data-testid={`day.add.${meal}`}>
                     <Plus aria-hidden="true" size={18} strokeWidth={2.4} />
                     <span>{t("day.add")}</span>

@@ -293,6 +293,35 @@ struct FoodFixture {
     let fixture: FoodFixture
     init() throws { fixture = try FoodFixture() }
 
+    /// Open since the evening: past midnight the screen moves on, so breakfast does not land on yesterday (UNFORGET S40).
+    @Test func todayMovesOnWithTheDate() {
+        let clock = TestClock(fixture.now)
+        let viewModel = DayViewModel(profile: fixture.profile(), context: fixture.context, timeZone: .gmt, now: { clock.now })
+        clock.now = clock.now.addingTimeInterval(86_400)
+        #expect(viewModel.dateChanged())
+        #expect(viewModel.day == fixture.today.adding(1))
+        #expect(viewModel.isToday)
+    }
+
+    @Test func backToTodayFollowsTheDateAgain() {
+        let clock = TestClock(fixture.now)
+        let viewModel = DayViewModel(profile: fixture.profile(), context: fixture.context, timeZone: .gmt, now: { clock.now })
+        viewModel.show(fixture.today.adding(-1))
+        viewModel.show(fixture.today)
+        clock.now = clock.now.addingTimeInterval(86_400)
+        #expect(viewModel.dateChanged())
+        #expect(viewModel.isToday)
+    }
+
+    @Test func aDayLookedBackAtStaysWhenTheDateMovesOn() {
+        let clock = TestClock(fixture.now)
+        let viewModel = DayViewModel(profile: fixture.profile(), context: fixture.context, timeZone: .gmt, now: { clock.now })
+        viewModel.show(fixture.today.adding(-1))
+        clock.now = clock.now.addingTimeInterval(86_400)
+        #expect(viewModel.dateChanged() == false)
+        #expect(viewModel.day == fixture.today.adding(-1))
+    }
+
     @Test func usesTheTargetsThatAppliedOnThatDay() {
         let profile = fixture.profile(kcal: 2500)
         let targets = { (kcal: Int) in NutritionTargets(kcal: kcal, proteinG: 128, carbsG: 300, fatG: 70) }

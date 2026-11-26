@@ -50,7 +50,21 @@ final class DayViewModel {
     func show(_ newDay: Day) {
         // The future has nothing to log yet.
         day = min(newDay, today)
+        followsToday = day == today
         reload()
+    }
+
+    /// Looking at today: the screen moves on with the date, so what is logged the next morning lands on that day. A day
+    /// the user went back to stays.
+    private var followsToday = true
+
+    /// The date moved on: at midnight, or when the app comes back on a later day. True when the screen moved with it.
+    @discardableResult
+    func dateChanged() -> Bool {
+        guard followsToday, day != today else { return false }
+        day = today
+        reload()
+        return true
     }
 
     func reload() {
