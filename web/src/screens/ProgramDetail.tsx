@@ -13,6 +13,36 @@ import { SwipeRow } from "../ui/SwipeRow";
 import { ExercisePicker } from "./ExercisePicker";
 
 /**
+ * The ids of a copy being made, kept in this tab until it is made. Trying again after a failure, also after going back
+ * or reloading the page, finishes that copy instead of making a second (UNFORGET S54).
+ */
+function copyKey(userID: string, programID: string): string {
+  return `fitling.copy.${userID}.${programID}`;
+}
+
+function keptCopyIDs(userID: string, programID: string): Map<string, string> {
+  try {
+    const stored: unknown = JSON.parse(sessionStorage.getItem(copyKey(userID, programID)) ?? "[]");
+    if (!Array.isArray(stored)) return new Map();
+    return new Map(
+      stored.filter((pair): pair is [string, string] => Array.isArray(pair) && typeof pair[0] === "string" && typeof pair[1] === "string"),
+    );
+  } catch {
+    return new Map();
+  }
+}
+
+/** Without ids: the copy was made, the next one is a new copy. */
+function keepCopyIDs(userID: string, programID: string, ids?: Map<string, string>) {
+  try {
+    if (ids) sessionStorage.setItem(copyKey(userID, programID), JSON.stringify([...ids]));
+    else sessionStorage.removeItem(copyKey(userID, programID));
+  } catch {
+    // A browser that keeps nothing: a try after a failure makes a new copy, as before.
+  }
+}
+
+/**
  * One programme with its days and their exercises (ProgramDetailView.swift). A ready-made programme can be started
  * or copied; the user's own can be renamed, removed and changed, except a composed day: that is the record of one
  * workout, and another one is composed instead.
@@ -81,10 +111,27 @@ export function ProgramDetail({
       onClick={() => {
         if (copying.current) return;
         copying.current = true;
+        const ids = keptCopyIDs(userID, programID);
         let copy: string | undefined;
         // Opened once it is read back, so FitlingCore knows it.
         void act(async () => {
-          copy = await copyProgram(supabase, userID, rows, programID, { name: t("training.program.copyName %@", program.name), language: typingLanguage() }, new Date());
+          try {
+            copy = await copyProgram(
+              supabase,
+              userID,
+              rows,
+              programID,
+              { name: t("training.program.copyName %@", program.name), language: typingLanguage() },
+              new Date(),
+              ids,
+            );
+            keepCopyIDs(userID, programID);
+          } catch (error) {
+            // Kept for the next try, which may come as soon as the message is closed.
+            keepCopyIDs(userID, programID, ids);
+            copying.current = false;
+            throw error;
+          }
         })
           .then(() => copy && onOpenCopy(copy))
           .finally(() => {
