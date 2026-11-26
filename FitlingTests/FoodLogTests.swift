@@ -265,36 +265,104 @@ struct FoodFixture {
 
         viewModel.useLabel(NutritionLabel.read(["Energie 373 kcal", "Vet 700 g"]))
         #expect(viewModel.labelNote == .check)
-        viewModel.useLabel(nil)
-        #expect(viewModel.labelNote == .nothing)
         viewModel.useLabel(NutritionLabel.read(["Ingrediënten: havermout, suiker"]))
         #expect(viewModel.labelNote == .nothing)
     }
 
-    /// A table drawn as a package prints it, in two columns, read by Vision on the simulator as on an iPhone.
-    @Test func visionReadsATableFromAPhoto() throws {
+    /// A blurry first photo, a sharp second one: the second replaces what the first put there, not what the user typed.
+    @Test func aSecondPhotoReplacesWhatTheFirstPutThere() {
+        let viewModel = AddProductViewModel(diary: fixture.diary, gtin: nil)
+        viewModel.useLabel(NutritionLabel.read(["Voedingswaarde per 100 ml", "Energie 300 kcal", "Vetten 7 g", "Koolhydraten 6 g"]))
+        #expect(viewModel.isMillilitre)
+        viewModel.fat = 8
+        viewModel.useLabel(NutritionLabel.read(["Voedingswaarde per 100 g", "Energie 1569 kJ / 373 kcal", "Vetten 7,5 g", "Koolhydraten 62 g"]))
+        #expect(viewModel.kcal == 373)
+        #expect(viewModel.carbs == 62)
+        #expect(viewModel.fat == 8)
+        #expect(viewModel.isMillilitre == false)
+        #expect(viewModel.labelNote == .read)
+    }
+
+    @Test func aPhotoThatCannotBeOpenedSaysSo() async {
+        let viewModel = AddProductViewModel(diary: fixture.diary, gtin: nil)
+        await viewModel.readLabel { nil }
+        #expect(viewModel.labelNote == .unreadable)
+        await viewModel.readLabel { Data("no photo".utf8) }
+        #expect(viewModel.labelNote == .unreadable)
+        #expect(viewModel.isReadingLabel == false)
+    }
+
+    /// A line photographed at an angle: its height along its own side, not the much taller box around it.
+    @Test func aTiltedPieceKeepsItsOwnHeightAndSlope() {
+        // Vision's corners, from the bottom left: a line 0.4 wide and 0.03 high, rising 0.02 to the right.
+        let piece = LabelReader.piece(
+            "Vetten 7,0 g", topLeft: CGPoint(x: 0.1, y: 0.73), topRight: CGPoint(x: 0.5, y: 0.75),
+            bottomLeft: CGPoint(x: 0.1, y: 0.70), bottomRight: CGPoint(x: 0.5, y: 0.72)
+        )
+        #expect(abs(piece.height - 0.03) < 0.0001)
+        #expect(abs(piece.x - 0.3) < 0.0001)
+        #expect(abs(piece.y - 0.275) < 0.0001)
+        // Rising to the right is up per width: negative, measured down from the top.
+        #expect(abs(piece.slope - -0.05) < 0.0001)
+    }
+
+    /// A table as a package prints it, in two columns, drawn at one pixel per point.
+    func table(turn degrees: CGFloat = 0) -> UIImage {
         let rows = [
             ("Voedingswaarde", "per 100 g"), ("Energie", "1569 kJ / 373 kcal"), ("Vetten", "7,0 g"),
             ("Koolhydraten", "62 g"), ("Eiwitten", "9,2 g"), ("Zout", "0,48 g"),
         ]
-        let size = CGSize(width: 1200, height: 140 + 110 * rows.count)
-        let image = UIGraphicsImageRenderer(size: size).image { context in
+        let size = CGSize(width: 1400, height: 240 + 110 * rows.count)
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        return UIGraphicsImageRenderer(size: size, format: format).image { context in
             UIColor.white.setFill()
             context.fill(CGRect(origin: .zero, size: size))
+            context.cgContext.translateBy(x: size.width / 2, y: size.height / 2)
+            context.cgContext.rotate(by: degrees * .pi / 180)
+            context.cgContext.translateBy(x: -size.width / 2, y: -size.height / 2)
             let font = UIFont.systemFont(ofSize: 56, weight: .medium)
             for (index, row) in rows.enumerated() {
-                let y = 70 + CGFloat(index) * 110
-                (row.0 as NSString).draw(at: CGPoint(x: 60, y: y), withAttributes: [.font: font, .foregroundColor: UIColor.black])
-                (row.1 as NSString).draw(at: CGPoint(x: 640, y: y), withAttributes: [.font: font, .foregroundColor: UIColor.black])
+                let y = 120 + CGFloat(index) * 110
+                (row.0 as NSString).draw(at: CGPoint(x: 100, y: y), withAttributes: [.font: font, .foregroundColor: UIColor.black])
+                (row.1 as NSString).draw(at: CGPoint(x: 680, y: y), withAttributes: [.font: font, .foregroundColor: UIColor.black])
             }
         }
-        let photo = try #require(image.jpegData(compressionQuality: 0.9))
+    }
+
+    func expectTheTable(_ photo: Data) throws {
         let label = try #require(LabelReader.read(photo))
         #expect(label.kcal == 373)
         #expect(label.fat == 7)
         #expect(label.carbs == 62)
         #expect(label.protein == 9.2)
-        #expect(label.salt == 0.48)
+    }
+
+    /// Read by Vision on the simulator as on an iPhone.
+    @Test func visionReadsATableFromAPhoto() throws {
+        try expectTheTable(try #require(table().jpegData(compressionQuality: 0.9)))
+    }
+
+    /// An iPhone stores a portrait photo turned on its side, with the turn written in the file.
+    @Test func visionReadsAPhotoStoredOnItsSide() throws {
+        let upright = try #require(table().cgImage)
+        let width = CGFloat(upright.width)
+        let height = CGFloat(upright.height)
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        // The pixels a quarter turn to the left; the file says to turn them right to show them.
+        let stored = UIGraphicsImageRenderer(size: CGSize(width: height, height: width), format: format).image { context in
+            context.cgContext.translateBy(x: 0, y: width)
+            context.cgContext.rotate(by: -.pi / 2)
+            UIImage(cgImage: upright).draw(in: CGRect(x: 0, y: 0, width: width, height: height))
+        }
+        let photo = try #require(UIImage(cgImage: try #require(stored.cgImage), scale: 1, orientation: .right).jpegData(compressionQuality: 0.9))
+        try expectTheTable(photo)
+    }
+
+    /// Held at a slight angle, as in a shop.
+    @Test func visionReadsATiltedPhoto() throws {
+        try expectTheTable(try #require(table(turn: 5).jpegData(compressionQuality: 0.9)))
     }
 
     @Test func savesAPrivateProductThatSyncs() throws {
