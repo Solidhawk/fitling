@@ -28,31 +28,19 @@ if ('missing' in config) {
         if (error) throw error;
         return data === true;
       },
-      async storeSubmission(userID, gtin, payload) {
-        const { data, error } = await admin.from('product_submissions').insert({ user_id: userID, gtin, payload })
-          .select('id')
-          .single();
+      async submit(userID, payload, row) {
+        const { data, error } = await admin.rpc('submit_shared_product', {
+          p_user: userID,
+          p_payload: payload,
+          p_product: row,
+        });
         if (error) throw error;
-        return data.id as string;
+        const result = (data as { shared_id: string; made_new: boolean }[] | null)?.[0];
+        if (!result?.shared_id) throw new Error('submit_shared_product gave no row');
+        return { productID: result.shared_id, created: result.made_new };
       },
-      async findShared(gtin) {
-        const { data, error } = await admin.from('products').select('id').eq('gtin', gtin).is('owner_id', null)
-          .is('deleted_at', null).maybeSingle();
-        if (error) throw error;
-        return data as { id: string } | null;
-      },
-      async insertShared(row) {
-        const { data, error } = await admin.from('products').insert({ ...row, updated_at: new Date().toISOString() })
-          .select('id').single();
-        // Another user's share for this barcode was just ahead: the unique index on shared barcodes.
-        if (error?.code === '23505') return null;
-        if (error) throw error;
-        return data.id as string;
-      },
-      async markAccepted(submissionID, productID) {
-        const { error } = await admin.from('product_submissions').update({ status: 'accepted', product_id: productID })
-          .eq('id', submissionID);
-        if (error) throw error;
+      log(message) {
+        console.error(message);
       },
     })
   );

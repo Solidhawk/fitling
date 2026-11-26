@@ -28,18 +28,40 @@ export type Deps = {
   getUser(token: string): Promise<{ id: string } | null>;
   /** Counts this call; false when the user is over the limit for this hour. */
   consumeRateLimit(userID: string): Promise<boolean>;
-  /** Keeps what was sent, as it was sent, and returns its id. */
-  storeSubmission(userID: string, gtin: string, payload: unknown): Promise<string>;
-  findShared(gtin: string): Promise<{ id: string } | null>;
-  /** The new shared row's id; null when another one for this barcode was just made (the unique index). */
-  insertShared(row: SharedRow): Promise<string | null>;
-  markAccepted(submissionID: string, productID: string): Promise<void>;
+  /**
+   * The submission, the shared row and its status in one transaction (submit_shared_product in
+   * supabase/submit-product.sql): the id of the barcode's shared row, and whether this submission made it.
+   */
+  submit(userID: string, payload: Submitted, row: SharedRow): Promise<{ productID: string; created: boolean }>;
+  log(message: string): void;
 };
+
+/** What is kept of a submission: only the fields the app sends, as it sent them. */
+export type Submitted = Record<string, string | number>;
 
 /** The languages the app is written in; a name is stored under one of them. */
 const languages = ['nl', 'en', 'de'];
 /** The database keeps at most this many characters of a name (FoodLog.nameLimit). */
 const nameLimit = 200;
+/** A brand is shown under the name; longer than this is no brand. */
+const brandLimit = 100;
+/** The fields the app sends; anything else in the body is not kept. */
+const fields = [
+  'gtin',
+  'name',
+  'brand',
+  'language',
+  'quantityUnit',
+  'servingSize',
+  'kcal',
+  'protein',
+  'carbs',
+  'sugars',
+  'fat',
+  'saturatedFat',
+  'fiber',
+  'salt',
+];
 
 function json(status: number, body: unknown): Response {
   return Response.json(body, { status, headers: corsHeaders });
@@ -62,12 +84,16 @@ function sharedRow(body: Record<string, unknown>): SharedRow | null {
   const gtin = typeof body.gtin === 'string' ? body.gtin : '';
   const name = typeof body.name === 'string' ? body.name.trim() : '';
   const kcal = within(body.kcal, 900, 1);
-  if (!isValidGtin(gtin) || name === '' || name.length > nameLimit || kcal === null) return null;
   const brand = typeof body.brand === 'string' && body.brand.trim() !== '' ? body.brand.trim() : null;
+  // Counted in characters, as Swift counts them in FitlingCore.
+  if (!isValidGtin(gtin) || name === '' || [...name].length > nameLimit || kcal === null) return null;
+  if (brand !== null && [...brand].length > brandLimit) return null;
   const language = typeof body.language === 'string' && languages.includes(body.language) ? body.language : 'nl';
-  const serving = typeof body.servingSize === 'number' && body.servingSize > 0 && body.servingSize < 100_000
+  // Rounded first, as numeric(7,2) keeps it: 0.001 would become 0, which the check refuses.
+  const servingRounded = typeof body.servingSize === 'number' && Number.isFinite(body.servingSize)
     ? Math.round(body.servingSize * 100) / 100
-    : null;
+    : 0;
+  const serving = servingRounded > 0 && servingRounded <= 99_999.99 ? servingRounded : null;
   return {
     source: 'user',
     gtin,
@@ -90,10 +116,31 @@ function sharedRow(body: Record<string, unknown>): SharedRow | null {
 
 /**
  * Shares a product for a barcode no source knows. The first one becomes the shared row; a barcode that already has
- * one keeps it, and the submission waits as it was sent. `lookup-product` asks Open Food Facts first, so a product
- * that turns up there later replaces a row from a user.
+ * one keeps it and the submission waits, except that the user who made a row may correct it and a removed row comes
+ * back. `lookup-product` asks Open Food Facts first, so a product that turns up there later replaces a row from a
+ * user.
  */
 export async function handle(req: Request, deps: Deps): Promise<Response> {
+  try {
+    return await share(req, deps);
+  } catch (error) {
+    // With the CORS headers, so the web app sees a server error and not a refused request.
+    deps.log(`submit-product: ${String(error)}`);
+    return json(500, { error: 'server_error' });
+  }
+}
+
+/** Only the known fields, each a string or a number: the submission keeps nothing else the body may hold. */
+function submitted(body: Record<string, unknown>): Submitted {
+  const kept: Submitted = {};
+  for (const field of fields) {
+    const value = body[field];
+    if (typeof value === 'string' || (typeof value === 'number' && Number.isFinite(value))) kept[field] = value;
+  }
+  return kept;
+}
+
+async function share(req: Request, deps: Deps): Promise<Response> {
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders });
   const header = req.headers.get('Authorization') ?? '';
   const token = header.startsWith('Bearer ') ? header.slice('Bearer '.length).trim() : '';
@@ -113,15 +160,6 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
 
   if (!(await deps.consumeRateLimit(user.id))) return json(429, { error: 'rate_limited' });
 
-  const submissionID = await deps.storeSubmission(user.id, row.gtin, body);
-  const existing = await deps.findShared(row.gtin);
-  if (existing) return json(200, { productID: existing.id, created: false });
-  const productID = await deps.insertShared(row);
-  if (productID === null) {
-    const first = await deps.findShared(row.gtin);
-    if (first) return json(200, { productID: first.id, created: false });
-    throw new Error('the shared row was refused, and no other one exists');
-  }
-  await deps.markAccepted(submissionID, productID);
-  return json(201, { productID, created: true });
+  const result = await deps.submit(user.id, submitted(body as Record<string, unknown>), row);
+  return json(result.created ? 201 : 200, result);
 }
