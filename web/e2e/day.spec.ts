@@ -156,21 +156,70 @@ test.describe("around midnight in Tokyo", () => {
     await page.getByRole("button", { name: nl("day.previous") }).click();
     await expect(page.getByText("Laat avondeten")).toBeVisible();
   });
+
+  function dayAfter(day: string, count: number): string {
+    const [year, month, date] = day.split("-").map(Number);
+    return new Date(Date.UTC(year, month - 1, date + count)).toISOString().slice(0, 10);
+  }
+
+  /** Signed in on `day` at 23.57 in Tokyo, with a dinner logged that evening. */
+  async function eveningOf(page: Page, day: string, setClock: (time: Date) => Promise<void>) {
+    const user = await createUser({ profile: true, creature: true });
+    await foodEntry(user.id, { consumed_on: day, meal: "dinner", name: "Laat avondeten", kcal: 400 });
+    await setClock(new Date(`${day}T23:57:00+09:00`));
+    await signIn(page, user.email);
+    await expect(page.getByText("Laat avondeten")).toBeVisible({ timeout: 15_000 });
+    return user;
+  }
+
+  // Open since the evening: past midnight Vandaag moves on to the new day by itself, so breakfast does not land on
+  // yesterday (UNFORGET S40).
+  test("vandaagMovesOnAtMidnight", async ({ page }) => {
+    await eveningOf(page, localDay(), (time) => page.clock.install({ time }));
+    await page.clock.fastForward("05:00");
+    await expect(page.getByText("Laat avondeten")).toHaveCount(0, { timeout: 15_000 });
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(nl("day.today"));
+    await expect(page.getByRole("button", { name: nl("day.next") })).toBeDisabled();
+  });
+
+  // A laptop that slept past midnight: its timer comes late, so coming back to the tab is enough. The fixed clock keeps
+  // the midnight timer out of it (real timers, a minute away).
+  test("backInTheTabTheNextMorningShowsThatDay", async ({ page }) => {
+    const day = localDay();
+    await eveningOf(page, day, (time) => page.clock.setFixedTime(time));
+    await page.clock.setFixedTime(new Date(`${dayAfter(day, 1)}T08:00:00+09:00`));
+    await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
+    await expect(page.getByText("Laat avondeten")).toHaveCount(0, { timeout: 15_000 });
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(nl("day.today"));
+  });
+
+  // Looking back on purpose: that day stays when the date moves on.
+  test("aDayLookedBackAtStaysPastMidnight", async ({ page }) => {
+    const day = localDay();
+    const user = await eveningOf(page, day, (time) => page.clock.install({ time }));
+    await foodEntry(user.id, { consumed_on: dayAfter(day, -1), meal: "lunch", name: "De dag ervoor gegeten", kcal: 300 });
+    await page.getByRole("button", { name: nl("day.previous") }).click();
+    await expect(page.getByText("De dag ervoor gegeten")).toBeVisible({ timeout: 15_000 });
+    await page.clock.fastForward("05:00");
+    await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
+    await expect(page.getByText("De dag ervoor gegeten")).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1 })).not.toHaveText(nl("day.today"));
+  });
 });
 
 // Review: tapping back twice quickly shows the second day, even when the first day's answer comes in last.
 test("switchingDaysQuicklyShowsTheLastDay", async ({ page }) => {
   const user = await start(page);
   await foodEntry(user.id, { consumed_on: daysBefore(1), name: "Gisteren gegeten" });
-  await foodEntry(user.id, { consumed_on: daysBefore(2), name: "Eergisteren gegeten" });
+  await foodEntry(user.id, { consumed_on: daysBefore(2), name: "De dag ervoor gegeten" });
   await page.route(`**/rest/v1/food_entries*consumed_on=eq.${daysBefore(1)}*`, async (route) => {
     await new Promise((resolve) => setTimeout(resolve, 1500));
     await route.continue();
   });
   await page.getByRole("button", { name: nl("day.previous") }).click();
   await page.getByRole("button", { name: nl("day.previous") }).click();
-  await expect(page.getByText("Eergisteren gegeten")).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText("De dag ervoor gegeten")).toBeVisible({ timeout: 15_000 });
   await page.waitForTimeout(2000);
-  await expect(page.getByText("Eergisteren gegeten")).toBeVisible();
+  await expect(page.getByText("De dag ervoor gegeten")).toBeVisible();
   await expect(page.getByText("Gisteren gegeten", { exact: true })).toHaveCount(0);
 });
