@@ -22,6 +22,7 @@ function due(id: string, overrides: Partial<Due> = {}): Due {
     title: 'Pip',
     body: 'Tijd voor lunch',
     endpoint: `https://web.push.apple.com/${id}`,
+    claimedUntil: '2026-11-25T11:35:00.000123+00:00',
     ...browser,
     ...overrides,
   };
@@ -30,12 +31,23 @@ function due(id: string, overrides: Partial<Due> = {}): Due {
 function deps(reminders: Due[], answer: (request: Request) => Response = () => new Response(null, { status: 201 })) {
   const sent: Request[] = [];
   const removed: string[] = [];
+  const released: string[] = [];
+  const claims: string[] = [];
+  const asked: number[] = [];
   const gone: string[] = [];
   const log: string[] = [];
   const d: Deps = {
-    due: () => Promise.resolve(reminders),
+    claim: (limit) => {
+      asked.push(limit);
+      return Promise.resolve(reminders);
+    },
     removeReminders: (ids) => {
       removed.push(...ids);
+      return Promise.resolve();
+    },
+    release: (ids, claimedUntil) => {
+      released.push(...ids);
+      claims.push(claimedUntil);
       return Promise.resolve();
     },
     removeSubscription: (id) => {
@@ -49,7 +61,7 @@ function deps(reminders: Due[], answer: (request: Request) => Response = () => n
     now: () => now,
     log: (message) => log.push(message),
   };
-  return { d, sent, removed, gone, log };
+  return { d, sent, removed, released, claims, asked, gone, log };
 }
 
 function call(d: Deps, key = secret): Promise<Response> {
@@ -65,6 +77,14 @@ Deno.test('only the scheduler with the secret key may send', async () => {
   const { d, sent } = deps([due('a')]);
   assertEquals((await call(d, 'sb_publishable_wrong')).status, 401);
   assertEquals(sent.length, 0);
+});
+
+// Claimed first: a call still busy with a slow push service and the call of the next minute never both send it.
+Deno.test('what is due is claimed first, at most 200 per call', async () => {
+  const { d, asked, released } = deps([due('a')]);
+  await call(d);
+  assertEquals(asked, [200]);
+  assertEquals(released, []);
 });
 
 Deno.test('a reminder that is due goes to its push service, encrypted, and is then done', async () => {
@@ -94,12 +114,56 @@ Deno.test('a browser that unsubscribed loses its subscription', async () => {
 });
 
 Deno.test('a push service that is busy gets the reminder again next minute', async () => {
-  const { d, removed } = deps(
+  const { d, removed, released } = deps(
     [due('a'), due('b')],
     (request) => new Response(null, { status: request.url.endsWith('/a') ? 429 : 503 }),
   );
   assertEquals(await (await call(d)).json(), { sent: 0, dropped: 0, waiting: 2 });
   assertEquals(removed, []);
+  assertEquals(released, ['a', 'b']);
+});
+
+// Only this call's claim: a slower call that released late must not free what the next call claimed since.
+Deno.test("what is released is this call's own claim", async () => {
+  const { d, claims } = deps([due('a')], () => new Response(null, { status: 503 }));
+  await call(d);
+  assertEquals(claims, ['2026-11-25T11:35:00.000123+00:00']);
+});
+
+// Fifteen seconds per push service that does not answer, two hundred per call: the call stops well before its
+// five-minute claim runs out, so the next minute's call never sends the same reminder a second time.
+Deno.test('a call stops before its claim runs out and lets the rest go', async () => {
+  const reminders = Array.from({ length: 20 }, (_, index) => due(`r${index}`));
+  const { d, sent, released } = deps(reminders);
+  let clock = now.getTime();
+  d.now = () => new Date(clock);
+  const answer = d.send;
+  d.send = (request) => {
+    clock += 100_000;
+    return answer(request);
+  };
+  assertEquals(await (await call(d)).json(), { sent: 3, dropped: 0, waiting: 17 });
+  assertEquals(sent.length, 3);
+  assertEquals(released, reminders.slice(3).map((reminder) => reminder.id));
+});
+
+// Sent, but the row could not be removed: sending it again next minute would be a second message.
+Deno.test('a reminder that was sent is not released when removing it fails once', async () => {
+  const { d, removed, released } = deps([due('a')]);
+  const remove = d.removeReminders;
+  let failures = 1;
+  d.removeReminders = (ids) => failures-- > 0 ? Promise.reject(new Error('timeout')) : remove(ids);
+  assertEquals(await (await call(d)).json(), { sent: 1, dropped: 0, waiting: 0 });
+  assertEquals(removed, ['a']);
+  assertEquals(released, []);
+});
+
+Deno.test('a push service that cannot be reached gets the reminder again next minute', async () => {
+  const { d, released, log } = deps([due('a')]);
+  d.send = () => Promise.reject(new TypeError('connection refused'));
+  assertEquals(await (await call(d)).json(), { sent: 0, dropped: 0, waiting: 1 });
+  assertEquals(released, ['a']);
+  assertEquals(log.length, 1);
 });
 
 Deno.test('a reminder that comes too late is not sent: never a lunch message at night', async () => {

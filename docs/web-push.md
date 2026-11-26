@@ -26,7 +26,9 @@ Maak het paar maar één keer. Met een nieuw paar moet elke browser zich opnieuw
 
 ## 2. De tabellen
 
-Supabase → SQL Editor. Plak de inhoud van `supabase/web-push.sql` en voer het uit.
+Supabase → SQL Editor. Plak de inhoud van `supabase/web-push.sql` en voer het uit. Doe dit vóór stap 4: de functie
+vraagt de herinneringen op met `claim_push_reminders`, die hier wordt gemaakt. Na een nieuwe versie van dit bestand ook
+stap 5 opnieuw uitvoeren.
 
 Dit maakt alleen `push_subscriptions` en `push_reminders` met hun regels. Bestaande data blijft. Opnieuw uitvoeren kan.
 
@@ -85,7 +87,8 @@ Komt er niets? Kijk in Supabase → Edge Functions → send-reminders → Logs.
 |---|---|
 | Herinneringen aan | De browser vraagt toestemming, meldt zich aan bij zijn pushdienst en zet het adres in `push_subscriptions`, via `save_push_subscription`. |
 | Vandaag of de partner openen, een tijd wijzigen | De browser plant opnieuw voor vandaag en morgen en vervangt de rijen in `push_reminders`, via `replace_push_reminders`. Dat zijn er hoogstens vier. |
-| Elke minuut | `send-reminders` versleutelt elk bericht dat aan de beurt is voor die ene browser (RFC 8291) en stuurt het met de VAPID-handtekening (RFC 8292). |
+| Elke minuut | `send-reminders` claimt wat aan de beurt is (`claim_push_reminders`), zodat twee aanroepen die elkaar overlappen het niet allebei sturen. Daarna versleutelt hij elk bericht voor die ene browser (RFC 8291) en stuurt het met de VAPID-handtekening (RFC 8292). |
+| Pushdienst druk of onbereikbaar | De herinnering komt vrij voor de volgende minuut. Een aanroep die halverwege stopte, houdt hem hoogstens vijf minuten vast. |
 | Bericht te laat (meer dan 30 minuten) | Het wordt niet meer verstuurd, zodat er nooit een lunchbericht 's nachts komt. |
 | Browser afgemeld (404/410) | Het abonnement en de herinneringen gaan weg. |
 | Uitloggen | Het abonnement van deze browser gaat weg, met de herinneringen. |
