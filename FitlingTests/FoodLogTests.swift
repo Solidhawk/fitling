@@ -1,6 +1,7 @@
 import Foundation
 import SwiftData
 import Testing
+import UIKit
 import FitlingCore
 @testable import Fitling
 
@@ -249,6 +250,51 @@ struct FoodFixture {
         viewModel.carbs = 38
         viewModel.servingSize = 120
         return viewModel
+    }
+
+    /// A photo of the nutrition table fills what the user did not type yet, and says what to do next (TASKS 2.8).
+    @Test func aLabelFillsTheEmptyFieldsAndAsksToCheck() {
+        let viewModel = AddProductViewModel(diary: fixture.diary, gtin: nil)
+        viewModel.protein = 10
+        viewModel.useLabel(NutritionLabel.read(["Voedingswaarde per 100 g", "Energie 1569 kJ / 373 kcal", "Vetten 7,0 g", "Koolhydraten 62 g", "Eiwitten 9,2 g"]))
+        #expect(viewModel.kcal == 373)
+        #expect(viewModel.fat == 7)
+        #expect(viewModel.carbs == 62)
+        #expect(viewModel.protein == 10)
+        #expect(viewModel.labelNote == .read)
+
+        viewModel.useLabel(NutritionLabel.read(["Energie 373 kcal", "Vet 700 g"]))
+        #expect(viewModel.labelNote == .check)
+        viewModel.useLabel(nil)
+        #expect(viewModel.labelNote == .nothing)
+        viewModel.useLabel(NutritionLabel.read(["Ingrediënten: havermout, suiker"]))
+        #expect(viewModel.labelNote == .nothing)
+    }
+
+    /// A table drawn as a package prints it, in two columns, read by Vision on the simulator as on an iPhone.
+    @Test func visionReadsATableFromAPhoto() throws {
+        let rows = [
+            ("Voedingswaarde", "per 100 g"), ("Energie", "1569 kJ / 373 kcal"), ("Vetten", "7,0 g"),
+            ("Koolhydraten", "62 g"), ("Eiwitten", "9,2 g"), ("Zout", "0,48 g"),
+        ]
+        let size = CGSize(width: 1200, height: 140 + 110 * rows.count)
+        let image = UIGraphicsImageRenderer(size: size).image { context in
+            UIColor.white.setFill()
+            context.fill(CGRect(origin: .zero, size: size))
+            let font = UIFont.systemFont(ofSize: 56, weight: .medium)
+            for (index, row) in rows.enumerated() {
+                let y = 70 + CGFloat(index) * 110
+                (row.0 as NSString).draw(at: CGPoint(x: 60, y: y), withAttributes: [.font: font, .foregroundColor: UIColor.black])
+                (row.1 as NSString).draw(at: CGPoint(x: 640, y: y), withAttributes: [.font: font, .foregroundColor: UIColor.black])
+            }
+        }
+        let photo = try #require(image.jpegData(compressionQuality: 0.9))
+        let label = try #require(LabelReader.read(photo))
+        #expect(label.kcal == 373)
+        #expect(label.fat == 7)
+        #expect(label.carbs == 62)
+        #expect(label.protein == 9.2)
+        #expect(label.salt == 0.48)
     }
 
     @Test func savesAPrivateProductThatSyncs() throws {
