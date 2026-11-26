@@ -24,6 +24,10 @@ struct ShoppingStore {
         ))) ?? []
     }
 
+    func list(_ id: UUID) -> ShoppingList? {
+        lists().first { $0.id == id }
+    }
+
     /// The list to show: `preferred` while it is on the device (the list the user joined), else the first by name, made
     /// on the device (also offline) with the user as its owner when there is none.
     func ensureList(named name: String, ownerName: String, preferred: UUID? = nil) -> ShoppingList {

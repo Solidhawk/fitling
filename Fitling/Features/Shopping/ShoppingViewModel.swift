@@ -92,12 +92,42 @@ final class ShoppingViewModel {
             }
         }
         try? store.context.save()
-        for list in store.lists() {
-            if let records = try? await services.sharing.members(of: list.id) {
+        // By id, and looked up again after each request: another refresh or leaving may have removed a list meanwhile.
+        for listID in store.lists().map(\.id) {
+            guard let records = try? await services.sharing.members(of: listID), let list = store.list(listID) else { continue }
+            let ownerWaits = store.members(of: list).contains { $0.userID == store.userID && $0.needsPush }
+            if records.contains(where: { $0.userID == store.userID }) || list.needsPush || ownerWaits {
                 store.replaceMembers(of: list.id, with: records)
+            } else {
+                await notAMember(of: list)
             }
         }
         await refreshOffers(force: force)
+        reload()
+    }
+
+    /// The server does not count this user as a member of `list`, and sends nothing more about it: they left it
+    /// elsewhere, or it went with its last member. A list this user made elsewhere before it had its owner gets one,
+    /// as on the web (ensureList in web/src/data/shopping.ts); any other goes from this device.
+    private func notAMember(of list: ShoppingList) async {
+        let listID = list.id
+        if list.createdBy == store.userID {
+            let owner = ListMemberRecord(listID: listID, userID: store.userID, role: "owner", displayName: ownerName)
+            do {
+                try await services.sharing.addOwner(owner)
+                if let records = try? await services.sharing.members(of: listID) {
+                    store.replaceMembers(of: listID, with: records)
+                }
+                return
+            } catch SharingError.network {
+                return
+            } catch {
+                // Refused: the server emptied `created_by` when this user left, or the list is gone.
+            }
+        }
+        if joinedList == listID { defaults.removeObject(forKey: joinedListKey) }
+        if let current = store.list(listID) { store.forget(current) }
+        // Right away: the list and items on screen may be the ones just removed.
         reload()
     }
 
@@ -172,11 +202,11 @@ final class ShoppingViewModel {
     // MARK: Sharing
 
     func createInvite() async {
-        guard let list else { return }
+        guard let listID = list?.id else { return }
         sharingProblem = nil
         await refresh()
         do {
-            inviteCode = try await services.sharing.createInvite(for: list.id)
+            inviteCode = try await services.sharing.createInvite(for: listID)
         } catch {
             sharingProblem = error as? SharingError ?? .rejected
         }
@@ -208,11 +238,12 @@ final class ShoppingViewModel {
     }
 
     func leave() async {
-        guard let list else { return }
+        guard let listID = list?.id else { return }
         do {
-            try await services.sharing.leave(list.id, userID: store.userID)
-            if joinedList == list.id { defaults.removeObject(forKey: joinedListKey) }
-            store.forget(list)
+            try await services.sharing.leave(listID, userID: store.userID)
+            if joinedList == listID { defaults.removeObject(forKey: joinedListKey) }
+            // A refresh during the request may already have removed it.
+            if let current = store.list(listID) { store.forget(current) }
             self.list = nil
             reload()
         } catch {
