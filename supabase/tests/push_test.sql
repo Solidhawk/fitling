@@ -113,5 +113,38 @@ select throws_ok($$
 $$, '42501', null, 'zonder account geen abonnement');
 
 reset role;
+
+-- Versturen (send-reminders): wat aan de beurt is, wordt eerst geclaimd. Een aanroep die nog bezig is met een trage
+-- pushdienst en de aanroep van de minuut erna sturen een herinnering zo niet allebei.
+insert into public.push_subscriptions (id, user_id, endpoint, p256dh, auth) values
+  ('71000000-0000-0000-0000-000000000001', '70000000-0000-0000-0000-000000000002', 'https://web.push.apple.com/claim',
+   repeat('B', 87), repeat('a', 22));
+insert into public.push_reminders (id, user_id, subscription_id, fire_at, title, body) values
+  ('72000000-0000-0000-0000-000000000001', '70000000-0000-0000-0000-000000000002', '71000000-0000-0000-0000-000000000001',
+   now() - interval '1 minute', 'Pip', 'Tijd voor lunch'),
+  ('72000000-0000-0000-0000-000000000002', '70000000-0000-0000-0000-000000000002', '71000000-0000-0000-0000-000000000001',
+   now() + interval '1 hour', 'Pip', 'Hoe ging het vandaag?');
+
+set local role service_role;
+select is(
+  (select array_agg(id::text || ' ' || endpoint) from public.claim_push_reminders(10)),
+  array['72000000-0000-0000-0000-000000000001 https://web.push.apple.com/claim'],
+  'wat aan de beurt is, wordt geclaimd, met het adres van de browser; wat later komt niet');
+select is_empty($$ select id from public.claim_push_reminders(10) $$, 'een tweede aanroep krijgt het niet nog eens');
+update public.push_reminders set claimed_until = null where id = '72000000-0000-0000-0000-000000000001';
+select is(
+  (select count(*)::int from public.claim_push_reminders(10)), 1, 'vrijgegeven (een drukke pushdienst) komt het terug');
+update public.push_reminders set claimed_until = now() - interval '1 second'
+where id = '72000000-0000-0000-0000-000000000001';
+select is(
+  (select count(*)::int from public.claim_push_reminders(10)), 1,
+  'een claim die verliep (een aanroep die halverwege stopte) houdt het niet vast');
+reset role;
+
+set local role authenticated;
+set local request.jwt.claims = '{"sub": "70000000-0000-0000-0000-000000000002", "role": "authenticated"}';
+select throws_ok($$ select id from public.claim_push_reminders(10) $$, '42501', null, 'alleen send-reminders claimt');
+reset role;
+
 select * from finish();
 rollback;
