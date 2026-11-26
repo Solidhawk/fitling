@@ -6,7 +6,7 @@ export { expect, type Page } from "@playwright/test";
  * Every test, with what went wrong inside the page printed next to a failure: an exception in a screen leaves an
  * empty page, and the assertion alone does not say why. Swift says why the rules stopped (a fatal error) on stderr,
  * which the app passes to console.warn (fitlingCore.ts). A page that no longer answers, stuck in a loop, leaves no
- * error and no snapshot, so that is said too.
+ * error and no snapshot, so that is said too, and so is every request that failed.
  */
 export const test = base.extend<{ pageErrors: void }>({
   pageErrors: [
@@ -17,6 +17,8 @@ export const test = base.extend<{ pageErrors: void }>({
         if (message.type() === "error" || message.type() === "warning") errors.push(`${message.type()}: ${message.text()}`);
       });
       page.on("crash", () => errors.push("the page crashed"));
+      // Which file a "Failed to load resource" was: the console does not say.
+      page.on("requestfailed", (request) => errors.push(`request failed: ${request.url()} (${request.failure()?.errorText ?? "?"})`));
       await use();
       if (info.status === info.expectedStatus) return;
       const answers = await Promise.race([
