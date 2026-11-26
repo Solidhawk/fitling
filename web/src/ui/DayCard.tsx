@@ -33,6 +33,7 @@ export function DayCard({ totals, targets, partner, snapshot }: { totals: DayTot
                 trainedRecently: snapshot.trainedRecently,
                 items: partner.items,
               }}
+              energy={snapshot.energy}
             />
           </div>
         )}

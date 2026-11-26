@@ -63,6 +63,17 @@ public enum CreatureEngine {
         baseColorCount + colorUnlockLevels.filter { $0 <= level }.count
     }
 
+    /// The levels at which the colours that are still locked at `level` unlock.
+    public static func lockedColorLevels(atLevel level: Int) -> [Int] {
+        colorUnlockLevels.filter { $0 > level }
+    }
+
+    /// The first day whose record folding `state` needs: the engine judges a day by the seven days ending on it, so
+    /// the week before the first day still to fold in. Shared by CreatureHistory on iOS and the web.
+    public static func firstRecordDay(toAdvance state: CreatureState) -> Day {
+        (state.lastProcessedDay ?? state.createdOn).adding(-(windowDays - 1))
+    }
+
     /// The XP one day earns. Also usable for today, to show what is already earned.
     public static func xp(for record: DayRecord) -> XPBreakdown {
         var breakdown = XPBreakdown()

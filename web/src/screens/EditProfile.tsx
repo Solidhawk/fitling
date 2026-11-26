@@ -1,5 +1,5 @@
 import { ChevronsUpDown } from "lucide-react";
-import { type ReactNode, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import type { Activity, BodyFields, FitlingCore, Goal, ProfileRules, Sex, Targets } from "../core/fitlingCore";
 import type { Body, Profile } from "../data/profileStore";
 import { outOfRange } from "../data/profileStore";
@@ -7,46 +7,9 @@ import { isIsoDay, today } from "../day";
 import { decimal, parseInteger, parseNumber } from "../format";
 import { t } from "../i18n";
 import { activityKeys, goalKeys } from "../profileTexts";
-import { useDialogFocus } from "../ui/dialogFocus";
-import { List, ListRow, ListSection } from "../ui/List";
-import { NavBar } from "../ui/NavBar";
+import { FormSheet } from "../ui/FormSheet";
+import { ListRow, ListSection } from "../ui/List";
 import { usesMetric } from "../units";
-
-/** A form as a sheet over the app, with Cancel and Save in its bar (a sheet with a NavigationStack on iOS). */
-function FormSheet({
-  title,
-  canSave = true,
-  onSave,
-  onCancel,
-  children,
-}: {
-  title: string;
-  canSave?: boolean;
-  onSave: () => void;
-  onCancel: () => void;
-  children: ReactNode;
-}) {
-  const sheet = useRef<HTMLDivElement>(null);
-  useDialogFocus(sheet, onCancel);
-  return (
-    <div ref={sheet} className="sheet" role="dialog" aria-modal="true" aria-label={title} tabIndex={-1}>
-      <NavBar
-        title={title}
-        leading={
-          <button type="button" className="nav-back nav-action" onClick={onCancel}>
-            {t("common.cancel")}
-          </button>
-        }
-        trailing={
-          <button type="button" className="nav-back nav-action nav-confirm" disabled={!canSave} onClick={onSave}>
-            {t("profile.save")}
-          </button>
-        }
-      />
-      <List>{children}</List>
-    </div>
-  );
-}
 
 /** A Picker in a Form: the label, the chosen value on the right, the choices when tapped. */
 function PickerRow<Value extends string>({
@@ -135,7 +98,7 @@ export function EditProfile({ core, profile, onSave, onCancel }: { core: Fitling
   const text = (field: keyof BodyFields) => (value: string) => setTexts({ ...texts, [field]: value });
 
   return (
-    <FormSheet title={t("profile.edit")} canSave={edited !== undefined} onSave={() => edited && onSave(edited)} onCancel={onCancel}>
+    <FormSheet title={t("profile.edit")} saveLabel={t("profile.save")} canSave={edited !== undefined} onSave={() => edited && onSave(edited)} onCancel={onCancel}>
       <ListSection>
         <ListRow>
           <label className="labeled picker-row">
@@ -221,7 +184,7 @@ export function EditTargets({
   }
 
   return (
-    <FormSheet title={t("profile.editTargets")} onSave={save} onCancel={onCancel}>
+    <FormSheet title={t("profile.editTargets")} saveLabel={t("profile.save")} onSave={save} onCancel={onCancel}>
       <ListSection footer={showsRangeError ? <span className="message">{t("profile.targets.outOfRange")}</span> : undefined}>
         {targetFields.map(([key, label]) => (
           <ListRow key={key}>

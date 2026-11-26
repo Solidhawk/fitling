@@ -223,4 +223,62 @@ import FitlingCore
         #expect(try answer("localizedText", #"{"values":{"nl":"Brood","en":"Bread"},"languages":["de-DE","en-US"]}"#)["text"] as? String == "Bread")
         #expect(try answer("localizedText", #"{"values":{"nl":"Brood"},"languages":["de"]}"#)["text"] as? String == "Brood")
     }
+
+    // Web phase 3: the partner as the engine folds and dresses it.
+    func partnerDays(xp: Int, lastProcessed: String?, entries: [String], today: String) -> String {
+        let row = lastProcessed.map { #","lastProcessedDay":"\#($0)""# } ?? ""
+        let creature = #"{"species":"owl","colorIndex":0,"tone":"sweet","createdOn":"2026-11-14","bodyShape":0.3,"xp":\#(xp),"offTargetDays":0\#(row)}"#
+        let logged = entries.map { #"{"day":"\#($0)","kcal":2000,"proteinG":130}"# }.joined(separator: ",")
+        let fallback = #"{"kcal":2000,"proteinG":120,"carbsG":250,"fatG":70}"#
+        return #"{"creature":\#(creature),"entries":[\#(logged)],"workoutDays":[],"periods":[],"fallback":\#(fallback),"today":"\#(today)"}"#
+    }
+
+    func records(_ days: [String]) -> [DayRecord] {
+        days.map { DayRecord(day: Day(isoString: $0)!, kcal: 2000, kcalTarget: 2000, proteinG: 130, proteinTargetG: 120, entryCount: 1, workoutCompleted: false) }
+    }
+
+    @Test func partnerAdvanceIsTheEnginesOwn() throws {
+        let days = ["2026-11-20", "2026-11-21", "2026-11-22", "2026-11-23"]
+        let state = CreatureState(species: .owl, colorIndex: 0, tone: .sweet, createdOn: Day(isoString: "2026-11-14")!, xp: 80)
+        let expected = CreatureEngine.advance(state, records: records(days), today: Day(isoString: "2026-11-24")!)
+        let result = try answer("partnerAdvance", partnerDays(xp: 80, lastProcessed: nil, entries: days, today: "2026-11-24"))
+        let creature = try #require(result["creature"] as? [String: Any])
+        #expect(number(creature["xp"]) == Double(expected.state.xp))
+        #expect(creature["lastProcessedDay"] as? String == expected.state.lastProcessedDay?.isoString)
+        #expect(result["changed"] as? Bool == (expected.state != state))
+        #expect((result["events"] as? [[String: Any]])?.count == expected.events.count)
+        #expect(try answer("advanceFrom", #"{"creature":{"species":"owl","colorIndex":0,"tone":"sweet","createdOn":"2026-11-14","bodyShape":0.3,"xp":0,"offTargetDays":0,"lastProcessedDay":"2026-11-20"}}"#)["firstDay"] as? String == "2026-11-14")
+    }
+
+    @Test func advancingTheSameDaysAgainChangesNothing() throws {
+        let days = ["2026-11-20", "2026-11-21", "2026-11-22", "2026-11-23"]
+        let once = try answer("partnerAdvance", partnerDays(xp: 80, lastProcessed: nil, entries: days, today: "2026-11-24"))
+        let creature = try #require(once["creature"] as? [String: Any])
+        let twice = try answer(
+            "partnerAdvance",
+            partnerDays(xp: Int(number(creature["xp"]) ?? 0), lastProcessed: creature["lastProcessedDay"] as? String, entries: days, today: "2026-11-24")
+        )
+        #expect(twice["changed"] as? Bool == false)
+        #expect((twice["events"] as? [Any])?.isEmpty == true)
+    }
+
+    @Test func todayXPIsTheEnginesOwn() throws {
+        let expected = CreatureEngine.xp(for: records(["2026-11-24"])[0])
+        let result = try answer("partnerSnapshot", partnerDays(xp: 0, lastProcessed: nil, entries: ["2026-11-24"], today: "2026-11-24"))
+        let today = try #require(result["todayXP"] as? [String: Any])
+        #expect(number(today["logging"]) == Double(expected.logging))
+        #expect(number(today["withinTarget"]) == Double(expected.withinTarget))
+        #expect(number(today["protein"]) == Double(expected.protein))
+        #expect(result["lockedColorLevels"] as? [Int] == CreatureEngine.colorUnlockLevels)
+        let items = try #require(result["items"] as? [[String: Any]])
+        #expect(items.map { $0["item"] as? String } == CreatureItem.allCases.map(\.rawValue))
+        #expect(items.map { number($0["unlockLevel"]) } == CreatureItem.allCases.map { Double($0.unlockLevel) })
+    }
+
+    @Test func wearingFollowsTheCore() throws {
+        let worn = try answer("wearing", #"{"worn":["scarf","crown"],"item":"cap","unlocked":["scarf","cap","bow","glasses","backpack","crown"]}"#)
+        #expect(worn["worn"] as? [String] == ["scarf", "cap"])
+        let locked = try answer("wearing", #"{"worn":[],"item":"crown","unlocked":["scarf"]}"#)
+        #expect(locked["worn"] as? [String] == [])
+    }
 }

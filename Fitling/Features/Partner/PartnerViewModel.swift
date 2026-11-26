@@ -79,14 +79,10 @@ final class PartnerViewModel {
     /// Puts an unlocked item on or takes it off. A cap and a crown do not fit on one head: putting
     /// one on takes the other off.
     func toggle(_ item: CreatureItem) {
-        guard let creature, isUnlocked(item) else { return }
-        var worn = creature.equippedItems.filter { $0 != item.rawValue }
-        if !isWorn(item) {
-            worn.removeAll { $0 == item.blocked?.rawValue }
-            worn.append(item.rawValue)
-        }
-        // Stored in a fixed order, so two devices that wear the same things store the same row.
-        save(creature) { $0.equippedItems = CreatureItem.allCases.map(\.rawValue).filter(worn.contains) }
+        guard let creature, isUnlocked(item), let unlocked = snapshot?.unlockedItems else { return }
+        // The same rule as on the web (FitlingCore), in the fixed order both store.
+        let worn = CreatureEngine.wearing(wornItems(of: creature), toggling: item, unlocked: unlocked)
+        save(creature) { $0.equippedItems = worn.map(\.rawValue) }
     }
 
     func setColor(_ index: Int) {
@@ -98,7 +94,7 @@ final class PartnerViewModel {
     /// Levels at which the colours that are still locked unlock.
     var lockedColorLevels: [Int] {
         guard let snapshot else { return [] }
-        return CreatureEngine.colorUnlockLevels.filter { $0 > snapshot.level }
+        return CreatureEngine.lockedColorLevels(atLevel: snapshot.level)
     }
 
     // MARK: Name and voice
@@ -156,16 +152,5 @@ final class PartnerViewModel {
         creature.updatedAt = history.now()
         creature.needsPush = true
         try? history.context.save()
-    }
-}
-
-extension CreatureItem {
-    /// The item that cannot be worn at the same time: both go on top of the head.
-    var blocked: CreatureItem? {
-        switch self {
-        case .cap: .crown
-        case .crown: .cap
-        default: nil
-        }
     }
 }

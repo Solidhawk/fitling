@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "./fixtures";
-import { createUser, foodEntry, localDay, nl, sharedProduct, signIn } from "./users";
+import { admin, createUser, foodEntry, localDay, nl, sharedProduct, signIn } from "./users";
 
 // Every screen of phase 1 in light, dark and at 200 % text (the largest text on iOS is about that): no axe
 // violations, and at 200 % nothing that only a sideways scroll reaches. The screenshots go on the board next to iOS.
@@ -38,7 +38,9 @@ async function check(page: Page, mode: Mode, name: string, project: string) {
         if (box.width === 0) continue;
         const visible = getComputedStyle(element).overflowX === "visible";
         const outside = box.right > width + 1 || box.left < -1;
-        const textOut = visible && element.clientWidth > 0 && element.scrollWidth > element.clientWidth + 1;
+        // A long value scrolls inside its field, as in a TextField on iOS; the field itself must stay on screen.
+        const field = element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement;
+        const textOut = visible && !field && element.clientWidth > 0 && element.scrollWidth > element.clientWidth + 1;
         if (outside || textOut) found.push(`${element.tagName.toLowerCase()}.${element.className}`);
       }
       return found.slice(0, 6);
@@ -116,6 +118,37 @@ for (const mode of modes) {
       await page.getByTestId("log.scan").click();
       await expect(page.locator('[data-screen="scan"]')).toBeVisible();
       await check(page, mode, "23-scannen", info.project.name);
+    });
+
+    // Review Focus: a long name at 200 % on the name plate and in the mood line; at level 1 the locked accessories
+    // and colours with their level, as on the iPhone's screens 12 and 23.
+    test("Partner", async ({ page }, info) => {
+      const user = await createUser({ profile: true, creature: true });
+      const { error } = await admin.from("creatures").update({ name: "Wollige Wervelwind Pip" }).eq("user_id", user.id);
+      if (error) throw error;
+      await foodEntry(user.id, { consumed_on: localDay(), kcal: 2700, protein_g: 130 });
+      await signIn(page, user.email);
+      await expect(page.getByTestId("day.progress")).toBeVisible({ timeout: 15_000 });
+      await page.getByRole("tab", { name: nl("partner.title") }).click();
+      await expect(page.getByTestId("partner.hero")).toBeVisible({ timeout: 15_000 });
+      await check(page, mode, "12-partner", info.project.name);
+      await page.getByTestId("partner.item.crown").scrollIntoViewIfNeeded();
+      await check(page, mode, "23-partner-onder", info.project.name);
+      await page.getByRole("button", { name: nl("partner.edit") }).click();
+      await expect(page.getByRole("dialog", { name: nl("partner.edit") })).toBeVisible();
+      await check(page, mode, "24-partner-aanpassen", info.project.name);
+    });
+
+    test("Partner with everything unlocked", async ({ page }, info) => {
+      const user = await createUser({ profile: true, creature: true });
+      const { error } = await admin.from("creatures").update({ xp: 30_000, equipped_items: ["scarf", "crown"] }).eq("user_id", user.id);
+      if (error) throw error;
+      await signIn(page, user.email);
+      await expect(page.getByTestId("day.progress")).toBeVisible({ timeout: 15_000 });
+      await page.getByRole("tab", { name: nl("partner.title") }).click();
+      await expect(page.getByTestId("partner.hero")).toBeVisible({ timeout: 15_000 });
+      await page.getByTestId("partner.item.crown").scrollIntoViewIfNeeded();
+      await check(page, mode, "25-partner-alles", info.project.name);
     });
 
     test("Dagdoel and account", async ({ page }, info) => {

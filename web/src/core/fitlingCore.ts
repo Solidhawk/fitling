@@ -111,13 +111,43 @@ export interface PartnerSnapshot {
   condition: string;
   energy: number;
   level: number;
+  xp: number;
+  xpIntoLevel: number;
+  /** 0 at the highest level. */
+  xpForNextLevel: number;
   growthStage: number;
   bodyShape: number;
   colorIndex: number;
   trainedRecently: boolean;
+  unlockedItems: string[];
+  /** Every accessory in its own order, with the level at which it unlocks. */
+  items: { item: string; unlockLevel: number }[];
   unlockedColorCount: number;
+  /** The levels at which the colours that are still locked unlock. */
+  lockedColorLevels: number[];
+  /** What today earns so far; it is added once the day is over. */
+  todayXP: { logging: number; withinTarget: number; protein: number; workout: number };
   /** How many days before today decide the mood. */
   historyDays: number;
+}
+
+/** What happened when finished days were folded in: a level, an accessory, a colour, a recovery bonus. */
+export interface PartnerEvent {
+  kind: "leveledUp" | "unlockedItem" | "unlockedColor" | "recoveryBonus";
+  level?: number;
+  item?: string;
+  index?: number;
+  xp?: number;
+}
+
+/** The partner's days, as partnerSnapshot and partnerAdvance read them. */
+export interface PartnerDays {
+  creature: CreatureStateInput;
+  entries: { day: IsoDay; kcal: number; proteinG?: number }[];
+  workoutDays: IsoDay[];
+  periods: { effectiveOn: IsoDay; updatedAtMs: number; targets: Targets }[];
+  fallback: Targets;
+  today: IsoDay;
 }
 
 export interface ProfileRules {
@@ -168,14 +198,10 @@ export interface FitlingCore {
   }): { fields?: OwnProductFields };
   dayTotals(input: { entries: Nutrients[] }): DayTotals;
   localizedText(input: { values: Record<string, string>; languages: string[] }): { text: string };
-  partnerSnapshot(input: {
-    creature: CreatureStateInput;
-    entries: { day: IsoDay; kcal: number; proteinG?: number }[];
-    workoutDays: IsoDay[];
-    periods: { effectiveOn: IsoDay; updatedAtMs: number; targets: Targets }[];
-    fallback: Targets;
-    today: IsoDay;
-  }): PartnerSnapshot;
+  partnerSnapshot(input: PartnerDays): PartnerSnapshot;
+  advanceFrom(input: { creature: CreatureStateInput }): { firstDay: IsoDay };
+  partnerAdvance(input: PartnerDays): { creature: CreatureStateInput; changed: boolean; events: PartnerEvent[] };
+  wearing(input: { worn: string[]; item: string; unlocked: string[] }): { worn: string[] };
 }
 
 interface Exports {
@@ -232,6 +258,9 @@ export async function loadCore(wasm: ArrayBuffer): Promise<FitlingCore> {
     ownProduct: (input) => call("ownProduct", input) as ReturnType<FitlingCore["ownProduct"]>,
     dayTotals: (input) => call("dayTotals", input) as DayTotals,
     partnerSnapshot: (input) => call("partnerSnapshot", input) as PartnerSnapshot,
+    advanceFrom: (input) => call("advanceFrom", input) as { firstDay: IsoDay },
+    partnerAdvance: (input) => call("partnerAdvance", input) as ReturnType<FitlingCore["partnerAdvance"]>,
+    wearing: (input) => call("wearing", input) as { worn: string[] },
     localizedText: (input) => call("localizedText", input) as { text: string },
   };
 }

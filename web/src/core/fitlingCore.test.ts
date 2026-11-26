@@ -129,3 +129,27 @@ test("the partner as the engine sees it today", async () => {
   expect(snapshot.energy).toBeGreaterThanOrEqual(0);
   expect(snapshot.energy).toBeLessThanOrEqual(1);
 });
+
+test("the partner folded, dressed and today's XP (web phase 3)", async () => {
+  const core = await loadCore(wasm);
+  const creature = { species: "owl", colorIndex: 0, tone: "sweet", createdOn: "2026-11-14", bodyShape: 0.3, xp: 80, offTargetDays: 0 };
+  const days = {
+    creature,
+    entries: ["2026-11-20", "2026-11-21", "2026-11-22", "2026-11-23"].map((day) => ({ day, kcal: 2000, proteinG: 130 })),
+    workoutDays: [],
+    periods: [],
+    fallback: { kcal: 2000, proteinG: 120, carbsG: 250, fatG: 70 },
+    today: "2026-11-24",
+  };
+  const once = core.partnerAdvance(days);
+  expect(once.changed).toBe(true);
+  expect(once.creature.lastProcessedDay).toBe("2026-11-23");
+  expect(core.partnerAdvance({ ...days, creature: once.creature })).toMatchObject({ changed: false, events: [] });
+  expect(core.advanceFrom({ creature: { ...creature, lastProcessedDay: "2026-11-20" } })).toEqual({ firstDay: "2026-11-14" });
+  expect(core.wearing({ worn: ["scarf", "crown"], item: "cap", unlocked: ["scarf", "cap", "crown"] })).toEqual({ worn: ["scarf", "cap"] });
+  const snapshot = core.partnerSnapshot({ ...days, creature: once.creature });
+  expect(snapshot.lockedColorLevels.length).toBeGreaterThan(0);
+  expect(snapshot.items.map((entry) => entry.item)).toEqual(["scarf", "cap", "bow", "glasses", "backpack", "crown"]);
+  expect(snapshot.items.find((entry) => entry.item === "crown")?.unlockLevel).toBe(15);
+  expect(Object.keys(snapshot.todayXP).sort()).toEqual(["logging", "protein", "withinTarget", "workout"]);
+});
