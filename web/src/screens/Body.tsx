@@ -22,7 +22,9 @@ export function Body({ core, userID, onBack }: { core: FitlingCore; userID: stri
   const [kind, setKind] = useState<MeasurementKind>("weight");
   const [measurements, setMeasurements] = useState<Measurement[]>([]);
   const [value, setValue] = useState("");
-  const [day, setDay] = useState(today());
+  // Undefined while the user leaves it at today: the day is then the one of the moment of adding, also past midnight
+  // with the screen still open (UNFORGET S53). A day the user picked stays.
+  const [picked, setPicked] = useState<string>();
   const [failed, setFailed] = useState<string>();
   const symbol = kind === "weight" ? (metric ? "kg" : "lb") : metric ? "cm" : "in";
   const shown = (measurement: Measurement) => core.measurementShown({ value: measurement.value, kind: measurement.kind, usesMetric: metric }).value ?? measurement.value;
@@ -56,7 +58,8 @@ export function Body({ core, userID, onBack }: { core: FitlingCore; userID: stri
     if (stored === undefined || adding.current) return;
     adding.current = true;
     void act(async () => {
-      if (await addMeasurement(supabase, userID, { kind, value: stored, day, today: today() }, new Date())) setValue("");
+      const now = today();
+      if (await addMeasurement(supabase, userID, { kind, value: stored, day: picked ?? now, today: now }, new Date())) setValue("");
     }).finally(() => {
       adding.current = false;
     });
@@ -101,7 +104,14 @@ export function Body({ core, userID, onBack }: { core: FitlingCore; userID: stri
           <ListRow>
             <label className="labeled picker-row">
               <span>{t("body.date")}</span>
-              <input className="picker" type="date" max={today()} value={day} onChange={(event) => setDay(event.target.value)} />
+              <input
+                className="picker"
+                type="date"
+                max={today()}
+                value={picked ?? today()}
+                // Emptied by hand, the field is today again: a measurement needs a day.
+                onChange={(event) => setPicked(event.target.value === "" || event.target.value === today() ? undefined : event.target.value)}
+              />
             </label>
           </ListRow>
           <ListRow onClick={add} disabled={stored === undefined}>

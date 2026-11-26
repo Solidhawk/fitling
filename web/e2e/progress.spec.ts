@@ -1,6 +1,6 @@
 import { deflateSync } from "node:zlib";
 import { expect, test } from "./fixtures";
-import { exercise, finishedWorkout, openTraining, tapRow } from "./training";
+import { daysBefore, exercise, finishedWorkout, openTraining, tapRow } from "./training";
 import { admin, nl } from "./users";
 
 // The progress screens of the training tab, the body log and the progress photos (web phase 4).
@@ -53,6 +53,49 @@ test("measurementsAreAddedAndShown", async ({ page }, info) => {
   await page.screenshot({ path: `test-results/screens/${info.project.name}-lichaam.png`, fullPage: true });
   const { data } = await admin.from("body_measurements").select("kind, value").eq("user_id", user.id);
   expect(data).toEqual([{ kind: "weight", value: 80.4 }]);
+});
+
+test.describe("around midnight in Tokyo", () => {
+  test.use({ timezoneId: "Asia/Tokyo" });
+
+  // Lichaam open since the evening: a measurement added after midnight is for the new day, not the day the screen
+  // opened on (UNFORGET S53). Yesterday in Tokyo, so the fake clock is never ahead of the real one.
+  test("aMeasurementAfterMidnightIsForTheNewDay", async ({ page }) => {
+    const day = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Tokyo" }).format(new Date(Date.now() - 86_400_000));
+    const [year, month, date] = day.split("-").map(Number);
+    const next = new Date(Date.UTC(year, month - 1, date + 1)).toISOString().slice(0, 10);
+    await page.clock.setFixedTime(new Date(`${day}T23:59:00+09:00`));
+    const user = await openTraining(page);
+    await page.getByRole("button", { name: nl("body.title") }).click();
+    await expect(page.getByTestId("body.value")).toBeVisible();
+    await page.clock.setFixedTime(new Date(`${next}T00:01:00+09:00`));
+    await page.getByTestId("body.value").fill("80,4");
+    await page.getByRole("button", { name: nl("body.add") }).click();
+    await expect(page.getByTestId("body.measurement")).toContainText(/80,4\s?kg/);
+    const { data } = await admin.from("body_measurements").select("measured_on").eq("user_id", user.id);
+    expect(data).toEqual([{ measured_on: next }]);
+  });
+});
+
+// The date field emptied by hand: the measurement is for today, not refused; a day picked earlier stays (UNFORGET S42,
+// S53).
+test("anEmptyDateFieldMeansTodayAndAPickedDayStays", async ({ page }) => {
+  const user = await openTraining(page);
+  await page.getByRole("button", { name: nl("body.title") }).click();
+  const field = page.getByLabel(nl("body.date"));
+  await page.getByTestId("body.value").fill("80,4");
+  await field.fill("");
+  await page.getByRole("button", { name: nl("body.add") }).click();
+  await expect(page.getByTestId("body.measurement")).toContainText(/80,4\s?kg/);
+  await page.getByTestId("body.value").fill("80,9");
+  await field.fill(daysBefore(1));
+  await page.getByRole("button", { name: nl("body.add") }).click();
+  await expect(page.getByTestId("body.measurement")).toHaveCount(2, { timeout: 15_000 });
+  const { data } = await admin.from("body_measurements").select("measured_on, value").eq("user_id", user.id).order("measured_on");
+  expect(data).toEqual([
+    { measured_on: daysBefore(1), value: 80.9 },
+    { measured_on: daysBefore(0), value: 80.4 },
+  ]);
 });
 
 // A double tap stores one measurement, not two (UNFORGET S42).
