@@ -145,6 +145,19 @@ struct MenuFixture {
         #expect(try fixture.context.fetchCount(FetchDescriptor<FoodEntry>()) == 1)
     }
 
+    /// Removed on another device after it was planned: the meal still shows and can be logged, as before MenuBook.
+    @Test func aMealWhoseRecipeWasRemovedCanStillBeLogged() throws {
+        fixture.store.generate(seed: 1)
+        let entry = try #require(fixture.store.entries().first)
+        let recipe = try #require(fixture.store.recipe(entry.recipeID))
+        recipe.deletedAt = fixture.now
+        try fixture.context.save()
+        #expect(fixture.store.entries().contains { $0.id == entry.id })
+        #expect(!fixture.store.recipes().contains { $0.id == recipe.id })
+        let food = try #require(fixture.store.log(entry))
+        #expect(food.recipeID == recipe.id)
+    }
+
     // MARK: Menu generator (feedback 2026-11-21: days, goal, what not to eat, adjust per day)
 
     @Test func aMenuCanCoverFewerDays() {

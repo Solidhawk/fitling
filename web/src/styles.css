@@ -278,8 +278,18 @@ body {
   color: var(--ink);
 }
 
-.list-row + .list-row {
-  box-shadow: inset var(--space-l) 1px 0 0 var(--card), inset 0 1px 0 0 var(--track);
+/* The hairline above each row after the first, from where the text starts to the right edge, as in a List on iOS.
+   A background image, not an inset shadow: a shadow's offset also paints the whole top edge and hid the line.
+   Rows whose text starts further in set --hairline-start. */
+.list-row + .list-row,
+.swipe-row + .list-row,
+.swipe-row + .swipe-row > .swipe-content,
+.list-row + .swipe-row > .swipe-content,
+.xp-row + .xp-row {
+  background-image: linear-gradient(var(--track), var(--track));
+  background-repeat: no-repeat;
+  background-position: right top;
+  background-size: calc(100% - var(--hairline-start, var(--space-l))) 1px;
 }
 
 .list-row-button:disabled {
@@ -921,11 +931,8 @@ p {
 /* What today earns: a filled check once a part is earned, with its XP on the right. The hairline starts at the
    text, past the check, as on iOS. */
 .xp-row {
+  --hairline-start: calc(var(--space-l) + 20px + var(--space-s));
   gap: var(--space-s);
-}
-
-.xp-row + .xp-row {
-  box-shadow: inset calc(var(--space-l) + 20px + var(--space-s)) 1px 0 0 var(--card), inset 0 1px 0 0 var(--track);
 }
 
 .xp-row-open .symbol {
@@ -1524,16 +1531,12 @@ input.picker[type="date"] {
   min-width: 0;
 }
 
-/* SwipeRow: the row slides left over its red Delete. */
+/* SwipeRow: the row slides aside over the buttons at its edges, Delete in red on the right. */
 .swipe-row {
   position: relative;
   overflow: hidden;
 }
 
-.swipe-row + .swipe-row,
-.swipe-row + .list-row {
-  box-shadow: inset var(--space-l) 1px 0 0 var(--card), inset 0 1px 0 0 var(--track);
-}
 
 .swipe-content {
   position: relative;
@@ -1541,26 +1544,75 @@ input.picker[type="date"] {
   background-color: var(--card);
   transition: transform 0.2s ease-out;
   touch-action: pan-y;
+  /* A long press opens the row's menu, not the browser's text selection. */
+  -webkit-touch-callout: none;
+  user-select: none;
 }
 
-.swipe-delete {
+.swipe-actions {
   position: absolute;
   top: 0;
-  right: 0;
   bottom: 0;
-  width: 96px;
+  display: flex;
+}
+
+.swipe-actions-leading {
+  left: 0;
+}
+
+.swipe-actions-trailing {
+  right: 0;
+}
+
+/* The labels keep their size at large text, as the buttons under a swiped row on iOS; each button is as wide as its
+   label needs, and at least 96 px. */
+.swipe-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  min-width: 96px;
+  padding: 0 var(--space-m);
   border: 0;
-  /* The deep red in both modes: white on the lighter red of dark mode would be 2.8:1. */
-  background-color: #d70015;
-  color: #fff;
   font: inherit;
+  font-size: min(0.9375rem, 15px);
   font-weight: 600;
+  line-height: 1.15;
+  white-space: nowrap;
   cursor: pointer;
 }
 
-.swipe-delete:focus-visible {
+/* The tints of the actions on iOS; the label in ink where white on the pale tint would be hard to read. */
+.swipe-sprout {
+  background-color: var(--sprout);
+  color: #231a33;
+}
+
+.swipe-ink {
+  background-color: var(--ink);
+  color: var(--card);
+}
+
+.swipe-pebble {
+  background-color: var(--pebble);
+  color: #231a33;
+}
+
+.swipe-delete {
+  /* The deep red in both modes: white on the lighter red of dark mode would be 2.8:1. */
+  background-color: #d70015;
+  color: #fff;
+  font-size: min(1rem, 16px);
+}
+
+.swipe-action:focus-visible {
   outline: 2px solid var(--ink);
   outline-offset: -4px;
+}
+
+.swipe-ink:focus-visible {
+  outline-color: var(--card);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2285,4 +2337,136 @@ span.labeled-row {
 /* A sheet opened from a sheet (an exercise from a workout) lies over everything of the first, its rest timer too. */
 .sheet .sheet {
   z-index: 12;
+}
+
+/* Menu (MenuTabView, MenuGeneratorView, RecipeViews). */
+.toolbar-split {
+  justify-content: space-between;
+}
+
+.stepper-label.heavy {
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.menu-empty {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-l);
+}
+
+.menu-empty-text {
+  margin: 0 var(--space-l);
+  color: var(--ink-soft);
+}
+
+/* A day's date in heavy ink as written, the button for other meals on the right (ViewThatFits). */
+.menu-day-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-s);
+  margin: 0 var(--space-l) var(--space-s);
+}
+
+.menu-day-title {
+  margin: 0;
+  font-size: 1.0625rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.menu-renew {
+  flex: none;
+  min-height: 2.75rem;
+  margin: calc(-1 * var(--space-m)) 0;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.menu-day-header[data-compact="true"] .menu-renew-label {
+  display: none;
+}
+
+/* Too narrow even for the icon beside it, at the largest text: the date may take a second line. */
+.menu-day-header[data-compact="true"] .menu-day-title {
+  white-space: normal;
+}
+
+.menu-entry,
+.recipe-row {
+  gap: var(--space-m);
+}
+
+.recipe-row {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.menu-entry-text {
+  flex: 1;
+}
+
+.menu-entry-slot {
+  font-weight: 700;
+}
+
+.menu-entry-state {
+  flex: none;
+  display: inline-flex;
+}
+
+/* Rows with a photo: the hairline starts under the text. */
+.list-rows:has(.thumbnail) {
+  --hairline-start: calc(var(--space-l) + 56px + var(--space-m));
+}
+
+.recipe-photo {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 0.625rem;
+}
+
+.recipe-step {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-m);
+}
+
+.recipe-step-number {
+  flex: none;
+  font-size: 1.0625rem;
+  font-weight: 800;
+}
+
+/* At the largest text the field goes under its label rather than out of the row. */
+label.labeled:has(.value-input) {
+  flex-wrap: wrap;
+}
+
+.value-input {
+  display: flex;
+  margin-left: auto;
+  align-items: baseline;
+  gap: var(--space-s);
+}
+
+.number-input {
+  width: 6.25rem;
+  text-align: right;
+}
+
+.ingredient-fields {
+  display: flex;
+  gap: var(--space-m);
+  width: 100%;
+}
+
+.ingredient-quantity {
+  flex: none;
+  width: 4.5rem;
 }

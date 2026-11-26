@@ -1,6 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "./fixtures";
 import { exercise, finishedWorkout, firstProgramme, openTraining } from "./training";
+import { openMenu, todaysMenu } from "./menu";
 import { admin, createUser, foodEntry, localDay, nl, sharedProduct, signIn } from "./users";
 
 // Every screen of phase 1 in light, dark and at 200 % text (the largest text on iOS is about that): no axe
@@ -196,6 +197,43 @@ for (const mode of modes) {
       await page.getByTestId("training.program.new").click();
       await page.getByTestId("training.program.name").fill("Mijn eigen schema voor maandag en donderdag");
       await check(page, mode, "11-eigen-schema", info.project.name);
+    });
+
+    test("Menu", async ({ page }, info) => {
+      await openMenu(page);
+      await check(page, mode, "26-menu-leeg", info.project.name);
+      await page.getByTestId("menu.generate.first").click();
+      await expect(page.getByTestId("menu.generator.make")).toBeVisible();
+      await check(page, mode, "27-menu-maken", info.project.name);
+      await page.getByTestId("menu.generator.make").click();
+      await expect(page.getByTestId(`menu.day.renew.${localDay()}`)).toBeVisible({ timeout: 15_000 });
+      await check(page, mode, "28-weekmenu", info.project.name);
+      await page.getByTestId("menu.preferences").click();
+      await check(page, mode, "29-menu-voorkeuren", info.project.name);
+      await page.getByRole("button", { name: nl("common.ok"), exact: true }).click();
+      await page.getByTestId("menu.recipes").click();
+      await expect(page.getByTestId("menu.recipe.new")).toBeVisible();
+      await check(page, mode, "30-recepten", info.project.name);
+      await page.getByTestId("menu.recipe.new").click();
+      await page.getByTestId("menu.own.title").fill("Ovenschotel met zoete aardappel en spinazie");
+      await check(page, mode, "31-eigen-recept", info.project.name);
+    });
+
+    test("A recipe and a meal's menu", async ({ page }, info) => {
+      let planned: Awaited<ReturnType<typeof todaysMenu>> = [];
+      await openMenu(page, async (userID) => {
+        planned = await todaysMenu(userID);
+      });
+      await page.getByTestId(`menu.entry.${planned[1].id}`).click({ button: "right" });
+      await expect(page.getByRole("alertdialog")).toBeVisible();
+      await check(page, mode, "32-menu-acties", info.project.name);
+      await page.getByRole("alertdialog").getByRole("button", { name: nl("menu.swap") }).click();
+      await expect(page.getByTestId("menu.picker.search")).toBeVisible();
+      await check(page, mode, "33-ander-recept", info.project.name);
+      await page.getByRole("button", { name: nl("common.cancel") }).click();
+      await page.getByTestId(`menu.entry.${planned[0].id}`).click();
+      await expect(page.getByRole("heading", { name: nl("menu.recipe.steps") })).toBeVisible({ timeout: 15_000 });
+      await check(page, mode, "34-recept", info.project.name);
     });
 
     test("Dagdoel and account", async ({ page }, info) => {

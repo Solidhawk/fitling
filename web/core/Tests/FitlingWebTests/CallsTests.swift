@@ -398,4 +398,84 @@ import FitlingCore
         #expect(number(try answer("measurementStored", #"{"value":176,"kind":"weight","usesMetric":false}"#)["value"]) == 79.8)
         #expect(try answer("measurementStored", #"{"value":600,"kind":"waist","usesMetric":true}"#)["value"] == nil)
     }
+
+    // Web phase 5: the week menu, from the same MenuBook as MenuStore.
+    struct MenuJSON: Encodable {
+        var userID = UUID()
+        var today = "2026-11-18"
+        var languages = ["nl"]
+        var recipes: [MenuRecipe] = []
+        var removedRecipes: [MenuRecipe] = []
+        var entries: [MenuEntry] = []
+        var settings = MenuSettings()
+        var excludedProductIDs: [UUID] = []
+
+        func with(_ extra: String) throws -> String {
+            let menu = String(decoding: try JSONEncoder().encode(self), as: UTF8.self)
+            return extra.isEmpty ? #"{"menu":\#(menu)}"# : #"{"menu":\#(menu),\#(extra)}"#
+        }
+    }
+
+    func menuRecipes() -> [MenuRecipe] {
+        ["breakfast", "lunch", "dinner"].flatMap { slot in
+            (1...3).map { number in
+                MenuRecipe(
+                    id: UUID(), ownerID: nil, title: LocalizedText(["nl": "\(slot) \(number)"]), servings: 2, cookMinutes: 20,
+                    kcalPerServing: 700, proteinGPerServing: 35, carbsGPerServing: 70, fatGPerServing: 20, mealSlots: [slot]
+                )
+            }
+        }
+    }
+
+    let menuTargets = #""targets":{"kcal":2200,"proteinG":120,"carbsG":250,"fatG":70}"#
+
+    @Test func menuGenerateKeepsPinnedMeals() throws {
+        var json = MenuJSON(recipes: menuRecipes())
+        let pinned = MenuEntry(id: UUID(), plannedOn: Day(isoString: "2026-11-18")!, meal: "dinner", recipeID: json.recipes[6].id, servings: 1, isPinned: true)
+        let plain = MenuEntry(id: UUID(), plannedOn: Day(isoString: "2026-11-18")!, meal: "lunch", recipeID: json.recipes[3].id, servings: 1)
+        json.entries = [pinned, plain]
+        let result = try answer("menuGenerate", try json.with(#""days":7,"seed":"18446744073709551615",\#(menuTargets)"#))
+        #expect(result["removed"] as? [String] == [plain.id.uuidString.lowercased()])
+        let added = try #require(result["added"] as? [[String: Any]])
+        #expect(added.count == 7 * 3 - 1)
+        #expect(!added.contains { $0["day"] as? String == "2026-11-18" && $0["slot"] as? String == "dinner" })
+        let overview = try answer("menuOverview", try json.with(""))
+        let first = try #require((overview["days"] as? [[String: Any]])?.first)
+        #expect(first["day"] as? String == "2026-11-18")
+        #expect(((first["entries"] as? [[String: Any]])?.map { $0["slot"] as? String }) == ["lunch", "dinner"])
+    }
+
+    @Test func loggedMealIsTheBooksOwn() throws {
+        var json = MenuJSON(recipes: menuRecipes())
+        let entry = MenuEntry(id: UUID(), plannedOn: Day(isoString: "2026-11-19")!, meal: "lunch", recipeID: json.recipes[3].id, servings: 1.5)
+        json.entries = [entry]
+        let result = try answer("menuLoggedMeal", try json.with(#""entryID":"\#(entry.id)""#))
+        let meal = try #require(result["meal"] as? [String: Any])
+        #expect(number(meal["kcal"]) == 1050 && meal["day"] as? String == "2026-11-19" && meal["slot"] as? String == "lunch")
+        #expect(meal["recipeID"] as? String == json.recipes[3].id.uuidString.lowercased())
+    }
+
+    @Test func aMealWhoseRecipeWasRemovedKeepsItsName() throws {
+        var json = MenuJSON(recipes: menuRecipes())
+        let removed = MenuRecipe(
+            id: UUID(), ownerID: json.userID, title: LocalizedText(["nl": "Weggehaald"]), servings: 1, cookMinutes: 10, kcalPerServing: 500,
+            proteinGPerServing: 20, carbsGPerServing: 50, fatGPerServing: 20, mealSlots: ["dinner"]
+        )
+        let entry = MenuEntry(id: UUID(), plannedOn: Day(isoString: "2026-11-18")!, meal: "dinner", recipeID: removed.id, servings: 1)
+        json.removedRecipes = [removed]
+        json.entries = [entry]
+        let overview = try answer("menuOverview", try json.with(""))
+        let shown = try #require(((overview["days"] as? [[String: Any]])?.first?["entries"] as? [[String: Any]])?.first)
+        #expect(shown["title"] as? String == "Weggehaald" && number(shown["kcal"]) == 500)
+        #expect(!((overview["recipes"] as? [[String: Any]]) ?? []).contains { $0["title"] as? String == "Weggehaald" })
+        let logged = try answer("menuLoggedMeal", try json.with(#""entryID":"\#(entry.id)""#))
+        #expect((logged["meal"] as? [String: Any])?["name"] as? String == "Weggehaald")
+    }
+
+    @Test func ownRecipeCompleteFollowsTheCore() throws {
+        let complete = try answer("ownRecipeComplete", #"{"title":"Pasta pesto","servings":2,"cookMinutes":20,"kcal":550,"protein":18,"carbs":70,"fat":20,"mealSlots":["dinner"]}"#)
+        #expect(complete["complete"] as? Bool == true)
+        let missing = try answer("ownRecipeComplete", #"{"title":"Pasta pesto","servings":2,"cookMinutes":20,"kcal":550,"protein":18,"carbs":70,"mealSlots":["dinner"]}"#)
+        #expect(missing["complete"] as? Bool == false)
+    }
 }

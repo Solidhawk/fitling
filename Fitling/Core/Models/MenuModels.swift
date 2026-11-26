@@ -166,12 +166,7 @@ extension Recipe {
     /// The recipe as the week-menu planner sees it. Nil for a recipe without energy, which
     /// the planner could not scale.
     func plannerRecipe(ingredientIDs: Set<UUID>) -> PlannerRecipe? {
-        guard kcalPerServing > 0 else { return nil }
-        return PlannerRecipe(
-            id: id, kcalPerServing: kcalPerServing, proteinPerServing: proteinGPerServing, cookMinutes: cookMinutes,
-            costCentsPerServing: costCentsPerServing, slots: Set(mealSlots.compactMap(MealSlot.init(rawValue:))),
-            tags: Set(tags), ingredientIDs: ingredientIDs, keepsWell: keepsWell
-        )
+        menuRecipe(productIDs: Array(ingredientIDs)).plannerRecipe
     }
 }
 
@@ -185,7 +180,6 @@ extension RecipeIngredient {
 extension MealPlanEntry {
     /// Nil when the stored values are not ones this app version knows.
     var plannedMeal: PlannedMeal? {
-        guard let day = Day(isoString: plannedOn), let slot = MealSlot(rawValue: meal) else { return nil }
-        return PlannedMeal(day: day, slot: slot, recipeID: recipeID, servings: servings, isLeftover: isLeftover, isPinned: isPinned)
+        menuEntry?.plannedMeal
     }
 }

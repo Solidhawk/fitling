@@ -13,6 +13,7 @@ export function Stepper({
   step = 1,
   onChange,
   testID,
+  heavy = false,
 }: {
   label: string;
   value: number;
@@ -21,11 +22,13 @@ export function Stepper({
   step?: number;
   onChange: (value: number) => void;
   testID?: string;
+  /** The value as the row's subject, in heavy type (MenuGeneratorView's days). */
+  heavy?: boolean;
 }) {
   const set = (next: number) => onChange(Math.min(Math.max(Math.round(next / step) * step, min), max));
   return (
     <div className="stepper-row" data-testid={testID}>
-      <span className="stepper-label" aria-live="polite">
+      <span className={heavy ? "stepper-label heavy" : "stepper-label"} aria-live="polite">
         {label}
       </span>
       <span className="stepper" role="group" aria-label={label}>

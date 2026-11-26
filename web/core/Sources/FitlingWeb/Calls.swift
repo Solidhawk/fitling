@@ -45,6 +45,12 @@ public func handle(_ request: Data) -> Data {
         case "weeklyVolume": return try encode(weeklyVolume(try input(request)))
         case "measurementStored": return try encode(measurementStored(try input(request)))
         case "measurementShown": return try encode(measurementShown(try input(request)))
+        case "menuOverview": return try encode(menuOverview(try input(request)))
+        case "menuGenerate": return try encode(menuGenerate(try input(request)))
+        case "menuRenew": return try encode(menuRenew(try input(request)))
+        case "menuLoggedMeal": return try encode(menuLoggedMeal(try input(request)))
+        case "menuRecipesFor": return try encode(menuRecipesFor(try input(request)))
+        case "ownRecipeComplete": return try encode(ownRecipeComplete(try input(request)))
         case "localizedText": return try encode(localizedText(try input(request)))
         default:
             return failure("unknown function \(call.fn)")
