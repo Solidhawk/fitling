@@ -171,6 +171,44 @@ test("anOwnRecipeSavedAgainAfterAFailureIsStoredOnce", async ({ page }) => {
   expect(lines).toEqual([{ recipe_id: recipes![0].id }]);
 });
 
+// The first save reached the server but its answer did not, and the user then changed the lines: saving again keeps the
+// lines as they are now (UNFORGET S46, review).
+test("linesChangedAfterALostAnswerAreTheOnesKept", async ({ page }) => {
+  const user = await openMenu(page);
+  await page.getByTestId("menu.recipes").click();
+  await page.getByTestId("menu.recipe.new").click();
+  await page.getByTestId("menu.own.title").fill("Pasta pesto");
+  await page.getByTestId("menu.own.kcal").fill("550");
+  await page.getByTestId("menu.own.protein").fill("18");
+  await page.getByTestId("menu.own.carbs").fill("70");
+  await page.getByTestId("menu.own.fat").fill("20,5");
+  await page.getByTestId("menu.own.ingredient").fill("Pasta");
+  await page.getByTestId("menu.own.quantity").fill("200");
+  await page.getByTestId("menu.own.addIngredient").click();
+  let lost = 1;
+  await page.route("**/rest/v1/recipe_ingredients*", async (route) => {
+    if (route.request().method() === "POST" && lost-- > 0) {
+      // Stored on the server; the answer never arrives.
+      await route.fetch();
+      return route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ message: "unavailable" }) });
+    }
+    return route.continue();
+  });
+  await page.getByRole("button", { name: nl("common.save") }).click();
+  await page.getByRole("alertdialog").getByRole("button").click();
+  await page.getByRole("dialog").getByRole("button", { name: nl("menu.recipe.delete") }).focus();
+  await page.keyboard.press("Enter");
+  await page.getByTestId("menu.own.ingredient").fill("Rijst");
+  await page.getByTestId("menu.own.quantity").fill("150");
+  await page.getByTestId("menu.own.addIngredient").click();
+  await page.getByRole("button", { name: nl("common.save") }).click();
+  await expect(page.getByText("Pasta pesto")).toBeVisible({ timeout: 15_000 });
+  const { data: recipes } = await admin.from("recipes").select("id").eq("owner_id", user.id);
+  expect(recipes).toHaveLength(1);
+  const { data: lines } = await admin.from("recipe_ingredients").select("name").eq("owner_id", user.id).is("deleted_at", null);
+  expect(lines).toEqual([{ name: { nl: "Rijst" } }]);
+});
+
 test("preferencesAreSavedAtOnce", async ({ page }) => {
   const user = await openMenu(page);
   await page.getByTestId("menu.preferences").click();
