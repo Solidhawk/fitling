@@ -1,3 +1,4 @@
+import AVFoundation
 import PhotosUI
 import SwiftUI
 import FitlingCore
@@ -6,6 +7,7 @@ struct AddProductView: View {
     @State private var viewModel: AddProductViewModel
     @State private var photographing = false
     @State private var picked: PhotosPickerItem?
+    @Environment(\.openURL) private var openURL
     private let onSaved: (Product) -> Void
 
     init(viewModel: AddProductViewModel, onSaved: @escaping (Product) -> Void) {
@@ -64,54 +66,71 @@ struct AddProductView: View {
         .navigationTitle("product.add.title")
         .navigationBarTitleDisplayMode(.inline)
         .fullScreenCover(isPresented: $photographing) {
-            CameraPicker { photo in Task { await viewModel.readLabel(photo) } }
-                .ignoresSafeArea()
+            CameraPicker { image in
+                Task { await read { image.jpegData(compressionQuality: 0.9) } }
+            }
+            .ignoresSafeArea()
         }
         .onChange(of: picked) { _, item in
             guard let item else { return }
-            Task {
-                if let photo = try? await item.loadTransferable(type: Data.self) {
-                    await viewModel.readLabel(photo)
-                } else {
-                    viewModel.useLabel(nil)
-                }
-                picked = nil
-            }
+            picked = nil
+            Task { await read { try? await item.loadTransferable(type: Data.self) } }
         }
+    }
+
+    /// Reads the photo, then says what came of it to VoiceOver as well: the note under the buttons changes quietly.
+    private func read(_ load: @escaping @Sendable () async -> Data?) async {
+        await viewModel.readLabel(load)
+        AccessibilityNotification.Announcement(String(localized: labelNote)).post()
     }
 
     /// A photo of the nutrition table fills the values; the user checks them (TASKS 2.8).
     private var labelSection: some View {
         Section {
             if CameraPicker.isAvailable {
-                Button {
-                    photographing = true
-                } label: {
-                    Label("product.label.photo", systemImage: "camera")
+                if cameraRefused {
+                    // Refused earlier, for the barcode: the camera would only show black.
+                    Button {
+                        if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
+                    } label: {
+                        Label("product.label.camera.settings", systemImage: "camera")
+                    }
+                } else {
+                    Button {
+                        photographing = true
+                    } label: {
+                        Label("product.label.photo", systemImage: "camera")
+                    }
+                    .accessibilityIdentifier("product.label.photo")
                 }
-                .accessibilityIdentifier("product.label.photo")
             }
             PhotosPicker(selection: $picked, matching: .images) {
                 Label("product.label.pick", systemImage: "photo")
             }
             .accessibilityIdentifier("product.label.pick")
             if viewModel.isReadingLabel {
-                ProgressView()
+                ProgressView("product.label.reading")
             }
         } footer: {
-            Text(labelNoteKey).footerStyle()
+            Text(labelNote).footerStyle()
         }
         .disabled(viewModel.isReadingLabel)
         .listRowBackground(Color.card)
     }
 
-    private var labelNoteKey: LocalizedStringKey {
+    private var labelNote: LocalizedStringResource {
         switch viewModel.labelNote {
-        case nil: "product.label.footer"
+        case nil: viewModel.isMillilitre ? "product.label.footer.ml" : "product.label.footer"
         case .read: "product.label.read"
         case .check: "product.label.check"
         case .nothing: "product.label.none"
+        case .unreadable: "product.label.unreadable"
         }
+    }
+
+    private var cameraRefused: Bool {
+        let status = AVCaptureDevice.authorizationStatus(for: .video)
+        return status == .denied || status == .restricted
     }
 
     private func numberField(_ key: LocalizedStringKey, value: Binding<Double?>, identifier: String) -> some View {
