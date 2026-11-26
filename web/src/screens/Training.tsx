@@ -61,7 +61,10 @@ export function Training({ userID }: { userID: string }) {
     return () => document.removeEventListener("visibilitychange", again);
   }, [reload]);
 
-  useEffect(() => window.scrollTo(0, 0), [path.length]);
+  // In braces: an effect may only hand back its cleanup, and newer Chrome answers scrollTo with a promise.
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [path.length]);
 
   const input = useMemo(() => (rows ? trainingInput(userID, rows) : undefined), [rows, userID]);
   const overview = useMemo(() => (core && input ? core.trainingOverview({ training: input }) : undefined), [core, input]);

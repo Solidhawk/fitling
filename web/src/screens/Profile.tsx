@@ -44,7 +44,10 @@ export function Profile({ userID, auth }: { userID: string; auth: AuthService })
     void load();
   }, [load]);
 
-  useEffect(() => window.scrollTo(0, 0), [page]);
+  // In braces: an effect may only hand back its cleanup, and newer Chrome answers scrollTo with a promise.
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [page]);
   // Account on Dagdoel, About and Delete on Account; swiping back goes one screen back.
   const back = useHistoryStack(page === "profile" ? 0 : page === "account" ? 1 : 2, (depth) => setPage(depth === 0 ? "profile" : "account"));
 
