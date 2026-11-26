@@ -127,9 +127,10 @@ insert into public.push_reminders (id, user_id, subscription_id, fire_at, title,
 
 set local role service_role;
 select is(
-  (select array_agg(id::text || ' ' || endpoint) from public.claim_push_reminders(10)),
-  array['72000000-0000-0000-0000-000000000001 https://web.push.apple.com/claim'],
-  'wat aan de beurt is, wordt geclaimd, met het adres van de browser; wat later komt niet');
+  (select array_agg(id::text || ' ' || endpoint || ' ' || (claimed_until = now() + interval '5 minutes'))
+   from public.claim_push_reminders(10)),
+  array['72000000-0000-0000-0000-000000000001 https://web.push.apple.com/claim true'],
+  'wat aan de beurt is, wordt vijf minuten geclaimd, met het adres van de browser; wat later komt niet');
 select is_empty($$ select id from public.claim_push_reminders(10) $$, 'een tweede aanroep krijgt het niet nog eens');
 update public.push_reminders set claimed_until = null where id = '72000000-0000-0000-0000-000000000001';
 select is(
@@ -144,6 +145,9 @@ reset role;
 set local role authenticated;
 set local request.jwt.claims = '{"sub": "70000000-0000-0000-0000-000000000002", "role": "authenticated"}';
 select throws_ok($$ select id from public.claim_push_reminders(10) $$, '42501', null, 'alleen send-reminders claimt');
+reset role;
+set local role anon;
+select throws_ok($$ select id from public.claim_push_reminders(10) $$, '42501', null, 'ook zonder account niet');
 reset role;
 
 select * from finish();
