@@ -16,16 +16,19 @@ public struct NutritionLabel: Sendable, Equatable {
     public var fiber: Double?
     public var protein: Double?
     public var salt: Double?
-    /// The table says "per 100 ml": a drink.
+    /// The table is per 100 ml: a drink.
     public var isMillilitre = false
-    /// The portion the table names, such as "per portie (30 g)".
+    /// The portion the label names, such as "per portie (30 g)".
     public var servingSize: Double?
+    /// A value was read that cannot be true per 100 g, and was left out.
+    public var leftSomethingOut = false
 
     public init() {}
 
-    /// Energy and the three macros known, and 4·protein + 4·carbs + 9·fat more than 25 % and more than 30 kcal away
-    /// from the energy: something was read wrong, or the label itself is wrong (ARCHITECTURE §5.1).
+    /// Something was left out, or energy and the three macros are known and 4·protein + 4·carbs + 9·fat is more than
+    /// 25 % and more than 30 kcal away from the energy: read wrong, or the label is wrong (ARCHITECTURE §5.1).
     public var needsCheck: Bool {
+        if leftSomethingOut { return true }
         guard let kcal, let protein, let carbs, let fat else { return false }
         let difference = abs(4 * protein + 4 * carbs + 9 * fat - kcal)
         return difference > 0.25 * kcal && difference > 30
@@ -45,170 +48,325 @@ public struct NutritionLabel: Sendable, Equatable {
 
     // MARK: Lines
 
-    /// A piece of text with its place: `x` from the left and `y` from the top, both as a part of the photo.
+    /// A piece of text with its place: `x` from the left and `y` from the top, both as a part of the photo, and the
+    /// slope of its baseline (down per width) when the photo was taken at an angle.
     public struct Piece: Sendable, Equatable {
         public let text: String
         public let x: Double
         public let y: Double
         public let height: Double
+        public let slope: Double
 
-        public init(text: String, x: Double, y: Double, height: Double) {
+        public init(text: String, x: Double, y: Double, height: Double, slope: Double = 0) {
             self.text = text
             self.x = x
             self.y = y
             self.height = height
+            self.slope = slope
         }
     }
 
     /// The pieces of one line joined from left to right, the lines from top to bottom. A table gives the name and the
-    /// values of a row as separate pieces; they are on one line when their middles are less than half a line apart.
+    /// values of a row as separate pieces; they are on one line when, straightened by the slope of the photo, their
+    /// middles are less than half a line apart.
     public static func rows(_ pieces: [Piece]) -> [String] {
-        var lines: [[Piece]] = []
-        for piece in pieces.sorted(by: { $0.y < $1.y }) {
-            if let first = lines.last?.first, abs(piece.y - first.y) < max(piece.height, first.height) / 2 {
-                lines[lines.count - 1].append(piece)
-            } else {
-                lines.append([piece])
+        let slopes = pieces.map(\.slope).sorted()
+        let slope = slopes.isEmpty ? 0 : slopes[slopes.count / 2]
+        let straight = pieces.map { (piece: $0, y: $0.y - slope * $0.x) }.sorted { $0.y < $1.y }
+        var lines: [[(piece: Piece, y: Double)]] = []
+        for item in straight {
+            if let line = lines.last {
+                let middle = line.map { $0.y }.reduce(0, +) / Double(line.count)
+                let height = max(item.piece.height, line.map { $0.piece.height }.max() ?? 0)
+                if abs(item.y - middle) < height / 2 {
+                    lines[lines.count - 1].append(item)
+                    continue
+                }
             }
+            lines.append([item])
         }
-        return lines.map { line in line.sorted { $0.x < $1.x }.map(\.text).joined(separator: " ") }
+        return lines.map { line in line.map { $0.piece }.sorted { $0.x < $1.x }.map { $0.text }.joined(separator: " ") }
     }
 
     // MARK: Reading
 
-    /// The values in the lines of a nutrition table. Of each row the first value counts: the column per 100 g comes
-    /// first on European labels (EU 1169/2011). A value that cannot be true per 100 g is left out.
+    /// The values in the lines of a nutrition table. A value belongs to the name before it, so a label written as one
+    /// line reads too; of a row with columns the first counts, the one per 100 g (EU 1169/2011). Reading starts at the
+    /// heading or the energy row, so the ingredients above the table do not count; a percentage and the "100" of
+    /// "per 100 g" are never a value. A value that cannot be true per 100 g is left out.
     public static func read(_ lines: [String]) -> NutritionLabel {
         var label = NutritionLabel()
-        var kilojoules: Double?
-        for line in lines {
-            let text = line.folded
-            let words = Self.words(text)
-            let numbers = Self.numbers(text)
-            if text.contains("100 ml") || text.contains("100ml") { label.isMillilitre = true }
-            if label.servingSize == nil, let serving = Self.servingSize(words: words, text: text) { label.servingSize = serving }
-            guard let nutrient = Nutrient.allCases.first(where: { $0.matches(words) }) else {
-                // "373 kcal" on its own row, under "Energie 1569 kJ".
-                if label.kcal == nil, let kcal = numbers.first(where: { $0.unit == "kcal" }) { label.kcal = kcal.value }
-                continue
-            }
-            if nutrient == .energy {
-                if label.kcal == nil, let kcal = Self.energy(numbers, unit: "kcal", rowSays: text.contains("kcal")) { label.kcal = kcal }
-                if kilojoules == nil, let kj = Self.energy(numbers, unit: "kj", rowSays: !text.contains("kcal") && text.contains("kj")) { kilojoules = kj }
-                continue
-            }
-            guard let first = numbers.first else { continue }
-            let grams = first.unit == "mg" ? first.value / 1000 : first.value
-            guard (0...100).contains(grams) else { continue }
-            label.set(nutrient, grams)
+        let tokenized = lines.map { Self.tokens(Self.digitsForLetters($0.folded)) }
+        let start = tokenized.firstIndex(where: Self.startsTable) ?? 0
+        var reading = Reading()
+        for (index, tokens) in tokenized.enumerated() {
+            if label.servingSize == nil, let serving = Self.servingSize(tokens) { label.servingSize = serving }
+            guard index >= start else { continue }
+            reading.line(tokens)
         }
-        if label.kcal == nil, let kilojoules { label.kcal = (kilojoules / 4.184 * 10).rounded() / 10 }
-        if let kcal = label.kcal, !Limits.kcalPer100.contains(kcal) { label.kcal = nil }
+        let table = tokenized[start...].flatMap { $0 }
+        if let hundred = table.first(where: { $0.number?.value == 100 && ["g", "ml"].contains($0.number?.unit ?? "") }) {
+            label.isMillilitre = hundred.number?.unit == "ml"
+        }
+        label.kcal = reading.kcal ?? reading.lonelyKcal ?? reading.kilojoules.map { ($0 / 4.184 * 10).rounded() / 10 }
+        if let kcal = label.kcal, !Limits.kcalPer100.contains(kcal) {
+            label.kcal = nil
+            label.leftSomethingOut = true
+        }
+        label.fat = reading.grams[.fat]
+        label.saturatedFat = reading.grams[.saturatedFat]
+        label.carbs = reading.grams[.carbs]
+        label.sugars = reading.grams[.sugars]
+        label.fiber = reading.grams[.fiber]
+        label.protein = reading.grams[.protein]
+        label.salt = reading.grams[.salt] ?? reading.grams[.sodium].map { ($0 * 2.5 * 100).rounded() / 100 }
+        label.leftSomethingOut = label.leftSomethingOut || reading.leftSomethingOut
         return label
     }
 
-    private mutating func set(_ nutrient: Nutrient, _ grams: Double) {
-        switch nutrient {
-        case .energy: break
-        case .saturatedFat: saturatedFat = saturatedFat ?? grams
-        case .sugars: sugars = sugars ?? grams
-        case .fiber: fiber = fiber ?? grams
-        case .protein: protein = protein ?? grams
-        case .salt: salt = salt ?? grams
-        case .fat: fat = fat ?? grams
-        case .carbs: carbs = carbs ?? grams
+    /// What has been read so far, line by line.
+    private struct Reading {
+        var grams: [Nutrient: Double] = [:]
+        var kcal: Double?
+        var kilojoules: Double?
+        /// "373 kcal" on a row of its own: used when the energy row gave none.
+        var lonelyKcal: Double?
+        var leftSomethingOut = false
+
+        mutating func line(_ tokens: [Token]) {
+            // The names since the last value: "verzadigde vetzuren" is one name, saturated fat.
+            var named: [Nutrient] = []
+            var energyNumbers: [Number] = []
+            var energyUnits: [String] = []
+            var previousWord = ""
+            for token in tokens {
+                switch token {
+                case let .word(word):
+                    previousWord = word
+                    guard let nutrient = Nutrient.named(by: word) else { continue }
+                    if named.first == .energy, !energyNumbers.isEmpty, nutrient != .energy {
+                        finishEnergy(energyNumbers, energyUnits)
+                        energyNumbers = []
+                        energyUnits = []
+                        named = []
+                    }
+                    if nutrient == .energy, word == "kj" || word == "kcal" { energyUnits.append(word) }
+                    named.append(nutrient)
+                    named.sort { $0.rank < $1.rank }
+                case let .number(number):
+                    defer { previousWord = "" }
+                    // "per 100 g" and "13 %" name the column or the reference intake, not a value.
+                    if ["per", "pro", "je", "pour"].contains(previousWord) || number.unit == "%" { continue }
+                    guard let nutrient = named.first else {
+                        if number.unit == "kcal" { lonelyKcal = lonelyKcal ?? number.value }
+                        continue
+                    }
+                    if nutrient == .energy {
+                        energyNumbers.append(number)
+                        continue
+                    }
+                    named = []
+                    guard nutrient != .other else { continue }
+                    let value = number.unit == "mg" ? number.value / 1000 : number.value
+                    guard (0...100).contains(value) else {
+                        leftSomethingOut = true
+                        continue
+                    }
+                    if grams[nutrient] == nil { grams[nutrient] = value }
+                }
+            }
+            if named.first == .energy { finishEnergy(energyNumbers, energyUnits) }
+        }
+
+        /// The numbers of an energy row: with their unit written after them, or in the order the row names its units
+        /// ("Energie kJ/kcal 1554/371"), or as a pair whose ratio is that of kJ to kcal.
+        mutating func finishEnergy(_ numbers: [Number], _ units: [String]) {
+            var kj = numbers.first { $0.unit == "kj" }.map(\.kilojoules)
+            var found = numbers.first { $0.unit == "kcal" }?.value
+            let bare = numbers.filter { $0.unit.isEmpty }
+            if !units.isEmpty {
+                for (unit, number) in zip(units, bare) {
+                    if unit == "kj" { kj = kj ?? number.kilojoules } else { found = found ?? number.value }
+                }
+            } else if kj == nil, found == nil, bare.count >= 2, bare[1].value > 0, (3.8...4.6).contains(bare[0].value / bare[1].value) {
+                kj = bare[0].kilojoules
+                found = bare[1].value
+            }
+            kcal = kcal ?? found
+            kilojoules = kilojoules ?? kj
         }
     }
 
-    /// The nutrients, in the order they are tried: "waarvan verzadigde vetzuren" is saturated fat before it is fat,
-    /// and "waarvan suikers" is sugars before anything else.
+    /// The nutrients, in the order they win when a name has more than one: "onverzadigde vetzuren" is none of them,
+    /// "verzadigde vetzuren" is saturated fat before it is fat, "waarvan suikers" is sugars.
     private enum Nutrient: CaseIterable {
-        case energy, saturatedFat, sugars, fiber, protein, salt, fat, carbs
+        /// Unsaturated fat, starch, polyols: a value of its own that belongs to no field.
+        case other
+        case energy, saturatedFat, sugars, fiber, protein, salt, sodium, fat, carbs
+
+        var rank: Int { Self.allCases.firstIndex(of: self) ?? 0 }
 
         /// Long words are found inside compounds ("voedingsvezel"); short ones only at the start of a word, so "vet"
         /// is not found in "verzadigd". "sel" (French salt) is a word of its own, not the start of "selen".
         private var keywords: (inside: [String], start: [String], whole: [String]) {
             switch self {
-            case .energy: (["energ", "brennwert"], [], [])
+            case .other: (["onverzadig", "unsatur", "ungesattig", "insatur", "zetmeel", "starch", "starke", "amidon", "polyol"], [], [])
+            case .energy: (["energ", "brennwert"], [], ["kj", "kcal"])
             case .saturatedFat: (["verzadigd", "satur", "gesattigt"], [], [])
             case .sugars: (["suiker", "sugar", "zucker", "sucre"], [], [])
             case .fiber: (["vezel", "fibre", "fiber", "ballaststoff"], [], [])
-            case .protein: (["eiwit", "protein", "eiweiß", "eiweiss"], [], [])
+            case .protein: (["eiwit", "protein", "eiwei"], [], [])
             case .salt: ([], ["zout", "salt", "salz"], ["sel"])
-            case .fat: (["lipide", "grasse"], ["vet", "fat", "fett"], [])
+            case .sodium: (["natrium", "sodium"], [], [])
+            case .fat: (["lipide", "grasse", "graisse"], ["vet", "fat", "fett"], [])
             case .carbs: (["koolhydra", "carbohydrat", "kohlenhydrat", "glucide"], [], [])
             }
         }
 
-        func matches(_ words: [String]) -> Bool {
-            let keywords = keywords
-            return words.contains { word in
-                keywords.inside.contains { word.contains($0) }
-                    || keywords.start.contains { word.hasPrefix($0) }
+        static func named(by word: String) -> Nutrient? {
+            allCases.first { nutrient in
+                let keywords = nutrient.keywords
+                return keywords.inside.contains { word.contains($0) } || keywords.start.contains { word.hasPrefix($0) }
                     || keywords.whole.contains(word)
             }
         }
     }
 
-    private static func words(_ text: String) -> [String] {
-        text.split { !$0.isLetter }.map(String.init)
+    // MARK: Words and numbers
+
+    struct Number: Equatable {
+        let value: Double
+        let unit: String
+        /// Digits after the decimal sign: "1.554 kJ" has three, a thousand separator.
+        let decimals: Int
+
+        /// kJ per 100 g is often above a thousand; "1.554" before kJ is then 1554, not 1.554.
+        var kilojoules: Double { decimals == 3 && value < 10 ? value * 1000 : value }
     }
 
-    /// The energy of a row in `unit`: the number written with that unit, or the first number when the row only names
-    /// the unit, as in "Energie (kcal) 373".
-    private static func energy(_ numbers: [(value: Double, unit: String)], unit: String, rowSays: Bool) -> Double? {
-        if let written = numbers.first(where: { $0.unit == unit }) { return written.value }
-        return rowSays ? numbers.first?.value : nil
+    enum Token: Equatable {
+        case word(String)
+        case number(Number)
+
+        var number: Number? {
+            if case let .number(number) = self { number } else { nil }
+        }
     }
 
-    /// "per portie (30 g)", "portion 30g", "1 serving = 30 g": the first number in grams or millilitres after the word.
-    private static func servingSize(words: [String], text: String) -> Double? {
+    /// The table starts at its heading ("Voedingswaarde per 100 g", "Nutrition", "Nährwerte") or at the energy row.
+    private static func startsTable(_ tokens: [Token]) -> Bool {
+        let words = tokens.compactMap { token -> String? in if case let .word(word) = token { word } else { nil } }
+        let headings = ["voedingswaarde", "nutrition", "nahrwert", "valeurs", "typical"]
+        if words.contains(where: { word in headings.contains { word.hasPrefix($0) } }) { return true }
+        if words.contains(where: { Nutrient.named(by: $0) == .energy }) { return true }
+        return zip(tokens, tokens.dropFirst()).contains { first, second in
+            if case let .word(word) = first, ["per", "pro", "je", "pour"].contains(word), second.number?.value == 100 { true } else { false }
+        }
+    }
+
+    /// "per portie (30 g)", "1 serving = 30 g", "Per 30g serving": grams or millilitres right after the word, before the
+    /// next "per" or name, or right before it. Never the 100 of "per 100 g".
+    private static func servingSize(_ tokens: [Token]) -> Double? {
         let names = ["portie", "portion", "serving"]
-        guard let name = names.first(where: { name in words.contains { $0.hasPrefix(name) } }),
-              let start = text.indices.first(where: { text[$0...].hasPrefix(name) }) else {
-            return nil
+        guard let index = tokens.firstIndex(where: { token in
+            if case let .word(word) = token { names.contains { word.hasPrefix($0) } } else { false }
+        }) else { return nil }
+        func portion(_ token: Token) -> Double? {
+            guard let number = token.number, number.unit == "g" || number.unit == "ml", number.value != 100,
+                  number.value > 0, number.value < 100_000 else { return nil }
+            return number.value
         }
-        let after = numbers(String(text[text.index(start, offsetBy: name.count)...]))
-        guard let first = after.first(where: { $0.unit == "g" || $0.unit == "ml" }), first.value > 0, first.value < 100_000 else {
-            return nil
-        }
-        return first.value
-    }
-
-    /// Every number in the text with the letters right after it: "1046kj/250kcal" is 1046 kj and 250 kcal, "7,0 g"
-    /// is 7.0 g. A comma or a point between digits is the decimal sign.
-    private static func numbers(_ text: String) -> [(value: Double, unit: String)] {
-        let characters = Array(text)
-        var found: [(value: Double, unit: String)] = []
-        var index = 0
-        while index < characters.count {
-            guard characters[index].isNumber, characters[index].isASCII else {
-                index += 1
+        for token in tokens[(index + 1)...] {
+            if case let .word(word) = token {
+                if ["per", "pro", "je", "pour"].contains(word) || Nutrient.named(by: word) != nil { break }
                 continue
             }
-            var digits = ""
-            while index < characters.count, characters[index].isASCII, characters[index].isNumber {
-                digits.append(characters[index])
-                index += 1
+            if let value = portion(token) { return value }
+        }
+        return index > 0 ? portion(tokens[index - 1]) : nil
+    }
+
+    /// A camera reads 0 as O and 1 as l or I next to digits: "O,5 g" is 0,5 g, "l,3 g" is 1,3 g. A letter only counts as
+    /// a digit where it touches one and is no part of a word.
+    static func digitsForLetters(_ text: String) -> String {
+        let characters = Array(text)
+        func isDigit(_ index: Int) -> Bool { characters.indices.contains(index) && characters[index].isASCII && characters[index].isNumber }
+        func isLetter(_ index: Int) -> Bool { characters.indices.contains(index) && characters[index].isLetter }
+        func isDecimal(_ index: Int) -> Bool {
+            characters.indices.contains(index) && (characters[index] == "," || characters[index] == ".") && isDigit(index + 1)
+        }
+        var result = ""
+        for (index, character) in characters.enumerated() {
+            let beforeDigits = !isLetter(index - 1) && (isDigit(index + 1) || isDecimal(index + 1))
+            if character == "o", beforeDigits || (isDigit(index - 1) && !isLetter(index + 1)) {
+                result.append("0")
+            } else if character == "l" || character == "i", beforeDigits {
+                result.append("1")
+            } else {
+                result.append(character)
             }
-            if index + 1 < characters.count, characters[index] == "," || characters[index] == ".",
-               characters[index + 1].isASCII, characters[index + 1].isNumber {
-                digits.append(".")
-                index += 1
-                while index < characters.count, characters[index].isASCII, characters[index].isNumber {
+        }
+        return result
+    }
+
+    /// The units a value can have, under one name each.
+    private static let units: [String: String] = [
+        "g": "g", "gr": "g", "gram": "g", "grams": "g", "gramm": "g", "mg": "mg", "µg": "µg", "ug": "µg", "mcg": "µg",
+        "kj": "kj", "kcal": "kcal", "ml": "ml", "cl": "cl", "l": "l",
+    ]
+
+    /// Words, and numbers with a unit or "%" right after them: "1046kj/250kcal" is 1046 kj and 250 kcal, "7,0 g" is
+    /// 7.0 g. A comma or a point between digits is the decimal sign.
+    static func tokens(_ text: String) -> [Token] {
+        let characters = Array(text)
+        var tokens: [Token] = []
+        var index = 0
+        func isDigit(_ index: Int) -> Bool { characters.indices.contains(index) && characters[index].isASCII && characters[index].isNumber }
+        while index < characters.count {
+            if isDigit(index) {
+                var digits = ""
+                while isDigit(index) {
                     digits.append(characters[index])
                     index += 1
                 }
+                var decimals = 0
+                if index < characters.count, characters[index] == "," || characters[index] == ".", isDigit(index + 1) {
+                    digits.append(".")
+                    index += 1
+                    while isDigit(index) {
+                        digits.append(characters[index])
+                        decimals += 1
+                        index += 1
+                    }
+                }
+                var unitIndex = index
+                while unitIndex < characters.count, characters[unitIndex] == " " { unitIndex += 1 }
+                var unit = ""
+                if unitIndex < characters.count, characters[unitIndex] == "%" {
+                    unit = "%"
+                    unitIndex += 1
+                } else {
+                    var letters = ""
+                    while unitIndex < characters.count, characters[unitIndex].isLetter {
+                        letters.append(characters[unitIndex])
+                        unitIndex += 1
+                    }
+                    // Only a unit: in "4 porties" the word stays a word.
+                    unit = Self.units[letters] ?? ""
+                }
+                if !unit.isEmpty { index = unitIndex }
+                if let value = Double(digits) { tokens.append(.number(Number(value: value, unit: unit, decimals: decimals))) }
+            } else if characters[index].isLetter {
+                var word = ""
+                while index < characters.count, characters[index].isLetter {
+                    word.append(characters[index])
+                    index += 1
+                }
+                tokens.append(.word(word))
+            } else {
+                index += 1
             }
-            var unitIndex = index
-            while unitIndex < characters.count, characters[unitIndex] == " " { unitIndex += 1 }
-            var unit = ""
-            while unitIndex < characters.count, characters[unitIndex].isLetter {
-                unit.append(characters[unitIndex])
-                unitIndex += 1
-            }
-            if let value = Double(digits) { found.append((value, unit)) }
         }
-        return found
+        return tokens
     }
 }
