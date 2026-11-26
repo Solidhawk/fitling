@@ -8,6 +8,7 @@ import { defaultReminderSettings, fireAt, loadReminderSettings, saveReminderSett
 const zone = process.env.TZ;
 
 afterEach(() => {
+  vi.useRealTimers();
   process.env.TZ = zone;
   vi.unstubAllGlobals();
   vi.unstubAllEnvs();
@@ -106,6 +107,85 @@ test("theLastPlanIsTheOneThatStays", async () => {
   setTimeout(release, 20);
   await Promise.all([on, off]);
   expect(stored).toEqual([]);
+});
+
+const withReminders = {
+  remindersPlan: () => ({ reminders: [{ day: "2026-11-26", minutes: 750, messageKey: "creature.message.fit.sweet.1" }] }),
+} as unknown as FitlingCore;
+const on = { isOn: true, times: [750, 1110] };
+const off = { isOn: false, times: [750, 1110] };
+
+/** A server whose first save waits for `first` (or forever); what it last stored and how often. */
+function server(first: Promise<void> = new Promise(() => {})) {
+  const seen = { stored: undefined as unknown[] | undefined, replaced: 0, saves: 0 };
+  const client = {
+    rpc: async (name: string, args: { p_reminders?: unknown[] }) => {
+      if (name === "save_push_subscription") {
+        seen.saves += 1;
+        if (seen.saves === 1) await first;
+        return { data: "id", error: null };
+      }
+      seen.replaced += 1;
+      seen.stored = args.p_reminders ?? [];
+      return { data: null, error: null };
+    },
+    from: () => ({ delete: () => ({ eq: async () => ({ error: null }) }) }),
+  } as unknown as SupabaseClient;
+  return { client, seen };
+}
+
+// Fable's review of S51: a plan whose connection never answers holds the next one back for half a minute at most, so
+// turning them off on a bad connection still reaches the server.
+test("aPlanThatHangsDoesNotHoldBackTheNext", async () => {
+  vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+  try {
+    const { push } = await pushIn(true);
+    const { client, seen } = server();
+    void push.planReminders(client, withReminders, { settings: on, name: "Pip", days });
+    await vi.advanceTimersByTimeAsync(0);
+    const later = push.planReminders(client, withReminders, { settings: off, name: "Pip", days });
+    await vi.advanceTimersByTimeAsync(30_000);
+    await later;
+    expect(seen.stored).toEqual([]);
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+// And when that plan answers after all, it was overtaken: it leaves the server alone.
+test("aPlanThatWasOvertakenLeavesTheServerAlone", async () => {
+  vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+  try {
+    const { push } = await pushIn(true);
+    let answer = () => {};
+    const { client, seen } = server(new Promise<void>((resolve) => (answer = resolve)));
+    const earlier = push.planReminders(client, withReminders, { settings: on, name: "Pip", days });
+    await vi.advanceTimersByTimeAsync(0);
+    const later = push.planReminders(client, withReminders, { settings: off, name: "Pip", days });
+    await vi.advanceTimersByTimeAsync(30_000);
+    await later;
+    answer();
+    await earlier;
+    expect(seen.stored).toEqual([]);
+    expect(seen.replaced).toBe(1);
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+// Signing out while plans wait: none of them reaches the server afterwards, so no reminder carries the name of a
+// partner whose owner is gone.
+test("signingOutStopsThePlansThatWait", async () => {
+  const { push } = await pushIn(true);
+  let answer = () => {};
+  const { client, seen } = server(new Promise<void>((resolve) => (answer = resolve)));
+  const first = push.planReminders(client, withReminders, { settings: on, name: "Pip", days });
+  const second = push.planReminders(client, withReminders, { settings: on, name: "Pip", days });
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  await push.forgetPush(client);
+  answer();
+  await Promise.all([first, second]);
+  expect(seen.replaced).toBe(0);
 });
 
 // Signing out without a network still stops the reminders here; the server is not asked.
