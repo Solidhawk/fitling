@@ -23,6 +23,8 @@ protocol ListSharing: Sendable {
     /// The maker of a list adds themselves as its owner, once the list is on the server.
     func addOwner(_ member: ListMemberRecord) async throws
     func members(of listID: UUID) async throws -> [ListMemberRecord]
+    /// The lists this user is a member of, according to the server.
+    func lists(of userID: UUID) async throws -> Set<UUID>
     /// A code that is valid for seven days and shown only once.
     func createInvite(for listID: UUID) async throws -> String
     /// Returns the id of the list joined.
@@ -36,6 +38,8 @@ enum SharingError: Error, Equatable {
     case invalidInvite
     case listFull
     case rejected
+    /// The server said no to this request itself: not allowed, or the list is gone.
+    case refused
 }
 
 struct SupabaseListSharing: ListSharing {
@@ -45,7 +49,7 @@ struct SupabaseListSharing: ListSharing {
     /// the new row through, and that policy asks for the membership this row is only now giving. Found by the web's
     /// tests against a real Supabase (web phase 6).
     func addOwner(_ member: ListMemberRecord) async throws {
-        _ = try await run {
+        _ = try await signedIn {
             do {
                 try await client.from("shopping_list_members").insert(member, returning: .minimal).execute()
             } catch let error as PostgrestError where error.code == "23505" {}
@@ -53,7 +57,22 @@ struct SupabaseListSharing: ListSharing {
     }
 
     func members(of listID: UUID) async throws -> [ListMemberRecord] {
-        try await run { try await client.from("shopping_list_members").select().eq("list_id", value: listID).execute().value }
+        try await signedIn { try await client.from("shopping_list_members").select().eq("list_id", value: listID).execute().value }
+    }
+
+    func lists(of userID: UUID) async throws -> Set<UUID> {
+        let rows: [Membership] = try await signedIn {
+            try await client.from("shopping_list_members").select("list_id").eq("user_id", value: userID).execute().value
+        }
+        return Set(rows.map(\.listID))
+    }
+
+    private struct Membership: Decodable {
+        let listID: UUID
+
+        enum CodingKeys: String, CodingKey {
+            case listID = "list_id"
+        }
     }
 
     func createInvite(for listID: UUID) async throws -> String {
@@ -65,7 +84,16 @@ struct SupabaseListSharing: ListSharing {
     }
 
     func leave(_ listID: UUID, userID: UUID) async throws {
-        _ = try await run { try await client.from("shopping_list_members").delete().eq("list_id", value: listID).eq("user_id", value: userID).execute() }
+        _ = try await signedIn { try await client.from("shopping_list_members").delete().eq("list_id", value: listID).eq("user_id", value: userID).execute() }
+    }
+
+    /// Without a session, supabase-swift sends the request with the publishable key alone, and Row Level Security then
+    /// answers with nothing instead of an error: an empty list of members would read as having left every list.
+    private func signedIn<Value>(_ work: () async throws -> Value) async throws -> Value {
+        try await run {
+            _ = try await client.auth.session
+            return try await work()
+        }
     }
 
     private func run<Value>(_ work: () async throws -> Value) async throws -> Value {
@@ -73,6 +101,9 @@ struct SupabaseListSharing: ListSharing {
             return try await work()
         } catch is URLError {
             throw SharingError.network
+        } catch let error as PostgrestError where error.code == "42501" || error.code == "23503" {
+            // A policy that says no, or a list that is no longer there.
+            throw SharingError.refused
         } catch {
             let text = String(describing: error)
             if text.contains("invalid_invite") { throw SharingError.invalidInvite }

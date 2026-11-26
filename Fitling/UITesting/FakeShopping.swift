@@ -45,7 +45,7 @@ final class FakeListSharing: ListSharing, @unchecked Sendable {
     func addOwner(_ member: ListMemberRecord) async throws {
         try lock.withLock {
             if let failure = _failure ?? _ownerFailure { throw failure }
-            if _withoutMaker.contains(member.listID) { throw SharingError.rejected }
+            if _withoutMaker.contains(member.listID) { throw SharingError.refused }
             if !(membersByList[member.listID] ?? []).contains(where: { $0.userID == member.userID }) {
                 membersByList[member.listID, default: []].append(member)
             }

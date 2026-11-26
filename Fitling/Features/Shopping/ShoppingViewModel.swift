@@ -85,44 +85,61 @@ final class ShoppingViewModel {
     /// Sends and fetches the list, then the members and the offers.
     func refresh(force: Bool = false) async {
         _ = await sync.sync()
-        for member in store.unsentMembers() {
-            let record = ListMemberRecord(listID: member.listID, userID: member.userID, role: member.role, displayName: member.displayName)
-            if (try? await services.sharing.addOwner(record)) != nil {
-                member.needsPush = false
-            }
-        }
-        try? store.context.save()
+        await sendOwners()
+        await followMemberships()
         // By id, and looked up again after each request: another refresh or leaving may have removed a list meanwhile.
         for listID in store.lists().map(\.id) {
-            guard let records = try? await services.sharing.members(of: listID), let list = store.list(listID) else { continue }
-            let ownerWaits = store.members(of: list).contains { $0.userID == store.userID && $0.needsPush }
-            if records.contains(where: { $0.userID == store.userID }) || list.needsPush || ownerWaits {
-                store.replaceMembers(of: list.id, with: records)
-            } else {
-                await notAMember(of: list)
-            }
+            guard let records = try? await services.sharing.members(of: listID), store.list(listID) != nil else { continue }
+            store.replaceMembers(of: listID, with: records)
         }
         await refreshOffers(force: force)
         reload()
     }
 
-    /// The server does not count this user as a member of `list`, and sends nothing more about it: they left it
-    /// elsewhere, or it went with its last member. A list this user made elsewhere before it had its owner gets one,
-    /// as on the web (ensureList in web/src/data/shopping.ts); any other goes from this device.
+    /// The owner rows made on this device. As records first: leaving may remove a row while a request is under way.
+    private func sendOwners() async {
+        let unsent = store.unsentMembers().map {
+            ListMemberRecord(listID: $0.listID, userID: $0.userID, role: $0.role, displayName: $0.displayName)
+        }
+        for record in unsent {
+            guard (try? await services.sharing.addOwner(record)) != nil else { continue }
+            let sent = store.unsentMembers().first { $0.listID == record.listID && $0.userID == record.userID }
+            sent?.needsPush = false
+        }
+        try? store.context.save()
+    }
+
+    /// Which lists the server counts this user as a member of. A list joined elsewhere (the web app, another device)
+    /// can be older than what this device last fetched, so the lists and their items are fetched whole. A list left
+    /// elsewhere, or gone with its last member, the server says nothing more about: it goes from this device, unless
+    /// the list or its owner still waits to be sent.
+    private func followMemberships() async {
+        guard let memberships = try? await services.sharing.lists(of: store.userID) else { return }
+        if !memberships.isSubset(of: store.knownListIDs()) {
+            sync.pullWhole([ShoppingList.tableName, ShoppingItem.tableName])
+            _ = await sync.sync()
+        }
+        for listID in store.lists().map(\.id) where !memberships.contains(listID) {
+            guard let list = store.list(listID), !list.needsPush,
+                  !store.members(of: list).contains(where: { $0.userID == store.userID && $0.needsPush }) else { continue }
+            await notAMember(of: list)
+        }
+    }
+
+    /// A list this user made elsewhere before it had its owner gets one, as on the web (ensureList in
+    /// web/src/data/shopping.ts). Any other goes from this device, and so does this one when the server refuses.
     private func notAMember(of list: ShoppingList) async {
         let listID = list.id
         if list.createdBy == store.userID {
             let owner = ListMemberRecord(listID: listID, userID: store.userID, role: "owner", displayName: ownerName)
             do {
                 try await services.sharing.addOwner(owner)
-                if let records = try? await services.sharing.members(of: listID) {
-                    store.replaceMembers(of: listID, with: records)
-                }
                 return
-            } catch SharingError.network {
-                return
+            } catch SharingError.refused {
+                // The server emptied `created_by` when this user left, or the list is gone.
             } catch {
-                // Refused: the server emptied `created_by` when this user left, or the list is gone.
+                // No answer about the list itself: asked again next time.
+                return
             }
         }
         if joinedList == listID { defaults.removeObject(forKey: joinedListKey) }

@@ -17,11 +17,18 @@ struct ShoppingStore {
 
     // MARK: Lists
 
+    /// By name, and by id when two have the same name, as on the web: the first is always the same one.
     func lists() -> [ShoppingList] {
-        (try? context.fetch(FetchDescriptor<ShoppingList>(
-            predicate: #Predicate<ShoppingList> { $0.deletedAt == nil },
-            sortBy: [SortDescriptor(\.name)]
-        ))) ?? []
+        let lists = (try? context.fetch(FetchDescriptor<ShoppingList>(predicate: #Predicate<ShoppingList> { $0.deletedAt == nil }))) ?? []
+        return lists.sorted { first, second in
+            let order = first.name.localizedStandardCompare(second.name)
+            return order == .orderedSame ? first.id.uuidString < second.id.uuidString : order == .orderedAscending
+        }
+    }
+
+    /// Every list the server sent to this device, also one marked deleted.
+    func knownListIDs() -> Set<UUID> {
+        Set(((try? context.fetch(FetchDescriptor<ShoppingList>())) ?? []).map(\.id))
     }
 
     func list(_ id: UUID) -> ShoppingList? {
