@@ -8,12 +8,13 @@ import FitlingCore
 struct ShoppingFixture {
     let menu: MenuFixture
     let remote = FakeRemoteStore()
-    let sharing = FakeListSharing()
+    let sharing: FakeListSharing
     let offers = FakeOfferSource()
     let sync: SyncEngine
 
     init() throws {
         menu = try MenuFixture()
+        sharing = FakeListSharing(userID: menu.userID)
         sync = SyncEngine(container: menu.container, remote: remote, tables: SyncTables.all, now: { [now = menu.now] in now })
     }
 
@@ -163,6 +164,48 @@ func manyOffers(_ count: Int, in shop: String, today: Day) -> [OfferRecord] {
         #expect(await viewModel.join(code: code, name: "Sam"))
         #expect(viewModel.list?.id == list.id)
         #expect(viewModel.items.map(\.id) == [item.id])
+    }
+
+    @Test func aListLeftElsewhereGoesFromThisDevice() async throws {
+        let viewModel = fixture.viewModel()
+        viewModel.reload()
+        let own = try #require(viewModel.list)
+        let shared = try await sharedList()
+        #expect(await viewModel.join(code: shared.code, name: "Sam"))
+
+        // Left in the web app: the server no longer shows this user the list, and says nothing more about it.
+        try await fixture.sharing.leave(shared.list.id, userID: fixture.menu.userID)
+        await viewModel.refresh()
+        #expect(viewModel.list?.id == own.id)
+        #expect(fixture.store.lists().map(\.id) == [own.id])
+    }
+
+    @Test func aListMadeElsewhereBeforeItHadItsOwnerGetsOne() async throws {
+        // Made offline on another device, which sent the list but not yet its owner.
+        let list = ShoppingListRecord(
+            id: UUID(), name: "Boodschappen", createdBy: fixture.menu.userID, updatedAt: fixture.menu.now, deletedAt: nil, syncedAt: nil
+        )
+        try fixture.remote.serve(list, table: "shopping_lists", syncedAt: fixture.menu.now)
+        let viewModel = fixture.viewModel()
+        await viewModel.refresh()
+
+        #expect(viewModel.list?.id == list.id)
+        let members = try await fixture.sharing.members(of: list.id)
+        #expect(members.map(\.userID) == [fixture.menu.userID])
+        #expect(members.map(\.role) == ["owner"])
+    }
+
+    @Test func aListThisUserMadeAndLeftElsewhereGoesToo() async throws {
+        let viewModel = fixture.viewModel()
+        viewModel.reload()
+        await viewModel.refresh()
+        let made = try #require(viewModel.list)
+
+        // Left in the web app after sharing it: the server emptied `created_by`, this device still has the old row.
+        try await fixture.sharing.leave(made.id, userID: fixture.menu.userID)
+        fixture.sharing.withoutMaker = [made.id]
+        await viewModel.refresh()
+        #expect(fixture.store.lists().map(\.id).contains(made.id) == false)
     }
 
     @Test func leavingTheJoinedListShowsTheOwnAgain() async throws {

@@ -2,12 +2,25 @@
 import Foundation
 import FitlingCore
 
-/// Sharing without a server: members and invitation codes in memory.
+/// Sharing without a server: members and invitation codes in memory. `userID` is who is signed in, which the real
+/// service takes from the session.
 final class FakeListSharing: ListSharing, @unchecked Sendable {
     private let lock = NSLock()
+    private let userID: UUID
     private var membersByList: [UUID: [ListMemberRecord]] = [:]
     private var codes: [String: UUID] = [:]
     private var _failure: SharingError?
+    private var _withoutMaker: Set<UUID> = []
+
+    init(userID: UUID) {
+        self.userID = userID
+    }
+
+    /// Lists whose maker left: the server no longer lets anyone become their owner (`created_by` is empty).
+    var withoutMaker: Set<UUID> {
+        get { lock.withLock { _withoutMaker } }
+        set { lock.withLock { _withoutMaker = newValue } }
+    }
 
     var failure: SharingError? {
         get { lock.withLock { _failure } }
@@ -17,6 +30,7 @@ final class FakeListSharing: ListSharing, @unchecked Sendable {
     func addOwner(_ member: ListMemberRecord) async throws {
         try lock.withLock {
             if let failure = _failure { throw failure }
+            if _withoutMaker.contains(member.listID) { throw SharingError.rejected }
             if !(membersByList[member.listID] ?? []).contains(where: { $0.userID == member.userID }) {
                 membersByList[member.listID, default: []].append(member)
             }
@@ -42,6 +56,9 @@ final class FakeListSharing: ListSharing, @unchecked Sendable {
     func join(code: String, name: String) async throws -> UUID {
         try lock.withLock {
             guard let listID = codes[code.uppercased()] else { throw SharingError.invalidInvite }
+            if !(membersByList[listID] ?? []).contains(where: { $0.userID == userID }) {
+                membersByList[listID, default: []].append(ListMemberRecord(listID: listID, userID: userID, role: "member", displayName: name))
+            }
             return listID
         }
     }
