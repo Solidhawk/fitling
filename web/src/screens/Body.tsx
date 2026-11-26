@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { FitlingCore, MeasurementKind } from "../core/fitlingCore";
 import { addMeasurement, deleteMeasurement, loadMeasurements, type Measurement, measurementKinds } from "../data/body";
 import { supabase } from "../data/supabase";
@@ -50,6 +50,18 @@ export function Body({ core, userID, onBack }: { core: FitlingCore; userID: stri
     await reload();
   }
 
+  // One measurement at a time: a double tap stores it once.
+  const adding = useRef(false);
+  function add() {
+    if (stored === undefined || adding.current) return;
+    adding.current = true;
+    void act(async () => {
+      if (await addMeasurement(supabase, userID, { kind, value: stored, day, today: today() }, new Date())) setValue("");
+    }).finally(() => {
+      adding.current = false;
+    });
+  }
+
   const number = new Intl.NumberFormat(language(), { maximumFractionDigits: 1 });
   const date = new Intl.DateTimeFormat(language(), { day: "numeric", month: "long", year: "numeric" });
   return (
@@ -92,15 +104,7 @@ export function Body({ core, userID, onBack }: { core: FitlingCore; userID: stri
               <input className="picker" type="date" max={today()} value={day} onChange={(event) => setDay(event.target.value)} />
             </label>
           </ListRow>
-          <ListRow
-            onClick={() =>
-              void act(async () => {
-                if (stored === undefined) return;
-                if (await addMeasurement(supabase, userID, { kind, value: stored, day, today: today() }, new Date())) setValue("");
-              })
-            }
-            disabled={stored === undefined}
-          >
+          <ListRow onClick={add} disabled={stored === undefined}>
             <span data-testid="body.add">{t("body.add")}</span>
           </ListRow>
         </ListSection>
