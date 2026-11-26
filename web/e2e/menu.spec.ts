@@ -141,6 +141,36 @@ test("anOwnRecipeIsMadeAndRemoved", async ({ page }, info) => {
   await expect(page.getByText("Pasta pesto")).toHaveCount(0, { timeout: 15_000 });
 });
 
+// The ingredients did not reach the server: saving again stores the recipe once, with its ingredients (UNFORGET S46).
+test("anOwnRecipeSavedAgainAfterAFailureIsStoredOnce", async ({ page }) => {
+  const user = await openMenu(page);
+  await page.getByTestId("menu.recipes").click();
+  await page.getByTestId("menu.recipe.new").click();
+  await page.getByTestId("menu.own.title").fill("Pasta pesto");
+  await page.getByTestId("menu.own.kcal").fill("550");
+  await page.getByTestId("menu.own.protein").fill("18");
+  await page.getByTestId("menu.own.carbs").fill("70");
+  await page.getByTestId("menu.own.fat").fill("20,5");
+  await page.getByTestId("menu.own.ingredient").fill("Pasta");
+  await page.getByTestId("menu.own.quantity").fill("200");
+  await page.getByTestId("menu.own.addIngredient").click();
+  let failures = 1;
+  await page.route("**/rest/v1/recipe_ingredients*", async (route) => {
+    if (route.request().method() === "POST" && failures-- > 0) {
+      return route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ message: "unavailable" }) });
+    }
+    return route.continue();
+  });
+  await page.getByRole("button", { name: nl("common.save") }).click();
+  await page.getByRole("alertdialog").getByRole("button").click();
+  await page.getByRole("button", { name: nl("common.save") }).click();
+  await expect(page.getByText("Pasta pesto")).toBeVisible({ timeout: 15_000 });
+  const { data: recipes } = await admin.from("recipes").select("id").eq("owner_id", user.id);
+  expect(recipes).toHaveLength(1);
+  const { data: lines } = await admin.from("recipe_ingredients").select("recipe_id").eq("owner_id", user.id);
+  expect(lines).toEqual([{ recipe_id: recipes![0].id }]);
+});
+
 test("preferencesAreSavedAtOnce", async ({ page }) => {
   const user = await openMenu(page);
   await page.getByTestId("menu.preferences").click();

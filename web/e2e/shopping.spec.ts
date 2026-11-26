@@ -6,6 +6,20 @@ import { admin, nl } from "./users";
 
 // ShoppingTests and the shopping UI tests on iOS: the list, the menu, offers and sharing (web phase 6).
 
+// Adding did not reach the server: what was typed stays in the field, to try again (UNFORGET S48).
+test("whatWasTypedStaysWhenAddingFails", async ({ page }) => {
+  await openShopping(page);
+  await page.route("**/rest/v1/shopping_items*", (route) =>
+    route.request().method() === "POST"
+      ? route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ message: "unavailable" }) })
+      : route.continue(),
+  );
+  await page.getByTestId("shopping.add.field").fill("Brood");
+  await page.getByRole("button", { name: nl("shopping.add"), exact: true }).click();
+  await expect(page.getByRole("alertdialog")).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByTestId("shopping.add.field")).toHaveValue("Brood");
+});
+
 test("addingCheckingAndClearing", async ({ page }, info) => {
   const user = await openShopping(page);
   await expect(page.getByText(nl("shopping.empty"))).toBeVisible();

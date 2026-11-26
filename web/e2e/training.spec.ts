@@ -33,6 +33,19 @@ test("sharedProgramsCannotBeChanged", async ({ page }, info) => {
   expect(data).toHaveLength(1);
 });
 
+// A double tap on Kopiëren makes one copy, not two (UNFORGET S42).
+test("aDoubleTapOnCopyMakesOneCopy", async ({ page }) => {
+  const programme = await firstProgramme();
+  const user = await openTraining(page);
+  await page.getByTestId(`training.program.${programme.id}`).click();
+  await page.getByRole("button", { name: nl("training.program.copy") }).dblclick();
+  const copyName = nl("training.program.copyName %@").replace("%@", programme.name);
+  await expect(page.getByRole("heading", { name: copyName })).toBeVisible({ timeout: 15_000 });
+  await page.waitForTimeout(1500);
+  const { data } = await admin.from("programs").select("id").eq("owner_id", user.id);
+  expect(data).toHaveLength(1);
+});
+
 test("aNewProgramHasItsDays", async ({ page }) => {
   await openTraining(page);
   await page.getByTestId("training.program.new").click();

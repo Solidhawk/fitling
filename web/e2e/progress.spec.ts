@@ -55,6 +55,19 @@ test("measurementsAreAddedAndShown", async ({ page }, info) => {
   expect(data).toEqual([{ kind: "weight", value: 80.4 }]);
 });
 
+// A double tap stores one measurement, not two (UNFORGET S42).
+test("aDoubleTapAddsOneMeasurement", async ({ page }) => {
+  const user = await openTraining(page);
+  await page.getByRole("button", { name: nl("body.title") }).click();
+  await page.getByTestId("body.value").fill("80,4");
+  await page.getByRole("button", { name: nl("body.add") }).dblclick();
+  await expect(page.getByTestId("body.measurement")).toContainText(/80,4\s?kg/);
+  // Room for a second write to land before counting.
+  await page.waitForTimeout(1500);
+  const { data } = await admin.from("body_measurements").select("value").eq("user_id", user.id);
+  expect(data).toEqual([{ value: 80.4 }]);
+});
+
 /** A PNG of 4 by 4 pixels in one colour, built here, as a photo picked from the library. */
 function png(): Buffer {
   const crc = (bytes: Buffer) => {
