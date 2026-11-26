@@ -41,6 +41,9 @@ final class SyncEngine {
     /// Goes up with every erase. A request that returns into another epoch is thrown away: its
     /// rows belong to the data that was just wiped, and its models may no longer exist.
     private var epoch = 0
+    /// How often each table was asked for whole. A pull that was under way when its table was asked for leaves the
+    /// cursor alone, so the next round still fetches from the start.
+    private var wholeRequests: [String: Int] = [:]
 
     init(container: ModelContainer, remote: any RemoteStore, tables: [any SyncTable], now: @escaping () -> Date = Date.init) {
         self.container = container
@@ -98,6 +101,7 @@ final class SyncEngine {
     /// can be older than the cursor: a shopping list joined with a code, with its items (UNFORGET S47). Kept on the
     /// device, so it also holds when the app closes before that round.
     func pullWhole(_ tableNames: Set<String>) {
+        for name in tableNames { wholeRequests[name, default: 0] += 1 }
         for cursor in (try? context.fetch(FetchDescriptor<SyncCursor>())) ?? [] where tableNames.contains(cursor.table) {
             cursor.syncedAt = nil
         }
@@ -185,6 +189,7 @@ final class SyncEngine {
     func pull<Model: SyncableModel>(_ type: Model.Type) async throws {
         let started = epoch
         let table = Model.tableName
+        let wholeRequestsAtStart = wholeRequests[table, default: 0]
         let cursor = try? context.fetch(FetchDescriptor<SyncCursor>(predicate: #Predicate<SyncCursor> { $0.table == table })).first
         let since: Date?
         switch SyncRules.pullStart(cursor: cursor?.syncedAt, lastPull: cursor?.pulledAt, now: now()) {
@@ -217,6 +222,11 @@ final class SyncEngine {
             pageCount = page.count
         }
 
+        // Asked for whole while this pull ran: its rows stay, its cursor would skip what it started too late to see.
+        guard wholeRequests[table, default: 0] == wholeRequestsAtStart else {
+            try? context.save()
+            return
+        }
         if let cursor {
             cursor.syncedAt = newest
             cursor.pulledAt = now()
