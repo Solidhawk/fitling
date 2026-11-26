@@ -17,9 +17,10 @@ struct BodyView: View {
         self.log = log
     }
 
-    private var day: Binding<Date> {
+    /// One `now` for what is shown and for the last day that can be picked, so the two never disagree.
+    private func day(now: Date) -> Binding<Date> {
         Binding(
-            get: { picked ?? .now },
+            get: { picked ?? now },
             set: { picked = Calendar.current.isDateInToday($0) ? nil : $0 }
         )
     }
@@ -60,7 +61,8 @@ struct BodyView: View {
                         .accessibilityIdentifier("body.value")
                     Text(verbatim: symbol).foregroundStyle(Color.inkSoft)
                 }
-                DatePicker("body.date", selection: day, in: ...Date.now, displayedComponents: .date)
+                let now = Date.now
+                DatePicker("body.date", selection: day(now: now), in: ...now, displayedComponents: .date)
                     .tint(Color.ink)
                 Button("body.add") {
                     if let value, log.add(value, kind: kind, on: Day(picked ?? .now, timeZone: .current)) != nil {

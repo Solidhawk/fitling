@@ -109,7 +109,8 @@ export function Body({ core, userID, onBack }: { core: FitlingCore; userID: stri
                 type="date"
                 max={today()}
                 value={picked ?? today()}
-                onChange={(event) => setPicked(event.target.value === today() ? undefined : event.target.value)}
+                // Emptied by hand, the field is today again: a measurement needs a day.
+                onChange={(event) => setPicked(event.target.value === "" || event.target.value === today() ? undefined : event.target.value)}
               />
             </label>
           </ListRow>
