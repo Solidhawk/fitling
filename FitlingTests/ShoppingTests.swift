@@ -143,6 +143,40 @@ func manyOffers(_ count: Int, in shop: String, today: Day) -> [OfferRecord] {
         #expect(await viewModel.join(code: code, name: "Sam"))
     }
 
+    @Test func aListThatExistedLongBeforeArrivesWithItsItems() async throws {
+        let viewModel = fixture.viewModel()
+        viewModel.reload()
+        // The device synced its own list: from then on it asks the server only for what changed since.
+        await viewModel.refresh()
+        let earlier = fixture.menu.now.addingTimeInterval(-86_400)
+        let list = ShoppingListRecord(id: UUID(), name: "Weekend", createdBy: UUID(), updatedAt: earlier, deletedAt: nil, syncedAt: nil)
+        let item = ShoppingItemRecord(
+            id: UUID(), listID: list.id, name: "Brood", quantity: nil, unit: nil, aisle: "other", productID: nil, isChecked: false,
+            source: "manual", updatedBy: list.createdBy, updatedAt: earlier, deletedAt: nil, syncedAt: nil
+        )
+        try fixture.remote.serve(list, table: "shopping_lists", syncedAt: earlier)
+        try fixture.remote.serve(item, table: "shopping_items", syncedAt: earlier)
+        let code = try await fixture.sharing.createInvite(for: list.id)
+
+        #expect(await viewModel.join(code: code, name: "Sam"))
+        #expect(viewModel.list?.id == list.id)
+        #expect(viewModel.items.map(\.id) == [item.id])
+    }
+
+    @Test func leavingTheJoinedListShowsTheOwnAgain() async throws {
+        let viewModel = fixture.viewModel()
+        viewModel.reload()
+        let own = try #require(viewModel.list)
+        let shared = try await sharedList()
+        #expect(await viewModel.join(code: shared.code, name: "Sam"))
+
+        await viewModel.leave()
+        #expect(viewModel.list?.id == own.id)
+        // Joined again later, the list of the code shows again.
+        #expect(await viewModel.join(code: shared.code, name: "Sam"))
+        #expect(viewModel.list?.id == shared.list.id)
+    }
+
     /// Someone else's list, on the server only, with a code to join it. Its name sorts after the user's own list, so
     /// the first list by name is the user's own (UNFORGET S47: with the same name either could come first).
     private func sharedList() async throws -> (list: ShoppingListRecord, code: String) {
