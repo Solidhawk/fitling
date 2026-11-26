@@ -6,19 +6,19 @@
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Fitling gebruikt de camera om de barcode van een product te scannen."
+            "value": "Fitling gebruikt de camera om de barcode en het etiket van een product te lezen."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Fitling uses the camera to scan the barcode of a product."
+            "value": "Fitling uses the camera to read the barcode and the label of a product."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Fitling nutzt die Kamera, um den Barcode eines Produkts zu scannen."
+            "value": "Fitling nutzt die Kamera, um den Barcode und das Etikett eines Produkts zu lesen."
           }
         }
       }

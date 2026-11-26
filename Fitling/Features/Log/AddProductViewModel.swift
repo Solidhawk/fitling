@@ -17,6 +17,19 @@ final class AddProductViewModel {
     var carbs: Double?
     var fat: Double?
 
+    /// What reading a photo of the nutrition table gave (TASKS 2.8).
+    enum LabelNote: Equatable {
+        /// Read: the user checks the values before saving.
+        case read
+        /// Read, but a value was left out or the energy does not fit the macros.
+        case check
+        /// No nutrition table on the photo that could be read.
+        case nothing
+    }
+
+    private(set) var labelNote: LabelNote?
+    private(set) var isReadingLabel = false
+
     private let diary: FoodDiary
 
     init(diary: FoodDiary, gtin: String?) {
@@ -24,12 +37,40 @@ final class AddProductViewModel {
         self.gtin = gtin ?? ""
     }
 
-    /// The checks and rounding of FitlingCore, the same as on the web.
-    private var fields: OwnProductFields? {
+    private var draft: OwnProductDraft {
         OwnProductDraft(
             name: name, brand: brand, gtin: gtin, isMillilitre: isMillilitre, kcal: kcal,
             protein: protein, carbs: carbs, fat: fat, servingSize: servingSize
-        ).validated()
+        )
+    }
+
+    /// The checks and rounding of FitlingCore, the same as on the web.
+    private var fields: OwnProductFields? {
+        draft.validated()
+    }
+
+    /// A photo of the nutrition table, read by Vision on this iPhone away from the main actor.
+    func readLabel(_ photo: Data) async {
+        isReadingLabel = true
+        let label = await Task.detached(priority: .userInitiated) { LabelReader.read(photo) }.value
+        isReadingLabel = false
+        useLabel(label)
+    }
+
+    /// What was read fills the fields that are still empty; what the user typed stays.
+    func useLabel(_ label: NutritionLabel?) {
+        guard let label, label.kcal != nil || label.protein != nil || label.carbs != nil || label.fat != nil else {
+            labelNote = .nothing
+            return
+        }
+        let filled = label.filling(draft)
+        kcal = filled.kcal
+        protein = filled.protein
+        carbs = filled.carbs
+        fat = filled.fat
+        servingSize = filled.servingSize
+        isMillilitre = filled.isMillilitre
+        labelNote = label.needsCheck ? .check : .read
     }
 
     /// The same limits as the `check` rules on `products`.

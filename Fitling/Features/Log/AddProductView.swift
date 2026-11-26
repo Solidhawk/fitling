@@ -1,8 +1,11 @@
+import PhotosUI
 import SwiftUI
 import FitlingCore
 
 struct AddProductView: View {
     @State private var viewModel: AddProductViewModel
+    @State private var photographing = false
+    @State private var picked: PhotosPickerItem?
     private let onSaved: (Product) -> Void
 
     init(viewModel: AddProductViewModel, onSaved: @escaping (Product) -> Void) {
@@ -12,6 +15,8 @@ struct AddProductView: View {
 
     var body: some View {
         Form {
+            labelSection
+
             Section {
                 TextField("product.add.name", text: $viewModel.name)
                     .accessibilityIdentifier("product.add.name")
@@ -58,6 +63,55 @@ struct AddProductView: View {
         .groundBackground()
         .navigationTitle("product.add.title")
         .navigationBarTitleDisplayMode(.inline)
+        .fullScreenCover(isPresented: $photographing) {
+            CameraPicker { photo in Task { await viewModel.readLabel(photo) } }
+                .ignoresSafeArea()
+        }
+        .onChange(of: picked) { _, item in
+            guard let item else { return }
+            Task {
+                if let photo = try? await item.loadTransferable(type: Data.self) {
+                    await viewModel.readLabel(photo)
+                } else {
+                    viewModel.useLabel(nil)
+                }
+                picked = nil
+            }
+        }
+    }
+
+    /// A photo of the nutrition table fills the values; the user checks them (TASKS 2.8).
+    private var labelSection: some View {
+        Section {
+            if CameraPicker.isAvailable {
+                Button {
+                    photographing = true
+                } label: {
+                    Label("product.label.photo", systemImage: "camera")
+                }
+                .accessibilityIdentifier("product.label.photo")
+            }
+            PhotosPicker(selection: $picked, matching: .images) {
+                Label("product.label.pick", systemImage: "photo")
+            }
+            .accessibilityIdentifier("product.label.pick")
+            if viewModel.isReadingLabel {
+                ProgressView()
+            }
+        } footer: {
+            Text(labelNoteKey).footerStyle()
+        }
+        .disabled(viewModel.isReadingLabel)
+        .listRowBackground(Color.card)
+    }
+
+    private var labelNoteKey: LocalizedStringKey {
+        switch viewModel.labelNote {
+        case nil: "product.label.footer"
+        case .read: "product.label.read"
+        case .check: "product.label.check"
+        case .nothing: "product.label.none"
+        }
     }
 
     private func numberField(_ key: LocalizedStringKey, value: Binding<Double?>, identifier: String) -> some View {

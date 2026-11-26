@@ -13968,6 +13968,138 @@
           }
         }
       }
+    },
+    "product.label.photo": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Etiket fotograferen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photograph the label"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Etikett fotografieren"
+          }
+        }
+      }
+    },
+    "product.label.pick": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foto van het etiket kiezen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a photo of the label"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foto des Etiketts wählen"
+          }
+        }
+      }
+    },
+    "product.label.footer": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fitling leest de voedingswaarde per 100 g van de foto, hier op je iPhone. Controleer de waarden voor je opslaat."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fitling reads the nutrition values per 100 g from the photo, here on your iPhone. Check the values before you save."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fitling liest die Nährwerte pro 100 g vom Foto, hier auf deinem iPhone. Prüfe die Werte, bevor du speicherst."
+          }
+        }
+      }
+    },
+    "product.label.read": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gelezen van het etiket. Controleer de waarden voor je opslaat."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Read from the label. Check the values before you save."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vom Etikett gelesen. Prüfe die Werte, bevor du speicherst."
+          }
+        }
+      }
+    },
+    "product.label.check": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Niet alles kon goed worden gelezen. Vergelijk de waarden met het etiket."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not everything could be read well. Compare the values with the label."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nicht alles war gut lesbar. Vergleiche die Werte mit dem Etikett."
+          }
+        }
+      }
+    },
+    "product.label.none": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Op deze foto vond Fitling geen voedingswaardetabel. Probeer een scherpere foto van alleen de tabel."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fitling found no nutrition table on this photo. Try a sharper photo of just the table."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auf diesem Foto fand Fitling keine Nährwerttabelle. Versuch ein schärferes Foto nur von der Tabelle."
+          }
+        }
+      }
     }
   },
   "version": "1.0"
