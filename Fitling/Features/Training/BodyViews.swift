@@ -9,10 +9,19 @@ struct BodyView: View {
     @State private var kind: MeasurementKind = .weight
     @State private var measurements: [BodyMeasurement] = []
     @State private var value: Double?
-    @State private var date = Date.now
+    /// Nil while the user leaves it at today: the day is then the one of the moment of adding, also past midnight with
+    /// the screen still open (UNFORGET S53). A day the user picked stays.
+    @State private var picked: Date?
 
     init(log: BodyLog) {
         self.log = log
+    }
+
+    private var day: Binding<Date> {
+        Binding(
+            get: { picked ?? .now },
+            set: { picked = Calendar.current.isDateInToday($0) ? nil : $0 }
+        )
     }
 
     private var symbol: String {
@@ -51,10 +60,10 @@ struct BodyView: View {
                         .accessibilityIdentifier("body.value")
                     Text(verbatim: symbol).foregroundStyle(Color.inkSoft)
                 }
-                DatePicker("body.date", selection: $date, in: ...Date.now, displayedComponents: .date)
+                DatePicker("body.date", selection: day, in: ...Date.now, displayedComponents: .date)
                     .tint(Color.ink)
                 Button("body.add") {
-                    if let value, log.add(value, kind: kind, on: Day(date, timeZone: .current)) != nil {
+                    if let value, log.add(value, kind: kind, on: Day(picked ?? .now, timeZone: .current)) != nil {
                         self.value = nil
                         reload()
                     }
