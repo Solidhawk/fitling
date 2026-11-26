@@ -17,16 +17,30 @@ struct ShoppingStore {
 
     // MARK: Lists
 
+    /// By name, and by id when two have the same name, as on the web: the first is always the same one.
     func lists() -> [ShoppingList] {
-        (try? context.fetch(FetchDescriptor<ShoppingList>(
-            predicate: #Predicate<ShoppingList> { $0.deletedAt == nil },
-            sortBy: [SortDescriptor(\.name)]
-        ))) ?? []
+        let lists = (try? context.fetch(FetchDescriptor<ShoppingList>(predicate: #Predicate<ShoppingList> { $0.deletedAt == nil }))) ?? []
+        return lists.sorted { first, second in
+            let order = first.name.localizedStandardCompare(second.name)
+            return order == .orderedSame ? first.id.uuidString < second.id.uuidString : order == .orderedAscending
+        }
     }
 
-    /// The first list, made on the device (also offline) with the user as its owner when there is none.
-    func ensureList(named name: String, ownerName: String) -> ShoppingList {
-        if let first = lists().first { return first }
+    /// Every list the server sent to this device, also one marked deleted.
+    func knownListIDs() -> Set<UUID> {
+        Set(((try? context.fetch(FetchDescriptor<ShoppingList>())) ?? []).map(\.id))
+    }
+
+    func list(_ id: UUID) -> ShoppingList? {
+        lists().first { $0.id == id }
+    }
+
+    /// The list to show: `preferred` while it is on the device (the list the user joined), else the first by name, made
+    /// on the device (also offline) with the user as its owner when there is none.
+    func ensureList(named name: String, ownerName: String, preferred: UUID? = nil) -> ShoppingList {
+        let existing = lists()
+        if let preferred, let kept = existing.first(where: { $0.id == preferred }) { return kept }
+        if let first = existing.first { return first }
         let list = ShoppingList(id: UUID(), name: String(name.prefix(60)), createdBy: userID, updatedAt: now())
         context.insert(list)
         context.insert(ShoppingListMember(listID: list.id, userID: userID, role: "owner", displayName: String(ownerName.prefix(40)), joinedAt: now()))

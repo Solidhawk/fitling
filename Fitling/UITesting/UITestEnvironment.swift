@@ -26,10 +26,11 @@ enum UITestEnvironment {
 
     static func makeIfRequested(arguments: [String] = ProcessInfo.processInfo.arguments) throws -> AppEnvironment? {
         let state: AuthState
+        let userID = UUID()
         if arguments.contains("--ui-testing-signed-out") {
             state = .signedOut
         } else if arguments.contains("--ui-testing") || arguments.contains("--ui-testing-with-profile") {
-            state = .signedIn(userID: UUID(), usesApple: false)
+            state = .signedIn(userID: userID, usesApple: false)
         } else {
             return nil
         }
@@ -53,7 +54,7 @@ enum UITestEnvironment {
         let offerSource = FakeOfferSource()
         offerSource.offerRecords = FakeOfferSource.sample(today: Day(.now, timeZone: .current))
         let root = RootViewModel(auth: FakeAuthProvider(state: state), sync: sync, food: food, reminders: FakeReminderDelivery(), health: FakeHealthReader(),
-            shopping: ShoppingServices(sharing: FakeListSharing(), offers: offerSource)
+            shopping: ShoppingServices(sharing: FakeListSharing(userID: userID), offers: offerSource)
         )
         return AppEnvironment(container: container, root: root)
     }

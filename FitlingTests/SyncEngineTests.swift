@@ -389,6 +389,43 @@ import FitlingCore
         #expect(remote.fetches.filter { $0.table == periods }.count == 2)
     }
 
+    /// Rows that become visible all at once, like a shopping list joined with a code, can be older than the cursor.
+    @Test func aTableAskedForWholeIsFetchedFromTheStartOnce() async throws {
+        let remote = FakeRemoteStore()
+        try remote.serve(makeProfile().record, table: "profiles", syncedAt: now)
+        let engine = try makeEngine(remote)
+        #expect(await engine.sync() == .completed)
+
+        engine.pullWhole(["profiles"])
+        #expect(try await profilesFetch(in: engine, remote).since == nil)
+        #expect(try await profilesFetch(in: engine, remote).since != nil)
+    }
+
+    /// The profiles request of one more round.
+    private func profilesFetch(in engine: SyncEngine, _ remote: FakeRemoteStore) async throws -> FakeRemoteStore.Fetch {
+        let before = remote.fetches.count
+        #expect(await engine.sync() == .completed)
+        return try #require(remote.fetches.dropFirst(before).first { $0.table == "profiles" })
+    }
+
+    /// Asked for while that table is being fetched: the round under way does not put its cursor back.
+    @Test func askingForAWholeTableDuringItsFetchHoldsForTheNextRound() async throws {
+        let remote = FakeRemoteStore()
+        try remote.serve(makeProfile().record, table: "profiles", syncedAt: now)
+        let engine = try makeEngine(remote)
+        #expect(await engine.sync() == .completed)
+        remote.holdsNextRequest = true
+
+        let round = Task { await engine.sync() }
+        try #require(await remote.requestArrived())
+        #expect(remote.fetches.last?.table == "profiles")
+        engine.pullWhole(["profiles"])
+        remote.releaseRequest()
+        #expect(await round.value == .completed)
+
+        #expect(try await profilesFetch(in: engine, remote).since == nil)
+    }
+
     @Test func erasingDuringARoundKeepsNothingFromIt() async throws {
         let remote = FakeRemoteStore()
         try remote.serve(record(kcal: 1800, updatedAt: now), table: periods, syncedAt: now)

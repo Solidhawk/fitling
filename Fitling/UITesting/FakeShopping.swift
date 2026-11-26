@@ -2,12 +2,40 @@
 import Foundation
 import FitlingCore
 
-/// Sharing without a server: members and invitation codes in memory.
+/// Sharing without a server: members and invitation codes in memory. `userID` is who is signed in, which the real
+/// service takes from the session.
 final class FakeListSharing: ListSharing, @unchecked Sendable {
     private let lock = NSLock()
+    private let userID: UUID
     private var membersByList: [UUID: [ListMemberRecord]] = [:]
     private var codes: [String: UUID] = [:]
     private var _failure: SharingError?
+    private var _withoutMaker: Set<UUID> = []
+    private var _ownerFailure: SharingError?
+    private var _joinsAfterNextLookup: UUID?
+
+    init(userID: UUID) {
+        self.userID = userID
+    }
+
+    /// Only adding an owner fails, as with a server error or an expired token while the rest answers.
+    var ownerFailure: SharingError? {
+        get { lock.withLock { _ownerFailure } }
+        set { lock.withLock { _ownerFailure = newValue } }
+    }
+
+    /// This user joins that list (on another device) right after the next answer about their lists: that answer is
+    /// already out of date when it arrives.
+    var joinsAfterNextLookup: UUID? {
+        get { lock.withLock { _joinsAfterNextLookup } }
+        set { lock.withLock { _joinsAfterNextLookup = newValue } }
+    }
+
+    /// Lists whose maker left: the server no longer lets anyone become their owner (`created_by` is empty).
+    var withoutMaker: Set<UUID> {
+        get { lock.withLock { _withoutMaker } }
+        set { lock.withLock { _withoutMaker = newValue } }
+    }
 
     var failure: SharingError? {
         get { lock.withLock { _failure } }
@@ -16,7 +44,8 @@ final class FakeListSharing: ListSharing, @unchecked Sendable {
 
     func addOwner(_ member: ListMemberRecord) async throws {
         try lock.withLock {
-            if let failure = _failure { throw failure }
+            if let failure = _failure ?? _ownerFailure { throw failure }
+            if _withoutMaker.contains(member.listID) { throw SharingError.refused }
             if !(membersByList[member.listID] ?? []).contains(where: { $0.userID == member.userID }) {
                 membersByList[member.listID, default: []].append(member)
             }
@@ -27,6 +56,18 @@ final class FakeListSharing: ListSharing, @unchecked Sendable {
         try lock.withLock {
             if let failure = _failure { throw failure }
             return membersByList[listID] ?? []
+        }
+    }
+
+    func lists(of userID: UUID) async throws -> Set<UUID> {
+        try lock.withLock {
+            if let failure = _failure { throw failure }
+            let answer = Set(membersByList.filter { list in list.value.contains { member in member.userID == userID } }.keys)
+            if let joined = _joinsAfterNextLookup {
+                _joinsAfterNextLookup = nil
+                membersByList[joined, default: []].append(ListMemberRecord(listID: joined, userID: userID, role: "member", displayName: "Sam"))
+            }
+            return answer
         }
     }
 
@@ -42,6 +83,9 @@ final class FakeListSharing: ListSharing, @unchecked Sendable {
     func join(code: String, name: String) async throws -> UUID {
         try lock.withLock {
             guard let listID = codes[code.uppercased()] else { throw SharingError.invalidInvite }
+            if !(membersByList[listID] ?? []).contains(where: { $0.userID == userID }) {
+                membersByList[listID, default: []].append(ListMemberRecord(listID: listID, userID: userID, role: "member", displayName: name))
+            }
             return listID
         }
     }

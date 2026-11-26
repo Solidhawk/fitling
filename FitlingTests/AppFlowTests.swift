@@ -66,7 +66,7 @@ struct FlowFixture {
         let food = FoodServices(source: FakeProductSource(), search: FakeProductSearch())
         return (RootViewModel(
             auth: auth, sync: sync, food: food, reminders: reminders, health: health,
-            shopping: ShoppingServices(sharing: FakeListSharing(), offers: FakeOfferSource())
+            shopping: ShoppingServices(sharing: FakeListSharing(userID: userID), offers: FakeOfferSource())
         ), auth)
     }
 

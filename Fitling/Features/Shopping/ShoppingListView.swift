@@ -95,8 +95,8 @@ struct ShoppingListView: View {
         .refreshable { await viewModel.refresh(force: true) }
         .onAppear { viewModel.reload() }
         .task { await viewModel.refresh() }
-        .sheet(isPresented: $joining) {
-            JoinListSheet { code, name in await viewModel.join(code: code, name: name) }
+        .sheet(isPresented: $joining, onDismiss: { viewModel.dismissJoinProblem() }) {
+            JoinListSheet(viewModel: viewModel)
         }
         .sheet(isPresented: $choosingShops) {
             SupermarketPicker(viewModel: viewModel)
@@ -242,16 +242,17 @@ enum ShoppingAmount {
     }
 }
 
-/// A code from someone else, and the name the other members will see.
+/// A code from someone else, and the name the other members will see. Why a code did not work shows here, where it was
+/// typed.
 private struct JoinListSheet: View {
-    let onJoin: (String, String) async -> Bool
+    let viewModel: ShoppingViewModel
     @State private var code = ""
     @State private var name = ""
     @State private var working = false
     @Environment(\.dismiss) private var dismiss
 
-    init(onJoin: @escaping (String, String) async -> Bool) {
-        self.onJoin = onJoin
+    init(viewModel: ShoppingViewModel) {
+        self.viewModel = viewModel
     }
 
     var body: some View {
@@ -263,7 +264,7 @@ private struct JoinListSheet: View {
                         .autocorrectionDisabled()
                     TextField("shopping.join.name", text: $name)
                 } footer: {
-                    Text("shopping.join.footer").footerStyle()
+                    Text(viewModel.joinProblem?.messageKey ?? "shopping.join.footer").footerStyle()
                 }
                 .listRowBackground(Color.card)
             }
@@ -279,7 +280,7 @@ private struct JoinListSheet: View {
                     Button("shopping.join.confirm") {
                         working = true
                         Task {
-                            if await onJoin(code, name) { dismiss() }
+                            if await viewModel.join(code: code, name: name) { dismiss() }
                             working = false
                         }
                     }
@@ -341,7 +342,7 @@ extension SharingError {
         case .network: "common.connection.body"
         case .invalidInvite: "shopping.error.invalidInvite"
         case .listFull: "shopping.error.listFull"
-        case .rejected: "error.server"
+        case .rejected, .refused: "error.server"
         }
     }
 }
