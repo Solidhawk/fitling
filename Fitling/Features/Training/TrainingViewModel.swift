@@ -14,6 +14,8 @@ final class TrainingViewModel {
     private(set) var recent: [WorkoutSession] = []
     private(set) var healthRefused = false
     private(set) var coachNotes: [CoachNote] = []
+    /// For the programme of composed workouts the number of them, per programme id.
+    private(set) var composedCounts: [UUID: Int] = [:]
     /// How long the user wants to train, kept for the next time on this device.
     var workoutMinutes: Int {
         didSet { defaults.set(workoutMinutes, forKey: Self.workoutMinutesKey) }
@@ -47,6 +49,10 @@ final class TrainingViewModel {
         next = store.nextWorkout()
         recent = store.finishedSessions(limit: 10)
         coachNotes = store.coachNotes()
+        let records = store.records()
+        composedCounts = Dictionary(uniqueKeysWithValues: programs.compactMap { program in
+            records.composedWorkoutCount(of: program.id).map { (program.id, $0) }
+        })
     }
 
     private static let workoutMinutesKey = "fitling.workoutMinutes"

@@ -18,19 +18,14 @@ struct TrainingStore {
 
     // MARK: Programmes
 
-    /// The ready-made programmes first (fewest days first), then the user's own.
+    /// The ready-made programmes first (fewest days first), then the user's own (TrainingRecords.programs).
     func programs() -> [Program] {
-        // Optional against optional: the predicate macro does not promote a plain UUID.
         let owner: UUID? = userID
         let all = (try? context.fetch(FetchDescriptor<Program>(
             predicate: #Predicate<Program> { $0.deletedAt == nil && ($0.ownerID == nil || $0.ownerID == owner) }
         ))) ?? []
-        let languages = Locale.preferredLanguages
-        return all.sorted { lhs, rhs in
-            if (lhs.ownerID == nil) != (rhs.ownerID == nil) { return lhs.ownerID == nil }
-            if lhs.daysPerWeek != rhs.daysPerWeek { return lhs.daysPerWeek < rhs.daysPerWeek }
-            return lhs.name.text(preferring: languages) < rhs.name.text(preferring: languages)
-        }
+        let byID = Dictionary(all.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        return ordering(programs: all).programs().compactMap { byID[$0.id] }
     }
 
     func program(_ id: UUID) -> Program? {
@@ -67,14 +62,14 @@ struct TrainingStore {
         return try? context.fetch(descriptor).first
     }
 
-    /// Shared and own exercises, by name in the user's language.
+    /// Shared and own exercises, by name in the user's language (TrainingRecords.exercises).
     func exercises() -> [Exercise] {
         let owner: UUID? = userID
         let all = (try? context.fetch(FetchDescriptor<Exercise>(
             predicate: #Predicate<Exercise> { $0.deletedAt == nil && ($0.ownerID == nil || $0.ownerID == owner) }
         ))) ?? []
-        let languages = Locale.preferredLanguages
-        return all.sorted { $0.name.text(preferring: languages).localizedStandardCompare($1.name.text(preferring: languages)) == .orderedAscending }
+        let byID = Dictionary(all.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        return ordering(exercises: all).exercises().compactMap { byID[$0.id] }
     }
 
     /// The user's own copy of a programme, to change freely. Days and exercises are copied with
@@ -153,14 +148,15 @@ struct TrainingStore {
 
     /// For the programme of composed workouts the number of them; nil for every other programme.
     func composedWorkoutCount(of program: Program) -> Int? {
-        let count = days(of: program).filter { ComposedWorkout.focus(of: $0.id) != nil }.count
-        return count > 0 ? count : nil
+        records().composedWorkoutCount(of: program.id)
     }
 
     /// Whether the programme screen may change the day: the user's own, and not a composed one. That is the record
     /// of one workout; another one is composed instead.
     func canChange(_ day: ProgramDay) -> Bool {
-        day.ownerID == userID && ComposedWorkout.focus(of: day.id) == nil
+        TrainingRecords(
+            userID: userID, exercises: [], programs: [], days: [], items: [], settings: [], sessions: [], sets: [], today: today, languages: languages
+        ).canChange(day.trainingRecord)
     }
 
     // MARK: Workouts
@@ -198,9 +194,10 @@ struct TrainingStore {
         touch(session)
     }
 
-    /// Throws a workout away with its sets, for a workout that was started by mistake. A composed day was made
-    /// for this one workout, so it goes too, unless another workout was done on it, and with the last day its programme.
+    /// Throws a workout away with its sets, for a workout that was started by mistake, and what FitlingCore says goes
+    /// with it (TrainingRecords.cleanup): a composed day made for this one workout, and with the last day its programme.
     func discard(_ session: WorkoutSession) {
+        let cleanup = records().cleanup(discarding: session.id)
         session.deletedAt = now()
         for set in sets(of: session) {
             set.deletedAt = now()
@@ -208,20 +205,11 @@ struct TrainingStore {
             set.needsPush = true
         }
         touch(session)
-        removeComposedDayIfUnused(session.programDayID)
-    }
-
-    private func removeComposedDayIfUnused(_ id: UUID?) {
-        guard let id, ComposedWorkout.focus(of: id) != nil, let unused = day(id), unused.ownerID == userID else { return }
-        let dayID: UUID? = id
-        let uses = (try? context.fetchCount(FetchDescriptor<WorkoutSession>(
-            predicate: #Predicate<WorkoutSession> { $0.programDayID == dayID && $0.deletedAt == nil }
-        ))) ?? 0
-        guard uses == 0 else { return }
-        for item in items(of: unused) { remove(item) }
+        guard let cleanup, let unused = day(cleanup.dayID) else { return }
+        for item in items(of: unused) where cleanup.itemIDs.contains(item.id) { remove(item) }
         unused.deletedAt = now()
         touch(unused)
-        if let program = program(unused.programID), days(of: program).isEmpty { delete(program) }
+        if let programID = cleanup.programID, let program = program(programID) { delete(program) }
     }
 
     func sets(of session: WorkoutSession) -> [WorkoutSet] {
@@ -253,63 +241,36 @@ struct TrainingStore {
     }
 
     /// How many of the composed workouts their programme shows.
-    static let composedDaysShown = 10
+    static let composedDaysShown = TrainingRecords.composedDaysShown
 
     /// The programme of composed workouts gets a day with every workout: it shows the newest first, and not all.
     func daysToShow(of program: Program) -> [ProgramDay] {
-        let all = days(of: program)
-        guard all.contains(where: { ComposedWorkout.focus(of: $0.id) != nil }) else { return all }
-        return Array(all.reversed().prefix(Self.composedDaysShown))
+        records().daysToShow(of: program.id).compactMap { day($0.id) }
     }
 
     /// After a workout from a programme the day after it, round and round. After a composed one the focus whose
     /// turn it is, for the generator to make a new workout for.
     func nextWorkout() -> NextWorkout? {
-        for session in finishedSessions(limit: 10) {
-            guard let lastID = session.programDayID, let last = day(lastID), let program = program(last.programID), program.deletedAt == nil else { continue }
-            if ComposedWorkout.focus(of: lastID) != nil {
-                return ComposedWorkout.nextFocus(after: composedWorkoutsDone()).map { NextWorkout.compose($0) }
-            }
-            let all = days(of: program)
-            guard !all.isEmpty else { continue }
-            let index = all.firstIndex { $0.id == last.id } ?? -1
-            return .programDay(program: program, day: all[(index + 1) % all.count])
+        switch records().nextWorkout() {
+        case let .programDay(programID, dayID):
+            guard let program = program(programID), let day = day(dayID) else { return nil }
+            return .programDay(program: program, day: day)
+        case let .compose(focus):
+            return .compose(focus)
+        case nil:
+            return nil
         }
-        return nil
     }
 
-    private func composedWorkoutsDone() -> [(focus: TrainingFocus, day: Day)] {
-        finishedSessions(limit: Self.historyWorkouts).compactMap { session in
-            guard let id = session.programDayID, let focus = ComposedWorkout.focus(of: id),
-                  let performedOn = Day(isoString: session.performedOn) else { return nil }
-            return (focus: focus, day: performedOn)
-        }
-    }
 
     // MARK: Progression
 
     /// Every workout with this exercise, working sets only (TASKS 4.5).
     func history(of exerciseID: UUID, excluding session: WorkoutSession? = nil) -> [ExerciseSession] {
-        let userID = userID
-        let sets = (try? context.fetch(FetchDescriptor<WorkoutSet>(
-            predicate: #Predicate<WorkoutSet> { $0.userID == userID && $0.exerciseID == exerciseID && $0.deletedAt == nil && !$0.isWarmup }
-        ))) ?? []
-        let excluded = session?.id
-        let sessions = Dictionary(uniqueKeysWithValues: Set(sets.map(\.sessionID)).compactMap { id -> (UUID, WorkoutSession)? in
-            var descriptor = FetchDescriptor<WorkoutSession>(predicate: #Predicate<WorkoutSession> { $0.id == id && $0.deletedAt == nil })
-            descriptor.fetchLimit = 1
-            return (try? context.fetch(descriptor).first).map { (id, $0) }
-        })
-        // Workouts on the same day by their start: which one is the last decides the advice.
-        return Dictionary(grouping: sets.filter { $0.sessionID != excluded && sessions[$0.sessionID] != nil }, by: \.sessionID)
-            .compactMap { sessionID, sets -> (started: Date, exercise: ExerciseSession)? in
-                guard let session = sessions[sessionID], let day = Day(isoString: session.performedOn) else { return nil }
-                return (session.startedAt, ExerciseSession(day: day, sets: sets.sorted { $0.position < $1.position }.compactMap(\.workingSet)))
-            }
-            .sorted { $0.exercise.day != $1.exercise.day ? $0.exercise.day < $1.exercise.day : $0.started < $1.started }
-            .map(\.exercise)
+        records().history(of: exerciseID, excluding: session?.id)
     }
 
+    /// The user's own setting for an exercise, to change; the newest when two devices made one.
     func setting(for exerciseID: UUID) -> ExerciseSetting? {
         let userID = userID
         var descriptor = FetchDescriptor<ExerciseSetting>(
@@ -334,47 +295,23 @@ struct TrainingStore {
 
     /// The user's own setting first, then the programme, then the exercise itself.
     func rules(for exercise: Exercise, in item: ProgramExercise?) -> ExerciseRules {
-        let setting = self.setting(for: exercise.id)
-        var range = item.map { $0.repMin...$0.repMax } ?? 8...12
-        if let low = setting?.repMin, let high = setting?.repMax, low <= high { range = low...high }
-        return ExerciseRules(
-            kind: ExerciseKind(rawValue: exercise.kind) ?? .compound,
-            loadType: LoadType(rawValue: exercise.loadType) ?? .external,
-            repRange: range,
-            targetSets: item?.targetSets ?? 3,
-            stepKg: setting?.stepKg ?? exercise.defaultStepKg
-        )
+        records().rules(for: exercise.trainingRecord, in: item?.trainingRecord)
     }
 
     /// The rules the last finished workout with the exercise was done by: those of its programme day, which for a
     /// composed workout is never refilled.
     func rulesOfLastWorkout(for exercise: Exercise) -> ExerciseRules {
-        let programDay = lastWorkout(with: exercise.id)?.programDayID.flatMap { day($0) }
-        let item = programDay.flatMap { items(of: $0).first { $0.exerciseID == exercise.id } }
-        return rules(for: exercise, in: item)
+        records().rulesOfLastWorkout(for: exercise.trainingRecord)
     }
 
     /// The advice outside a workout: by the rules of the last one.
     func adviceAfterLastWorkout(for exercise: Exercise) -> ProgressionAdvice {
-        ProgressionEngine.advise(history: history(of: exercise.id), rules: rulesOfLastWorkout(for: exercise), today: today)
+        records().adviceAfterLastWorkout(for: exercise.trainingRecord)
     }
 
-    /// The last finished workout with a working set of the exercise.
-    private func lastWorkout(with exerciseID: UUID) -> WorkoutSession? {
-        let userID = userID
-        let sets = (try? context.fetch(FetchDescriptor<WorkoutSet>(
-            predicate: #Predicate<WorkoutSet> { $0.userID == userID && $0.exerciseID == exerciseID && $0.deletedAt == nil && !$0.isWarmup }
-        ))) ?? []
-        let sessions = Set(sets.map(\.sessionID)).compactMap { id -> WorkoutSession? in
-            var descriptor = FetchDescriptor<WorkoutSession>(predicate: #Predicate<WorkoutSession> { $0.id == id && $0.deletedAt == nil && $0.endedAt != nil })
-            descriptor.fetchLimit = 1
-            return try? context.fetch(descriptor).first
-        }
-        return sessions.max { $0.startedAt < $1.startedAt }
-    }
 
     func advice(for exercise: Exercise, in item: ProgramExercise?, excluding session: WorkoutSession? = nil) -> ProgressionAdvice {
-        ProgressionEngine.advise(history: history(of: exercise.id, excluding: session), rules: rules(for: exercise, in: item), today: today)
+        records().advice(for: exercise.trainingRecord, in: item?.trainingRecord, excluding: session?.id)
     }
 
     private func touch(_ model: some SyncableModel) {
@@ -386,56 +323,18 @@ struct TrainingStore {
     // MARK: Coach
 
     /// How far back the coach looks for exercises to say something about.
-    static let coachDays = 28
+    static let coachDays = TrainingRecords.coachDays
+    /// How many finished workouts back the generator and the coach look.
+    static let historyWorkouts = TrainingRecords.historyWorkouts
 
     /// Every exercise the user can do, with the day it was last done.
     func workoutCandidates() -> [WorkoutCandidate] {
-        let lastDone = lastDoneDays()
-        let places = placesInReadyMadePrograms()
-        return exercises().compactMap { exercise in
-            let muscles = exercise.primaryMuscles.compactMap(MuscleGroup.init(rawValue:))
-            guard !muscles.isEmpty, let kind = ExerciseKind(rawValue: exercise.kind) else { return nil }
-            return WorkoutCandidate(
-                id: exercise.id, kind: kind, primaryMuscles: muscles, preference: places[exercise.id], lastDone: lastDone[exercise.id]
-            )
-        }
+        records().workoutCandidates()
     }
-
-    /// How many finished workouts back the generator and the coach look.
-    static let historyWorkouts = 200
 
     /// The finished workouts, newest first, each with its exercises in the order they were first done.
     func workoutHistory() -> [[UUID]] {
-        finishedSessions(limit: Self.historyWorkouts).map { session in
-            var seen = Set<UUID>()
-            return sets(of: session).filter { !$0.isWarmup }.map(\.exerciseID).filter { seen.insert($0).inserted }
-        }
-    }
-
-    /// Where each exercise first appears in the ready-made programmes, fewest days first: squat, bench press, row.
-    private func placesInReadyMadePrograms() -> [UUID: Int] {
-        var places: [UUID: Int] = [:]
-        for program in programs() where program.ownerID == nil {
-            for day in days(of: program) {
-                for item in items(of: day) where places[item.exerciseID] == nil {
-                    places[item.exerciseID] = places.count
-                }
-            }
-        }
-        return places
-    }
-
-    /// Per exercise the day of the last finished workout with a working set of it.
-    private func lastDoneDays() -> [UUID: Day] {
-        var result: [UUID: Day] = [:]
-        for session in finishedSessions(limit: Self.historyWorkouts) {
-            guard let day = Day(isoString: session.performedOn) else { continue }
-            for set in sets(of: session) where !set.isWarmup {
-                if let known = result[set.exerciseID], known >= day { continue }
-                result[set.exerciseID] = day
-            }
-        }
-        return result
+        records().workoutHistory()
     }
 
     /// A composed workout as a new day in the user's own programme of composed workouts. An earlier day is never
@@ -463,48 +362,66 @@ struct TrainingStore {
     }
 
     /// The programme of composed workouts, known by its days: so it is the same on every device and after a rename.
-    /// With two, made on two devices that were offline, the one with the newest workout.
     private func composedProgram() -> Program? {
-        let withNewest = programs().filter { $0.ownerID == userID }.compactMap { program -> (program: Program, newest: Date)? in
-            let composed = days(of: program).filter { ComposedWorkout.focus(of: $0.id) != nil }
-            guard let newest = composed.map(\.updatedAt).max() else { return nil }
-            return (program: program, newest: newest)
-        }
-        return withNewest.max { $0.newest < $1.newest }?.program
+        records().composedProgram().flatMap { program($0.id) }
     }
 
     /// What the coach has to say about the exercises of the last weeks, most recent first: which
     /// can go heavier, and which have stalled with another exercise for the same muscle to try.
     func coachNotes(limit: Int = 5) -> [CoachNote] {
-        let since = today.adding(-Self.coachDays)
-        let candidates = workoutCandidates()
-        var notes: [CoachNote] = []
-        // Most recent first; exercises of the same day by name, so the list keeps its order.
-        let recent = lastDoneDays().filter { $0.value >= since }.compactMap { id, day in exercise(id).map { (exercise: $0, day: day) } }
-        let ordered = recent.sorted { first, second in
-            if first.day != second.day { return first.day > second.day }
-            return first.exercise.name.text(preferring: [language]).localizedStandardCompare(second.exercise.name.text(preferring: [language])) == .orderedAscending
-        }
-        for (exercise, _) in ordered {
-            guard notes.count < limit else { break }
-            let exerciseID = exercise.id
-            let history = history(of: exerciseID)
-            if ProgressionEngine.isStalled(history: history),
-               let candidate = candidates.first(where: { $0.id == exerciseID }),
-               let other = WorkoutBuilder.alternative(to: candidate, from: candidates),
-               let otherExercise = self.exercise(other.id) {
-                notes.append(CoachNote(exercise: exercise, kind: .switchTo(otherExercise)))
-                continue
-            }
-            let advice = ProgressionEngine.advise(history: history, rules: rulesOfLastWorkout(for: exercise), today: today)
-            switch advice {
-            case .increase, .addRepsFirst, .makeHarder:
-                notes.append(CoachNote(exercise: exercise, kind: .heavier(advice)))
-            default:
-                break
+        records().coachNotes(limit: limit).compactMap { note in
+            guard let exercise = exercise(note.exerciseID) else { return nil }
+            switch note.kind {
+            case let .heavier(advice):
+                return CoachNote(exercise: exercise, kind: .heavier(advice))
+            case let .switchTo(otherID):
+                return self.exercise(otherID).map { CoachNote(exercise: exercise, kind: .switchTo($0)) }
             }
         }
-        return notes
+    }
+
+    // MARK: Records
+
+    /// The user's languages, for names and their order.
+    var languages: [String] {
+        [language] + Locale.preferredLanguages
+    }
+
+    /// Everything on this device that FitlingCore reads: shared and own rows, sessions and sets that are not
+    /// deleted, and programmes and days also when removed (a past workout keeps the name of its day).
+    func records() -> TrainingRecords {
+        let owner: UUID? = userID
+        let userID = userID
+        let exercises = (try? context.fetch(FetchDescriptor<Exercise>(
+            predicate: #Predicate<Exercise> { $0.deletedAt == nil && ($0.ownerID == nil || $0.ownerID == owner) }
+        ))) ?? []
+        let programs = (try? context.fetch(FetchDescriptor<Program>(predicate: #Predicate<Program> { $0.ownerID == nil || $0.ownerID == owner }))) ?? []
+        let days = (try? context.fetch(FetchDescriptor<ProgramDay>(predicate: #Predicate<ProgramDay> { $0.ownerID == nil || $0.ownerID == owner }))) ?? []
+        let items = (try? context.fetch(FetchDescriptor<ProgramExercise>(
+            predicate: #Predicate<ProgramExercise> { $0.deletedAt == nil && ($0.ownerID == nil || $0.ownerID == owner) }
+        ))) ?? []
+        let settings = (try? context.fetch(FetchDescriptor<ExerciseSetting>(
+            predicate: #Predicate<ExerciseSetting> { $0.userID == userID && $0.deletedAt == nil }
+        ))) ?? []
+        let sessions = (try? context.fetch(FetchDescriptor<WorkoutSession>(
+            predicate: #Predicate<WorkoutSession> { $0.userID == userID && $0.deletedAt == nil }
+        ))) ?? []
+        let sets = (try? context.fetch(FetchDescriptor<WorkoutSet>(
+            predicate: #Predicate<WorkoutSet> { $0.userID == userID && $0.deletedAt == nil }
+        ))) ?? []
+        return TrainingRecords(
+            userID: userID, exercises: exercises.map(\.trainingRecord), programs: programs.map(\.trainingRecord), days: days.map(\.trainingRecord),
+            items: items.map(\.trainingRecord), settings: settings.map(\.trainingRecord), sessions: sessions.compactMap(\.trainingRecord), sets: sets.map(\.trainingRecord),
+            today: today, languages: languages
+        )
+    }
+
+    /// Only the rows a list needs, for ordering it.
+    private func ordering(programs: [Program] = [], exercises: [Exercise] = []) -> TrainingRecords {
+        TrainingRecords(
+            userID: userID, exercises: exercises.map(\.trainingRecord), programs: programs.map(\.trainingRecord), days: [], items: [], settings: [],
+            sessions: [], sets: [], today: today, languages: languages
+        )
     }
 }
 
@@ -526,4 +443,63 @@ struct CoachNote: Identifiable {
     let exercise: Exercise
     let kind: Kind
     var id: UUID { exercise.id }
+}
+
+// The SwiftData rows as FitlingCore reads them.
+
+extension Exercise {
+    var trainingRecord: FitlingCore.ExerciseRecord {
+        FitlingCore.ExerciseRecord(
+            id: id, ownerID: ownerID, name: name, kind: kind, loadType: loadType, primaryMuscles: primaryMuscles,
+            secondaryMuscles: secondaryMuscles, defaultStepKg: defaultStepKg
+        )
+    }
+}
+
+extension Program {
+    var trainingRecord: FitlingCore.ProgramRecord {
+        FitlingCore.ProgramRecord(id: id, ownerID: ownerID, name: name, daysPerWeek: daysPerWeek, deleted: deletedAt != nil)
+    }
+}
+
+extension ProgramDay {
+    var trainingRecord: FitlingCore.ProgramDayRecord {
+        FitlingCore.ProgramDayRecord(
+            id: id, programID: programID, ownerID: ownerID, name: name, position: position,
+            updatedAt: updatedAt.timeIntervalSince1970, deleted: deletedAt != nil
+        )
+    }
+}
+
+extension ProgramExercise {
+    var trainingRecord: FitlingCore.ProgramItemRecord {
+        FitlingCore.ProgramItemRecord(
+            id: id, programDayID: programDayID, ownerID: ownerID, exerciseID: exerciseID, position: position, targetSets: targetSets,
+            repMin: repMin, repMax: repMax, restSeconds: restSeconds
+        )
+    }
+}
+
+extension ExerciseSetting {
+    var trainingRecord: FitlingCore.ExerciseSettingRecord {
+        FitlingCore.ExerciseSettingRecord(exerciseID: exerciseID, stepKg: stepKg, repMin: repMin, repMax: repMax, updatedAt: updatedAt.timeIntervalSince1970)
+    }
+}
+
+extension WorkoutSession {
+    /// Nil for a session whose day cannot be read; it never counts.
+    var trainingRecord: FitlingCore.SessionRecord? {
+        Day(isoString: performedOn).map {
+            FitlingCore.SessionRecord(
+                id: id, programDayID: programDayID, performedOn: $0, startedAt: startedAt.timeIntervalSince1970,
+                endedAt: endedAt?.timeIntervalSince1970
+            )
+        }
+    }
+}
+
+extension WorkoutSet {
+    var trainingRecord: FitlingCore.SetRecord {
+        FitlingCore.SetRecord(id: id, sessionID: sessionID, exerciseID: exerciseID, position: position, weightKg: weightKg, reps: reps, rpe: rpe, isWarmup: isWarmup)
+    }
 }

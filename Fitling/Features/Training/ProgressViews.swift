@@ -31,7 +31,8 @@ struct ExerciseProgressList: View {
         .groundBackground()
         .navigationTitle("training.progress.exercises")
         .onAppear {
-            exercises = store.exercises().filter { !store.history(of: $0.id).isEmpty }
+            let records = store.records()
+            exercises = store.exercises().filter { !records.history(of: $0.id).isEmpty }
         }
     }
 }
@@ -43,6 +44,7 @@ struct ExerciseProgressView: View {
     let store: TrainingStore
     @State private var history: [ExerciseSession] = []
     @State private var step: Double = 2.5
+    @State private var advice: ProgressionAdvice = .findStartingWeight
     private let unit = WeightUnit(locale: .current)
 
     init(exercise: Exercise, store: TrainingStore) {
@@ -108,7 +110,7 @@ struct ExerciseProgressView: View {
             .listRowBackground(Color.card)
 
             Section {
-                Text(store.adviceAfterLastWorkout(for: exercise).text(unit: unit))
+                Text(advice.text(unit: unit))
                 Stepper(value: $step, in: 0.25...25, step: 0.25) {
                     Text("training.step.label \(unit.format(kilograms: step))")
                 }
@@ -116,6 +118,7 @@ struct ExerciseProgressView: View {
                     // Opening the screen sets the stepper too; only a real change is stored.
                     if value != store.setting(for: exercise.id)?.stepKg ?? exercise.defaultStepKg {
                         store.saveStep(value, for: exercise)
+                        advice = store.adviceAfterLastWorkout(for: exercise)
                     }
                 }
             } header: {
@@ -136,7 +139,9 @@ struct ExerciseProgressView: View {
         .groundBackground()
         .navigationTitle(Text(verbatim: exercise.name.text(preferring: Locale.preferredLanguages)))
         .onAppear {
-            history = store.history(of: exercise.id)
+            let records = store.records()
+            history = records.history(of: exercise.id)
+            advice = records.adviceAfterLastWorkout(for: exercise.trainingRecord)
             step = store.setting(for: exercise.id)?.stepKg ?? exercise.defaultStepKg
         }
     }
@@ -197,16 +202,7 @@ struct VolumeView: View {
     }
 
     private func load() {
-        let since = store.today.weekStart.adding(-7)
-        var logged: [LoggedExercise] = []
-        for exercise in store.exercises() {
-            let primary = exercise.primaryMuscles.compactMap(MuscleGroup.init(rawValue:))
-            let secondary = exercise.secondaryMuscles.compactMap(MuscleGroup.init(rawValue:))
-            for session in store.history(of: exercise.id) where session.day >= since {
-                logged.append(LoggedExercise(day: session.day, primaryMuscles: primary, secondaryMuscles: secondary, sets: session.sets))
-            }
-        }
-        weeks = ProgressionEngine.weeklyVolume(logged)
+        weeks = store.records().weeklyVolume()
     }
 }
 

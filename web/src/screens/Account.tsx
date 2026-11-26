@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { deleteAccount } from "../data/account";
+import { removeAllPhotos } from "../data/photos";
 import type { AuthService } from "../data/auth";
 import { deliver, exportFiles, exportTables, fetchTables, type Table } from "../data/export";
 import { supabase } from "../data/supabase";
@@ -52,6 +53,8 @@ export function Account({ auth, onBack, onOpen }: { auth: AuthService; onBack: (
     setMessageKey(undefined);
     try {
       await auth.signOut();
+      // Signing out on request removes the progress photos of this browser, as on iOS.
+      await removeAllPhotos();
     } catch (error) {
       setMessageKey(error instanceof Error ? error.message : "error.server");
       setWorking(false);

@@ -1,7 +1,20 @@
-import { useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 
-/** A button that opens a short list of actions under it, as a Menu in the toolbar on iOS. */
-export function Menu({ label, items, testID }: { label: string; items: { label: string; onSelect: () => void }[]; testID?: string }) {
+/**
+ * A button that opens a short list of actions under it, as a Menu in the toolbar on iOS. With `icon` the button
+ * shows it instead of its label (which a screen reader still says); a destructive item is red, as role: .destructive.
+ */
+export function Menu({
+  label,
+  items,
+  testID,
+  icon,
+}: {
+  label: string;
+  items: { label: string; onSelect: () => void; destructive?: boolean }[];
+  testID?: string;
+  icon?: ReactNode;
+}) {
   const [open, setOpen] = useState(false);
   const menu = useRef<HTMLDivElement>(null);
   const button = useRef<HTMLButtonElement>(null);
@@ -23,13 +36,14 @@ export function Menu({ label, items, testID }: { label: string; items: { label: 
       <button
         ref={button}
         type="button"
-        className="nav-back nav-action"
+        className={icon ? "nav-back nav-action icon-button" : "nav-back nav-action"}
+        aria-label={icon ? label : undefined}
         aria-haspopup="menu"
         aria-expanded={open}
         data-testid={testID}
         onClick={() => setOpen(!open)}
       >
-        {label}
+        {icon ?? label}
       </button>
       {open && (
         <>
@@ -40,7 +54,7 @@ export function Menu({ label, items, testID }: { label: string; items: { label: 
                 key={item.label}
                 type="button"
                 role="menuitem"
-                className="menu-item"
+                className={item.destructive ? "menu-item destructive" : "menu-item"}
                 onClick={() => {
                   setOpen(false);
                   // The sheet this opens gives the focus back here when it closes.

@@ -193,7 +193,7 @@ struct TrainingTabView: View {
 
     private func programDetail(_ program: Program) -> Text {
         if program.ownerID == nil { return Text("training.program.shared \(program.daysPerWeek)") }
-        if let count = viewModel.store.composedWorkoutCount(of: program) { return Text("training.program.composed \(count)") }
+        if let count = viewModel.composedCounts[program.id] { return Text("training.program.composed \(count)") }
         return Text("training.program.own \(program.daysPerWeek)")
     }
 

@@ -2,22 +2,10 @@ import Foundation
 import Observation
 import FitlingCore
 
-/// Kilograms or pounds, by the user's region. The store always holds kilograms.
-enum WeightUnit: Equatable {
-    case kilograms, pounds
-
-    static let kilogramsPerPound = 0.45359237
-
+/// Kilograms or pounds (FitlingCore), by the user's region. The store always holds kilograms.
+extension WeightUnit {
     init(locale: Locale) {
         self = locale.measurementSystem == .us ? .pounds : .kilograms
-    }
-
-    func kilograms(from value: Double) -> Double {
-        self == .pounds ? value * Self.kilogramsPerPound : value
-    }
-
-    func value(fromKilograms kilograms: Double) -> Double {
-        self == .pounds ? kilograms / Self.kilogramsPerPound : kilograms
     }
 
     var symbol: String {
@@ -63,11 +51,14 @@ final class WorkoutViewModel {
     private(set) var isFinished = false
 
     private let store: TrainingStore
+    /// The rows FitlingCore reads, once per reload: advice and rules leave this workout out, so they hold while typing.
+    private var training: TrainingRecords
 
     init(session: WorkoutSession, store: TrainingStore, unit: WeightUnit = WeightUnit(locale: .current)) {
         self.session = session
         self.store = store
         self.unit = unit
+        training = store.records()
         if let dayID = session.programDayID, let day = store.day(dayID) {
             entries = store.items(of: day).compactMap { item in store.exercise(item.exerciseID).map { Entry(exercise: $0, item: item) } }
         }
@@ -93,6 +84,7 @@ final class WorkoutViewModel {
 
     func reload() {
         sets = store.sets(of: session)
+        training = store.records()
     }
 
     func sets(of entry: Entry) -> [WorkoutSet] {
@@ -100,38 +92,26 @@ final class WorkoutViewModel {
     }
 
     func advice(for entry: Entry) -> ProgressionAdvice {
-        store.advice(for: entry.exercise, in: entry.item, excluding: session)
+        training.advice(for: entry.exercise.trainingRecord, in: entry.item?.trainingRecord, excluding: session.id)
     }
 
     func rules(for entry: Entry) -> ExerciseRules {
-        store.rules(for: entry.exercise, in: entry.item)
+        training.rules(for: entry.exercise.trainingRecord, in: entry.item?.trainingRecord)
     }
 
-    /// Fills in the next set from the advice: the weight it names and the reps to aim for.
+    /// Fills in the next set from the advice: the weight it names and the reps to aim for (TrainingRecords.prefill).
     func prefill(_ entry: Entry) {
-        let rules = self.rules(for: entry)
+        let advised = training.prefill(entry.exercise.trainingRecord, in: entry.item?.trainingRecord, excluding: session.id)
         var draft = drafts[entry.id] ?? Draft()
-        draft.reps = rules.repRange.lowerBound
-        switch advice(for: entry) {
-        case let .increase(weight), let .reduce(weight), let .easeBackIn(weight):
+        draft.reps = advised.reps
+        if let weight = advised.weightKg {
             draft.weight = rounded(unit.value(fromKilograms: weight))
-        case let .keepGoing(weight):
-            draft.weight = rounded(unit.value(fromKilograms: weight))
-            // Aim for one more rep than last time at this weight, up to the top of the range.
-            let last = store.history(of: entry.exercise.id, excluding: session).last?.sets.filter { $0.weightKg == weight }.map(\.reps).max()
-            draft.reps = min(max((last ?? rules.repRange.lowerBound - 1) + 1, rules.repRange.lowerBound), rules.repRange.upperBound)
-        case let .addRepsFirst(weight, targetReps):
-            draft.weight = rounded(unit.value(fromKilograms: weight))
-            draft.reps = targetReps
-        case .findStartingWeight, .makeHarder, .makeEasier:
-            break
         }
         drafts[entry.id] = draft
     }
 
     func canLog(_ entry: Entry) -> Bool {
-        guard let draft = drafts[entry.id], let weight = draft.weight, let reps = draft.reps else { return false }
-        return weight >= 0 && reps > 0
+        TrainingRecords.canLog(weight: drafts[entry.id]?.weight, reps: drafts[entry.id]?.reps)
     }
 
     /// Stores the draft as a set. A working set starts the rest timer; a warm-up set does not.
@@ -178,14 +158,11 @@ final class WorkoutViewModel {
         isFinished = true
     }
 
-    /// Records set in this workout, to celebrate at the end.
+    /// Records set in this workout, to celebrate at the end (TrainingRecords.records).
     func records() -> [(Exercise, PersonalRecord)] {
-        entries.flatMap { entry -> [(Exercise, PersonalRecord)] in
-            let working = sets(of: entry).compactMap(\.workingSet)
-            guard !working.isEmpty else { return [] }
-            let session = ExerciseSession(day: store.today, sets: working)
-            return ProgressionEngine.personalRecords(in: session, history: store.history(of: entry.exercise.id, excluding: self.session))
-                .map { (entry.exercise, $0) }
+        let exercises = Dictionary(entries.map { ($0.exercise.id, $0.exercise) }, uniquingKeysWith: { first, _ in first })
+        return store.records().records(in: session.id, exerciseIDs: entries.map(\.exercise.id)).compactMap { found in
+            exercises[found.exerciseID].map { ($0, found.record) }
         }
     }
 

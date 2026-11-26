@@ -13853,6 +13853,52 @@
           }
         }
       }
+    },
+    "common.decrease": {
+      "comment": "Web: the minus and plus of a stepper, for screen readers; iOS has the system's own.",
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verlagen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Decrease"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verringern"
+          }
+        }
+      }
+    },
+    "common.increase": {
+      "comment": "Web: the minus and plus of a stepper, for screen readers; iOS has the system's own.",
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verhogen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Increase"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erhöhen"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

@@ -153,3 +153,67 @@ test("the partner folded, dressed and today's XP (web phase 3)", async () => {
   expect(snapshot.items.find((entry) => entry.item === "crown")?.unlockLevel).toBe(15);
   expect(Object.keys(snapshot.todayXP).sort()).toEqual(["logging", "protein", "withinTarget", "workout"]);
 });
+
+test("training from the same TrainingRecords as the iPhone (web phase 4)", async () => {
+  const core = await loadCore(wasm);
+  const squat = {
+    id: "00000000-0000-4000-8000-000000000001",
+    name: { nl: "Squat" },
+    kind: "compound",
+    loadType: "external",
+    primaryMuscles: ["quads"],
+    secondaryMuscles: [],
+    defaultStepKg: 2.5,
+  };
+  const program = { id: "00000000-0000-4000-8000-000000000002", name: { nl: "Volledig lichaam" }, daysPerWeek: 2, deleted: false };
+  const days = [0, 1].map((position) => ({
+    id: `00000000-0000-4000-8000-00000000001${position}`,
+    programID: program.id,
+    name: { nl: `Dag ${position + 1}` },
+    position,
+    updatedAt: 0,
+    deleted: false,
+  }));
+  const items = days.map((day, index) => ({
+    id: `00000000-0000-4000-8000-00000000002${index}`,
+    programDayID: day.id,
+    exerciseID: squat.id,
+    position: 0,
+    targetSets: 3,
+    repMin: 6,
+    repMax: 8,
+    restSeconds: 150,
+  }));
+  const done = { id: "00000000-0000-4000-8000-000000000030", programDayID: days[0].id, performedOn: "2026-11-15", startedAt: 1_794_740_000, endedAt: 1_794_743_600 };
+  const now = { id: "00000000-0000-4000-8000-000000000031", programDayID: days[1].id, performedOn: "2026-11-18", startedAt: 1_795_000_000 };
+  const sets = [0, 1, 2].map((position) => ({
+    id: `00000000-0000-4000-8000-00000000004${position}`,
+    sessionID: done.id,
+    exerciseID: squat.id,
+    position,
+    weightKg: 100,
+    reps: 6,
+    rpe: 7,
+    isWarmup: false,
+  }));
+  const training = {
+    userID: "00000000-0000-4000-8000-0000000000ff",
+    today: "2026-11-18",
+    languages: ["nl"],
+    exercises: [squat],
+    programs: [program],
+    days,
+    items,
+    settings: [],
+    sessions: [done, now],
+    sets,
+  };
+  const overview = core.trainingOverview({ training });
+  expect(overview.active?.id).toBe(now.id);
+  expect(overview.recent[0]).toMatchObject({ id: done.id, title: "Dag 1", setCount: 3 });
+  const workout = core.workout({ training, sessionID: now.id, added: [], usesPounds: false });
+  expect(workout.entries[0]).toMatchObject({ exerciseID: squat.id, restSeconds: 150, draft: { weight: 100, reps: 7 } });
+  expect(core.loggedSet({ weight: 135, reps: 5, usesPounds: true })).toMatchObject({ canLog: true, weightKg: 61.23 });
+  expect(core.trainingChoices().durations).toContain(60);
+  expect(core.measurementStored({ value: 176, kind: "weight", usesMetric: false }).value).toBe(79.8);
+});

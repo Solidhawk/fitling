@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AuthService, type AuthState } from "./data/auth";
 import { useCoreFailure } from "./core/useCore";
 import { deleteAccount } from "./data/account";
+import { keepPhotosFor } from "./data/photoOwner";
 import { lookUp } from "./data/profile";
 import { sessionKey, supabase } from "./data/supabase";
 import { Home } from "./Home";
@@ -39,6 +40,11 @@ export function App() {
   }, []);
 
   const userID = authState.kind === "signedIn" ? authState.userID : undefined;
+
+  // Progress photos live in this browser alone and belong to the user who took them (RootViewModel.eraseLocalData).
+  useEffect(() => {
+    if (userID) void keepPhotosFor(userID);
+  }, [userID]);
   const currentUser = useRef(userID);
   currentUser.current = userID;
 
