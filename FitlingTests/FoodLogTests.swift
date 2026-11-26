@@ -356,7 +356,8 @@ struct FoodFixture {
             context.cgContext.rotate(by: -.pi / 2)
             UIImage(cgImage: upright).draw(in: CGRect(x: 0, y: 0, width: width, height: height))
         }
-        let photo = try #require(UIImage(cgImage: try #require(stored.cgImage), scale: 1, orientation: .right).jpegData(compressionQuality: 0.9))
+        let turned = try #require(stored.cgImage)
+        let photo = try #require(UIImage(cgImage: turned, scale: 1, orientation: .right).jpegData(compressionQuality: 0.9))
         try expectTheTable(photo)
     }
 
