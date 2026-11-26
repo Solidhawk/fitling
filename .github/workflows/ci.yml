@@ -52,7 +52,8 @@ jobs:
           name: fitling-core-wasm
           path: web/public/fitling-core.wasm*
 
-  # Op Ubuntu 24.04: de Swift-container en ubuntu-latest draaien 26.04, waar Playwright 1.53 geen browsers voor heeft.
+  # Op Ubuntu 24.04: de Swift-container en ubuntu-latest draaien 26.04, waar Playwright 1.53 geen browsers voor had. Met
+  # Playwright 1.65 (S51) draait WebKit 27.2 hier zonder fouten; een andere Ubuntu is niet geprobeerd.
   web:
     name: Web
     needs: web-core

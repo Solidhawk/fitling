@@ -542,28 +542,71 @@ interface Exports {
   fitling_call(pointer: number, length: number): bigint;
 }
 
-/** Loads the WebAssembly built from web/core. Every call sends JSON and gets JSON back. */
-export async function loadCore(wasm: ArrayBuffer): Promise<FitlingCore> {
+/** One request to a running copy, and its answer as text. */
+function exchange(exports: Exports, fn: string, input: unknown): string {
+  const request = new TextEncoder().encode(JSON.stringify({ fn, input }));
+  const pointer = exports.fitling_alloc(request.length);
+  new Uint8Array(exports.memory.buffer, pointer, request.length).set(request);
+  const packed = exports.fitling_call(pointer, request.length);
+  exports.fitling_free(pointer, request.length);
+  const answerPointer = Number(packed >> 32n);
+  const answerLength = Number(packed & 0xffffffffn);
+  // Read before freeing: the memory may grow, so take the buffer anew.
+  const answer = new TextDecoder().decode(new Uint8Array(exports.memory.buffer, answerPointer, answerLength).slice());
+  exports.fitling_free(answerPointer, answerLength);
+  return answer;
+}
+
+/** A running copy of the rules, with its own memory; Swift writes why it stopped to stderr (console.warn). */
+async function start(module: WebAssembly.Module): Promise<Exports> {
   const wasi = new WASI([], [], [
     new OpenFile(new File([])),
     ConsoleStdout.lineBuffered((line) => console.log(line)),
     ConsoleStdout.lineBuffered((line) => console.warn(line)),
   ]);
-  const { instance } = await WebAssembly.instantiate(wasm, { wasi_snapshot_preview1: wasi.wasiImport });
+  const instance = await WebAssembly.instantiate(module, { wasi_snapshot_preview1: wasi.wasiImport });
   wasi.initialize(instance as { exports: { memory: WebAssembly.Memory; _initialize?: () => unknown } });
-  const exports = instance.exports as unknown as Exports;
+  return instance.exports as unknown as Exports;
+}
+
+/** Loads the WebAssembly built from web/core. Every call sends JSON and gets JSON back. */
+export async function loadCore(wasm: ArrayBuffer): Promise<FitlingCore> {
+  const module = await WebAssembly.compile(wasm);
+  let exports: Exports | undefined = await start(module);
+  let replacing: Promise<void> | undefined;
+
+  /**
+   * A trap stops the module halfway (its stack, a value half made), so it is not called again: a fresh copy of the
+   * same module takes over. That takes a moment, as Chrome does not start a module this big at once on the page.
+   */
+  function replace() {
+    exports = undefined;
+    replacing ??= start(module).then(
+      (fresh) => {
+        exports = fresh;
+        replacing = undefined;
+      },
+      () => {
+        replacing = undefined;
+      },
+    );
+  }
 
   function call(fn: string, input: unknown): unknown {
-    const request = new TextEncoder().encode(JSON.stringify({ fn, input }));
-    const pointer = exports.fitling_alloc(request.length);
-    new Uint8Array(exports.memory.buffer, pointer, request.length).set(request);
-    const packed = exports.fitling_call(pointer, request.length);
-    exports.fitling_free(pointer, request.length);
-    const answerPointer = Number(packed >> 32n);
-    const answerLength = Number(packed & 0xffffffffn);
-    // Read before freeing: the memory may grow, so take the buffer anew.
-    const answer = new TextDecoder().decode(new Uint8Array(exports.memory.buffer, answerPointer, answerLength).slice());
-    exports.fitling_free(answerPointer, answerLength);
+    if (!exports) {
+      replace();
+      throw new Error("error.server");
+    }
+    let answer: string;
+    try {
+      answer = exchange(exports, fn, input);
+    } catch (error) {
+      // A trap, or a stack that ran out inside the module.
+      if (!(error instanceof WebAssembly.RuntimeError || error instanceof RangeError)) throw error;
+      console.error(`fitling-core ${fn}: ${error.message}`);
+      replace();
+      throw new Error("error.server");
+    }
     // A call can answer null (logEntry for an amount that cannot be worked out).
     const result = JSON.parse(answer) as { error?: string } | null;
     if (result !== null && typeof result.error === "string") throw new Error(result.error);

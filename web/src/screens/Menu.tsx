@@ -84,7 +84,10 @@ export function Menu({ userID }: { userID: string }) {
     return () => document.removeEventListener("visibilitychange", again);
   }, [reload]);
 
-  useEffect(() => window.scrollTo(0, 0), [path.length]);
+  // In braces: an effect may only hand back its cleanup, and newer Chrome answers scrollTo with a promise.
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [path.length]);
 
   const input = useMemo<MenuInput | undefined>(
     () => loaded && { userID, today: today(), languages: [...navigator.languages], ...withoutSteps(loaded.rows) },

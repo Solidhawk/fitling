@@ -1,4 +1,5 @@
 import AxeBuilder from "@axe-core/playwright";
+import { readFileSync } from "node:fs";
 import { expect, type Page, test } from "./fixtures";
 import { admin, createUser, foodEntry, localDay, nl, nlCount, signIn } from "./users";
 
@@ -9,6 +10,21 @@ async function start(page: Page) {
   await expect(page.getByTestId("day.progress")).toBeVisible({ timeout: 15_000 });
   return user;
 }
+
+// vite preview sends the gzipped rules with Content-Encoding, so the browser unpacks them; a server that hands them over
+// as they are (application/gzip) leaves that to the app, which unpacks them with DecompressionStream (useCore.ts).
+// That way is checked here, in Safari too: otherwise WebAssembly would refuse the bytes and Vandaag would not show.
+test("theAppUnpacksTheRulesItself", async ({ page }) => {
+  const packed = readFileSync(new URL("../public/fitling-core.wasm.gz", import.meta.url));
+  expect([...packed.subarray(0, 2)]).toEqual([0x1f, 0x8b]);
+  let served = 0;
+  await page.route("**/fitling-core.wasm.gz*", async (route) => {
+    served += 1;
+    await route.fulfill({ status: 200, contentType: "application/gzip", body: packed });
+  });
+  await start(page);
+  expect(served).toBe(1);
+});
 
 function daysBefore(count: number): string {
   const date = new Date();

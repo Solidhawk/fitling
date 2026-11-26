@@ -1,5 +1,5 @@
 import { readFile } from "node:fs/promises";
-import { expect, test } from "vitest";
+import { expect, test, vi } from "vitest";
 import { type DailyPlanInput, loadCore } from "./fitlingCore";
 
 // Built by CI from web/core (swift build --swift-sdk wasm32-unknown-wasi).
@@ -36,6 +36,92 @@ test("an unknown goal is an error, not a crash", async () => {
   expect(() => core.dailyPlan({ ...maintain, goal: "x" as DailyPlanInput["goal"] })).toThrow();
   // The module still answers after a failure.
   expect(core.dailyPlan(maintain).targets.kcal).toBe(2760);
+});
+
+/**
+ * A stand-in for the rules, written out by hand, that answers every call with {} and traps when it is in a bad state,
+ * as Swift does after a fatal error. A call to macros puts it in that state, like an earlier call that left something
+ * broken behind; a call to kcalShares recurses until the stack runs out. In text form:
+ *   (func $deep (call $deep))
+ *   (func $call (param i32 i32) (result i64)
+ *     (if (i32.eq (i32.load8_u offset=7 (local.get 0)) (i32.const 0x6b)) (then (call $deep)))   ;; {"fn":"k...
+ *     (if (i32.eq (i32.load8_u offset=7 (local.get 0)) (i32.const 0x6d))                        ;; {"fn":"m...
+ *       (then (global.set 0 (i32.const 1)) (return (i64.const answer))))
+ *     (if (global.get 0) (then unreachable))
+ *     (i64.const answer))
+ */
+function rulesThatBreak(): ArrayBuffer {
+  const unsigned = (value: number) => {
+    const out: number[] = [];
+    do {
+      const low = value & 0x7f;
+      value >>>= 7;
+      out.push(value ? low | 0x80 : low);
+    } while (value);
+    return out;
+  };
+  const signed = (value: bigint) => {
+    const out: number[] = [];
+    for (;;) {
+      const low = Number(value & 0x7fn);
+      value >>= 7n;
+      const done = (value === 0n && (low & 0x40) === 0) || (value === -1n && (low & 0x40) !== 0);
+      out.push(done ? low : low | 0x80);
+      if (done) return out;
+    }
+  };
+  const section = (id: number, content: number[]) => [id, ...unsigned(content.length), ...content];
+  const vector = (items: number[][]) => [...unsigned(items.length), ...items.flat()];
+  const name = (text: string) => [...unsigned(text.length), ...new TextEncoder().encode(text)];
+  const body = (code: number[]) => [...unsigned(code.length + 1), 0, ...code];
+  // The answer "{}" at address 2048: its address in the upper 32 bits, its length in the lower 32.
+  const answer = signed((2048n << 32n) | 2n);
+  const call = [
+    ...[0x20, 0, 0x2d, 0, 7, 0x41, ...signed(0x6bn), 0x46, 0x04, 0x40, 0x10, 4, 0x0b],
+    ...[0x20, 0, 0x2d, 0, 7, 0x41, ...signed(0x6dn), 0x46, 0x04, 0x40],
+    ...[0x41, 1, 0x24, 0, 0x42, ...answer, 0x0f, 0x0b],
+    ...[0x23, 0, 0x04, 0x40, 0x00, 0x0b],
+    ...[0x42, ...answer, 0x0b],
+  ];
+  const bytes = [
+    ...[0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00],
+    ...section(1, vector([[0x60, 1, 0x7f, 1, 0x7f], [0x60, 2, 0x7f, 0x7f, 0], [0x60, 2, 0x7f, 0x7f, 1, 0x7e], [0x60, 0, 0]])),
+    ...section(3, vector([[0], [1], [2], [3], [3]])),
+    ...section(5, vector([[0x00, 1]])),
+    ...section(6, vector([[0x7f, 1, 0x41, 0, 0x0b]])),
+    ...section(
+      7,
+      vector([
+        [...name("memory"), 0x02, 0],
+        [...name("fitling_alloc"), 0x00, 0],
+        [...name("fitling_free"), 0x00, 1],
+        [...name("fitling_call"), 0x00, 2],
+        [...name("_initialize"), 0x00, 3],
+      ]),
+    ),
+    ...section(10, vector([body([0x41, ...signed(1024n), 0x0b]), body([0x0b]), body(call), body([0x0b]), body([0x10, 4, 0x0b])])),
+    ...section(11, vector([[0x00, 0x41, ...signed(2048n), 0x0b, ...name("{}")]])),
+  ];
+  return new Uint8Array(bytes).buffer;
+}
+
+// UNFORGET S51: a trap leaves the module in an unknown state (its stack, a value half made). The call that trapped is
+// an error the app can show; the module is replaced, so the calls after it are answered again.
+test("after a trap a fresh copy of the rules answers", async () => {
+  const told = vi.spyOn(console, "error").mockImplementation(() => undefined);
+  try {
+    const core = await loadCore(rulesThatBreak());
+    expect(core.macros({ kcal: 2000, weightKg: 80, goal: "maintain" })).toEqual({});
+    expect(() => core.dailyPlan(maintain)).toThrow("error.server");
+    expect(told).toHaveBeenCalledWith(expect.stringContaining("fitling-core dailyPlan"));
+    await vi.waitFor(() => expect(core.dailyPlan(maintain)).toEqual({}));
+    // A stack that runs out stops the module halfway too.
+    expect(() => core.kcalShares({ kcal: 2000, proteinG: 100, carbsG: 250, fatG: 70 })).toThrow("error.server");
+    expect(told).toHaveBeenCalledWith(expect.stringContaining("fitling-core kcalShares"));
+    await vi.waitFor(() => expect(core.dailyPlan(maintain)).toEqual({}));
+  } finally {
+    told.mockRestore();
+  }
 });
 
 // Every visitor downloads this file before the numbers appear; on a phone that has to stay small. The

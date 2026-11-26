@@ -34,10 +34,15 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+// Kept answers are found past Vary. Matched on Vary, the script and style kept at install were not found without a
+// connection (S51: Chrome 157 with vite preview, which sends "Vary: Origin"; Vite loads both with crossorigin). What is
+// kept here is the same whoever asks for it; the address, with its version, still has to match.
+const found = { ignoreVary: true };
+
 async function fromCache(request, cacheName, keep) {
   const cache = await caches.open(cacheName);
   // This build first; a page still on the build before finds its own files in that one.
-  const kept = (await cache.match(request)) ?? (await caches.match(request));
+  const kept = (await cache.match(request, found)) ?? (await caches.match(request, found));
   if (kept) return kept;
   const response = await fetch(request);
   if (keep && response.ok) await cache.put(request, response.clone());
@@ -54,7 +59,7 @@ self.addEventListener("fetch", (event) => {
     // without a connection the one kept.
     event.respondWith(
       fetch(request, { cache: "no-cache" }).catch(
-        async () => (await caches.match(self.registration.scope, { cacheName: shellCache })) ?? Response.error(),
+        async () => (await caches.match(self.registration.scope, { ...found, cacheName: shellCache })) ?? Response.error(),
       ),
     );
     return;
