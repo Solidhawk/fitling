@@ -27,8 +27,12 @@ create table if not exists public.push_reminders (
   fire_at         timestamptz not null,
   -- De naam van de partner en wat die zegt, al in de taal van de gebruiker.
   title           text not null check (length(title) between 1 and 100),
-  body            text not null check (length(body) between 1 and 400)
+  body            text not null check (length(body) between 1 and 400),
+  -- Tot wanneer send-reminders hem aan het versturen is (claim_push_reminders).
+  claimed_until   timestamptz
 );
+-- Voor een project waar dit bestand al eerder liep.
+alter table public.push_reminders add column if not exists claimed_until timestamptz;
 
 create index if not exists push_reminders_fire_at on public.push_reminders (fire_at);
 create index if not exists push_reminders_subscription on public.push_reminders (subscription_id);
@@ -108,7 +112,39 @@ begin
 end;
 $$;
 
+-- Voor send-reminders: claimt wat aan de beurt is. Een aanroep die nog bezig is met een trage pushdienst en de aanroep
+-- van de minuut erna sturen een herinnering zo niet allebei. Verstuurd of opgegeven gaat de rij weg; wat moet wachten
+-- (een drukke pushdienst) geeft de functie meteen vrij. Een claim verloopt na vijf minuten, zodat een aanroep die
+-- halverwege stopte niets voorgoed vasthoudt.
+create or replace function public.claim_push_reminders(p_limit integer)
+returns table (
+  id uuid, subscription_id uuid, fire_at timestamptz, title text, body text, endpoint text, p256dh text, auth text
+)
+language sql
+security definer
+set search_path = ''
+as $$
+  with claimed as (
+    update public.push_reminders r
+    set claimed_until = now() + interval '5 minutes'
+    where r.id in (
+      select d.id from public.push_reminders d
+      where d.fire_at <= now() and (d.claimed_until is null or d.claimed_until < now())
+      order by d.fire_at
+      limit p_limit
+      for update skip locked
+    )
+    returning r.id, r.subscription_id, r.fire_at, r.title, r.body
+  )
+  select c.id, c.subscription_id, c.fire_at, c.title, c.body, s.endpoint, s.p256dh, s.auth
+  from claimed c
+  join public.push_subscriptions s on s.id = c.subscription_id
+  order by c.fire_at;
+$$;
+
 revoke all on function public.save_push_subscription(text, text, text) from public, anon;
 revoke all on function public.replace_push_reminders(uuid, jsonb) from public, anon;
 grant execute on function public.save_push_subscription(text, text, text) to authenticated;
 grant execute on function public.replace_push_reminders(uuid, jsonb) to authenticated;
+revoke all on function public.claim_push_reminders(integer) from public, anon, authenticated;
+grant execute on function public.claim_push_reminders(integer) to service_role;

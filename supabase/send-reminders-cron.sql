@@ -22,6 +22,9 @@ select cron.schedule(
     ),
     timeout_milliseconds := 60000
   )
-  where exists (select 1 from public.push_reminders where fire_at <= now())
+  where exists (
+    select 1 from public.push_reminders
+    where fire_at <= now() and (claimed_until is null or claimed_until < now())
+  )
   $job$
 );

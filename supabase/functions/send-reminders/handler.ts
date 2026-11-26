@@ -13,9 +13,14 @@ export type Due = {
 };
 
 export type Deps = {
-  /** Reminders with fire_at at or before `now`, oldest first, at most `limit`. */
-  due(now: Date, limit: number): Promise<Due[]>;
+  /**
+   * Reminders whose time has come that no other call is sending, oldest first, at most `limit`; claimed for this call
+   * (claim_push_reminders in web-push.sql).
+   */
+  claim(limit: number): Promise<Due[]>;
   removeReminders(ids: string[]): Promise<void>;
+  /** Claimed reminders that must wait go back, for the next minute. */
+  release(ids: string[]): Promise<void>;
   /** Removes a browser's subscription, and with it its reminders (on delete cascade). */
   removeSubscription(id: string): Promise<void>;
   send(request: Request): Promise<Response>;
@@ -117,7 +122,8 @@ export async function handle(
     return Response.json({ error: 'unauthorized' }, { status: 401 });
   }
   const counts: Record<Outcome, number> = { sent: 0, dropped: 0, waiting: 0 };
-  for (const reminder of await deps.due(deps.now(), batch)) {
+  const waiting: string[] = [];
+  for (const reminder of await deps.claim(batch)) {
     let outcome: Outcome;
     try {
       outcome = await deliver(reminder, vapid, deps);
@@ -126,6 +132,15 @@ export async function handle(
       outcome = 'waiting';
     }
     counts[outcome] += 1;
+    if (outcome === 'waiting') waiting.push(reminder.id);
+  }
+  if (waiting.length > 0) {
+    try {
+      await deps.release(waiting);
+    } catch (error) {
+      // The claim runs out by itself after five minutes.
+      deps.log(`send-reminders: cannot release ${waiting.length} reminders: ${String(error)}`);
+    }
   }
   return Response.json(counts);
 }
