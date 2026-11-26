@@ -46,13 +46,14 @@ test("aDoubleTapOnCopyMakesOneCopy", async ({ page }) => {
   expect(data).toHaveLength(1);
 });
 
-// The days did not reach the server: copying again makes one copy, with all its days (UNFORGET S54).
+// The exercises did not reach the server. Back to the list and the original again: copying finishes the same copy,
+// with all its days and exercises, instead of making a second one (UNFORGET S54).
 test("copyingAgainAfterAFailureMakesOneCopy", async ({ page }) => {
   const programme = await firstProgramme();
   const user = await openTraining(page);
   await page.getByTestId(`training.program.${programme.id}`).click();
   let failures = 1;
-  await page.route("**/rest/v1/program_days*", async (route) => {
+  await page.route("**/rest/v1/program_exercises*", async (route) => {
     if (route.request().method() === "POST" && failures-- > 0) {
       return route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ message: "unavailable" }) });
     }
@@ -60,6 +61,8 @@ test("copyingAgainAfterAFailureMakesOneCopy", async ({ page }) => {
   });
   await page.getByRole("button", { name: nl("training.program.copy") }).click();
   await page.getByRole("alertdialog").getByRole("button").click();
+  await page.getByRole("button", { name: nl("training.title"), exact: true }).click();
+  await page.getByTestId(`training.program.${programme.id}`).click();
   await page.getByRole("button", { name: nl("training.program.copy") }).click();
   const copyName = nl("training.program.copyName %@").replace("%@", programme.name);
   await expect(page.getByRole("heading", { name: copyName })).toBeVisible({ timeout: 15_000 });
@@ -67,6 +70,16 @@ test("copyingAgainAfterAFailureMakesOneCopy", async ({ page }) => {
   expect(data).toHaveLength(1);
   const { data: days } = await admin.from("program_days").select("id").eq("program_id", data![0].id);
   expect(days).toHaveLength(programme.days.length);
+  const { count: copied } = await admin
+    .from("program_exercises")
+    .select("id", { count: "exact", head: true })
+    .in("program_day_id", days!.map((day) => day.id));
+  const { count: original } = await admin
+    .from("program_exercises")
+    .select("id", { count: "exact", head: true })
+    .in("program_day_id", programme.days.map((day) => day.id))
+    .is("deleted_at", null);
+  expect(copied).toBe(original);
 });
 
 test("aNewProgramHasItsDays", async ({ page }) => {
