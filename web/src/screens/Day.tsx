@@ -75,6 +75,9 @@ export function Day({ userID, advance }: { userID: string; advance: Advance }) {
   const [failed, setFailed] = useState<string>();
   const [unsaved, setUnsaved] = useState(false);
   const request = useRef(0);
+  // Looking at today: the screen moves on with the date, so what is logged the next morning lands on that day. A day the
+  // user went back to stays (DayViewModel.dateChanged).
+  const followsToday = useRef(true);
 
   // An answer that a newer request overtook is dropped: tapping back twice quickly shows the second day, not
   // whichever answer came in last.
@@ -94,9 +97,27 @@ export function Day({ userID, advance }: { userID: string; advance: Advance }) {
   }, [core, userID, day, advance]);
 
   function show(next: string) {
+    followsToday.current = next >= today();
     setShown(undefined);
     setDay(next);
   }
+
+  useEffect(() => {
+    const moveOn = () => {
+      const now = today();
+      if (followsToday.current && day !== now) show(now);
+    };
+    // Just past midnight where the user is. A timer that came late, on a laptop that slept, is caught by coming back.
+    const now = new Date();
+    const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    const timer = setTimeout(moveOn, midnight.getTime() - now.getTime() + 1000);
+    const back = () => document.visibilityState === "visible" && moveOn();
+    document.addEventListener("visibilitychange", back);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("visibilitychange", back);
+    };
+  }, [day]);
 
   useEffect(() => {
     void reload();

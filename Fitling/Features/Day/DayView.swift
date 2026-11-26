@@ -10,6 +10,7 @@ struct MealChoice: Identifiable {
 struct DayView: View {
     @State private var viewModel: DayViewModel
     @State private var logging: MealChoice?
+    @Environment(\.scenePhase) private var scenePhase
     private let food: FoodServices
     private let sync: SyncEngine
     private let partner: PartnerViewModel
@@ -75,6 +76,12 @@ struct DayView: View {
             .refreshable {
                 await sync.sync()
                 viewModel.reload()
+            }
+            .onChange(of: scenePhase) { _, phase in
+                if phase == .active { viewModel.dateChanged() }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged).receive(on: RunLoop.main)) { _ in
+                viewModel.dateChanged()
             }
             .sheet(item: $logging, onDismiss: {
                 viewModel.reload()
