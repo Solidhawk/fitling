@@ -84,9 +84,9 @@ final class ShoppingViewModel {
 
     /// Sends and fetches the list, then the members and the offers.
     func refresh(force: Bool = false) async {
-        _ = await sync.sync()
+        let synced = await sync.sync() == .completed
         await sendOwners()
-        await followMemberships()
+        await followMemberships(syncAgain: synced)
         // By id, and looked up again after each request: another refresh or leaving may have removed a list meanwhile.
         for listID in store.lists().map(\.id) {
             guard let records = try? await services.sharing.members(of: listID), store.list(listID) != nil else { continue }
@@ -112,12 +112,13 @@ final class ShoppingViewModel {
     /// Which lists the server counts this user as a member of. A list joined elsewhere (the web app, another device)
     /// can be older than what this device last fetched, so the lists and their items are fetched whole. A list left
     /// elsewhere, or gone with its last member, the server says nothing more about: it goes from this device, unless
-    /// the list or its owner still waits to be sent.
-    private func followMemberships() async {
+    /// the list or its owner still waits to be sent. `syncAgain`: the round before reached the server, so another one
+    /// now brings the lists; otherwise the next round fetches them whole.
+    private func followMemberships(syncAgain: Bool) async {
         guard let memberships = try? await services.sharing.lists(of: store.userID) else { return }
         if !memberships.isSubset(of: store.knownListIDs()) {
             sync.pullWhole([ShoppingList.tableName, ShoppingItem.tableName])
-            _ = await sync.sync()
+            if syncAgain { _ = await sync.sync() }
         }
         for listID in store.lists().map(\.id) where !memberships.contains(listID) {
             guard let list = store.list(listID), !list.needsPush,
@@ -142,6 +143,8 @@ final class ShoppingViewModel {
                 return
             }
         }
+        // Asked once more right before: a join can have finished while this refresh was waiting on the server.
+        guard let memberships = try? await services.sharing.lists(of: store.userID), !memberships.contains(listID) else { return }
         if joinedList == listID { defaults.removeObject(forKey: joinedListKey) }
         if let current = store.list(listID) { store.forget(current) }
         // Right away: the list and items on screen may be the ones just removed.
