@@ -14,6 +14,18 @@ async function start(page: Page) {
   return user;
 }
 
+// Back on Dagdoel, after another device changed the target or a new day began: the screen reads it again
+// (UNFORGET S53).
+test("backOnDagdoelShowsTheTargetOfNow", async ({ page }) => {
+  const user = await start(page);
+  await expect(page.getByTestId("profile.target")).toHaveText(/2\.760\s?kcal/);
+  const { error } = await admin.from("profiles").update({ kcal_target: 2400, targets_are_manual: true, updated_at: new Date().toISOString() })
+    .eq("id", user.id);
+  expect(error).toBeNull();
+  await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
+  await expect(page.getByTestId("profile.target")).toHaveText(/2\.400\s?kcal/, { timeout: 15_000 });
+});
+
 async function shot(page: Page, name: string, project: string) {
   const axe = await new AxeBuilder({ page }).analyze();
   expect(axe.violations.map((violation) => `${name}: ${violation.id}`)).toEqual([]);
