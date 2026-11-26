@@ -10,6 +10,8 @@ export type Due = {
   endpoint: string;
   p256dh: string;
   auth: string;
+  /** Until when this call holds it (claim_push_reminders): releasing frees only this call's own claim. */
+  claimedUntil: string;
 };
 
 export type Deps = {
@@ -19,8 +21,8 @@ export type Deps = {
    */
   claim(limit: number): Promise<Due[]>;
   removeReminders(ids: string[]): Promise<void>;
-  /** Claimed reminders that must wait go back, for the next minute. */
-  release(ids: string[]): Promise<void>;
+  /** Claimed reminders that must wait go back for the next minute, as long as `claimedUntil` is still their claim. */
+  release(ids: string[], claimedUntil: string): Promise<void>;
   /** Removes a browser's subscription, and with it its reminders (on delete cascade). */
   removeSubscription(id: string): Promise<void>;
   send(request: Request): Promise<Response>;
@@ -35,6 +37,11 @@ const batch = 200;
  * one that falls past 21:00 would break the quiet hours (ReminderSettings).
  */
 const lateMs = 30 * 60 * 1000;
+/**
+ * A call stops sending after this long and lets the rest go: its claim lasts five minutes, and a push service that does
+ * not answer takes fifteen seconds. Past the claim, the next minute's call would send the same reminder again.
+ */
+const sendingMs = 4 * 60 * 1000;
 
 /**
  * The push services of Safari, Chrome, Firefox and Edge. Only these are called: an endpoint is whatever a browser
@@ -95,7 +102,7 @@ async function deliver(reminder: Due, vapid: VapidKeys & { subject: string }, de
   await response.body?.cancel();
   // RFC 8030: 201 Created. Gone or unknown: the browser unsubscribed. Too many or a server problem: next minute.
   if (response.ok) {
-    await deps.removeReminders([reminder.id]);
+    await removeSent(reminder, deps);
     return 'sent';
   }
   if (response.status === 404 || response.status === 410) {
@@ -106,6 +113,21 @@ async function deliver(reminder: Due, vapid: VapidKeys & { subject: string }, de
   deps.log(`send-reminders: push service answered ${response.status} for subscription ${reminder.subscriptionID}`);
   await deps.removeReminders([reminder.id]);
   return 'dropped';
+}
+
+/**
+ * Sent: the row goes. Asked twice, because a sent reminder that stayed would go out once more when its claim runs out.
+ */
+async function removeSent(reminder: Due, deps: Deps) {
+  try {
+    await deps.removeReminders([reminder.id]);
+  } catch {
+    try {
+      await deps.removeReminders([reminder.id]);
+    } catch (error) {
+      deps.log(`send-reminders: cannot remove sent reminder ${reminder.id}: ${String(error)}`);
+    }
+  }
 }
 
 /**
@@ -122,8 +144,16 @@ export async function handle(
     return Response.json({ error: 'unauthorized' }, { status: 401 });
   }
   const counts: Record<Outcome, number> = { sent: 0, dropped: 0, waiting: 0 };
-  const waiting: string[] = [];
-  for (const reminder of await deps.claim(batch)) {
+  const waiting: Due[] = [];
+  const started = deps.now().getTime();
+  const claimed = await deps.claim(batch);
+  for (const [index, reminder] of claimed.entries()) {
+    if (deps.now().getTime() - started > sendingMs) {
+      const rest = claimed.slice(index);
+      waiting.push(...rest);
+      counts.waiting += rest.length;
+      break;
+    }
     let outcome: Outcome;
     try {
       outcome = await deliver(reminder, vapid, deps);
@@ -132,14 +162,16 @@ export async function handle(
       outcome = 'waiting';
     }
     counts[outcome] += 1;
-    if (outcome === 'waiting') waiting.push(reminder.id);
+    if (outcome === 'waiting') waiting.push(reminder);
   }
-  if (waiting.length > 0) {
+  // Per claim: one call claims all its reminders at once, so this is one request.
+  for (const claimedUntil of new Set(waiting.map((reminder) => reminder.claimedUntil))) {
+    const ids = waiting.filter((reminder) => reminder.claimedUntil === claimedUntil).map((reminder) => reminder.id);
     try {
-      await deps.release(waiting);
+      await deps.release(ids, claimedUntil);
     } catch (error) {
       // The claim runs out by itself after five minutes.
-      deps.log(`send-reminders: cannot release ${waiting.length} reminders: ${String(error)}`);
+      deps.log(`send-reminders: cannot release ${ids.length} reminders: ${String(error)}`);
     }
   }
   return Response.json(counts);

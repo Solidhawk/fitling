@@ -26,7 +26,9 @@ Maak het paar maar één keer. Met een nieuw paar moet elke browser zich opnieuw
 
 ## 2. De tabellen
 
-Supabase → SQL Editor. Plak de inhoud van `supabase/web-push.sql` en voer het uit.
+Supabase → SQL Editor. Plak de inhoud van `supabase/web-push.sql` en voer het uit. Doe dit vóór stap 4: de functie
+vraagt de herinneringen op met `claim_push_reminders`, die hier wordt gemaakt. Na een nieuwe versie van dit bestand ook
+stap 5 opnieuw uitvoeren.
 
 Dit maakt alleen `push_subscriptions` en `push_reminders` met hun regels. Bestaande data blijft. Opnieuw uitvoeren kan.
 

@@ -12,6 +12,7 @@ type Claimed = {
   endpoint: string;
   p256dh: string;
   auth: string;
+  claimed_until: string;
 };
 
 // The partner's reminders for the web version on the home screen (web phase 7), sent every minute by pg_cron
@@ -49,14 +50,19 @@ if ('missing' in config || vapidPublic === '' || vapidPrivate === '') {
           endpoint: row.endpoint,
           p256dh: row.p256dh,
           auth: row.auth,
+          claimedUntil: row.claimed_until,
         }));
       },
       async removeReminders(ids) {
         const { error } = await admin.from('push_reminders').delete().in('id', ids);
         if (error) throw error;
       },
-      async release(ids) {
-        const { error } = await admin.from('push_reminders').update({ claimed_until: null }).in('id', ids);
+      async release(ids, claimedUntil) {
+        const { error } = await admin
+          .from('push_reminders')
+          .update({ claimed_until: null })
+          .in('id', ids)
+          .eq('claimed_until', claimedUntil);
         if (error) throw error;
       },
       async removeSubscription(id) {

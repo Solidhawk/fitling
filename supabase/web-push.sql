@@ -115,28 +115,32 @@ $$;
 -- Voor send-reminders: claimt wat aan de beurt is. Een aanroep die nog bezig is met een trage pushdienst en de aanroep
 -- van de minuut erna sturen een herinnering zo niet allebei. Verstuurd of opgegeven gaat de rij weg; wat moet wachten
 -- (een drukke pushdienst) geeft de functie meteen vrij. Een claim verloopt na vijf minuten, zodat een aanroep die
--- halverwege stopte niets voorgoed vasthoudt.
-create or replace function public.claim_push_reminders(p_limit integer)
+-- halverwege stopte niets voorgoed vasthoudt. `claimed_until` komt mee terug: wie vrijgeeft, geeft alleen zijn eigen
+-- claim vrij. De keuze staat apart (materialized), zodat er nooit meer dan p_limit rijen geclaimd worden.
+drop function if exists public.claim_push_reminders(integer);
+create function public.claim_push_reminders(p_limit integer)
 returns table (
-  id uuid, subscription_id uuid, fire_at timestamptz, title text, body text, endpoint text, p256dh text, auth text
+  id uuid, subscription_id uuid, fire_at timestamptz, title text, body text, endpoint text, p256dh text, auth text,
+  claimed_until timestamptz
 )
 language sql
 security definer
 set search_path = ''
 as $$
-  with claimed as (
+  with due as materialized (
+    select d.id from public.push_reminders d
+    where d.fire_at <= now() and (d.claimed_until is null or d.claimed_until < now())
+    order by d.fire_at
+    limit p_limit
+    for update skip locked
+  ), claimed as (
     update public.push_reminders r
     set claimed_until = now() + interval '5 minutes'
-    where r.id in (
-      select d.id from public.push_reminders d
-      where d.fire_at <= now() and (d.claimed_until is null or d.claimed_until < now())
-      order by d.fire_at
-      limit p_limit
-      for update skip locked
-    )
-    returning r.id, r.subscription_id, r.fire_at, r.title, r.body
+    from due
+    where r.id = due.id
+    returning r.id, r.subscription_id, r.fire_at, r.title, r.body, r.claimed_until
   )
-  select c.id, c.subscription_id, c.fire_at, c.title, c.body, s.endpoint, s.p256dh, s.auth
+  select c.id, c.subscription_id, c.fire_at, c.title, c.body, s.endpoint, s.p256dh, s.auth, c.claimed_until
   from claimed c
   join public.push_subscriptions s on s.id = c.subscription_id
   order by c.fire_at;
