@@ -34,10 +34,15 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+// Kept answers are found past Vary. A server may send "Vary: Origin" (vite preview does) and the page asks for its
+// script and style with crossorigin: matched on Vary, the files kept at install were not found without a connection
+// (S51, seen in Chrome 157). A file of a build is the same whoever asks: its build is in its name or address.
+const found = { ignoreVary: true };
+
 async function fromCache(request, cacheName, keep) {
   const cache = await caches.open(cacheName);
   // This build first; a page still on the build before finds its own files in that one.
-  const kept = (await cache.match(request)) ?? (await caches.match(request));
+  const kept = (await cache.match(request, found)) ?? (await caches.match(request, found));
   if (kept) return kept;
   const response = await fetch(request);
   if (keep && response.ok) await cache.put(request, response.clone());
@@ -54,7 +59,7 @@ self.addEventListener("fetch", (event) => {
     // without a connection the one kept.
     event.respondWith(
       fetch(request, { cache: "no-cache" }).catch(
-        async () => (await caches.match(self.registration.scope, { cacheName: shellCache })) ?? Response.error(),
+        async () => (await caches.match(self.registration.scope, { ...found, cacheName: shellCache })) ?? Response.error(),
       ),
     );
     return;
