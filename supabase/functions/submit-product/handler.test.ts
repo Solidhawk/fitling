@@ -1,31 +1,23 @@
 import { assertEquals } from '@std/assert';
-import { type Deps, handle, type SharedRow } from './handler.ts';
+import { type Deps, handle, type SharedRow, type Submitted } from './handler.ts';
 
 const user = { id: '00000000-0000-4000-8000-000000000001' };
 
-function deps(existing: { id: string } | null = null) {
-  const submissions: { userID: string; gtin: string; payload: unknown }[] = [];
-  const inserted: SharedRow[] = [];
-  const accepted: { submissionID: string; productID: string }[] = [];
+// What the database decides (made, kept, corrected) is tested in supabase/tests/submit_product_test.sql.
+function deps(created = true) {
+  const submitted: { userID: string; payload: Submitted; row: SharedRow }[] = [];
+  const log: string[] = [];
   let allowed = true;
   const d: Deps = {
     getUser: (token) => Promise.resolve(token === 'good' ? user : null),
     consumeRateLimit: () => Promise.resolve(allowed),
-    storeSubmission: (userID, gtin, payload) => {
-      submissions.push({ userID, gtin, payload });
-      return Promise.resolve(`submission-${submissions.length}`);
+    submit: (userID, payload, row) => {
+      submitted.push({ userID, payload, row });
+      return Promise.resolve({ productID: 'product-1', created });
     },
-    findShared: () => Promise.resolve(existing),
-    insertShared: (row) => {
-      inserted.push(row);
-      return Promise.resolve('product-1');
-    },
-    markAccepted: (submissionID, productID) => {
-      accepted.push({ submissionID, productID });
-      return Promise.resolve();
-    },
+    log: (message) => log.push(message),
   };
-  return { d, submissions, inserted, accepted, refuse: () => (allowed = false) };
+  return { d, submitted, log, refuse: () => (allowed = false) };
 }
 
 const product = {
@@ -50,24 +42,25 @@ function call(d: Deps, body: unknown, token = 'good'): Promise<Response> {
     new Request('http://localhost/submit-product', {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
+      body: typeof body === 'string' ? body : JSON.stringify(body),
     }),
     d,
   );
 }
 
 Deno.test('only a signed-in user may share a product', async () => {
-  const { d, submissions } = deps();
+  const { d, submitted } = deps();
   assertEquals((await call(d, product, 'bad')).status, 401);
-  assertEquals(submissions.length, 0);
+  assertEquals(submitted.length, 0);
 });
 
-Deno.test('a product nobody shared yet becomes the shared row for its barcode, unverified', async () => {
-  const { d, submissions, inserted, accepted } = deps();
+Deno.test('a product nobody shared yet is sent as the shared row for its barcode, unverified', async () => {
+  const { d, submitted } = deps();
   const response = await call(d, product);
   assertEquals(response.status, 201);
   assertEquals(await response.json(), { productID: 'product-1', created: true });
-  assertEquals(inserted, [{
+  assertEquals(submitted[0].userID, user.id);
+  assertEquals(submitted[0].row, {
     source: 'user',
     gtin: '8712100849084',
     name: { nl: "Oma's Appeltaart" },
@@ -84,67 +77,83 @@ Deno.test('a product nobody shared yet becomes the shared row for its barcode, u
     fiber_100: 1.8,
     salt_100: 0.3,
     is_verified: false,
-  }]);
-  // The submission is kept as it was sent, with who sent it.
-  assertEquals(submissions, [{ userID: user.id, gtin: '8712100849084', payload: product }]);
-  assertEquals(accepted, [{ submissionID: 'submission-1', productID: 'product-1' }]);
+  });
+  // The submission is kept as it was sent.
+  assertEquals(submitted[0].payload, product);
 });
 
-Deno.test('a barcode that already has a shared row keeps it; the submission waits', async () => {
-  const { d, submissions, inserted, accepted } = deps({ id: 'product-off' });
+Deno.test('a barcode that already has its shared row answers with that row', async () => {
+  const { d } = deps(false);
   const response = await call(d, product);
   assertEquals(response.status, 200);
-  assertEquals(await response.json(), { productID: 'product-off', created: false });
-  assertEquals(inserted, []);
-  assertEquals(accepted, []);
-  assertEquals(submissions.length, 1);
+  assertEquals(await response.json(), { productID: 'product-1', created: false });
 });
 
-Deno.test('two users at once: the second finds the row the first made', async () => {
-  const { d, inserted } = deps();
-  let found: { id: string } | null = null;
-  d.findShared = () => Promise.resolve(found);
-  d.insertShared = (row) => {
-    inserted.push(row);
-    // The unique index refused it: someone was just ahead.
-    found = { id: 'product-first' };
-    return Promise.resolve(null);
-  };
-  const response = await call(d, product);
-  assertEquals(response.status, 200);
-  assertEquals(await response.json(), { productID: 'product-first', created: false });
+Deno.test('the submission keeps only the fields the app sends', async () => {
+  const { d, submitted } = deps();
+  await call(d, { ...product, email: 'a@example.test', nested: { deep: true }, kcal: 280 });
+  assertEquals(Object.keys(submitted[0].payload).includes('email'), false);
+  assertEquals(Object.keys(submitted[0].payload).includes('nested'), false);
+  assertEquals(submitted[0].payload.kcal, 280);
 });
 
-Deno.test('the barcode must be a real one and the energy must be there', async () => {
-  const { d, submissions } = deps();
+Deno.test('the barcode must be real, the energy there, the name and brand of a sensible length', async () => {
+  const { d, submitted } = deps();
   assertEquals((await call(d, { ...product, gtin: '8712100849085' })).status, 400);
   assertEquals((await call(d, { ...product, kcal: 950 })).status, 400);
   assertEquals((await call(d, { ...product, kcal: undefined })).status, 400);
   assertEquals((await call(d, { ...product, name: '   ' })).status, 400);
-  assertEquals((await call(d, 'not json')).status, 400);
-  assertEquals(submissions.length, 0);
+  assertEquals((await call(d, { ...product, name: 'a'.repeat(201) })).status, 400);
+  assertEquals((await call(d, { ...product, brand: 'b'.repeat(101) })).status, 400);
+  assertEquals((await call(d, '{not json')).status, 400);
+  assertEquals((await call(d, [product])).status, 400);
+  assertEquals(submitted.length, 0);
+  // Two hundred characters, whatever the letters: as Swift counts them.
+  assertEquals((await call(d, { ...product, name: 'é'.repeat(200) })).status, 201);
 });
 
 Deno.test('a value that cannot be true per 100 g is left out, as for Open Food Facts', async () => {
-  const { d, inserted } = deps();
-  await call(d, { ...product, protein: 120, salt: -1, servingSize: 0, quantityUnit: 'litre', language: 'xx' });
-  assertEquals(inserted[0].protein_100, null);
-  assertEquals(inserted[0].salt_100, null);
-  assertEquals(inserted[0].serving_size, null);
-  assertEquals(inserted[0].quantity_unit, 'g');
-  assertEquals(inserted[0].name, { nl: "Oma's Appeltaart" });
+  const { d, submitted } = deps();
+  await call(d, {
+    ...product,
+    protein: 120,
+    salt: -1,
+    servingSize: 0.001,
+    quantityUnit: 'litre',
+    language: 'xx',
+    brand: '  ',
+  });
+  const row = submitted[0].row;
+  assertEquals(row.protein_100, null);
+  assertEquals(row.salt_100, null);
+  // 0.001 rounds to 0, which serving_size > 0 refuses.
+  assertEquals(row.serving_size, null);
+  assertEquals(row.quantity_unit, 'g');
+  assertEquals(row.name, { nl: "Oma's Appeltaart" });
+  assertEquals(row.brand, null);
+  await call(d, { ...product, servingSize: 99_999.999 });
+  // Rounds to 100000, more than numeric(7,2) holds.
+  assertEquals(submitted[1].row.serving_size, null);
+  await call(d, { ...product, kcal: 899.96 });
+  // Rounds to 900.0, the highest kcal_100 allows.
+  assertEquals(submitted[2].row.kcal_100, 900);
 });
 
 Deno.test('sharing is limited per hour', async () => {
-  const { d, refuse, submissions } = deps();
+  const { d, refuse, submitted } = deps();
   refuse();
   assertEquals((await call(d, product)).status, 429);
-  assertEquals(submissions.length, 0);
+  assertEquals(submitted.length, 0);
 });
 
-Deno.test('the web app may ask first from its own origin', async () => {
-  const { d } = deps();
-  const response = await handle(new Request('http://localhost/submit-product', { method: 'OPTIONS' }), d);
-  assertEquals(response.status, 204);
-  assertEquals(response.headers.get('Access-Control-Allow-Origin'), '*');
+Deno.test('the web app may ask first from its own origin, and sees a server error as one', async () => {
+  const { d, log } = deps();
+  const preflight = await handle(new Request('http://localhost/submit-product', { method: 'OPTIONS' }), d);
+  assertEquals(preflight.status, 204);
+  assertEquals(preflight.headers.get('Access-Control-Allow-Origin'), '*');
+  d.submit = () => Promise.reject(new Error('database unavailable'));
+  const failed = await call(d, product);
+  assertEquals(failed.status, 500);
+  assertEquals(failed.headers.get('Access-Control-Allow-Origin'), '*');
+  assertEquals(log.length, 1);
 });
