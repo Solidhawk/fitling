@@ -1,6 +1,6 @@
 import { deflateSync } from "node:zlib";
 import { expect, test } from "./fixtures";
-import { exercise, finishedWorkout, openTraining, tapRow } from "./training";
+import { daysBefore, exercise, finishedWorkout, openTraining, tapRow } from "./training";
 import { admin, nl } from "./users";
 
 // The progress screens of the training tab, the body log and the progress photos (web phase 4).
@@ -75,6 +75,27 @@ test.describe("around midnight in Tokyo", () => {
     const { data } = await admin.from("body_measurements").select("measured_on").eq("user_id", user.id);
     expect(data).toEqual([{ measured_on: next }]);
   });
+});
+
+// The date field emptied by hand: the measurement is for today, not refused; a day picked earlier stays (UNFORGET S42,
+// S53).
+test("anEmptyDateFieldMeansTodayAndAPickedDayStays", async ({ page }) => {
+  const user = await openTraining(page);
+  await page.getByRole("button", { name: nl("body.title") }).click();
+  const field = page.getByLabel(nl("body.date"));
+  await page.getByTestId("body.value").fill("80,4");
+  await field.fill("");
+  await page.getByRole("button", { name: nl("body.add") }).click();
+  await expect(page.getByTestId("body.measurement")).toContainText(/80,4\s?kg/);
+  await page.getByTestId("body.value").fill("80,9");
+  await field.fill(daysBefore(1));
+  await page.getByRole("button", { name: nl("body.add") }).click();
+  await expect(page.getByTestId("body.measurement")).toHaveCount(2, { timeout: 15_000 });
+  const { data } = await admin.from("body_measurements").select("measured_on, value").eq("user_id", user.id).order("measured_on");
+  expect(data).toEqual([
+    { measured_on: daysBefore(1), value: 80.9 },
+    { measured_on: daysBefore(0), value: 80.4 },
+  ]);
 });
 
 // A double tap stores one measurement, not two (UNFORGET S42).
