@@ -1,6 +1,6 @@
 import { deflateSync } from "node:zlib";
 import { expect, test } from "./fixtures";
-import { exercise, finishedWorkout, openTraining } from "./training";
+import { exercise, finishedWorkout, openTraining, tapRow } from "./training";
 import { admin, nl } from "./users";
 
 // The progress screens of the training tab, the body log and the progress photos (web phase 4).
@@ -11,7 +11,7 @@ test("progressShowsEveryWorkout", async ({ page }, info) => {
     await finishedWorkout(userID, bench.id, 9, [[60, 8], [60, 8]]);
     await finishedWorkout(userID, bench.id, 2, [[62.5, 8], [62.5, 8]]);
   });
-  await page.getByRole("button", { name: nl("training.progress.exercises") }).click();
+  await tapRow(page, nl("training.progress.exercises"));
   await page.getByTestId(`progress.exercise.${bench.id}`).click();
   await expect(page.getByRole("heading", { name: bench.name })).toBeVisible();
   await expect(page.getByTestId("progress.workouts")).toHaveText("2");
@@ -22,7 +22,7 @@ test("progressShowsEveryWorkout", async ({ page }, info) => {
 test("theStepIsSaved", async ({ page }) => {
   const bench = await exercise("Bench press");
   const user = await openTraining(page, (userID) => finishedWorkout(userID, bench.id, 2, [[60, 8]]).then(() => undefined));
-  await page.getByRole("button", { name: nl("training.progress.exercises") }).click();
+  await tapRow(page, nl("training.progress.exercises"));
   await page.getByTestId(`progress.exercise.${bench.id}`).click();
   // Quick taps are stored one after the other: one setting, with the last step (bug-echo of the menu preferences).
   const increase = page.getByTestId("progress.step").getByRole("button", { name: nl("common.increase") });
@@ -102,7 +102,7 @@ test("photosStayOnThisDevice", async ({ page }, info) => {
 test("animationStandsStillWithReduceMotion", async ({ page }) => {
   const bench = await exercise("Bench press");
   await openTraining(page, (userID) => finishedWorkout(userID, bench.id, 2, [[60, 8]]).then(() => undefined));
-  await page.getByRole("button", { name: nl("training.progress.exercises") }).click();
+  await tapRow(page, nl("training.progress.exercises"));
   await page.getByTestId(`progress.exercise.${bench.id}`).click();
   await expect(page.getByTestId("exercise.animation")).toBeVisible();
   await page.getByTestId("exercise.animation").click();
@@ -110,7 +110,7 @@ test("animationStandsStillWithReduceMotion", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.reload();
   await page.getByRole("tab", { name: nl("training.title") }).click();
-  await page.getByRole("button", { name: nl("training.progress.exercises") }).click();
+  await tapRow(page, nl("training.progress.exercises"));
   await page.getByTestId(`progress.exercise.${bench.id}`).click();
   await expect(page.getByTestId("exercise.animation.still")).toBeVisible();
 });

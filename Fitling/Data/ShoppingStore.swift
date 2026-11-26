@@ -10,7 +10,6 @@ struct ShoppingStore {
     let userID: UUID
     var timeZone: TimeZone = .current
     var now: () -> Date = Date.init
-    var language = Locale.preferredLanguages.first.map { String($0.prefix(2)) } ?? "nl"
 
     var today: Day {
         Day(now(), timeZone: timeZone)
@@ -82,29 +81,32 @@ struct ShoppingStore {
 
     // MARK: Items
 
-    /// Unchecked first, in the order of a walk through the shop, then what is in the basket.
-    func items(of list: ShoppingList) -> [ShoppingItem] {
+    private func itemModels(of list: ShoppingList) -> [ShoppingItem] {
         let listID = list.id
-        let all = (try? context.fetch(FetchDescriptor<ShoppingItem>(
+        return (try? context.fetch(FetchDescriptor<ShoppingItem>(
             predicate: #Predicate<ShoppingItem> { $0.listID == listID && $0.deletedAt == nil }
         ))) ?? []
-        let order = Dictionary(uniqueKeysWithValues: ShoppingListBuilder.aisleOrder.enumerated().map { ($1, $0) })
-        return all.sorted { lhs, rhs in
-            if lhs.isChecked != rhs.isChecked { return !lhs.isChecked }
-            let left = order[lhs.aisle] ?? order.count
-            let right = order[rhs.aisle] ?? order.count
-            if left != right { return left < right }
-            return lhs.name.localizedStandardCompare(rhs.name) == .orderedAscending
-        }
+    }
+
+    /// Unchecked first, in the order of a walk through the shop, then what is in the basket (ShoppingBook.items).
+    func items(of list: ShoppingList) -> [ShoppingItem] {
+        let all = itemModels(of: list)
+        let byID = Dictionary(all.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        return book(items: all).items().compactMap { byID[$0.id] }
     }
 
     @discardableResult
     func add(_ name: String, quantity: Double? = nil, unit: String? = nil, aisle: String = "other", to list: ShoppingList) -> ShoppingItem? {
-        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return nil }
-        let item = ShoppingItem(id: UUID(), listID: list.id, name: String(trimmed.prefix(120)), aisle: aisle, source: "manual", updatedBy: userID, updatedAt: now())
-        item.quantity = quantity.flatMap { $0 > 0 ? $0 : nil }
-        item.unit = item.quantity == nil ? nil : unit
+        guard let new = ShoppingBook.newItem(name, quantity: quantity, unit: unit, aisle: aisle) else { return nil }
+        return insert(new, source: "manual", into: list)
+    }
+
+    @discardableResult
+    private func insert(_ new: NewShoppingItem, source: String, into list: ShoppingList) -> ShoppingItem {
+        let item = ShoppingItem(id: UUID(), listID: list.id, name: new.name, aisle: new.aisle, source: source, updatedBy: userID, updatedAt: now())
+        item.quantity = new.quantity
+        item.unit = new.unit
+        item.productID = new.productID
         context.insert(item)
         try? context.save()
         return item
@@ -131,34 +133,22 @@ struct ShoppingStore {
         try? context.save()
     }
 
-    /// Puts what the week menu needs on the list. Items from an earlier menu are replaced;
-    /// items the user added stay, and so do menu items already in the basket.
-    func fill(_ list: ShoppingList, from entries: [MealPlanEntry], menu: MenuStore) {
-        for item in items(of: list) where item.source == "menu" && !item.isChecked {
+    /// Puts what this week's menu needs on the list (MenuBook.shoppingLines, ShoppingBook.refill). Items from an
+    /// earlier menu are replaced; items the user added stay, and so do menu items already in the basket.
+    func fill(_ list: ShoppingList, menu: MenuStore) {
+        let ingredients = (try? context.fetch(FetchDescriptor<RecipeIngredient>(predicate: #Predicate<RecipeIngredient> { $0.deletedAt == nil }))) ?? []
+        let lines = menu.book().shoppingLines(ingredients: ingredients.map(\.ingredientRow))
+        let all = itemModels(of: list)
+        let change = book(items: all).refill(with: lines)
+        let removed = Set(change.removed)
+        for item in all where removed.contains(item.id) {
             item.deletedAt = now()
             item.updatedAt = now()
             item.updatedBy = userID
             item.needsPush = true
         }
-        let languages = [language] + Locale.preferredLanguages
-        let uses = entries.filter { $0.loggedEntryID == nil }.compactMap { entry -> PlannedRecipeUse? in
-            guard let recipe = menu.recipe(entry.recipeID) else { return nil }
-            return PlannedRecipeUse(
-                recipeServings: recipe.servings, plannedServings: entry.servings,
-                ingredients: menu.ingredients(of: recipe).map { ingredient in
-                    MenuIngredient(
-                        productID: ingredient.productID, name: ingredient.name.text(preferring: languages),
-                        quantity: ingredient.quantity, unit: ingredient.unit, aisle: ingredient.aisle
-                    )
-                }
-            )
-        }
-        for line in ShoppingListBuilder.lines(for: uses) {
-            let item = ShoppingItem(id: UUID(), listID: list.id, name: String(line.name.prefix(120)), aisle: line.aisle, source: "menu", updatedBy: userID, updatedAt: now())
-            item.quantity = line.quantity > 0 ? line.quantity : nil
-            item.unit = item.quantity == nil ? nil : line.unit
-            item.productID = line.productID
-            context.insert(item)
+        for new in change.added {
+            insert(new, source: "menu", into: list)
         }
         try? context.save()
     }
@@ -230,31 +220,18 @@ struct ShoppingStore {
         return (try? context.fetch(descriptor))?.first?.fetchedAt
     }
 
-    /// The cheapest offer per unchecked item in the favourite supermarkets, and the total per
-    /// supermarket. Uncertain matches count only after the user confirmed them. `titles` holds the title of
-    /// every matched offer.
-    func offerSummary(
-        for list: ShoppingList, confirmed: Set<UUID>
-    ) -> (perItem: [UUID: OfferMatch], totals: [StoreTotal], matches: [OfferMatch], titles: [UUID: String]) {
-        let favorites = Set(favoriteSupermarketIDs())
-        let items = self.items(of: list).filter { !$0.isChecked }
-        let offers = ((try? context.fetch(FetchDescriptor<Offer>())) ?? []).filter { favorites.contains($0.supermarketID) }
-        let matchingItems = items.map { ListItemForMatching(id: $0.id, name: $0.name, quantity: $0.quantity, unit: $0.unit) }
-        let matchingOffers = offers.compactMap { offer -> OfferForMatching? in
-            guard let from = Day(isoString: offer.validFrom), let to = Day(isoString: offer.validTo) else { return nil }
-            return OfferForMatching(
-                id: offer.id, supermarketID: offer.supermarketID, title: offer.title, brand: offer.brand, gtin: offer.gtin,
-                quantityValue: offer.quantityValue, quantityUnit: offer.quantityUnit, priceCents: offer.priceCents, validFrom: from, validTo: to
-            )
-        }
-        let names = Set(supermarkets().filter { favorites.contains($0.id) }.map(\.name))
-        let matches = OfferMatcher.matches(items: matchingItems, offers: matchingOffers, on: today, ignoredWords: names)
-        let matched = Set(matches.map(\.offerID))
-        return (
-            OfferMatcher.cheapestPerItem(matches, confirmedOfferIDs: confirmed),
-            OfferMatcher.storeTotals(itemIDs: items.map(\.id), matches: matches, confirmedOfferIDs: confirmed),
-            matches,
-            Dictionary(uniqueKeysWithValues: offers.filter { matched.contains($0.id) }.map { ($0.id, $0.title) })
+    /// The cheapest offer per unchecked item in the favourite supermarkets, the total per supermarket and the possible
+    /// offers to ask about (ShoppingBook.offers). Uncertain matches count only after the user confirmed them.
+    func offers(for list: ShoppingList, confirmed: Set<UUID>) -> ShoppingOffers {
+        let offers = ((try? context.fetch(FetchDescriptor<Offer>())) ?? []).compactMap(\.offerRow)
+        return book(items: itemModels(of: list), offers: offers, confirmed: confirmed).offers()
+    }
+
+    /// Everything on this device that FitlingCore reads for the list.
+    private func book(items: [ShoppingItem], offers: [OfferRow] = [], confirmed: Set<UUID> = []) -> ShoppingBook {
+        ShoppingBook(
+            items: items.map(\.itemRow), offers: offers, supermarkets: supermarkets().map { SupermarketRow(id: $0.id, name: $0.name) },
+            favoriteSupermarketIDs: favoriteSupermarketIDs(), confirmedOfferIDs: confirmed, today: today
         )
     }
 
@@ -269,5 +246,32 @@ struct ShoppingStore {
         item.updatedBy = userID
         item.needsPush = true
         try? context.save()
+    }
+}
+
+// The SwiftData rows as FitlingCore reads them.
+
+extension ShoppingItem {
+    var itemRow: ShoppingItemRow {
+        ShoppingItemRow(
+            id: id, name: name, quantity: quantity, unit: unit, aisle: aisle, productID: productID, isChecked: isChecked, source: source
+        )
+    }
+}
+
+extension Offer {
+    /// Nil for an offer whose days cannot be read; it never matches.
+    var offerRow: OfferRow? {
+        guard let from = Day(isoString: validFrom), let to = Day(isoString: validTo) else { return nil }
+        return OfferRow(
+            id: id, supermarketID: supermarketID, title: title, brand: brand, gtin: gtin, quantityValue: quantityValue,
+            quantityUnit: quantityUnit, priceCents: priceCents, validFrom: from, validTo: to
+        )
+    }
+}
+
+extension RecipeIngredient {
+    var ingredientRow: RecipeIngredientRow {
+        RecipeIngredientRow(recipeID: recipeID, productID: productID, name: name, quantity: quantity, unit: unit, aisle: aisle, position: position)
     }
 }

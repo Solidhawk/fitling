@@ -252,3 +252,22 @@ test("the week menu from the same MenuBook as the iPhone (web phase 5)", async (
   expect(new Set(change.added.map((meal) => meal.day))).toEqual(new Set(["2026-11-18", "2026-11-19", "2026-11-20"]));
   expect(core.ownRecipeComplete({ title: "Soep", servings: 2, cookMinutes: 30, kcal: 300, protein: 12, carbs: 30, fat: 10, mealSlots: ["lunch"] }).complete).toBe(true);
 });
+
+test("the shopping list from the same ShoppingBook as the iPhone (web phase 6)", async () => {
+  const core = await loadCore(wasm);
+  const overview = core.shoppingOverview({
+    shopping: {
+      today: "2026-11-18",
+      items: [
+        { id: "00000000-0000-4000-8000-000000000001", name: "Melk", aisle: "dairy", isChecked: false, source: "manual" },
+        { id: "00000000-0000-4000-8000-000000000002", name: "Appels", aisle: "produce", isChecked: false, source: "manual" },
+      ],
+      offers: [],
+      supermarkets: [],
+      favoriteSupermarketIDs: [],
+      confirmedOfferIDs: [],
+    },
+  });
+  expect(overview.items.map((item) => item.name)).toEqual(["Appels", "Melk"]);
+  expect(core.shoppingNewItem({ text: "   " }).item).toBeUndefined();
+});

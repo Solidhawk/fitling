@@ -478,4 +478,54 @@ import FitlingCore
         let missing = try answer("ownRecipeComplete", #"{"title":"Pasta pesto","servings":2,"cookMinutes":20,"kcal":550,"protein":18,"carbs":70,"mealSlots":["dinner"]}"#)
         #expect(missing["complete"] as? Bool == false)
     }
+
+    // Web phase 6: the shopping list, from the same ShoppingBook as ShoppingStore.
+    struct ShoppingJSON: Encodable {
+        var today = "2026-11-18"
+        var items: [ShoppingItemRow] = []
+        var offers: [OfferRow] = []
+        var supermarkets = [SupermarketRow(id: "testmarkt", name: "Testmarkt"), SupermarketRow(id: "proefsuper", name: "Proefsuper")]
+        var favoriteSupermarketIDs = ["testmarkt", "proefsuper"]
+        var confirmedOfferIDs: [UUID] = []
+
+        var json: String { String(decoding: try! JSONEncoder().encode(self), as: UTF8.self) }
+    }
+
+    @Test func shoppingOverviewMatchesTheCore() throws {
+        let day = Day(isoString: "2026-11-18")!
+        let tomatoes = ShoppingItemRow(id: UUID(), name: "Tomatenblokjes", aisle: "pantry")
+        let tomato = ShoppingItemRow(id: UUID(), name: "Tomaat", aisle: "produce")
+        let bread = ShoppingItemRow(id: UUID(), name: "Brood", aisle: "bakery", isChecked: true)
+        let offer = OfferRow(id: UUID(), supermarketID: "proefsuper", title: "Tomatenblokjes 400 g", priceCents: 69, validFrom: day, validTo: day.adding(3))
+        let shopping = ShoppingJSON(items: [bread, tomatoes, tomato], offers: [offer])
+        let result = try answer("shoppingOverview", #"{"shopping":\#(shopping.json)}"#)
+        let items = try #require(result["items"] as? [[String: Any]])
+        #expect(items.map { $0["name"] as? String } == ["Tomaat", "Tomatenblokjes", "Brood"])
+        let priced = try #require(items[1]["offer"] as? [String: Any])
+        #expect(number(priced["priceCents"]) == 69 && priced["supermarketName"] as? String == "Proefsuper" && priced["validTo"] as? String == "2026-11-21")
+        #expect(items[1]["id"] as? String == tomatoes.id.uuidString.lowercased())
+        let totals = try #require(result["totals"] as? [[String: Any]])
+        #expect(totals.map { $0["name"] as? String } == ["Proefsuper"])
+        let question = try #require((result["questions"] as? [[String: Any]])?.first)
+        #expect(question["itemName"] as? String == "Tomaat" && question["supermarketNames"] as? [String] == ["Proefsuper"])
+        #expect(question["offerIDs"] as? [String] == [offer.id.uuidString.lowercased()])
+    }
+
+    @Test func refillFromTheMenu() throws {
+        var menu = MenuJSON(recipes: menuRecipes())
+        let dinner = menu.recipes[6]
+        menu.entries = [MenuEntry(id: UUID(), plannedOn: Day(isoString: "2026-11-18")!, meal: "dinner", recipeID: dinner.id, servings: 1)]
+        let ingredient = RecipeIngredientRow(recipeID: dinner.id, productID: UUID(), name: LocalizedText(["nl": "Rijst"]), quantity: 300, unit: "g", aisle: "pantry", position: 0)
+        let old = ShoppingItemRow(id: UUID(), name: "Ui", aisle: "produce", source: "menu")
+        let shopping = ShoppingJSON(items: [old])
+        let ingredients = String(decoding: try JSONEncoder().encode([ingredient]), as: UTF8.self)
+        let result = try answer("shoppingRefill", try menu.with(#""shopping":\#(shopping.json),"ingredients":\#(ingredients)"#))
+        #expect(result["removed"] as? [String] == [old.id.uuidString.lowercased()])
+        let added = try #require((result["added"] as? [[String: Any]])?.first)
+        // The recipe serves two; one planned serving needs half.
+        #expect(added["name"] as? String == "Rijst" && number(added["quantity"]) == 150 && added["unit"] as? String == "g")
+        #expect(added["productID"] as? String == ingredient.productID?.uuidString.lowercased())
+        let typed = try answer("shoppingNewItem", #"{"text":"  Melk  "}"#)
+        #expect((typed["item"] as? [String: Any])?["name"] as? String == "Melk")
+    }
 }

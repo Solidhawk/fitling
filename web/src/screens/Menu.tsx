@@ -1,4 +1,4 @@
-import { BookOpen, Check, CircleCheck, Pin, PinOff, RefreshCw, SlidersHorizontal, TriangleAlert } from "lucide-react";
+import { BookOpen, Check, CircleCheck, Pin, PinOff, RefreshCw, ShoppingCart, SlidersHorizontal, TriangleAlert } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { FitlingCore, Goal, MenuChange, MenuInput, MenuIssue, MenuOverview, MenuPreferences, RecipeSummary, Targets } from "../core/fitlingCore";
 import { useCore } from "../core/useCore";
@@ -27,8 +27,9 @@ import { NavBar } from "../ui/NavBar";
 import { SwipeRow } from "../ui/SwipeRow";
 import { MenuGenerator, MenuPreferencesSheet } from "./MenuGenerator";
 import { OwnRecipeForm, RecipeDetail, RecipeList, RecipePicker, RecipeThumbnail } from "./Recipes";
+import { Shopping } from "./Shopping";
 
-type Route = { kind: "recipes" } | { kind: "recipe"; id: string };
+type Route = { kind: "recipes" } | { kind: "recipe"; id: string } | { kind: "shopping" };
 type Entry = MenuOverview["days"][number]["entries"][number];
 
 interface Loaded {
@@ -44,7 +45,7 @@ function seed(): string {
 
 /**
  * The menu tab (MenuTabView.swift): per day the planned meals, to pin, swap or log with one tap; a new menu, other
- * meals for one day, the preferences and the recipes. The shopping list comes with phase 6. Recipes are pushed
+ * meals for one day, the preferences, the shopping list and the recipes. Those are pushed
  * screens (back and swiping back go through the browser's history).
  */
 export function Menu({ userID }: { userID: string }) {
@@ -186,6 +187,8 @@ export function Menu({ userID }: { userID: string }) {
         <NavBar title="" back={backLabel} onBack={back} />
       </div>
     );
+  } else if (route?.kind === "shopping") {
+    screen = <Shopping core={core} userID={userID} menu={input} onBack={back} />;
   } else if (route?.kind === "recipes") {
     screen = (
       <RecipeList
@@ -207,6 +210,7 @@ export function Menu({ userID }: { userID: string }) {
         onRenew={renew}
         onOpen={(id) => push({ kind: "recipe", id })}
         onRecipes={() => push({ kind: "recipes" })}
+        onShopping={() => push({ kind: "shopping" })}
         onLog={log}
         onSwap={(entry) => setSwapping(entry.id)}
         onPin={pin}
@@ -401,6 +405,7 @@ function MenuList({
   onRenew,
   onOpen,
   onRecipes,
+  onShopping,
   onLog,
   onSwap,
   onPin,
@@ -413,6 +418,7 @@ function MenuList({
   onRenew: (day: string) => void;
   onOpen: (recipeID: string) => void;
   onRecipes: () => void;
+  onShopping: () => void;
   onLog: (entry: Entry) => void;
   onSwap: (entry: Entry) => void;
   onPin: (entry: Entry) => void;
@@ -469,6 +475,12 @@ function MenuList({
           </ListSection>
         ))}
         <ListSection>
+          <ListRow onClick={onShopping} chevron>
+            <span className="icon-label" data-testid="menu.shopping">
+              <ShoppingCart aria-hidden="true" size={22} strokeWidth={2} />
+              <span>{t("shopping.title")}</span>
+            </span>
+          </ListRow>
           <ListRow onClick={onRecipes} chevron>
             <span className="icon-label" data-testid="menu.recipes">
               <BookOpen aria-hidden="true" size={22} strokeWidth={2} />

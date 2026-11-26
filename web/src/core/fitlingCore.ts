@@ -348,6 +348,77 @@ export interface LoggedMeal {
   fatG: number;
 }
 
+/** An item on the shopping list (shopping_items), as ShoppingBook reads it. */
+export interface ShoppingItemRow {
+  id: string;
+  name: string;
+  quantity?: number;
+  unit?: string;
+  aisle: string;
+  productID?: string;
+  isChecked: boolean;
+  /** manual, or menu for what the week menu put on the list. */
+  source: string;
+}
+
+/** An offer the backend collected (offers), as far as matching needs it. */
+export interface OfferRow {
+  id: string;
+  supermarketID: string;
+  title: string;
+  brand?: string;
+  gtin?: string;
+  quantityValue?: number;
+  quantityUnit?: string;
+  priceCents: number;
+  validFrom: IsoDay;
+  validTo: IsoDay;
+}
+
+export interface ShoppingInput {
+  today: IsoDay;
+  items: ShoppingItemRow[];
+  offers: OfferRow[];
+  supermarkets: { id: string; name: string }[];
+  favoriteSupermarketIDs: string[];
+  /** Uncertain offers the user said are right, kept on the device. */
+  confirmedOfferIDs: string[];
+}
+
+export interface ShoppingOverview {
+  items: {
+    id: string;
+    name: string;
+    quantity?: number;
+    unit?: string;
+    isChecked: boolean;
+    source: string;
+    offer?: { offerID: string; priceCents: number; supermarketID: string; supermarketName: string; validTo: IsoDay };
+  }[];
+  totals: { supermarketID: string; name: string; totalCents: number; itemsWithoutPrice: number }[];
+  questions: { id: string; itemName: string; offerTitle: string; supermarketNames: string[]; offerIDs: string[] }[];
+}
+
+/** One line of a recipe (recipe_ingredients), for what the week menu needs. */
+export interface RecipeIngredientRow {
+  recipeID: string;
+  productID?: string;
+  name: Localized;
+  quantity: number;
+  unit: string;
+  aisle: string;
+  position: number;
+}
+
+/** An item as it goes on the list: a name of at most 120 characters, an amount only with a quantity. */
+export interface NewShoppingItem {
+  name: string;
+  quantity?: number;
+  unit?: string;
+  aisle: string;
+  productID?: string;
+}
+
 export interface PartnerDays {
   creature: CreatureStateInput;
   entries: { day: IsoDay; kcal: number; proteinG?: number }[];
@@ -438,6 +509,12 @@ export interface FitlingCore {
     fat?: number;
     mealSlots: string[];
   }): { complete: boolean };
+  shoppingOverview(input: { shopping: ShoppingInput }): ShoppingOverview;
+  shoppingRefill(input: { shopping: ShoppingInput; menu: MenuInput; ingredients: RecipeIngredientRow[] }): {
+    removed: string[];
+    added: NewShoppingItem[];
+  };
+  shoppingNewItem(input: { text: string }): { item?: NewShoppingItem };
 }
 
 interface Exports {
@@ -516,6 +593,9 @@ export async function loadCore(wasm: ArrayBuffer): Promise<FitlingCore> {
     menuLoggedMeal: (input) => call("menuLoggedMeal", input) as { meal?: LoggedMeal },
     menuRecipesFor: (input) => call("menuRecipesFor", input) as RecipeSummary[],
     ownRecipeComplete: (input) => call("ownRecipeComplete", input) as { complete: boolean },
+    shoppingOverview: (input) => call("shoppingOverview", input) as ShoppingOverview,
+    shoppingRefill: (input) => call("shoppingRefill", input) as { removed: string[]; added: NewShoppingItem[] },
+    shoppingNewItem: (input) => call("shoppingNewItem", input) as { item?: NewShoppingItem },
     localizedText: (input) => call("localizedText", input) as { text: string },
   };
 }

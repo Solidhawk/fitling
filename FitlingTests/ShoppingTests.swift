@@ -18,7 +18,7 @@ struct ShoppingFixture {
     }
 
     var store: ShoppingStore {
-        ShoppingStore(context: menu.context, userID: menu.userID, timeZone: .gmt, now: { [now = menu.now] in now }, language: "nl")
+        ShoppingStore(context: menu.context, userID: menu.userID, timeZone: .gmt, now: { [now = menu.now] in now })
     }
 
     func viewModel(now: (() -> Date)? = nil) -> ShoppingViewModel {
@@ -81,14 +81,14 @@ func manyOffers(_ count: Int, in shop: String, today: Day) -> [OfferRecord] {
         fixture.menu.store.generate(seed: 1)
         let list = fixture.store.ensureList(named: "Boodschappen", ownerName: "Ik")
         fixture.store.add("Koffie", to: list)
-        fixture.store.fill(list, from: fixture.menu.store.entries(), menu: fixture.menu.store)
+        fixture.store.fill(list, menu: fixture.menu.store)
         let first = fixture.store.items(of: list)
         #expect(first.contains { $0.source == "menu" })
         #expect(first.contains { $0.name == "Koffie" && $0.source == "manual" })
 
         let basket = try #require(first.first { $0.source == "menu" })
         fixture.store.toggle(basket)
-        fixture.store.fill(list, from: fixture.menu.store.entries(), menu: fixture.menu.store)
+        fixture.store.fill(list, menu: fixture.menu.store)
         let second = fixture.store.items(of: list)
         #expect(second.filter { $0.source == "menu" && !$0.isChecked }.count == first.filter { $0.source == "menu" }.count)
         #expect(second.contains { $0.id == basket.id })
@@ -100,7 +100,7 @@ func manyOffers(_ count: Int, in shop: String, today: Day) -> [OfferRecord] {
         let entries = fixture.menu.store.entries()
         for entry in entries { fixture.menu.store.log(entry) }
         let list = fixture.store.ensureList(named: "Boodschappen", ownerName: "Ik")
-        fixture.store.fill(list, from: entries, menu: fixture.menu.store)
+        fixture.store.fill(list, menu: fixture.menu.store)
         #expect(fixture.store.items(of: list).isEmpty)
     }
 
