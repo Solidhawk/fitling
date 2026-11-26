@@ -58,11 +58,13 @@ final class DayViewModel {
     /// the user went back to stays.
     private var followsToday = true
 
-    /// The date moved on: at midnight, or when the app comes back on a later day.
-    func dateChanged() {
-        guard followsToday, day != today else { return }
+    /// The date moved on: at midnight, or when the app comes back on a later day. True when the screen moved with it.
+    @discardableResult
+    func dateChanged() -> Bool {
+        guard followsToday, day != today else { return false }
         day = today
         reload()
+        return true
     }
 
     func reload() {

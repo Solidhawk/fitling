@@ -102,20 +102,29 @@ export function Day({ userID, advance }: { userID: string; advance: Advance }) {
     setDay(next);
   }
 
+  /**
+   * The date moved on while the user looked at today: the screen follows, and a log sheet that was open closes, so
+   * nothing lands on a day the screen no longer shows. True when it moved.
+   */
+  function moveOn(): boolean {
+    const now = today();
+    if (!followsToday.current || day === now) return false;
+    setLogging(undefined);
+    show(now);
+    return true;
+  }
+
   useEffect(() => {
-    const moveOn = () => {
-      const now = today();
-      if (followsToday.current && day !== now) show(now);
-    };
-    // Just past midnight where the user is. A timer that came late, on a laptop that slept, is caught by coming back.
-    const now = new Date();
-    const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-    const timer = setTimeout(moveOn, midnight.getTime() - now.getTime() + 1000);
+    // Every minute, and when the page or the window comes back: a timer stops while a laptop sleeps, and a window that
+    // stayed in front gets no visibilitychange.
+    const timer = setInterval(moveOn, 60_000);
     const back = () => document.visibilityState === "visible" && moveOn();
     document.addEventListener("visibilitychange", back);
+    window.addEventListener("focus", moveOn);
     return () => {
-      clearTimeout(timer);
+      clearInterval(timer);
       document.removeEventListener("visibilitychange", back);
+      window.removeEventListener("focus", moveOn);
     };
   }, [day]);
 
@@ -188,7 +197,8 @@ export function Day({ userID, advance }: { userID: string; advance: Advance }) {
                   type="button"
                   className="inline-action"
                   data-testid="water.add"
-                  onClick={() => void change(() => addWater(supabase, userID, day, new Date()))}
+                  // Past midnight before any check came: the first tap moves on and writes nothing on yesterday.
+                  onClick={() => moveOn() || void change(() => addWater(supabase, userID, day, new Date()))}
                 >
                   <Droplet aria-hidden="true" size={18} strokeWidth={2.2} fill="currentColor" />
                   <span>{t("water.add")}</span>
@@ -223,7 +233,7 @@ export function Day({ userID, advance }: { userID: string; advance: Advance }) {
                     </span>
                   </SwipeRow>
                 ))}
-                <ListRow onClick={() => setLogging(meal)}>
+                <ListRow onClick={() => moveOn() || setLogging(meal)}>
                   <span className="inline-action" data-testid={`day.add.${meal}`}>
                     <Plus aria-hidden="true" size={18} strokeWidth={2.4} />
                     <span>{t("day.add")}</span>

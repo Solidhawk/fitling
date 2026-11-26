@@ -78,10 +78,10 @@ struct DayView: View {
                 viewModel.reload()
             }
             .onChange(of: scenePhase) { _, phase in
-                if phase == .active { viewModel.dateChanged() }
+                if phase == .active { dateChanged() }
             }
             .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged).receive(on: RunLoop.main)) { _ in
-                viewModel.dateChanged()
+                dateChanged()
             }
             .sheet(item: $logging, onDismiss: {
                 viewModel.reload()
@@ -102,6 +102,11 @@ struct DayView: View {
                 )
             }
         }
+    }
+
+    /// A log sheet that was open closes when the screen moves on, so nothing lands on a day it no longer shows.
+    private func dateChanged() {
+        if viewModel.dateChanged() { logging = nil }
     }
 
     private var title: Text {
