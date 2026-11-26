@@ -1,4 +1,8 @@
+#if os(WASI)
+import FoundationEssentials
+#else
 import Foundation
+#endif
 
 // Must stay identical to the `check` constraints on `public.profiles`; a value the app accepts
 // but the database rejects would leave a profile that can never be pushed.

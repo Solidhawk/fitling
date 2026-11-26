@@ -1,4 +1,8 @@
+#if os(WASI)
+import FoundationEssentials
+#else
 import Foundation
+#endif
 
 /// A calendar day as the user lived it, without a time or time zone. Logs, the creature and the
 /// week menu count in days; a `Date` would shift a late-evening meal to another day when the

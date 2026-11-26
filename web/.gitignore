@@ -1,0 +1,10 @@
+node_modules/
+dist/
+public/fitling-core.wasm
+public/fitling-core.wasm.gz
+src/generated/
+public/partners/
+public/exercises/
+public/recipes/
+test-results/
+playwright-report/

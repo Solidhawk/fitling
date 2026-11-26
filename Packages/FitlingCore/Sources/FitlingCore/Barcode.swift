@@ -1,4 +1,8 @@
+#if os(WASI)
+import FoundationEssentials
+#else
 import Foundation
+#endif
 
 public enum Barcode {
     /// The key under which a scanned code is stored and looked up: 8 digits for EAN-8, 13 digits

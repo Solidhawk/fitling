@@ -1,4 +1,8 @@
+#if os(WASI)
+import FoundationEssentials
+#else
 import Foundation
+#endif
 
 /// One ingredient of a recipe, as written for the number of servings the recipe makes.
 public struct MenuIngredient: Sendable, Equatable {
@@ -70,7 +74,7 @@ public enum ShoppingListBuilder {
                 if lines[key] == nil {
                     order.append(key)
                     lines[key] = ShoppingLine(
-                        productID: ingredient.productID, name: ingredient.name.trimmingCharacters(in: .whitespaces),
+                        productID: ingredient.productID, name: ingredient.name.trimmingSpaces(),
                         quantity: 0, unit: isSpoon ? "tsp" : ingredient.unit, aisle: ingredient.aisle
                     )
                 }
@@ -93,7 +97,7 @@ public enum ShoppingListBuilder {
     }
 
     private static func normalized(_ name: String) -> String {
-        name.trimmingCharacters(in: .whitespaces).lowercased()
+        name.trimmingSpaces().lowercased()
     }
 
     /// Rounded up to what can be bought or measured: whole grams, millilitres and pieces, half spoons.

@@ -1,4 +1,8 @@
+#if os(WASI)
+import FoundationEssentials
+#else
 import Foundation
+#endif
 
 /// Height and weight as the user types them, in metric or in feet, inches and pounds. Every
 /// conversion lives here, so onboarding and the profile editor store the same values.

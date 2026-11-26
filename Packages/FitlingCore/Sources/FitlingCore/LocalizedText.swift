@@ -1,4 +1,8 @@
+#if os(WASI)
+import FoundationEssentials
+#else
 import Foundation
+#endif
 
 /// A text in several languages, as Postgres stores it in jsonb: {"nl": "Brood", "en": "Bread"}.
 /// Used for content that comes from the database (products, recipes, exercises); interface

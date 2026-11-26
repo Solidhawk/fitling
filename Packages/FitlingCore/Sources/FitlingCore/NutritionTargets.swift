@@ -1,4 +1,8 @@
+#if os(WASI)
+import FoundationEssentials
+#else
 import Foundation
+#endif
 
 public struct NutritionTargets: Sendable, Equatable, Codable {
     public var kcal: Int

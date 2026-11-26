@@ -1,4 +1,8 @@
+#if os(WASI)
+import FoundationEssentials
+#else
 import Foundation
+#endif
 
 // Raw values are the exact `check` values of `food_entries.meal` and `meal_plan_entries.meal`.
 public enum MealSlot: String, Sendable, CaseIterable, Codable {

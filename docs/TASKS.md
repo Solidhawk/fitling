@@ -458,6 +458,18 @@ Het menu loopt van vandaag tot zes dagen later. Gelogde maaltijden blijven bij e
 
 ---
 
+## Web (D-24)
+
+Ontwerp: `docs/superpowers/specs/2026-11-24-fitling-web-design.md`. Werkplan per fase in `docs/superpowers/plans/`.
+
+### Web, fase 0 – Fundament — gebouwd
+
+- **Adres:** https://solidhawk.github.io/fitling/. Live na de merge naar `main`; CI publiceert via GitHub Pages.
+- **Op een iPhone:** Safari → Deel → "Zet op beginscherm".
+- **Rekenregels:** FitlingCore als WebAssembly (`web/core`), onder WASI met `FoundationEssentials`. Accenten weglaten en spaties trimmen zitten nu in FitlingCore zelf (`Text.swift`, `FoldTable.swift` uit `Scripts/fold-table.py`), op iOS en web hetzelfde.
+- **Teksten, kleuren en beelden:** uit de iOS-bestanden via `web/scripts/generate.mjs`. Receptfoto's gaan pas online met het receptscherm, vanwege de bronvermelding.
+- **De app:** een lege app met de vijf tabbladen, getest in WebKit en Chromium met axe.
+
 ## Fase 7 – Afronden
 
 | Nr | Wat |

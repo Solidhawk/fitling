@@ -1,0 +1,46 @@
+import { readFile } from "node:fs/promises";
+import { expect, test } from "vitest";
+import { type DailyPlanInput, loadCore } from "./fitlingCore";
+
+// Built by CI from web/core (swift build --swift-sdk wasm32-unknown-wasi).
+const file = await readFile(new URL("../../public/fitling-core.wasm", import.meta.url));
+const wasm = file.buffer.slice(file.byteOffset, file.byteOffset + file.byteLength) as ArrayBuffer;
+
+// The profile of NutritionEngineTests.maintenanceTargetEqualsTotalExpenditure.
+const maintain: DailyPlanInput = {
+  birthDay: "1996-01-10",
+  sex: "male",
+  heightCm: 180,
+  weightKg: 80,
+  activityLevel: "moderate",
+  goal: "maintain",
+  today: "2026-11-18",
+};
+
+test("the daily plan is the one of the app", async () => {
+  const core = await loadCore(wasm);
+  const plan = core.dailyPlan(maintain);
+  expect(plan.targets).toEqual({ kcal: 2760, proteinG: 128, carbsG: 389, fatG: 77 });
+  expect(plan.bmr).toBeCloseTo(1780, 4);
+  expect(plan.floorApplied).toBe(false);
+  expect(plan.warnings).toEqual([]);
+});
+
+test("an absurd weight is an error with a message, not a trap", async () => {
+  const core = await loadCore(wasm);
+  expect(() => core.dailyPlan({ ...maintain, weightKg: 1e300 })).toThrow(/weightKg/);
+});
+
+test("an unknown goal is an error, not a crash", async () => {
+  const core = await loadCore(wasm);
+  expect(() => core.dailyPlan({ ...maintain, goal: "x" as DailyPlanInput["goal"] })).toThrow();
+  // The module still answers after a failure.
+  expect(core.dailyPlan(maintain).targets.kcal).toBe(2760);
+});
+
+// Every visitor downloads this file before the numbers appear; on a phone that has to stay small. The
+// web app downloads the gzipped file and unpacks it with DecompressionStream.
+test("the download is at most 4 MB", async () => {
+  const packed = await readFile(new URL("../../public/fitling-core.wasm.gz", import.meta.url));
+  expect(packed.byteLength).toBeLessThanOrEqual(4 * 1024 * 1024);
+});

@@ -1,4 +1,8 @@
+#if os(WASI)
+import FoundationEssentials
+#else
 import Foundation
+#endif
 
 public struct ListItemForMatching: Sendable, Equatable {
     public var id: UUID
@@ -237,12 +241,7 @@ public enum OfferMatcher {
 
     /// Lower case and without accents: "Crème" and "creme" are the same word.
     private static func plain(_ text: String) -> String {
-        var scalars = String.UnicodeScalarView()
-        for scalar in text.lowercased().decomposedStringWithCanonicalMapping.unicodeScalars
-        where scalar.properties.generalCategory != .nonspacingMark {
-            scalars.append(scalar)
-        }
-        return String(scalars)
+        text.folded
     }
 
     /// "500", "500g", "6x330": a number, optionally followed by a unit or by "x" and another number.

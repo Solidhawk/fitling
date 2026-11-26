@@ -1,4 +1,8 @@
+#if os(WASI)
+import FoundationEssentials
+#else
 import Foundation
+#endif
 
 /// A workout made by the generator is a programme day of its own, so the workout done on it keeps its
 /// name, exercises, sets and reps.
