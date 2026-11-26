@@ -107,15 +107,31 @@ export function fireAt(day: IsoDay, minutes: number): Date {
 /** What was last handed to the server, so reading Vandaag again does not send the same plan again. */
 let handed: { endpoint: string; id: string; plan: string } | undefined;
 
+/** The plans asked for so far, one after the other. */
+let planning: Promise<void> = Promise.resolve();
+
 /**
  * Plans the reminders of today and tomorrow and hands them to the server, replacing what it had for this browser
  * (PartnerViewModel.planReminders). Turned off, the plan is empty. Without permission nothing is subscribed.
+ * Vandaag, the partner tab and every change ask for a plan: they run one at a time, in the order asked, so a plan
+ * that started earlier never lands after a later one (turned off, they stay off).
  */
-export async function planReminders(
+export function planReminders(
   client: SupabaseClient,
   core: FitlingCore,
   plan: { settings: ReminderSettings; name: string; days: PartnerDays },
   now = new Date(),
+): Promise<void> {
+  const next = planning.then(() => planNow(client, core, plan, now));
+  planning = next.catch(() => undefined);
+  return next;
+}
+
+async function planNow(
+  client: SupabaseClient,
+  core: FitlingCore,
+  plan: { settings: ReminderSettings; name: string; days: PartnerDays },
+  now: Date,
 ): Promise<void> {
   // Without a network the plan waits for the next visit: supabase-js would first spend half a minute on the token.
   if (pushSupport() !== "ready" || Notification.permission !== "granted" || noNetwork()) return;
