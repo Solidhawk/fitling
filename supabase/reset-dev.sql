@@ -51,6 +51,7 @@ drop function if exists
   public.join_shopping_list(text, text),
   public.save_push_subscription(text, text, text),
   public.replace_push_reminders(uuid, jsonb),
+  public.claim_push_reminders(integer),
   private.apply_sync_rules(),
   private.is_list_member(uuid),
   private.is_list_owner(uuid),
