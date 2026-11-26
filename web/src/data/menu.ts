@@ -258,14 +258,21 @@ export interface OwnRecipe {
 
 /**
  * Stores a recipe of the user's own (MenuStore.create) that FitlingCore found complete (ownRecipeComplete): the title
- * and steps under the language the user types in, the lines with a name and an amount, in their order.
+ * and steps under the language the user types in, the lines with a name and an amount, in their order. Saving again
+ * after a failure, with the same `id`, stores the recipe once and its lines once (UNFORGET S46).
  */
-export async function createRecipe(client: SupabaseClient, userID: string, own: OwnRecipe, language: string, now: Date): Promise<string> {
-  const id = crypto.randomUUID();
+export async function createRecipe(
+  client: SupabaseClient,
+  userID: string,
+  own: OwnRecipe,
+  language: string,
+  now: Date,
+  id: string,
+): Promise<string> {
   const stamp = now.toISOString();
   const steps = own.steps.map((step) => step.trim()).filter((step) => step.length > 0);
   await write(
-    client.from("recipes").insert({
+    client.from("recipes").upsert({
       id,
       owner_id: userID,
       title: { [language]: own.title.trim() },
@@ -284,6 +291,10 @@ export async function createRecipe(client: SupabaseClient, userID: string, own: 
     .map((line, position) => ({ ...line, name: line.name.trim(), position }))
     .filter((line) => line.quantity > 0 && line.name.length > 0);
   if (lines.length > 0) {
+    // The lines go in one request, so all or none of them are stored; an earlier try whose answer was lost stored all.
+    const stored = await client.from("recipe_ingredients").select("id").eq("recipe_id", id).limit(1);
+    if (stored.error) throw failure(stored.error);
+    if ((stored.data ?? []).length > 0) return id;
     await write(
       client.from("recipe_ingredients").insert(
         lines.map((line) => ({

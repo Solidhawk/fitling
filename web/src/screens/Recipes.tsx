@@ -1,5 +1,5 @@
 import { Plus, Search } from "lucide-react";
-import { Fragment, type ReactNode, useEffect, useMemo, useState } from "react";
+import { Fragment, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import type { FitlingCore, RecipeSummary } from "../core/fitlingCore";
 import { createRecipe, type Ingredient, mealSlots, type MenuRows, type OwnRecipe, recipeIngredients } from "../data/menu";
 import { supabase } from "../data/supabase";
@@ -303,11 +303,14 @@ export function OwnRecipeForm({
     mealSlots: mealSlots.filter((slot) => slots.includes(slot)),
   }).complete;
 
+  // One id for every try: saving again after a failure does not make a second recipe.
+  const recipeID = useRef(crypto.randomUUID());
+
   async function save() {
     if (!complete || saving) return;
     setSaving(true);
     try {
-      await createRecipe(supabase, userID, own, typingLanguage(), new Date());
+      await createRecipe(supabase, userID, own, typingLanguage(), new Date(), recipeID.current);
       onSaved();
     } catch (error) {
       setSaving(false);

@@ -140,8 +140,17 @@ export function Shopping({ core, userID, menu, onBack }: { core: FitlingCore; us
   function add() {
     const item = core.shoppingNewItem({ text: newItem }).item;
     if (!item || !list) return;
+    const typed = newItem;
     setNewItem("");
-    void act(() => addItem(supabase, userID, list.list.id, item, "manual", new Date()));
+    void act(async () => {
+      try {
+        await addItem(supabase, userID, list.list.id, item, "manual", new Date());
+      } catch (error) {
+        // Back in the field to try again, unless something new was typed meanwhile.
+        setNewItem((current) => (current === "" ? typed : current));
+        throw error;
+      }
+    });
   }
 
   /** Ticked at once, as on iOS; the list is read again once the server has it. */

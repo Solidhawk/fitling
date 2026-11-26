@@ -1,5 +1,5 @@
 import { CircleEllipsis, Play, Plus } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { FitlingCore, TrainingInput } from "../core/fitlingCore";
 import { supabase } from "../data/supabase";
 import { addItem, copyProgram, deleteProgram, removeItem, renameProgram, type TrainingRows, typingLanguage } from "../data/training";
@@ -55,6 +55,9 @@ export function ProgramDetail({
     await onChanged();
   }
 
+  // One copy at a time: a double tap makes one.
+  const copying = useRef(false);
+
   /** A composed day carries its date, or ten times "Bovenlichaam" could not be told apart. */
   function title(day: (typeof program.days)[number]): string {
     if (!day.composed) return day.name;
@@ -76,11 +79,17 @@ export function ProgramDetail({
       type="button"
       className="nav-back nav-action"
       onClick={() => {
+        if (copying.current) return;
+        copying.current = true;
         let copy: string | undefined;
         // Opened once it is read back, so FitlingCore knows it.
         void act(async () => {
           copy = await copyProgram(supabase, userID, rows, programID, { name: t("training.program.copyName %@", program.name), language: typingLanguage() }, new Date());
-        }).then(() => copy && onOpenCopy(copy));
+        })
+          .then(() => copy && onOpenCopy(copy))
+          .finally(() => {
+            copying.current = false;
+          });
       }}
     >
       {t("training.program.copy")}

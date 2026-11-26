@@ -127,6 +127,7 @@ describe.skipIf(!url || !key || !serviceKey)("the week menu on the server", () =
       },
       "nl",
       new Date(),
+      crypto.randomUUID(),
     );
     const rows = await loadMenu(client, today);
     const own = rows.recipes.find((recipe) => recipe.id === recipeID)!;
@@ -135,6 +136,29 @@ describe.skipIf(!url || !key || !serviceKey)("the week menu on the server", () =
     expect(await recipeIngredients(client, recipeID)).toEqual([{ name: { nl: "Pasta" }, quantity: 200, unit: "g" }]);
     await deleteRecipe(client, recipeID, new Date());
     expect((await loadMenu(client, today)).recipes.some((recipe) => recipe.id === recipeID)).toBe(false);
+  });
+
+  // An answer that got lost: saving again with the same id stores no second recipe and no second set of lines.
+  test("anOwnRecipeSavedTwiceIsStoredOnce", async () => {
+    const { id, client } = await user();
+    const recipeID = crypto.randomUUID();
+    const own = {
+      title: "Soep",
+      servings: 2,
+      cookMinutes: 30,
+      kcal: 300,
+      protein: 12,
+      carbs: 30,
+      fat: 10,
+      mealSlots: ["lunch"],
+      ingredients: [{ name: "Tomaat", quantity: 4, unit: "piece" }],
+      steps: [],
+    };
+    await createRecipe(client, id, own, "nl", new Date(), recipeID);
+    await createRecipe(client, id, own, "nl", new Date(), recipeID);
+    const rows = await loadMenu(client, today);
+    expect(rows.recipes.filter((recipe) => recipe.ownerID === id).map((recipe) => recipe.id)).toEqual([recipeID]);
+    expect(await recipeIngredients(client, recipeID)).toEqual([{ name: { nl: "Tomaat" }, quantity: 4, unit: "piece" }]);
   });
 
   test("preferencesAreKept", async () => {
