@@ -44,6 +44,17 @@ export function Profile({ userID, auth }: { userID: string; auth: AuthService })
     void load();
   }, [load]);
 
+  // Back in the tab: another device may have changed the target, or a new day begun (UNFORGET S53). What is shown stays
+  // when this read fails; only the first read shows its failure.
+  useEffect(() => {
+    const again = () => {
+      if (document.visibilityState !== "visible") return;
+      void loadProfile(supabase, userID).then(setProfile, () => undefined);
+    };
+    document.addEventListener("visibilitychange", again);
+    return () => document.removeEventListener("visibilitychange", again);
+  }, [userID]);
+
   // In braces: an effect may only hand back its cleanup, and newer Chrome answers scrollTo with a promise.
   useEffect(() => {
     window.scrollTo(0, 0);
