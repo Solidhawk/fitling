@@ -28,13 +28,20 @@ enum LabelReader {
         } catch {
             return nil
         }
-        let pieces = (request.results ?? []).compactMap { observation in
-            observation.topCandidates(1).first.map { candidate in
-                piece(
-                    candidate.string, topLeft: observation.topLeft, topRight: observation.topRight,
-                    bottomLeft: observation.bottomLeft, bottomRight: observation.bottomRight
-                )
+        let pieces = (request.results ?? []).compactMap { observation -> NutritionLabel.Piece? in
+            guard let candidate = observation.topCandidates(1).first else { return nil }
+            let text = candidate.string
+            // The box of a line of text is upright even when the line is tilted; the boxes of its first and last letter
+            // follow the line, so they give its slope and its own height.
+            if let first = text.indices.first, let last = text.indices.last, first != last,
+               let head = try? candidate.boundingBox(for: first..<text.index(after: first)),
+               let tail = try? candidate.boundingBox(for: last..<text.endIndex) {
+                return piece(text, topLeft: head.topLeft, topRight: tail.topRight, bottomLeft: head.bottomLeft, bottomRight: tail.bottomRight)
             }
+            return piece(
+                text, topLeft: observation.topLeft, topRight: observation.topRight,
+                bottomLeft: observation.bottomLeft, bottomRight: observation.bottomRight
+            )
         }
         return NutritionLabel.read(NutritionLabel.rows(pieces))
     }
