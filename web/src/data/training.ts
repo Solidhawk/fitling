@@ -144,7 +144,8 @@ export async function createProgram(
 
 /**
  * The user's own copy of a programme, to change freely (TrainingStore.copy): days and exercises with new ids; the
- * shared original stays as it is.
+ * shared original stays as it is. `ids` gives each original row its new id and gets the ones it lacks: copying again
+ * after a failure with the same map writes the same rows, so no second copy is made (UNFORGET S54).
  */
 export async function copyProgram(
   client: SupabaseClient,
@@ -153,20 +154,28 @@ export async function copyProgram(
   programID: string,
   copy: { name: string; language: string },
   now: Date,
+  ids: Map<string, string>,
 ): Promise<string> {
   const source = training.programs.find((program) => program.id === programID);
   if (!source) throw new Error("error.server");
-  const id = crypto.randomUUID();
+  const newID = (original: string) => {
+    const known = ids.get(original);
+    if (known) return known;
+    const made = crypto.randomUUID();
+    ids.set(original, made);
+    return made;
+  };
+  const id = newID(programID);
   const updated = now.toISOString();
-  await write(client.from("programs").insert({ id, owner_id: userID, name: { [copy.language]: copy.name }, days_per_week: source.daysPerWeek, updated_at: updated }));
+  await write(client.from("programs").upsert({ id, owner_id: userID, name: { [copy.language]: copy.name }, days_per_week: source.daysPerWeek, updated_at: updated }));
   const days = training.days.filter((day) => day.programID === programID && !day.deleted);
-  const newDays = days.map((day) => ({ old: day.id, row: { id: crypto.randomUUID(), program_id: id, owner_id: userID, name: day.name, position: day.position, updated_at: updated } }));
-  if (newDays.length > 0) await write(client.from("program_days").insert(newDays.map((day) => day.row)));
+  const newDays = days.map((day) => ({ old: day.id, row: { id: newID(day.id), program_id: id, owner_id: userID, name: day.name, position: day.position, updated_at: updated } }));
+  if (newDays.length > 0) await write(client.from("program_days").upsert(newDays.map((day) => day.row)));
   const items = newDays.flatMap((day) =>
     training.items
       .filter((item) => item.programDayID === day.old)
       .map((item) => ({
-        id: crypto.randomUUID(),
+        id: newID(item.id),
         program_day_id: day.row.id,
         owner_id: userID,
         exercise_id: item.exerciseID,
@@ -178,7 +187,7 @@ export async function copyProgram(
         updated_at: updated,
       })),
   );
-  if (items.length > 0) await write(client.from("program_exercises").insert(items));
+  if (items.length > 0) await write(client.from("program_exercises").upsert(items));
   return id;
 }
 

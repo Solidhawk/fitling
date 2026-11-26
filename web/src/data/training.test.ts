@@ -41,8 +41,12 @@ describe.skipIf(!url || !key || !serviceKey)("training on the server", () => {
     const { id, client } = await user();
     const before = await loadTraining(client);
     const shared = before.programs.find((program) => program.ownerID === undefined && !program.deleted)!;
-    const copyID = await copyProgram(client, id, before, shared.id, { name: "Mijn schema", language: "nl" }, new Date());
+    const ids = new Map<string, string>();
+    const copyID = await copyProgram(client, id, before, shared.id, { name: "Mijn schema", language: "nl" }, new Date(), ids);
+    // Again with the same ids, as after a failure: still one copy, with its days and exercises once.
+    expect(await copyProgram(client, id, before, shared.id, { name: "Mijn schema", language: "nl" }, new Date(), ids)).toBe(copyID);
     const after = await loadTraining(client);
+    expect(after.programs.filter((program) => program.ownerID === id)).toHaveLength(1);
     const copy = after.programs.find((program) => program.id === copyID)!;
     expect(copy).toMatchObject({ ownerID: id, name: { nl: "Mijn schema" }, daysPerWeek: shared.daysPerWeek });
     const byPosition = (a: { position: number }, b: { position: number }) => a.position - b.position;

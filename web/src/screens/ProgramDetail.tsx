@@ -55,8 +55,10 @@ export function ProgramDetail({
     await onChanged();
   }
 
-  // One copy at a time: a double tap makes one.
+  // One copy at a time: a double tap makes one. The ids stay until a copy is made, so trying again after a failure
+  // writes the same copy.
   const copying = useRef(false);
+  const copyIDs = useRef(new Map<string, string>());
 
   /** A composed day carries its date, or ten times "Bovenlichaam" could not be told apart. */
   function title(day: (typeof program.days)[number]): string {
@@ -84,7 +86,16 @@ export function ProgramDetail({
         let copy: string | undefined;
         // Opened once it is read back, so FitlingCore knows it.
         void act(async () => {
-          copy = await copyProgram(supabase, userID, rows, programID, { name: t("training.program.copyName %@", program.name), language: typingLanguage() }, new Date());
+          copy = await copyProgram(
+            supabase,
+            userID,
+            rows,
+            programID,
+            { name: t("training.program.copyName %@", program.name), language: typingLanguage() },
+            new Date(),
+            copyIDs.current,
+          );
+          copyIDs.current = new Map();
         })
           .then(() => copy && onOpenCopy(copy))
           .finally(() => {
