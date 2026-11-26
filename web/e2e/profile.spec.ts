@@ -26,6 +26,25 @@ test("backOnDagdoelShowsTheTargetOfNow", async ({ page }) => {
   await expect(page.getByTestId("profile.target")).toHaveText(/2\.400\s?kcal/, { timeout: 15_000 });
 });
 
+// A target saved here, then the connection drops: back on Dagdoel, what this browser keeps for offline is the saved
+// target, not the one read before (UNFORGET S53, review).
+test("aSavedTargetStaysWhenTheConnectionDrops", async ({ page, context }) => {
+  await start(page);
+  await adjust(page, "profile.editTargets");
+  await page.getByTestId("input.target.kcal").fill("2500");
+  await page.getByTestId("input.target.proteinG").fill("150");
+  await page.getByTestId("input.target.carbsG").fill("300");
+  await page.getByTestId("input.target.fatG").fill("70");
+  await page.getByRole("button", { name: nl("profile.save") }).click();
+  await expect(page.getByTestId("profile.target")).toHaveText(/2\.500\s?kcal/);
+  await context.setOffline(true);
+  await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
+  // Room for a read from this browser's copy to land before looking.
+  await page.waitForTimeout(1000);
+  await expect(page.getByTestId("profile.target")).toHaveText(/2\.500\s?kcal/);
+  await context.setOffline(false);
+});
+
 async function shot(page: Page, name: string, project: string) {
   const axe = await new AxeBuilder({ page }).analyze();
   expect(axe.violations.map((violation) => `${name}: ${violation.id}`)).toEqual([]);
