@@ -1,5 +1,5 @@
 import { Plus, Search } from "lucide-react";
-import { Fragment, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, type ReactNode, useEffect, useMemo, useState } from "react";
 import type { FitlingCore, RecipeSummary } from "../core/fitlingCore";
 import { createRecipe, type Ingredient, mealSlots, type MenuRows, type OwnRecipe, recipeIngredients } from "../data/menu";
 import { supabase } from "../data/supabase";
@@ -304,13 +304,13 @@ export function OwnRecipeForm({
   }).complete;
 
   // One id for every try: saving again after a failure does not make a second recipe.
-  const recipeID = useRef(crypto.randomUUID());
+  const [recipeID] = useState(() => crypto.randomUUID());
 
   async function save() {
     if (!complete || saving) return;
     setSaving(true);
     try {
-      await createRecipe(supabase, userID, own, typingLanguage(), new Date(), recipeID.current);
+      await createRecipe(supabase, userID, own, typingLanguage(), new Date(), recipeID);
       onSaved();
     } catch (error) {
       setSaving(false);
@@ -322,7 +322,7 @@ export function OwnRecipeForm({
     const quantity = parseNumber(line.quantity);
     const name = line.name.trim();
     if (quantity === undefined || quantity <= 0 || name === "") return;
-    setLines([...lines, { name, quantity, unit: line.unit }]);
+    setLines([...lines, { id: crypto.randomUUID(), name, quantity, unit: line.unit }]);
     setLine({ ...line, name: "", quantity: "" });
   }
 

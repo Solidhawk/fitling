@@ -251,15 +251,15 @@ export interface OwnRecipe {
   carbs?: number;
   fat?: number;
   mealSlots: string[];
-  /** Lines without a name or an amount are left out. */
-  ingredients: { name: string; quantity: number; unit: string }[];
+  /** Lines without a name or an amount are left out. Each has its id from the moment it was added to the form. */
+  ingredients: { id: string; name: string; quantity: number; unit: string }[];
   steps: string[];
 }
 
 /**
  * Stores a recipe of the user's own (MenuStore.create) that FitlingCore found complete (ownRecipeComplete): the title
  * and steps under the language the user types in, the lines with a name and an amount, in their order. Saving again
- * after a failure, with the same `id`, stores the recipe once and its lines once (UNFORGET S46).
+ * after a failure, with the same `id`, stores the recipe once and its lines as the form has them now (UNFORGET S46).
  */
 export async function createRecipe(
   client: SupabaseClient,
@@ -284,6 +284,7 @@ export async function createRecipe(
       carbs_g_per_serving: own.carbs,
       fat_g_per_serving: own.fat,
       meal_slots: mealSlots.filter((slot) => own.mealSlots.includes(slot)),
+      deleted_at: null,
       updated_at: stamp,
     }),
   );
@@ -291,25 +292,26 @@ export async function createRecipe(
     .map((line, position) => ({ ...line, name: line.name.trim(), position }))
     .filter((line) => line.quantity > 0 && line.name.length > 0);
   if (lines.length > 0) {
-    // The lines go in one request, so all or none of them are stored; an earlier try whose answer was lost stored all.
-    const stored = await client.from("recipe_ingredients").select("id").eq("recipe_id", id).limit(1);
-    if (stored.error) throw failure(stored.error);
-    if ((stored.data ?? []).length > 0) return id;
     await write(
-      client.from("recipe_ingredients").insert(
+      client.from("recipe_ingredients").upsert(
         lines.map((line) => ({
-          id: crypto.randomUUID(),
+          id: line.id,
           recipe_id: id,
           owner_id: userID,
           name: { [language]: line.name },
           quantity: line.quantity,
           unit: line.unit,
           position: line.position,
+          deleted_at: null,
           updated_at: stamp,
         })),
       ),
     );
   }
+  // Lines an earlier try stored that the form no longer has go, as a removal on another device would (deleted_at).
+  let gone = client.from("recipe_ingredients").update({ deleted_at: stamp, updated_at: stamp }).eq("recipe_id", id).is("deleted_at", null);
+  if (lines.length > 0) gone = gone.not("id", "in", `(${lines.map((line) => line.id).join(",")})`);
+  await write(gone);
   return id;
 }
 

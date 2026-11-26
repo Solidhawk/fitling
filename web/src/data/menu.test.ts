@@ -119,9 +119,9 @@ describe.skipIf(!url || !key || !serviceKey)("the week menu on the server", () =
         fat: 20,
         mealSlots: ["dinner", "lunch"],
         ingredients: [
-          { name: "Pasta", quantity: 200, unit: "g" },
-          { name: "", quantity: 1, unit: "piece" },
-          { name: "Pesto", quantity: 0, unit: "tbsp" },
+          { id: crypto.randomUUID(), name: "Pasta", quantity: 200, unit: "g" },
+          { id: crypto.randomUUID(), name: "", quantity: 1, unit: "piece" },
+          { id: crypto.randomUUID(), name: "Pesto", quantity: 0, unit: "tbsp" },
         ],
         steps: ["Kook de pasta.", " ", "Roer de pesto erdoor."],
       },
@@ -151,7 +151,7 @@ describe.skipIf(!url || !key || !serviceKey)("the week menu on the server", () =
       carbs: 30,
       fat: 10,
       mealSlots: ["lunch"],
-      ingredients: [{ name: "Tomaat", quantity: 4, unit: "piece" }],
+      ingredients: [{ id: crypto.randomUUID(), name: "Tomaat", quantity: 4, unit: "piece" }],
       steps: [],
     };
     await createRecipe(client, id, own, "nl", new Date(), recipeID);
@@ -159,6 +159,9 @@ describe.skipIf(!url || !key || !serviceKey)("the week menu on the server", () =
     const rows = await loadMenu(client, today);
     expect(rows.recipes.filter((recipe) => recipe.ownerID === id).map((recipe) => recipe.id)).toEqual([recipeID]);
     expect(await recipeIngredients(client, recipeID)).toEqual([{ name: { nl: "Tomaat" }, quantity: 4, unit: "piece" }]);
+    // Changed in the form before saving again: the lines are the ones it has now.
+    await createRecipe(client, id, { ...own, ingredients: [{ id: crypto.randomUUID(), name: "Ui", quantity: 1, unit: "piece" }] }, "nl", new Date(), recipeID);
+    expect(await recipeIngredients(client, recipeID)).toEqual([{ name: { nl: "Ui" }, quantity: 1, unit: "piece" }]);
   });
 
   test("preferencesAreKept", async () => {
