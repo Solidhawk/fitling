@@ -34,9 +34,9 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-// Kept answers are found past Vary. A server may send "Vary: Origin" (vite preview does) and the page asks for its
-// script and style with crossorigin: matched on Vary, the files kept at install were not found without a connection
-// (S51, seen in Chrome 157). A file of a build is the same whoever asks: its build is in its name or address.
+// Kept answers are found past Vary. Matched on Vary, the script and style kept at install were not found without a
+// connection (S51: Chrome 157 with vite preview, which sends "Vary: Origin"; Vite loads both with crossorigin). What is
+// kept here is the same whoever asks for it; the address, with its version, still has to match.
 const found = { ignoreVary: true };
 
 async function fromCache(request, cacheName, keep) {

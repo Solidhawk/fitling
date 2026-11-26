@@ -21,10 +21,13 @@ export const test = base.extend<{ pageErrors: void }>({
       page.on("requestfailed", (request) => errors.push(`request failed: ${request.url()} (${request.failure()?.errorText ?? "?"})`));
       await use();
       if (info.status === info.expectedStatus) return;
-      const answers = await Promise.race([
-        page.evaluate(() => true).catch(() => false),
-        new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 2_000)),
-      ]);
+      // A page the test itself closed is not a page that hangs.
+      const answers =
+        page.isClosed() ||
+        (await Promise.race([
+          page.evaluate(() => true).catch(() => false),
+          new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 2_000)),
+        ]));
       if (!answers) errors.push("the page does not answer");
       if (errors.length > 0) console.log(`${info.project.name} › ${info.title}: errors in the page\n${errors.join("\n")}`);
     },
