@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import FitlingCore
 @testable import FitlingWeb
 
 /// The bridge answers with what FitlingCore answers in the app.
@@ -143,5 +144,83 @@ import Testing
         #expect((limits["proteinG"] as? [Any])?.compactMap(number) == [0, 1000])
         #expect((limits["carbsG"] as? [Any])?.compactMap(number) == [0, 5000])
         #expect((limits["fatG"] as? [Any])?.compactMap(number) == [0, 2000])
+    }
+
+    // Web phase 2: the rules for Vandaag and logging.
+    @Test func searchKeyAndBarcodeAreTheCoresOwn() throws {
+        #expect(try answer("searchKey", #"{"text":"  Crème Brûlée "}"#)["key"] as? String == "creme brulee")
+        #expect(try answer("barcode", #"{"text":"036000291452"}"#)["gtin"] as? String == "0036000291452")
+        #expect(try answer("barcode", #"{"text":"8712100849085"}"#)["gtin"] == nil)
+    }
+
+    @Test func recentProductsAreEachOnceNewestFirstInLowerCase() throws {
+        let a = "8C1F0A52-5D0E-4C2B-9A51-6F2F7F5D2A10"
+        let b = "0B5A1C2D-3E4F-4A5B-8C6D-7E8F9A0B1C2D"
+        let result = try answer("recentProducts", #"{"logged":[{"productID":"\#(a)","updatedAtMs":1000},{"productID":"\#(b)","updatedAtMs":2000},{"productID":"\#(a)","updatedAtMs":3000}]}"#)
+        #expect(result["ids"] as? [String] == [a.lowercased(), b.lowercased()])
+        #expect(number(result["limit"]) == 20)
+    }
+
+    @Test func aPortionStartsAtOneServingAndAsksForMissingKcal() throws {
+        let serving = try answer("portion", #"{"quantityUnit":"g","servingSize":30,"per100":{"kcal":400,"proteinG":10}}"#)
+        #expect(serving["units"] as? [String] == ["serving", "g"])
+        #expect(serving["defaultUnit"] as? String == "serving")
+        #expect(number((serving["preview"] as? [String: Any])?["kcal"]) == 120)
+        #expect(serving["canSave"] as? Bool == true)
+        let noKcal = try answer("portion", #"{"quantityUnit":"g","per100":{"proteinG":10},"quantity":50,"unit":"g","kcalOnPackage":950}"#)
+        #expect(noKcal["needsKcal"] as? Bool == true)
+        #expect(noKcal["canSave"] as? Bool == false)
+    }
+
+    @Test func anEntryStoresWhatFoodDiaryStores() throws {
+        let entry = try answer("logEntry", #"{"name":"Volkorenbrood","quantity":35.04,"unit":"g","per100":{"kcal":250,"proteinG":10}}"#)
+        #expect(entry["name"] as? String == "Volkorenbrood")
+        #expect(number(entry["quantity"]) == 35)
+        #expect(number((entry["nutrients"] as? [String: Any])?["kcal"]) == 87.6)
+        let data = handle(Data(#"{"fn":"logEntry","input":{"name":"x","quantity":2,"unit":"serving","per100":{"kcal":250}}}"#.utf8))
+        #expect(String(decoding: data, as: UTF8.self) == "null")
+    }
+
+    @Test func anOwnProductIsCheckedAndRounded() throws {
+        let fields = try answer("ownProduct", #"{"name":" Oma's appeltaart ","brand":"Bakkerij Jansen","gtin":"","isMillilitre":false,"kcal":280.44,"protein":3.2,"carbs":38,"servingSize":120}"#)["fields"] as? [String: Any]
+        #expect(fields?["name"] as? String == "Oma's appeltaart")
+        #expect(number(fields?["kcal100"]) == 280.4)
+        #expect(fields?["searchName"] as? String == "oma's appeltaart bakkerij jansen")
+        let refused = try answer("ownProduct", #"{"name":"x","brand":"","gtin":"","isMillilitre":false,"kcal":950}"#)
+        #expect(refused["fields"] == nil)
+    }
+
+    @Test func dayTotalsCountUnknownMacros() throws {
+        let totals = try answer("dayTotals", #"{"entries":[{"kcal":100,"proteinG":5},{"kcal":50.5}]}"#)
+        #expect(number(totals["kcal"]) == 150.5)
+        #expect(number(totals["proteinG"]) == 5)
+        #expect(number(totals["unknownProtein"]) == 1)
+        #expect(number(totals["unknownFat"]) == 2)
+    }
+
+    /// Three days on target after creation: the same mood and energy as the engine gives the app.
+    @Test func partnerSnapshotIsTheEnginesOwn() throws {
+        let state = CreatureState(species: .owl, colorIndex: 0, tone: .sweet, createdOn: Day(isoString: "2026-11-14")!)
+        let days = ["2026-11-21", "2026-11-22", "2026-11-23"]
+        let records = days.map {
+            DayRecord(day: Day(isoString: $0)!, kcal: 2000, kcalTarget: 2000, proteinG: 120, proteinTargetG: 120, entryCount: 1, workoutCompleted: false)
+        }
+        let expected = CreatureEngine.snapshot(of: state, records: records, today: Day(isoString: "2026-11-24")!)
+        let entries = days.map { #"{"day":"\#($0)","kcal":2000,"proteinG":120}"# }.joined(separator: ",")
+        let creature = #"{"species":"owl","colorIndex":0,"tone":"sweet","createdOn":"2026-11-14","bodyShape":0.3,"xp":0,"offTargetDays":0}"#
+        let fallback = #"{"kcal":2000,"proteinG":120,"carbsG":250,"fatG":70}"#
+        let result = try answer(
+            "partnerSnapshot",
+            #"{"creature":\#(creature),"entries":[\#(entries)],"workoutDays":[],"periods":[],"fallback":\#(fallback),"today":"2026-11-24"}"#
+        )
+        #expect(result["mood"] as? String == expected.mood.rawValue)
+        #expect(number(result["energy"]) == expected.energy)
+        #expect(number(result["level"]) == Double(expected.level))
+        #expect(number(result["historyDays"]) == 8)
+    }
+
+    @Test func aNameFollowsTheBrowsersLanguagesThenEnglishThenDutch() throws {
+        #expect(try answer("localizedText", #"{"values":{"nl":"Brood","en":"Bread"},"languages":["de-DE","en-US"]}"#)["text"] as? String == "Bread")
+        #expect(try answer("localizedText", #"{"values":{"nl":"Brood"},"languages":["de"]}"#)["text"] as? String == "Brood")
     }
 }

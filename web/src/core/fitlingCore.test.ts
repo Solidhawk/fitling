@@ -83,3 +83,49 @@ test("the rules Dagdoel shows and the ranges of typed targets", async () => {
   expect(rules.proteinPerKg.maintain).toBe(1.6);
   expect(rules.targetLimits).toEqual({ kcal: [1, 20000], proteinG: [0, 1000], carbsG: [0, 5000], fatG: [0, 2000] });
 });
+
+test("the rules for Vandaag and logging (web phase 2)", async () => {
+  const core = await loadCore(wasm);
+  expect(core.searchKey({ text: "  Crème Brûlée " })).toEqual({ key: "creme brulee" });
+  expect(core.barcode({ text: "036000291452" })).toEqual({ gtin: "0036000291452" });
+  expect(core.barcode({ text: "8712100849085" })).toEqual({});
+  const a = "8c1f0a52-5d0e-4c2b-9a51-6f2f7f5d2a10";
+  const b = "0b5a1c2d-3e4f-4a5b-8c6d-7e8f9a0b1c2d";
+  expect(
+    core.recentProducts({
+      logged: [
+        { productID: a, updatedAtMs: 1000 },
+        { productID: b, updatedAtMs: 2000 },
+        { productID: a, updatedAtMs: 3000 },
+      ],
+    }),
+  ).toEqual({ ids: [a, b], limit: 20 });
+  const serving = core.portion({ quantityUnit: "g", servingSize: 30, per100: { kcal: 400, proteinG: 10 } });
+  expect(serving).toMatchObject({ units: ["serving", "g"], defaultUnit: "serving", defaultQuantity: 1, needsKcal: false, canSave: true });
+  expect(serving.preview?.kcal).toBe(120);
+  expect(core.logEntry({ name: "Volkorenbrood", quantity: 35.04, unit: "g", per100: { kcal: 250, proteinG: 10 } })).toEqual({
+    name: "Volkorenbrood",
+    quantity: 35,
+    nutrients: { kcal: 87.6, proteinG: 3.5 },
+  });
+  expect(core.logEntry({ name: "x", quantity: 2, unit: "serving", per100: { kcal: 250 } })).toBeNull();
+  expect(core.ownProduct({ name: "x", brand: "", gtin: "", isMillilitre: false, kcal: 950 })).toEqual({});
+  expect(core.dayTotals({ entries: [{ kcal: 100, proteinG: 5 }, { kcal: 50.5 }] })).toMatchObject({ kcal: 150.5, unknownProtein: 1, unknownFat: 2 });
+});
+
+test("the partner as the engine sees it today", async () => {
+  const core = await loadCore(wasm);
+  const target = { kcal: 2000, proteinG: 120, carbsG: 250, fatG: 70 };
+  const snapshot = core.partnerSnapshot({
+    creature: { species: "owl", colorIndex: 0, tone: "sweet", createdOn: "2026-11-14", bodyShape: 0.3, xp: 0, offTargetDays: 0 },
+    entries: ["2026-11-21", "2026-11-22", "2026-11-23"].map((day) => ({ day, kcal: 2000, proteinG: 120 })),
+    workoutDays: [],
+    periods: [],
+    fallback: target,
+    today: "2026-11-24",
+  });
+  expect(snapshot.historyDays).toBe(8);
+  expect(["happy", "content", "sluggish", "tired", "hungry", "asleep"]).toContain(snapshot.mood);
+  expect(snapshot.energy).toBeGreaterThanOrEqual(0);
+  expect(snapshot.energy).toBeLessThanOrEqual(1);
+});

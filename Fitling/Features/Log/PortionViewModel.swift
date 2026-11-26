@@ -25,9 +25,9 @@ final class PortionViewModel {
         self.meal = meal
         self.day = day
         self.languages = languages
-        let hasServing = (product.servingSize ?? 0) > 0
-        unit = hasServing ? .serving : (product.quantityUnit == "ml" ? .millilitre : .gram)
-        quantity = hasServing ? 1 : 100
+        let portion = Portion(quantityUnit: product.quantityUnit, servingSize: product.servingSize)
+        unit = portion.defaultUnit
+        quantity = portion.defaultQuantity
     }
 
     var name: String {
@@ -40,8 +40,7 @@ final class PortionViewModel {
 
     /// The units this product can be logged in.
     var units: [QuantityUnit] {
-        let base: QuantityUnit = product.quantityUnit == "ml" ? .millilitre : .gram
-        return (product.servingSize ?? 0) > 0 ? [.serving, base] : [base]
+        Portion(quantityUnit: product.quantityUnit, servingSize: product.servingSize).units
     }
 
     var isFavorite: Bool {
@@ -54,11 +53,10 @@ final class PortionViewModel {
 
     /// What this portion adds to the day, or nil while something is missing.
     var preview: Nutrients? {
-        guard let quantity, quantity > 0, quantity <= Limits.foodQuantity.upperBound else { return nil }
         let per100 = NutrientsPer100(
             kcal: product.kcal100 ?? kcalOnPackage, proteinG: product.protein100, carbsG: product.carbs100, fatG: product.fat100
         )
-        return FoodMath.nutrients(per100: per100, quantity: quantity, unit: unit, servingSize: product.servingSize)
+        return Portion.preview(per100: per100, quantity: quantity, unit: unit, servingSize: product.servingSize)
     }
 
     var hasUnknownMacros: Bool {
@@ -66,11 +64,7 @@ final class PortionViewModel {
     }
 
     var canSave: Bool {
-        guard preview != nil else { return false }
-        if needsKcal {
-            return kcalOnPackage.map { Limits.kcalPer100.contains($0) } ?? false
-        }
-        return true
+        Portion.canSave(preview: preview, needsKcal: needsKcal, kcalOnPackage: kcalOnPackage)
     }
 
     /// Stores the entry. A product without kcal becomes the user's own copy with the kcal they

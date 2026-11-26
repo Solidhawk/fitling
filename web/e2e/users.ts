@@ -12,10 +12,17 @@ const url = process.env.VITE_SUPABASE_URL ?? "";
 const service = process.env.LOCAL_SUPABASE_SERVICE_KEY ?? "";
 export const admin = createClient(url, service, { auth: { persistSession: false, autoRefreshToken: false } });
 
-/** The Dutch text of a key, as the browser in the tests shows it (locale nl-NL). */
+/** The Dutch text of a key, as the browser in the tests shows it (locale nl-NL); a plural in its "other" form. */
 export function nl(key: string): string {
   const entry = strings.nl[key];
   return typeof entry === "string" ? entry : (entry?.other ?? key);
+}
+
+/** The Dutch text of a plural key for `count`, with the number filled in, as the app chooses it. */
+export function nlCount(key: string, count: number): string {
+  const entry = strings.nl[key];
+  const text = typeof entry === "string" ? entry : new Intl.PluralRules("nl").select(count) === "one" ? entry.one : entry.other;
+  return text.replace("%lld", String(count));
 }
 
 export const password = "lang-genoeg-wachtwoord-1";
@@ -101,4 +108,60 @@ export async function confirmationLink(email: string): Promise<string> {
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
   throw new Error(`no confirmation mail for ${email}`);
+}
+
+/**
+ * A shared product, as the Edge Function lookup-product stores it; users cannot write those. The name gets a unique
+ * word, so a search in one test does not find another test's products.
+ */
+export async function sharedProduct(name: string, values: Record<string, unknown> = {}) {
+  const unique = `${name} ${crypto.randomUUID().slice(0, 8)}`;
+  const row = {
+    id: crypto.randomUUID(),
+    source: "off",
+    name: { nl: unique },
+    search_name: unique.toLowerCase(),
+    quantity_unit: "g",
+    kcal_100: 250,
+    protein_100: 10,
+    carbs_100: 30,
+    fat_100: 8,
+    fetched_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    ...values,
+  };
+  const { error } = await admin.from("products").insert(row);
+  if (error) throw error;
+  return { id: row.id, name: unique };
+}
+
+/** A food entry stored as the iPhone would have synced it. */
+export async function foodEntry(userID: string, values: Record<string, unknown>) {
+  const { error } = await admin.from("food_entries").insert({
+    id: crypto.randomUUID(),
+    user_id: userID,
+    meal: "breakfast",
+    name: "Volkorenbrood",
+    quantity: 100,
+    quantity_unit: "g",
+    kcal: 250,
+    protein_g: 10,
+    carbs_g: 40,
+    fat_g: 3,
+    updated_at: new Date().toISOString(),
+    ...values,
+  });
+  if (error) throw error;
+}
+
+/** Today in the browser's time zone, as Postgres writes a date. */
+export function localDay(date = new Date()): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+/** A fresh, valid EAN-13 (with its GS1 check digit), so tests running side by side never share a barcode. */
+export function ean13(): string {
+  const digits = Array.from({ length: 12 }, (_, index) => (index === 0 ? 2 : Math.floor(Math.random() * 10)));
+  const sum = digits.reduce((total, digit, index) => total + digit * (index % 2 === 0 ? 1 : 3), 0);
+  return [...digits, (10 - (sum % 10)) % 10].join("");
 }

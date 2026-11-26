@@ -15,6 +15,13 @@ extension String {
         return String(scalars)
     }
 
+    /// Without white space and newlines at the start and end, as Foundation's
+    /// `trimmingCharacters(in: .whitespacesAndNewlines)`.
+    func trimmingWhitespace() -> String {
+        guard let first = firstIndex(where: { !$0.isWhitespace }), let last = lastIndex(where: { !$0.isWhitespace }) else { return "" }
+        return String(self[first...last])
+    }
+
     /// Without spaces and tabs at the start and end; newlines and the spaces between words stay. The same
     /// as Foundation's `trimmingCharacters(in: .whitespaces)`.
     func trimmingSpaces() -> String {

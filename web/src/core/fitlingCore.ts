@@ -49,6 +49,77 @@ export type Sex = DailyPlanInput["sex"];
 export type Goal = DailyPlanInput["goal"];
 export type Activity = DailyPlanInput["activityLevel"];
 
+export type QuantityUnit = "g" | "ml" | "serving";
+
+/** Per 100 g or 100 ml, or what one entry adds; undefined is unknown. */
+export interface Nutrients {
+  kcal?: number;
+  proteinG?: number;
+  carbsG?: number;
+  fatG?: number;
+}
+
+export interface PortionAnswer {
+  units: QuantityUnit[];
+  defaultUnit: QuantityUnit;
+  defaultQuantity: number;
+  preview?: Required<Pick<Nutrients, "kcal">> & Nutrients;
+  needsKcal: boolean;
+  canSave: boolean;
+}
+
+export interface OwnProductFields {
+  name: string;
+  brand?: string;
+  gtin?: string;
+  quantityUnit: "g" | "ml";
+  servingSize?: number;
+  kcal100: number;
+  protein100?: number;
+  carbs100?: number;
+  fat100?: number;
+  searchName: string;
+}
+
+export interface DayTotals {
+  kcal: number;
+  proteinG: number;
+  carbsG: number;
+  fatG: number;
+  entryCount: number;
+  unknownProtein: number;
+  unknownCarbs: number;
+  unknownFat: number;
+}
+
+export type Mood = "happy" | "content" | "sluggish" | "tired" | "hungry" | "asleep";
+
+/** The `creatures` row as FitlingCore reads it. */
+export interface CreatureStateInput {
+  species: string;
+  colorIndex: number;
+  tone: string;
+  createdOn: IsoDay;
+  bodyShape: number;
+  xp: number;
+  lastProcessedDay?: IsoDay;
+  offTargetDays: number;
+}
+
+export interface PartnerSnapshot {
+  mood: Mood;
+  condition: string;
+  energy: number;
+  level: number;
+  growthStage: number;
+  bodyShape: number;
+  colorIndex: number;
+  trainedRecently: boolean;
+  unlockedColorCount: number;
+  /** How many days before today decide the mood. */
+  historyDays: number;
+}
+
 export interface ProfileRules {
   activityFactors: Record<Activity, number>;
   proteinPerKg: Record<Goal, number>;
@@ -68,6 +139,43 @@ export interface FitlingCore {
   creature(input: { level: number }): { startShape: number; colorCount: number; growthStage: number };
   goalFactors(): Record<Goal, number>;
   profileRules(): ProfileRules;
+  searchKey(input: { text: string }): { key: string };
+  barcode(input: { text: string }): { gtin?: string };
+  recentProducts(input: { logged: { productID: string; updatedAtMs: number }[] }): { ids: string[]; limit: number };
+  portion(input: {
+    quantityUnit: string;
+    servingSize?: number;
+    per100: Nutrients;
+    quantity?: number;
+    unit?: QuantityUnit;
+    kcalOnPackage?: number;
+  }): PortionAnswer;
+  logEntry(input: { name: string; quantity: number; unit: QuantityUnit; servingSize?: number; per100: Nutrients }): {
+    name: string;
+    quantity: number;
+    nutrients: Required<Pick<Nutrients, "kcal">> & Nutrients;
+  } | null;
+  ownProduct(input: {
+    name: string;
+    brand: string;
+    gtin: string;
+    isMillilitre: boolean;
+    kcal?: number;
+    protein?: number;
+    carbs?: number;
+    fat?: number;
+    servingSize?: number;
+  }): { fields?: OwnProductFields };
+  dayTotals(input: { entries: Nutrients[] }): DayTotals;
+  localizedText(input: { values: Record<string, string>; languages: string[] }): { text: string };
+  partnerSnapshot(input: {
+    creature: CreatureStateInput;
+    entries: { day: IsoDay; kcal: number; proteinG?: number }[];
+    workoutDays: IsoDay[];
+    periods: { effectiveOn: IsoDay; updatedAtMs: number; targets: Targets }[];
+    fallback: Targets;
+    today: IsoDay;
+  }): PartnerSnapshot;
 }
 
 interface Exports {
@@ -99,8 +207,9 @@ export async function loadCore(wasm: ArrayBuffer): Promise<FitlingCore> {
     // Read before freeing: the memory may grow, so take the buffer anew.
     const answer = new TextDecoder().decode(new Uint8Array(exports.memory.buffer, answerPointer, answerLength).slice());
     exports.fitling_free(answerPointer, answerLength);
-    const result = JSON.parse(answer) as { error?: string };
-    if (typeof result.error === "string") throw new Error(result.error);
+    // A call can answer null (logEntry for an amount that cannot be worked out).
+    const result = JSON.parse(answer) as { error?: string } | null;
+    if (result !== null && typeof result.error === "string") throw new Error(result.error);
     return result;
   }
 
@@ -115,5 +224,14 @@ export async function loadCore(wasm: ArrayBuffer): Promise<FitlingCore> {
     creature: (input) => call("creature", input) as ReturnType<FitlingCore["creature"]>,
     goalFactors: () => call("goalFactors", {}) as Record<Goal, number>,
     profileRules: () => call("profileRules", {}) as ProfileRules,
+    searchKey: (input) => call("searchKey", input) as ReturnType<FitlingCore["searchKey"]>,
+    barcode: (input) => call("barcode", input) as ReturnType<FitlingCore["barcode"]>,
+    recentProducts: (input) => call("recentProducts", input) as ReturnType<FitlingCore["recentProducts"]>,
+    portion: (input) => call("portion", input) as PortionAnswer,
+    logEntry: (input) => call("logEntry", input) as ReturnType<FitlingCore["logEntry"]>,
+    ownProduct: (input) => call("ownProduct", input) as ReturnType<FitlingCore["ownProduct"]>,
+    dayTotals: (input) => call("dayTotals", input) as DayTotals,
+    partnerSnapshot: (input) => call("partnerSnapshot", input) as PartnerSnapshot,
+    localizedText: (input) => call("localizedText", input) as { text: string },
   };
 }

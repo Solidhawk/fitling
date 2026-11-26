@@ -2619,6 +2619,29 @@
         }
       }
     },
+    "day.delete": {
+      "comment": "Web: swiping an entry on Vandaag to the left; iOS shows the system's own Delete.",
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verwijderen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Löschen"
+          }
+        }
+      }
+    },
     "day.next": {
       "localizations": {
         "nl": {

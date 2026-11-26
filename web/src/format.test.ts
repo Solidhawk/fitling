@@ -1,5 +1,5 @@
 import { beforeEach, expect, test, vi } from "vitest";
-import { fixed, grams, kcal, parseInteger, parseNumber } from "./format";
+import { fixed, grams, kcal, millilitres, parseInteger, parseNumber } from "./format";
 
 // The numbers follow the browser's language; these are the Dutch forms, whatever language runs the tests.
 beforeEach(() => {
@@ -26,4 +26,8 @@ test("a typed whole number with a thousands separator", () => {
   expect(parseInteger("2500")).toBe(2500);
   expect(parseInteger("2,5")).toBeUndefined();
   expect(parseInteger("")).toBeUndefined();
+});
+
+test("water in millilitres", () => {
+  expect(millilitres(500)).toBe("500 ml");
 });

@@ -17,3 +17,9 @@ export function thirtyYearsBefore(day: string): string {
 export function isIsoDay(text: string): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(text);
 }
+
+/** The day `count` days later (or earlier, when negative), as "2026-11-24". */
+export function addDays(day: string, count: number): string {
+  const [year, month, date] = day.split("-").map(Number);
+  return new Date(Date.UTC(year, month - 1, date + count)).toISOString().slice(0, 10);
+}

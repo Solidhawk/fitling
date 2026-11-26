@@ -1217,3 +1217,325 @@ input.picker[type="date"] {
   outline: 2px solid var(--ink);
   outline-offset: 2px;
 }
+
+/* Small type helpers. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+.list-header:has(.header-plain),
+.list-header:has(.meal-header) {
+  color: var(--ink);
+  text-transform: none;
+}
+
+/* An icon-only bar button, 44 px square. */
+.icon-button {
+  justify-content: center;
+  min-width: 2.75rem;
+}
+
+/* A Label in a row or a borderless button: symbol and text in ink. */
+.inline-action {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-s);
+  min-height: 2.75rem;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+
+/* An alert with two buttons side by side, the action in bold. */
+.alert-buttons {
+  display: flex;
+}
+
+.alert-buttons .alert-button + .alert-button {
+  border-left: 1px solid var(--track);
+}
+
+.alert-button-action {
+  font-weight: 700;
+}
+
+/* DayCard: the partner beside the number, the macros as blocks under it. */
+.day-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-m);
+  color: var(--ink);
+}
+
+.day-card-partner {
+  color: var(--on-ribbon);
+}
+
+.day-card-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-l);
+}
+
+.day-card-figure {
+  flex: none;
+  width: 112px;
+}
+
+.day-card-numbers {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-xs);
+  min-width: min(100%, 9rem);
+}
+
+.day-card-remaining {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: calc(3.25rem * var(--fit, 1));
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.05;
+  white-space: nowrap;
+}
+
+.day-card-label {
+  font-size: 1.0625rem;
+  font-weight: 800;
+}
+
+.day-card-eaten {
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.day-card-mood {
+  margin: 0;
+  font-size: 0.9375rem;
+}
+
+.unknown-macros {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.water-amount {
+  font-size: 1.25rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+/* A meal's header: its name and its kcal, heavy and in ink. */
+.meal-header {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-m);
+  font-size: 1.0625rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.entry-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-m);
+  width: 100%;
+}
+
+.entry-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-xs);
+  min-width: 0;
+}
+
+/* SwipeRow: the row slides left over its red Delete. */
+.swipe-row {
+  position: relative;
+  overflow: hidden;
+}
+
+.swipe-row + .swipe-row,
+.swipe-row + .list-row {
+  box-shadow: inset var(--space-l) 1px 0 0 var(--card), inset 0 1px 0 0 var(--track);
+}
+
+.swipe-content {
+  position: relative;
+  z-index: 1;
+  background-color: var(--card);
+  transition: transform 0.2s ease-out;
+  touch-action: pan-y;
+}
+
+.swipe-delete {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 96px;
+  border: 0;
+  /* The deep red in both modes: white on the lighter red of dark mode would be 2.8:1. */
+  background-color: #d70015;
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.swipe-delete:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: -4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .swipe-content {
+    transition: none;
+  }
+}
+
+/* ProductRow and ProductThumbnail. */
+.product-row {
+  gap: var(--space-m);
+}
+
+.thumbnail {
+  flex: none;
+  object-fit: cover;
+}
+
+.thumbnail-placeholder {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--track);
+  color: var(--ink);
+  font-weight: 800;
+  line-height: 1;
+}
+
+.product-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-m);
+}
+
+.product-name {
+  font-weight: 800;
+}
+
+/* A segmented Picker. */
+.segmented {
+  display: flex;
+  width: 100%;
+  padding: 2px;
+  border-radius: 0.5rem;
+  background-color: var(--track);
+}
+
+.segment {
+  flex: 1;
+  min-height: 2.25rem;
+  border: 0;
+  border-radius: 0.4375rem;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.segment[aria-checked="true"] {
+  background-color: var(--card);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.15);
+}
+
+.segment:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 1px;
+}
+
+/* .searchable: the search field under the bar of the sheet. */
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-s);
+  margin: var(--space-s) var(--space-l) 0;
+  padding: 0 var(--space-m);
+  border-radius: 0.625rem;
+  background-color: var(--track);
+  color: var(--ink-soft);
+}
+
+.search-field {
+  flex: 1;
+  min-width: 0;
+  min-height: 2.25rem;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+}
+
+.search-field::placeholder {
+  color: var(--ink-soft);
+}
+
+.search-field:focus-visible {
+  outline: none;
+}
+
+.search-bar:focus-within {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.search-loading {
+  padding: var(--space-l);
+}
+
+/* ScanSheet: the camera, then the field to type the code. */
+.scan {
+  padding: var(--space-l);
+}
+
+.scan-camera {
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  border-radius: var(--radius-card);
+  background-color: #000;
+  object-fit: cover;
+}
+
+.scan-manual {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-s);
+}
+
+.scan-field {
+  flex: 1;
+  min-width: min(100%, 10rem);
+  padding: 0 var(--space-m);
+  border-radius: 0.5rem;
+  background-color: var(--card);
+}
+
+.scan-manual .button {
+  width: auto;
+}
+
+/* A Label that is the whole row: the row is already the 44 px target, so the label adds no height of its own. */
+.list-row-button .inline-action {
+  min-height: 0;
+}

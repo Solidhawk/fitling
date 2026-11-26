@@ -10,8 +10,8 @@ struct FoodDiary {
     let userID: UUID
     var now: () -> Date = Date.init
 
-    /// How many products "recent" shows (ARCHITECTURE: the last 20 different products).
-    static let recentLimit = 20
+    /// How many products "recent" shows (FoodLog.recentLimit).
+    static let recentLimit = FoodLog.recentLimit
 
     func entries(on day: Day) -> [FoodEntry] {
         let dayString = day.isoString
@@ -45,10 +45,9 @@ struct FoodDiary {
         guard let nutrients = FoodMath.nutrients(per100: per100, quantity: quantity, unit: unit, servingSize: product.servingSize) else {
             return nil
         }
-        let name = product.name.text(preferring: languages)
         let entry = FoodEntry(
-            id: UUID(), userID: userID, consumedOn: day, meal: meal, name: String(name.prefix(200)),
-            quantity: (quantity * 10).rounded() / 10, quantityUnit: unit.rawValue, kcal: nutrients.kcal, updatedAt: now()
+            id: UUID(), userID: userID, consumedOn: day, meal: meal, name: FoodLog.storedName(product.name.text(preferring: languages)),
+            quantity: FoodLog.storedQuantity(quantity), quantityUnit: unit.rawValue, kcal: nutrients.kcal, updatedAt: now()
         )
         entry.productID = product.id
         entry.proteinG = nutrients.proteinG
@@ -74,14 +73,10 @@ struct FoodDiary {
             sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
         )
         descriptor.fetchLimit = 200
-        var seen = Set<UUID>()
-        var products: [Product] = []
-        for entry in (try? context.fetch(descriptor)) ?? [] {
-            guard let id = entry.productID, seen.insert(id).inserted, let product = product(id) else { continue }
-            products.append(product)
-            if products.count == Self.recentLimit { break }
+        let logged = ((try? context.fetch(descriptor)) ?? []).compactMap { entry in
+            entry.productID.map { (productID: $0, updatedAt: entry.updatedAt) }
         }
-        return products
+        return Array(FoodLog.recentProductIDs(logged).lazy.compactMap { product($0) }.prefix(Self.recentLimit))
     }
 
     func favoriteProducts() -> [Product] {
@@ -154,10 +149,8 @@ struct FoodDiary {
         return try? context.fetch(descriptor).first
     }
 
-    /// Lower case without accents, the form `search_name` is stored in.
+    /// Lower case without accents, the form `search_name` is stored in (FoodLog.searchKey).
     static func searchKey(_ text: String) -> String {
-        text.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil)
-            .lowercased()
-            .trimmingCharacters(in: .whitespacesAndNewlines)
+        FoodLog.searchKey(text)
     }
 }

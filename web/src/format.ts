@@ -43,3 +43,8 @@ export function parseInteger(text: string): number | undefined {
   const plain = text.trim().split(separator).join("");
   return /^-?\d+$/.test(plain) ? Number(plain) : undefined;
 }
+
+/** Millilitres, as Measurement(.milliliters) abbreviated: "500 ml". */
+export function millilitres(value: number): string {
+  return new Intl.NumberFormat(language(), { style: "unit", unit: "milliliter", unitDisplay: "short", maximumFractionDigits: 0 }).format(value);
+}

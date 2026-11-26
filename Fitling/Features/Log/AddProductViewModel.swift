@@ -24,44 +24,35 @@ final class AddProductViewModel {
         self.gtin = gtin ?? ""
     }
 
-    private var trimmedName: String {
-        name.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
-    /// The barcode as stored, or nil when the field is empty; a typed code must be valid.
-    private var normalizedGtin: String?? {
-        let code = gtin.trimmingCharacters(in: .whitespaces)
-        if code.isEmpty { return .some(nil) }
-        return Barcode.normalized(code).map { .some($0) }
+    /// The checks and rounding of FitlingCore, the same as on the web.
+    private var fields: OwnProductFields? {
+        OwnProductDraft(
+            name: name, brand: brand, gtin: gtin, isMillilitre: isMillilitre, kcal: kcal,
+            protein: protein, carbs: carbs, fat: fat, servingSize: servingSize
+        ).validated()
     }
 
     /// The same limits as the `check` rules on `products`.
     var canSave: Bool {
-        guard !trimmedName.isEmpty, trimmedName.count <= 200, normalizedGtin != nil,
-              let kcal, Limits.kcalPer100.contains(kcal) else { return false }
-        let grams = [protein, carbs, fat].compactMap { $0 }
-        guard grams.allSatisfy({ (0...100).contains($0) }) else { return false }
-        if let servingSize { return servingSize > 0 && servingSize < 100_000 }
-        return true
+        fields != nil
     }
 
     func save() -> Product? {
-        guard canSave, let kcal, let gtinValue = normalizedGtin else { return nil }
+        guard let fields else { return nil }
         // Stored under the user's own language; other languages fall back to it (`LocalizedText`).
         let language = Locale.preferredLanguages.first.map { String($0.prefix { $0 != "-" && $0 != "_" }) } ?? "nl"
         let product = Product(
-            id: UUID(), ownerID: diary.userID, source: "user", name: LocalizedText([language: trimmedName]),
-            quantityUnit: isMillilitre ? "ml" : "g", updatedAt: diary.now()
+            id: UUID(), ownerID: diary.userID, source: "user", name: LocalizedText([language: fields.name]),
+            quantityUnit: fields.quantityUnit, updatedAt: diary.now()
         )
-        let brandText = brand.trimmingCharacters(in: .whitespacesAndNewlines)
-        product.brand = brandText.isEmpty ? nil : brandText
-        product.gtin = gtinValue
-        product.searchName = FoodDiary.searchKey([trimmedName, brandText].filter { !$0.isEmpty }.joined(separator: " "))
-        product.servingSize = servingSize.map { ($0 * 100).rounded() / 100 }
-        product.kcal100 = (kcal * 10).rounded() / 10
-        product.protein100 = protein.map { ($0 * 100).rounded() / 100 }
-        product.carbs100 = carbs.map { ($0 * 100).rounded() / 100 }
-        product.fat100 = fat.map { ($0 * 100).rounded() / 100 }
+        product.brand = fields.brand
+        product.gtin = fields.gtin
+        product.searchName = fields.searchName
+        product.servingSize = fields.servingSize
+        product.kcal100 = fields.kcal100
+        product.protein100 = fields.protein100
+        product.carbs100 = fields.carbs100
+        product.fat100 = fields.fat100
         diary.context.insert(product)
         try? diary.context.save()
         return product
