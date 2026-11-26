@@ -15,7 +15,7 @@ interface Manifest {
 
 let manifest: Promise<Manifest | undefined> | undefined;
 
-function loadManifest(): Promise<Manifest | undefined> {
+export function loadManifest(): Promise<Manifest | undefined> {
   manifest ??= fetch(`${import.meta.env.BASE_URL}exercises/ExerciseAnimations.json`)
     .then((response) => (response.ok ? (response.json() as Promise<Manifest>) : undefined))
     .catch(() => {
