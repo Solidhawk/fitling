@@ -138,8 +138,46 @@ func manyOffers(_ count: Int, in shop: String, today: Day) -> [OfferRecord] {
         #expect(code.count == 12)
 
         #expect(await viewModel.join(code: "WRONGCODE123", name: "Sam") == false)
-        #expect(viewModel.sharingProblem == .invalidInvite)
+        // The sheet the code was typed in shows why; the list behind it stays as it was (UNFORGET S48).
+        #expect(viewModel.sharingProblem == nil)
         #expect(await viewModel.join(code: code, name: "Sam"))
+    }
+
+    /// Someone else's list, on the server only, with a code to join it. Its name sorts after the user's own list, so
+    /// the first list by name is the user's own (UNFORGET S47: with the same name either could come first).
+    private func sharedList() async throws -> (list: ShoppingListRecord, code: String) {
+        let list = ShoppingListRecord(id: UUID(), name: "Weekend", createdBy: UUID(), updatedAt: fixture.menu.now, deletedAt: nil, syncedAt: nil)
+        try fixture.remote.serve(list, table: "shopping_lists", syncedAt: fixture.menu.now)
+        return (list, try await fixture.sharing.createInvite(for: list.id))
+    }
+
+    @Test func theListOfTheCodeShowsAfterJoining() async throws {
+        let viewModel = fixture.viewModel()
+        viewModel.reload()
+        let shared = try await sharedList()
+
+        #expect(await viewModel.join(code: shared.code, name: "Sam"))
+        #expect(viewModel.list?.id == shared.list.id)
+
+        let reopened = fixture.viewModel()
+        reopened.reload()
+        #expect(reopened.list?.id == shared.list.id)
+    }
+
+    @Test func theListOfTheCodeShowsOnceItArrives() async throws {
+        let viewModel = fixture.viewModel()
+        viewModel.reload()
+        let own = try #require(viewModel.list)
+        let shared = try await sharedList()
+
+        // Joined, but the list itself did not come along: the own list shows until it does.
+        fixture.remote.isOffline = true
+        #expect(await viewModel.join(code: shared.code, name: "Sam"))
+        #expect(viewModel.list?.id == own.id)
+
+        fixture.remote.isOffline = false
+        await viewModel.refresh()
+        #expect(viewModel.list?.id == shared.list.id)
     }
 
     @Test func aFailingServerIsExplained() async {
