@@ -151,6 +151,16 @@ func manyOffers(_ count: Int, in shop: String, today: Day) -> [OfferRecord] {
         viewModel.reload()
         // The device synced its own list: from then on it asks the server only for what changed since.
         await viewModel.refresh()
+        let (list, item, code) = try await oldSharedList()
+
+        #expect(await viewModel.join(code: code, name: "Sam"))
+        #expect(viewModel.list?.id == list.id)
+        #expect(viewModel.items.map(\.id) == [item.id])
+    }
+
+    /// Someone else's list with one item, on the server since a day before: older than what a device that synced since
+    /// asks for.
+    private func oldSharedList() async throws -> (list: ShoppingListRecord, item: ShoppingItemRecord, code: String) {
         let earlier = fixture.menu.now.addingTimeInterval(-86_400)
         let list = ShoppingListRecord(id: UUID(), name: "Weekend", createdBy: UUID(), updatedAt: earlier, deletedAt: nil, syncedAt: nil)
         let item = ShoppingItemRecord(
@@ -159,11 +169,20 @@ func manyOffers(_ count: Int, in shop: String, today: Day) -> [OfferRecord] {
         )
         try fixture.remote.serve(list, table: "shopping_lists", syncedAt: earlier)
         try fixture.remote.serve(item, table: "shopping_items", syncedAt: earlier)
-        let code = try await fixture.sharing.createInvite(for: list.id)
+        return (list, item, try await fixture.sharing.createInvite(for: list.id))
+    }
 
-        #expect(await viewModel.join(code: code, name: "Sam"))
-        #expect(viewModel.list?.id == list.id)
-        #expect(viewModel.items.map(\.id) == [item.id])
+    @Test func aListJoinedElsewhereArrivesWithItsItems() async throws {
+        let viewModel = fixture.viewModel()
+        viewModel.reload()
+        await viewModel.refresh()
+        let (list, item, code) = try await oldSharedList()
+
+        // Joined in the web app, not on this device.
+        _ = try await fixture.sharing.join(code: code, name: "Sam")
+        await viewModel.refresh()
+        let arrived = try #require(fixture.store.list(list.id))
+        #expect(fixture.store.items(of: arrived).map(\.id) == [item.id])
     }
 
     @Test func aListLeftElsewhereGoesFromThisDevice() async throws {
@@ -193,6 +212,73 @@ func manyOffers(_ count: Int, in shop: String, today: Day) -> [OfferRecord] {
         let members = try await fixture.sharing.members(of: list.id)
         #expect(members.map(\.userID) == [fixture.menu.userID])
         #expect(members.map(\.role) == ["owner"])
+    }
+
+    @Test func anOwnerRequestThatFailsKeepsTheList() async throws {
+        let list = ShoppingListRecord(
+            id: UUID(), name: "Boodschappen", createdBy: fixture.menu.userID, updatedAt: fixture.menu.now, deletedAt: nil, syncedAt: nil
+        )
+        try fixture.remote.serve(list, table: "shopping_lists", syncedAt: fixture.menu.now)
+        // A server error or an expired token: not the server saying no.
+        fixture.sharing.ownerFailure = .rejected
+        await fixture.viewModel().refresh()
+        #expect(fixture.store.list(list.id) != nil)
+    }
+
+    @Test func listsStayWhileTheServerCannotSayWhoIsAMember() async throws {
+        let viewModel = fixture.viewModel()
+        viewModel.reload()
+        await viewModel.refresh()
+        let own = try #require(viewModel.list)
+        fixture.sharing.failure = .network
+        await viewModel.refresh()
+        #expect(fixture.store.lists().map(\.id) == [own.id])
+    }
+
+    @Test func aListNotYetOnTheServerStays() async throws {
+        let viewModel = fixture.viewModel()
+        viewModel.reload()
+        let own = try #require(viewModel.list)
+        // The list cannot be sent; the server then refuses its owner too.
+        fixture.remote.isOffline = true
+        fixture.sharing.ownerFailure = .rejected
+        await viewModel.refresh()
+        #expect(fixture.store.list(own.id) != nil)
+    }
+
+    @Test func aListWhoseOwnerIsNotYetOnTheServerStays() async throws {
+        let viewModel = fixture.viewModel()
+        viewModel.reload()
+        let own = try #require(viewModel.list)
+        // The list was sent, its owner not.
+        fixture.sharing.ownerFailure = .network
+        await viewModel.refresh()
+        #expect(fixture.store.list(own.id) != nil)
+    }
+
+    @Test func aListJoinedWhileTheListsWereAskedForStays() async throws {
+        let viewModel = fixture.viewModel()
+        viewModel.reload()
+        await viewModel.refresh()
+        let shared = try await sharedList()
+        // On the device already, as after a join whose refresh ran alongside this one.
+        fixture.menu.context.insert(ShoppingList(id: shared.list.id, name: shared.list.name, createdBy: UUID(), updatedAt: fixture.menu.now))
+        fixture.store.list(shared.list.id)?.needsPush = false
+        try fixture.menu.context.save()
+
+        fixture.sharing.joinsAfterNextLookup = shared.list.id
+        await viewModel.refresh()
+        #expect(fixture.store.list(shared.list.id) != nil)
+    }
+
+    @Test func twoListsWithTheSameNameAlwaysShowTheSameFirst() throws {
+        let later = try #require(UUID(uuidString: "00000000-0000-0000-0000-000000000002"))
+        let earlier = try #require(UUID(uuidString: "00000000-0000-0000-0000-000000000001"))
+        for id in [later, earlier] {
+            fixture.menu.context.insert(ShoppingList(id: id, name: "Boodschappen", createdBy: UUID(), updatedAt: fixture.menu.now))
+        }
+        try fixture.menu.context.save()
+        #expect(fixture.store.ensureList(named: "Boodschappen", ownerName: "Ik").id == earlier)
     }
 
     @Test func aListThisUserMadeAndLeftElsewhereGoesToo() async throws {

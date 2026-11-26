@@ -397,10 +397,15 @@ import FitlingCore
         #expect(await engine.sync() == .completed)
 
         engine.pullWhole(["profiles"])
+        #expect(try await profilesFetch(in: engine, remote).since == nil)
+        #expect(try await profilesFetch(in: engine, remote).since != nil)
+    }
+
+    /// The profiles request of one more round.
+    private func profilesFetch(in engine: SyncEngine, _ remote: FakeRemoteStore) async throws -> FakeRemoteStore.Fetch {
+        let before = remote.fetches.count
         #expect(await engine.sync() == .completed)
-        #expect(remote.fetches.last { $0.table == "profiles" }?.since == nil)
-        #expect(await engine.sync() == .completed)
-        #expect(remote.fetches.last { $0.table == "profiles" }?.since != nil)
+        return try #require(remote.fetches.dropFirst(before).first { $0.table == "profiles" })
     }
 
     /// Asked for while that table is being fetched: the round under way does not put its cursor back.
@@ -418,8 +423,7 @@ import FitlingCore
         remote.releaseRequest()
         #expect(await round.value == .completed)
 
-        #expect(await engine.sync() == .completed)
-        #expect(remote.fetches.last { $0.table == "profiles" }?.since == nil)
+        #expect(try await profilesFetch(in: engine, remote).since == nil)
     }
 
     @Test func erasingDuringARoundKeepsNothingFromIt() async throws {
