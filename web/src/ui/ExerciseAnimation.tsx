@@ -16,8 +16,12 @@ interface Manifest {
 let manifest: Promise<Manifest | undefined> | undefined;
 
 export function loadManifest(): Promise<Manifest | undefined> {
+  // Every build ships the list, so an answer that is not OK is a hiccup: asked again next time, like no connection.
   manifest ??= fetch(`${import.meta.env.BASE_URL}exercises/ExerciseAnimations.json`)
-    .then((response) => (response.ok ? (response.json() as Promise<Manifest>) : undefined))
+    .then((response) => {
+      if (!response.ok) throw new Error(`exercises: ${response.status}`);
+      return response.json() as Promise<Manifest>;
+    })
     .catch(() => {
       manifest = undefined;
       return undefined;
