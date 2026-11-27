@@ -51,10 +51,17 @@ public struct Portion: Sendable, Equatable {
         defaultQuantity = hasServing ? 1 : 100
     }
 
-    /// What this portion adds to the day, or nil while the amount is missing or outside what the database accepts.
+    /// What this portion adds to the day, or nil while the amount is missing or the entry is outside what
+    /// `food_entries` accepts: a row the database refuses would stay unsent on the iPhone for good.
     public static func preview(per100: NutrientsPer100, quantity: Double?, unit: QuantityUnit, servingSize: Double?) -> Nutrients? {
-        guard let quantity, quantity > 0, quantity <= Limits.foodQuantity.upperBound else { return nil }
-        return FoodMath.nutrients(per100: per100, quantity: quantity, unit: unit, servingSize: servingSize)
+        guard let quantity, FoodLog.storedQuantity(quantity) > 0, quantity <= Limits.foodQuantity.upperBound,
+              let nutrients = FoodMath.nutrients(per100: per100, quantity: quantity, unit: unit, servingSize: servingSize),
+              nutrients.kcal <= Limits.entryKcal,
+              (nutrients.proteinG ?? 0) <= Limits.entryProteinG,
+              (nutrients.carbsG ?? 0) <= Limits.entryCarbsG,
+              (nutrients.fatG ?? 0) <= Limits.entryFatG
+        else { return nil }
+        return nutrients
     }
 
     /// A product without kcal can be logged once the kcal on the package is within what the database accepts.

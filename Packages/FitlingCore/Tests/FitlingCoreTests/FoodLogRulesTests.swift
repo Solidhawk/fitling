@@ -44,6 +44,24 @@ import Testing
         #expect(Portion.preview(per100: per100, quantity: 40, unit: .gram, servingSize: nil) == Nutrients(kcal: 100, proteinG: 4, carbsG: nil, fatG: 2))
     }
 
+    /// What the database refuses would stay unsent on the iPhone for good (S40): an amount that rounds to 0, and an
+    /// entry beyond what `food_entries` accepts, such as a kilo of oil typed as ten.
+    @Test func aPortionTheDatabaseWouldRefuseCannotBeLogged() {
+        let oil = NutrientsPer100(kcal: 900, proteinG: 0, carbsG: 0, fatG: 100)
+        #expect(Portion.preview(per100: oil, quantity: 0.04, unit: .gram, servingSize: nil) == nil)
+        #expect(Portion.preview(per100: oil, quantity: 0.05, unit: .gram, servingSize: nil) != nil)
+        // Chocolate: 3 700 g is 20 350 kcal, more than the 20 000 of one entry; 3 600 g is 19 800 kcal.
+        let chocolate = NutrientsPer100(kcal: 550, proteinG: 7, carbsG: 60, fatG: 30)
+        #expect(Portion.preview(per100: chocolate, quantity: 3700, unit: .gram, servingSize: nil) == nil)
+        #expect(Portion.preview(per100: chocolate, quantity: 3600, unit: .gram, servingSize: nil) != nil)
+        // Oil: 2 500 g is 2 500 g of fat, more than the 2 000 g of one entry.
+        #expect(Portion.preview(per100: oil, quantity: 2500, unit: .gram, servingSize: nil) == nil)
+        // 25 servings of 100 g of pure protein: 2 500 g, more than the 2 000 g of one entry.
+        let powder = NutrientsPer100(kcal: 400, proteinG: 100, carbsG: 0, fatG: 0)
+        #expect(Portion.preview(per100: powder, quantity: 25, unit: .serving, servingSize: 100) == nil)
+        #expect(Portion.preview(per100: powder, quantity: 20, unit: .serving, servingSize: 100) != nil)
+    }
+
     @Test func withoutKcalThePackageValueDecides() {
         let preview = Nutrients(kcal: 100, proteinG: nil, carbsG: nil, fatG: nil)
         #expect(!Portion.canSave(preview: nil, needsKcal: false, kcalOnPackage: nil))
