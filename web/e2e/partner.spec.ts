@@ -81,6 +81,32 @@ test("wearingACapTakesOffTheCrown", async ({ page }) => {
   await expect.poll(async () => (await stored(user.id)).equipped_items).toEqual(["cap"]);
 });
 
+// The app comes back to the front while a change is still being stored: the partner is read again only after it, so it
+// keeps the crown it was just given instead of going back to how it was stored before (UNFORGET S41).
+test("aReadWhileSavingKeepsTheChange", async ({ page }) => {
+  const user = await start(page, { xp: 30_000 });
+  await openPartner(page, user.email);
+  let release = () => {};
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route("**/rest/v1/creatures*", async (route) => {
+    if (route.request().method() === "PATCH") await held;
+    return route.continue();
+  });
+  const crown = page.getByRole("switch", { name: nl("partner.item.crown") });
+  await crown.click();
+  await expect(crown).toBeChecked();
+  await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
+  // Room for a read to come back before the change is stored.
+  await page.waitForTimeout(1500);
+  release();
+  await expect.poll(async () => (await stored(user.id)).equipped_items).toEqual(["crown"]);
+  // Room for a read after the change to land.
+  await page.waitForTimeout(1500);
+  await expect(crown).toBeChecked();
+});
+
 // Review Focus: a crown put on on another device comes off for the cap.
 test("aCrownFromAnotherDeviceComesOffForTheCap", async ({ page }) => {
   const user = await start(page, { xp: 30_000, equipped_items: ["crown"] });
