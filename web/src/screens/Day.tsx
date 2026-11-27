@@ -2,7 +2,7 @@ import { ChevronLeft, ChevronRight, Droplet, Plus } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { DayTotals, FitlingCore, PartnerSnapshot, Targets } from "../core/fitlingCore";
 import { useCore } from "../core/useCore";
-import { type Partner, partnerWeek } from "../data/creature";
+import { type Advance, type Partner, partnerWeek } from "../data/creature";
 import { addWater, deleteEntry, entriesOn, type FoodEntry, type Meal, meals, waterOn } from "../data/diary";
 import { loadProfile, loadTargetPeriods } from "../data/profileStore";
 import { notSaved, takeRefused, toldEvent } from "../data/offline";
@@ -27,9 +27,6 @@ interface Shown {
   /** The partner could not be read or brought up to date this time: the card keeps the one it showed. */
   partnerFailed?: boolean;
 }
-
-/** Folds finished days into the partner and returns it, once for Vandaag and the partner tab together (Home). */
-export type Advance = (core: FitlingCore) => Promise<Partner | undefined>;
 
 async function load(core: FitlingCore, userID: string, day: string, advance: Advance): Promise<Shown> {
   const now = today();
