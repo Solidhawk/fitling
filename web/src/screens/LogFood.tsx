@@ -41,6 +41,16 @@ export function LogFood({ core, userID, meal, day, onClose }: { core: FitlingCor
   const push = (next: Step) => setStack((current) => [...current, next]);
   const back = useHistoryStack(stack.length - 1, (depth) => setStack((current) => current.slice(0, depth + 1)));
   useDialogFocus(sheet, onClose);
+  // The next step replaces the row that was tapped: the focus goes to its title, as a pushed screen on the iPhone and
+  // each step of the onboarding, not to the page behind the sheet.
+  const firstStep = useRef(true);
+  useEffect(() => {
+    if (firstStep.current) {
+      firstStep.current = false;
+      return;
+    }
+    sheet.current?.querySelector<HTMLElement>(".nav-title")?.focus();
+  }, [step]);
 
   useEffect(() => {
     void Promise.all([recentProducts(supabase, core), favoriteProducts(supabase)]).then(

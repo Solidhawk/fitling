@@ -207,7 +207,16 @@ export function Portion({
             ))}
           </ListSection>
         )}
-        <ListSection footer={failed ? <span className="message">{t(failed)}</span> : undefined}>
+        <ListSection
+          footer={
+            failed ? (
+              // Said out loud as it appears: Save did not go through.
+              <span className="message" role="alert">
+                {t(failed)}
+              </span>
+            ) : undefined
+          }
+        >
           <div className="button-row">
             <PrimaryButton disabled={!portion.canSave || saving} data-testid="portion.save" onClick={() => void save()}>
               {t("portion.save")}

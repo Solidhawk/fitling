@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useId, useRef } from "react";
 import { t } from "../i18n";
 import { useDialogFocus } from "./dialogFocus";
 
@@ -26,14 +26,28 @@ export function ActionSheet({
   onCancel: () => void;
 }) {
   const sheet = useRef<HTMLDivElement>(null);
+  // The message describes the sheet: a screen reader reads it after the title.
+  const messageID = useId();
   useDialogFocus(sheet, onCancel, false);
 
   return (
     <div className="action-sheet-backdrop" onClick={(event) => event.target === event.currentTarget && onCancel()}>
-      <div ref={sheet} className="action-sheet" role="alertdialog" aria-modal="true" aria-label={title} tabIndex={-1}>
+      <div
+        ref={sheet}
+        className="action-sheet"
+        role="alertdialog"
+        aria-modal="true"
+        aria-label={title}
+        aria-describedby={message ? messageID : undefined}
+        tabIndex={-1}
+      >
         <div className="action-sheet-group">
           <p className="action-sheet-title">{title}</p>
-          {message && <p className="action-sheet-message">{message}</p>}
+          {message && (
+            <p className="action-sheet-message" id={messageID}>
+              {message}
+            </p>
+          )}
           {actions.map((action) => (
             <button
               key={action.label}
