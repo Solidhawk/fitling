@@ -1,7 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "./fixtures";
 import { openMenu, sharedRecipe, todaysMenu } from "./menu";
-import { admin, localDay, nl, nlCount } from "./users";
+import { admin, createUser, localDay, nl, nlCount, signIn } from "./users";
 
 // MenuTests and the menu UI tests on iOS: the week menu, its recipes and the user's own (web phase 5).
 
@@ -261,4 +261,116 @@ test("aMealWhoseRecipeIsGoneStillShows", async ({ page }) => {
   await page.getByTestId(`menu.log.${entryID}`).focus();
   await page.keyboard.press("Enter");
   await expect(page.getByTestId(`menu.logged.${entryID}`)).toBeVisible({ timeout: 15_000 });
+});
+
+/** A week of breakfast, lunch and dinner from today on, as a menu the app made; answers the entries' ids by day. */
+async function weekMenu(userID: string): Promise<string[][]> {
+  const days: string[][] = [];
+  const rows = [];
+  for (let offset = 0; offset < 7; offset++) {
+    const date = new Date();
+    date.setDate(date.getDate() + offset);
+    const ids: string[] = [];
+    for (const slot of ["breakfast", "lunch", "dinner"]) {
+      const id = crypto.randomUUID();
+      ids.push(id);
+      const recipe = await sharedRecipe(slot, offset % 2);
+      rows.push({ id, user_id: userID, planned_on: localDay(date), meal: slot, recipe_id: recipe.id, servings: 1, updated_at: new Date().toISOString() });
+    }
+    days.push(ids);
+  }
+  const stored = await admin.from("meal_plan_entries").insert(rows);
+  if (stored.error) throw stored.error;
+  return days;
+}
+
+// Back from a recipe the menu is where it was left, as a NavigationStack keeps it; a new screen opens at the top
+// (UNFORGET S46).
+test("backFromARecipeTheMenuIsWhereItWasLeft", async ({ page }) => {
+  let week: string[][] = [];
+  await openMenu(page, async (userID) => {
+    week = await weekMenu(userID);
+  });
+  const entry = page.getByTestId(`menu.entry.${week[4][2]}`);
+  await expect(entry).toBeVisible({ timeout: 15_000 });
+  await entry.evaluate((element) => element.scrollIntoView({ block: "center" }));
+  const left = await page.evaluate(() => window.scrollY);
+  expect(left).toBeGreaterThan(100);
+  await entry.click();
+  await expect(page.locator('[data-page="recipe"]')).toBeVisible();
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+  await page.goBack();
+  await expect(entry).toBeVisible();
+  await expect.poll(async () => Math.abs((await page.evaluate(() => window.scrollY)) - left)).toBeLessThanOrEqual(2);
+});
+
+// A profile that cannot be read leaves the menu in view: only making a menu needs it, and that says it did not work
+// (UNFORGET S58).
+test("theMenuShowsWithoutTheProfile", async ({ page }) => {
+  const user = await createUser({ profile: true, creature: true });
+  const planned = await todaysMenu(user.id);
+  await signIn(page, user.email);
+  await expect(page.getByTestId("day.progress")).toBeVisible({ timeout: 15_000 });
+  await page.route("**/rest/v1/profiles*", (route) =>
+    route.request().method() === "GET"
+      ? route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ message: "unavailable" }) })
+      : route.continue(),
+  );
+  await page.getByRole("tab", { name: nl("menu.title") }).click();
+  await expect(page.getByTestId(`menu.entry.${planned[0].id}`)).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole("alertdialog")).toHaveCount(0);
+  await page.getByTestId("menu.generate").click();
+  await expect(page.getByRole("alertdialog", { name: nl("error.server") })).toBeVisible();
+});
+
+// A screen reader on a phone has no long press: the row's menu is also a button after the row, out of sight until it
+// has the focus, and Weghalen is in that menu (UNFORGET S46; on iOS VoiceOver reaches the context menu).
+test("theRowMenuIsReachableWithoutALongPress", async ({ page }) => {
+  let planned: Awaited<ReturnType<typeof todaysMenu>> = [];
+  await openMenu(page, async (userID) => {
+    planned = await todaysMenu(userID);
+  });
+  const lunch = planned.find((meal) => meal.slot === "lunch")!;
+  const options = page.locator(".swipe-row", { has: page.getByTestId(`menu.entry.${lunch.id}`) }).getByRole("button", { name: nl("menu.entry.options") });
+  await options.focus();
+  await expect(options).toBeInViewport();
+  const axe = await new AxeBuilder({ page }).analyze();
+  expect(axe.violations.map((violation) => violation.id)).toEqual([]);
+  await page.keyboard.press("Enter");
+  await page.getByRole("alertdialog", { name: lunch.recipe.title }).getByRole("button", { name: nl("menu.remove") }).click();
+  await expect(page.getByTestId(`menu.entry.${lunch.id}`)).toHaveCount(0, { timeout: 15_000 });
+  const { data } = await admin.from("meal_plan_entries").select("deleted_at").eq("id", lunch.id);
+  expect(data?.[0].deleted_at).not.toBeNull();
+});
+
+// Another device whose clock runs ahead changed the meal a moment ago: the server takes this tap as older and keeps the
+// meal as it was (apply_sync_rules), so the app says it did not work instead of doing nothing, and leaves nothing in
+// the diary (UNFORGET S46).
+test("aLogTheServerTakesAsOlderSaysSo", async ({ page }) => {
+  let planned: Awaited<ReturnType<typeof todaysMenu>> = [];
+  const user = await openMenu(page, async (userID) => {
+    planned = await todaysMenu(userID);
+  });
+  const dinner = planned.find((meal) => meal.slot === "dinner")!;
+  const ahead = await admin
+    .from("meal_plan_entries")
+    .update({ updated_at: new Date(Date.now() + 2 * 60_000).toISOString() })
+    .eq("id", dinner.id);
+  if (ahead.error) throw ahead.error;
+  await page.getByTestId(`menu.log.${dinner.id}`).focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("alertdialog", { name: nl("error.server") })).toBeVisible({ timeout: 15_000 });
+  const { data } = await admin.from("food_entries").select("id").eq("user_id", user.id).is("deleted_at", null);
+  expect(data).toEqual([]);
+});
+
+// The photo's credit links to the page of the photo, as its licence asks (UNFORGET S46).
+test("thePhotoCreditLinksToItsSource", async ({ page }) => {
+  let planned: Awaited<ReturnType<typeof todaysMenu>> = [];
+  await openMenu(page, async (userID) => {
+    planned = await todaysMenu(userID);
+  });
+  await page.getByTestId(`menu.entry.${planned[0].id}`).click();
+  const credit = page.getByRole("link", { name: /Wikimedia Commons/ });
+  await expect(credit).toHaveAttribute("href", /^https:\/\/commons\.wikimedia\.org\//);
 });
