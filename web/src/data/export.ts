@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { allRows, type Keyset } from "./pages";
 
 /**
  * All of the user's own data, as one JSON file and one CSV file per table (DataExport.swift). The tables are those
@@ -104,10 +105,7 @@ export function exportFiles(exported: Table[], exportedAt: Date): File[] {
   ];
 }
 
-/** The server answers at most this many rows at a time (PostgREST max_rows). */
-const page = 1000;
-
-/** The primary key, for a stable order between pages; one row per user in the tables keyed by user_id. */
+/** The primary key, for reading page by page on from it; one row per user in the tables keyed by user_id. */
 function key(name: string): string {
   return name === "creatures" || name === "menu_preferences" ? "user_id" : "id";
 }
@@ -119,14 +117,13 @@ function key(name: string): string {
 export async function fetchTables(client: SupabaseClient): Promise<Record<string, Row[]>> {
   const results = await Promise.all(
     tables.map(async ([name, owner]) => {
-      const rows: Row[] = [];
-      for (let from = 0; ; from += page) {
+      // Page by page on from the key: a row removed while the export reads skips no other (S42).
+      const rows = await allRows(() => {
         const query = client.from(name).select("*");
-        const { data, error } = await (owner ? query.not(owner, "is", null) : query).order(key(name)).range(from, from + page - 1);
-        if (error) throw new Error("account.export.failed");
-        rows.push(...(data as Row[]));
-        if (data.length < page) break;
-      }
+        return (owner ? query.not(owner, "is", null) : query) as unknown as Keyset;
+      }, key(name)).catch(() => {
+        throw new Error("account.export.failed");
+      });
       return [name, rows] as const;
     }),
   );

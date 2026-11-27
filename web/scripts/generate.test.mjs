@@ -106,3 +106,22 @@ test("copiesEveryLayerOnTheRealResources", async () => {
   expect((await readdir(join(out, "public/recipes"))).length).toBe(24);
 
 }, 60_000);
+
+// The app fills in %@ and %lld, numbered or not (i18n.ts); any other code would show on screen as it is, so the
+// texts are not made (UNFORGET S36).
+test("failsOnAFormatCodeTheAppDoesNotFillIn", async () => {
+  const dirs = await fixture({ ...both, "day.count %d": { localizations: { nl: unit("%d dagen"), en: unit("%d days"), de: unit("%d Tage") } } });
+  await expect(generate(dirs)).rejects.toThrow("Format codes the app does not fill in: day.count %d (nl: %d)");
+  // With a width or a flag too (review of PR #60).
+  const padded = await fixture({ ...both, "day.padded": { localizations: { nl: unit("%02lld dagen"), en: unit("%02lld days"), de: unit("%02lld Tage") } } });
+  await expect(generate(padded)).rejects.toThrow("day.padded (nl: %02lld)");
+});
+
+// A percent sign that is no code, the codes the app fills in and a letter after %@ are fine.
+test("keepsTextWithAPercentSignAndTheCodesTheAppFillsIn", async () => {
+  const text = (value) => ({ localizations: { nl: unit(value), en: unit(value), de: unit(value) } });
+  const dirs = await fixture({ ...both, "a.percent": text("50% eiwit"), "a.numbered": text("%1$lld van %2$lld"), "a.name": text("%@s lijst") });
+  await generate(dirs);
+  const strings = JSON.parse(await readFile(join(dirs.out, "src/generated/strings.json"), "utf8"));
+  expect(strings.nl["a.percent"]).toBe("50% eiwit");
+});

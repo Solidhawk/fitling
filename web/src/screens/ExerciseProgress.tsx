@@ -1,4 +1,4 @@
-import { type ComponentProps, useMemo, useRef, useState } from "react";
+import { type ComponentProps, useEffect, useMemo, useRef, useState } from "react";
 import type { FitlingCore, TrainingInput } from "../core/fitlingCore";
 import { supabase } from "../data/supabase";
 import { saveStep, type TrainingRows } from "../data/training";
@@ -51,11 +51,26 @@ export function ExerciseProgressList({
   );
 }
 
+type ExerciseProgressProps = ComponentProps<typeof KnownExercise>;
+
 /**
- * One exercise over time (ExerciseProgressView on iOS): the animation, the estimated one-rep max per workout, the
- * records, the advice for next time with the user's own weight step, and how it is done.
+ * One exercise over time (ExerciseProgressView on iOS). Gone while it is open (removed from the catalogue, then read
+ * back), only the way back is left, on a pushed screen and in a sheet alike (bug-echo of UNFORGET S42).
  */
-export function ExerciseProgress({
+export function ExerciseProgress(props: ExerciseProgressProps) {
+  if (props.input.exercises.some((exercise) => exercise.id === props.exerciseID)) return <KnownExercise {...props} />;
+  return (
+    <div className="tab-page pushed" data-page="exerciseProgress">
+      <NavBar title="" back={t("training.title")} onBack={props.onBack} />
+    </div>
+  );
+}
+
+/**
+ * The animation, the estimated one-rep max per workout, the records, the advice for next time with the user's own
+ * weight step, and how it is done.
+ */
+function KnownExercise({
   core,
   userID,
   input,
@@ -156,9 +171,15 @@ export function ExerciseProgress({
 }
 
 /** An exercise opened from a sheet or a workout, over it, with its own focus and Escape (a NavigationLink there). */
-export function ExerciseSheet({ label, ...props }: ComponentProps<typeof ExerciseProgress> & { label: string }) {
+export function ExerciseSheet({ label, ...props }: ExerciseProgressProps & { label: string }) {
   const sheet = useRef<HTMLDivElement>(null);
   useDialogFocus(sheet, props.onBack);
+  // An exercise gone while the sheet is open takes the focused control with it: the sheet takes the focus back, so
+  // Tab stays in it and Escape closes it (review of PR #61).
+  const gone = !props.input.exercises.some((exercise) => exercise.id === props.exerciseID);
+  useEffect(() => {
+    if (gone && !sheet.current?.contains(document.activeElement)) sheet.current?.focus();
+  }, [gone]);
   return (
     <div ref={sheet} className="sheet" role="dialog" aria-modal="true" aria-label={label} tabIndex={-1}>
       <ExerciseProgress {...props} />

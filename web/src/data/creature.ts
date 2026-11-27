@@ -4,7 +4,7 @@ import { addDays } from "../day";
 import type { Species } from "../partner/species";
 import { entriesBetween, workoutDaysBetween } from "./diary";
 import { failure } from "./failure";
-import { keep, kept, noNetwork } from "./offline";
+import { keep, kept, keptAnswer, noNetwork } from "./offline";
 import { loadProfile, loadTargetPeriods } from "./profileStore";
 
 /** The user's partner as stored: what FitlingCore needs for its mood, plus its name and what it wears. */
@@ -14,6 +14,9 @@ export interface Partner {
   state: CreatureStateInput;
   items: string[];
 }
+
+/** Folds finished days into the partner and returns it, once for Vandaag and the partner tab together (Home). */
+export type Advance = (core: FitlingCore) => Promise<Partner | undefined>;
 
 /** The partner; without a connection the one this browser last knew. */
 export async function loadPartner(client: SupabaseClient, userID: string): Promise<Partner | undefined> {
@@ -127,6 +130,16 @@ export async function savePartner(
   if (change.items !== undefined) row.equipped_items = change.items;
   const { error } = await client.from("creatures").update(row).eq("user_id", userID);
   if (error) throw failure(error);
+  // The partner this browser keeps for without a connection wears the change too (UNFORGET S50).
+  const known = keptAnswer<Partner>("partner");
+  if (known) {
+    keep("partner", {
+      ...known,
+      name: change.name ?? known.name,
+      items: change.items ?? known.items,
+      state: { ...known.state, colorIndex: change.colorIndex ?? known.state.colorIndex, tone: change.tone ?? known.state.tone },
+    });
+  }
 }
 
 /** The days partnerSnapshot is given: more than the eight it looks at, which it picks itself. */

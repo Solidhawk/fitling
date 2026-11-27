@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { FitlingCore, PartnerDays, PartnerEvent, PartnerSnapshot, ReminderSettings } from "../core/fitlingCore";
 import { useCore } from "../core/useCore";
-import { loadPartner, partnerWeek, savePartner, type Partner as StoredPartner } from "../data/creature";
+import { type Advance, loadPartner, partnerWeek, savePartner, type Partner as StoredPartner } from "../data/creature";
 import { noNetwork } from "../data/offline";
 import { loadProfile, loadTargetPeriods } from "../data/profileStore";
 import { loadReminderSettings, notificationsRefused, planReminders, pushSupport, saveReminderSettings, turnOn } from "../data/push";
@@ -17,7 +17,6 @@ import { LevelRibbon } from "../ui/LevelRibbon";
 import { List, ListRow, ListSection } from "../ui/List";
 import { NamePlate } from "../ui/NamePlate";
 import { CheckCircleFill, Circle, LockFill } from "../ui/Symbols";
-import type { Advance } from "./Day";
 import { PartnerEdit } from "./PartnerEdit";
 
 interface Shown {
@@ -96,6 +95,12 @@ export function Partner({
 
   const reload = useCallback(async () => {
     if (!core) return;
+    // A change still being stored would otherwise be read back as it was (UNFORGET S41); also one made while waiting.
+    let waited: Promise<void>;
+    do {
+      waited = saving.current;
+      await waited;
+    } while (waited !== saving.current);
     const mine = ++request.current;
     try {
       const next = await load(core, userID, advance);

@@ -10,8 +10,9 @@ import {
   ensureList,
   joinList,
   leaveList,
+  loadList,
+  loadOffers,
   loadRecipeIngredients,
-  loadShopping,
   setFavoriteSupermarket,
   type ShoppingRows,
   toggleItem,
@@ -44,6 +45,12 @@ describe.skipIf(!url || !key || !serviceKey)("the shopping list on the server", 
     return { id: created.data.user.id, client };
   }
 
+  /** Everything the list screen reads, as it reads it: the list and the offers. */
+  async function loadShopping(client: SupabaseClient, listID: string): Promise<ShoppingRows> {
+    const [list, offers] = await Promise.all([loadList(client, listID), loadOffers(client, today, new Date())]);
+    return { ...list, ...offers };
+  }
+
   function input(rows: ShoppingRows): ShoppingInput {
     return { today, items: rows.items, offers: rows.offers, supermarkets: rows.supermarkets, favoriteSupermarketIDs: rows.favoriteSupermarketIDs, confirmedOfferIDs: [] };
   }
@@ -64,7 +71,7 @@ describe.skipIf(!url || !key || !serviceKey)("the shopping list on the server", 
     expect(joined).toBe(list.id);
     expect((await ensureList(guest.client, guest.id, "Boodschappen", "Bram", new Date())).id).toBe(own.id);
     // The list of the code, which the screen remembers, comes first.
-    const seen = await loadShopping(guest.client, (await ensureList(guest.client, guest.id, "Boodschappen", "Bram", new Date(), joined)).id, today, new Date());
+    const seen = await loadShopping(guest.client, (await ensureList(guest.client, guest.id, "Boodschappen", "Bram", new Date(), joined)).id);
     expect(seen.list.id).toBe(list.id);
     expect(seen.items.map((item) => item.name)).toEqual(["Melk"]);
     expect(seen.members.map((member) => [member.displayName, member.role])).toEqual([
@@ -72,7 +79,7 @@ describe.skipIf(!url || !key || !serviceKey)("the shopping list on the server", 
       ["Bram", "member"],
     ]);
     await toggleItem(guest.client, guest.id, seen.items[0], new Date());
-    expect((await loadShopping(owner.client, list.id, today, new Date())).items[0].isChecked).toBe(true);
+    expect((await loadShopping(owner.client, list.id)).items[0].isChecked).toBe(true);
 
     // Someone without the code sees nothing of it and cannot add to it.
     const stranger = await user();
@@ -84,7 +91,25 @@ describe.skipIf(!url || !key || !serviceKey)("the shopping list on the server", 
     await leaveList(guest.client, list.id, guest.id);
     const after = await guest.client.from("shopping_items").select("id").eq("list_id", list.id);
     expect(after.data).toEqual([]);
-    expect((await loadShopping(owner.client, list.id, today, new Date())).members.map((member) => member.displayName)).toEqual(["Anna"]);
+    expect((await loadShopping(owner.client, list.id)).members.map((member) => member.displayName)).toEqual(["Anna"]);
+  });
+
+  // Ten people at most on a list (join_shopping_list): the eleventh is told the list is full, and someone already on
+  // it can use the code again (UNFORGET S48).
+  test("aFullListSaysSo", async () => {
+    const owner = await user();
+    const list = await ensureList(owner.client, owner.id, "Boodschappen", "Anna", new Date());
+    const code = await createInvite(owner.client, list.id);
+    const members = [];
+    for (let index = 0; index < 9; index++) {
+      const member = await user();
+      await joinList(member.client, code, `Lid ${index + 1}`);
+      members.push(member);
+    }
+    const late = await user();
+    await expect(joinList(late.client, code, "Te laat")).rejects.toThrow("shopping.error.listFull");
+    expect(await joinList(members[0].client, code, "Lid 1")).toBe(list.id);
+    expect((await loadShopping(owner.client, list.id)).members).toHaveLength(10);
   });
 
   test("aWrongCodeSaysSo", async () => {
@@ -118,15 +143,15 @@ describe.skipIf(!url || !key || !serviceKey)("the shopping list on the server", 
     ]);
     if (offers.error) throw offers.error;
     const list = await ensureList(shopper.client, shopper.id, "Boodschappen", "Anna", new Date());
-    expect((await loadShopping(shopper.client, list.id, today, new Date())).offers).toEqual([]);
+    expect((await loadShopping(shopper.client, list.id)).offers).toEqual([]);
     await setFavoriteSupermarket(shopper.client, shopper.id, shop, true, new Date());
     await setFavoriteSupermarket(shopper.client, shopper.id, shop, true, new Date());
-    const rows = await loadShopping(shopper.client, list.id, today, new Date());
+    const rows = await loadShopping(shopper.client, list.id);
     expect(rows.favoriteSupermarketIDs).toEqual([shop]);
     expect(rows.offers.map((row) => row.title)).toEqual(["Vers"]);
     expect(rows.supermarkets).toContainEqual({ id: shop, name: "Proefmarkt" });
     await setFavoriteSupermarket(shopper.client, shopper.id, shop, false, new Date());
-    expect((await loadShopping(shopper.client, list.id, today, new Date())).offers).toEqual([]);
+    expect((await loadShopping(shopper.client, list.id)).offers).toEqual([]);
   });
 
   test("refillingFromTheMenuReplacesMenuItems", async () => {
@@ -140,9 +165,9 @@ describe.skipIf(!url || !key || !serviceKey)("the shopping list on the server", 
     const fill = async () => {
       const book = await menu();
       const ingredients = await loadRecipeIngredients(cook.client, book.entries.map((entry) => entry.recipeID));
-      const rows = await loadShopping(cook.client, list.id, today, new Date());
+      const rows = await loadShopping(cook.client, list.id);
       await applyRefill(cook.client, cook.id, list.id, core.shoppingRefill({ shopping: input(rows), menu: book, ingredients }), new Date());
-      return loadShopping(cook.client, list.id, today, new Date());
+      return loadShopping(cook.client, list.id);
     };
     const first = await fill();
     const fromMenu = first.items.filter((item) => item.source === "menu");

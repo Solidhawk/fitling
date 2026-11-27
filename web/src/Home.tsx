@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { FitlingCore, PartnerEvent } from "./core/fitlingCore";
 import type { AuthService } from "./data/auth";
 import { advancePartner, type Partner as StoredPartner } from "./data/creature";
@@ -12,13 +12,42 @@ import { Profile } from "./screens/Profile";
 import { Training } from "./screens/Training";
 import { type Tab, TabBar, tabs } from "./TabBar";
 
+/** The tab the address names (#menu), so a reload opens it again; anything else there (a sign-in link) is no tab. */
+function tabInAddress(): Tab | undefined {
+  const named = location.hash.slice(1);
+  return tabs.find((candidate) => candidate.id === named)?.id;
+}
+
+/** The address names `tab`: replaced, not pushed, so Back goes through a tab's screens and not through the tabs. */
+function showInAddress(tab: Tab) {
+  if (location.hash !== `#${tab}`) history.replaceState(history.state, "", `#${tab}`);
+}
+
 /**
  * The five tabs of the iOS app (HomeView); a tab whose screens are not built yet shows its large title. Finished days
  * are folded into the partner when Vandaag or the partner tab loads (also when the app comes back), one fold at a
  * time; what that brought is kept here until the partner tab has shown it (PartnerViewModel.news).
  */
 export function Home({ userID, auth }: { userID: string; auth: AuthService }) {
-  const [tab, setTab] = useState<Tab>("today");
+  const [tab, setTab] = useState<Tab>(() => tabInAddress() ?? "today");
+  // Back to an entry made on another tab brings that tab's address along; the address keeps naming the open one.
+  // The tab belongs to this session: signing out, or another user signing in, starts again on Vandaag (review of
+  // PR #60).
+  useEffect(
+    () => () => {
+      if (tabInAddress()) history.replaceState(history.state, "", location.pathname + location.search);
+    },
+    [],
+  );
+  useEffect(() => {
+    const onPop = () => showInAddress(tab);
+    addEventListener("popstate", onPop);
+    return () => removeEventListener("popstate", onPop);
+  }, [tab]);
+  const select = (next: Tab) => {
+    setTab(next);
+    showInAddress(next);
+  };
   const [news, setNews] = useState<PartnerEvent[]>([]);
   const folding = useRef<Promise<StoredPartner | undefined>>(undefined);
   const advance = useCallback(
@@ -55,7 +84,7 @@ export function Home({ userID, auth }: { userID: string; auth: AuthService }) {
           )}
         </div>
       </main>
-      <TabBar selected={tab} onSelect={setTab} />
+      <TabBar selected={tab} onSelect={select} />
     </div>
   );
 }

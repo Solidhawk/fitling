@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "./fixtures";
-import { exercise, finishedWorkout, firstProgramme, openTraining, tapRow } from "./training";
+import { exercise, finishedWorkout, firstProgramme, openTraining, png, tapRow } from "./training";
 import { openMenu, todaysMenu } from "./menu";
 import { fakePush } from "./push";
 import { openShopping, shopWithOffers } from "./shopping";
@@ -215,6 +215,49 @@ for (const mode of modes) {
       await page.getByTestId("training.program.new").click();
       await page.getByTestId("training.program.name").fill("Mijn eigen schema voor maandag en donderdag");
       await check(page, mode, "11-eigen-schema", info.project.name);
+    });
+
+    // The training screens the review of web phase 4 found unchecked: picking an exercise, renaming, the rest timer, the
+    // records and a photo (UNFORGET S42).
+    test("Training details", async ({ page }, info) => {
+      test.setTimeout(120_000);
+      const programme = await firstProgramme();
+      const items = await admin.from("program_exercises").select("exercise_id").eq("program_day_id", programme.days[0].id).order("position");
+      const exerciseID = items.data![0].exercise_id as string;
+      await openTraining(page, (userID) => finishedWorkout(userID, exerciseID, 3, [[50, 8]], programme.days[0].id).then(() => undefined));
+      await page.getByTestId("training.program.new").click();
+      await page.getByTestId("training.program.name").fill("Schema voor maandag en donderdag");
+      await page.getByRole("button", { name: nl("common.save") }).click();
+      await expect(page.getByRole("heading", { name: "Schema voor maandag en donderdag" })).toBeVisible({ timeout: 15_000 });
+      await page.getByText(nl("training.program.addExercise")).first().click();
+      await expect(page.getByTestId("picker.search")).toBeVisible();
+      await check(page, mode, "12-oefening-kiezen", info.project.name);
+      await page.getByRole("button", { name: nl("common.cancel") }).click();
+      await page.getByTestId("program.options").click();
+      await page.getByRole("menuitem", { name: nl("training.program.rename") }).click();
+      await expect(page.getByRole("alertdialog", { name: nl("training.program.rename") })).toBeVisible();
+      await check(page, mode, "13-schema-hernoemen", info.project.name);
+      await page.getByRole("alertdialog").getByRole("button", { name: nl("common.cancel") }).click();
+      await page.goBack();
+      await page.getByTestId(`training.program.${programme.id}`).click();
+      await page.getByTestId(`training.start.${programme.days[0].id}`).click();
+      await expect(page.getByRole("dialog", { name: programme.days[0].name })).toBeVisible({ timeout: 15_000 });
+      await page.getByTestId(`workout.weight.${exerciseID}`).fill("55");
+      await page.getByTestId(`workout.reps.${exerciseID}`).fill("8");
+      await page.getByTestId(`workout.log.${exerciseID}`).click();
+      await expect(page.getByTestId("workout.rest")).toBeVisible({ timeout: 15_000 });
+      await check(page, mode, "14-rusttimer", info.project.name);
+      await page.getByTestId("workout.finish").click();
+      const records = page.getByRole("alertdialog", { name: nl("training.records.title") });
+      await expect(records).toBeVisible({ timeout: 15_000 });
+      await check(page, mode, "15-records", info.project.name);
+      await records.getByRole("button", { name: nl("common.ok") }).click();
+      await page.goBack();
+      await page.getByRole("button", { name: nl("photos.title") }).click();
+      await page.getByTestId("photos.picker").setInputFiles({ name: "voortgang.png", mimeType: "image/png", buffer: png() });
+      await page.getByTestId("photos.tile").click();
+      await expect(page.getByRole("button", { name: nl("photos.delete") })).toBeVisible();
+      await check(page, mode, "16-foto", info.project.name);
     });
 
     test("Menu", async ({ page }, info) => {

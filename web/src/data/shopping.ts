@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { IsoDay, Localized, NewShoppingItem, OfferRow, RecipeIngredientRow, ShoppingInput, ShoppingItemRow } from "../core/fitlingCore";
 import { failure } from "./failure";
-import { allRows, type Row } from "./pages";
+import { allRows, type Keyset, type Row } from "./pages";
 import { limitedText } from "../text";
 
 export interface ShoppingList {
@@ -21,8 +21,6 @@ export type ShoppingRows = Omit<ShoppingInput, "today" | "confirmedOfferIDs"> & 
   list: ShoppingList;
   members: ListMember[];
 };
-
-type Page = PromiseLike<{ data: Row[] | null; error: { message: string } | null }>;
 
 /** How old an offer may be: PrijsProfeet's terms allow a price shown as current only when at most a day old, and
  * the job runs nightly (SupabaseOfferSource on iOS). */
@@ -89,14 +87,12 @@ export async function loadList(client: SupabaseClient, listID: string): Promise<
   const [list, items, members] = await Promise.all([
     client.from("shopping_lists").select("id, name").eq("id", listID).single(),
     allRows(
-      (from, to) =>
+      () =>
         client
           .from("shopping_items")
           .select("id, name, quantity, unit, aisle, product_id, is_checked, source")
           .eq("list_id", listID)
-          .is("deleted_at", null)
-          .order("id")
-          .range(from, to) as unknown as Page,
+          .is("deleted_at", null) as unknown as Keyset,
     ),
     client.from("shopping_list_members").select("user_id, role, display_name").eq("list_id", listID).order("joined_at").order("user_id"),
   ]);
@@ -139,15 +135,13 @@ export async function loadOffers(client: SupabaseClient, today: IsoDay, now: Dat
     favoriteIDs.length === 0
       ? []
       : await allRows(
-          (from, to) =>
+          () =>
             client
               .from("offers")
               .select("id, supermarket_id, title, brand, gtin, quantity_value, quantity_unit, price_cents, valid_from, valid_to")
               .in("supermarket_id", favoriteIDs)
               .gte("valid_to", today)
-              .gte("fetched_at", new Date(now.getTime() - offerLifetimeMs).toISOString())
-              .order("id")
-              .range(from, to) as unknown as Page,
+              .gte("fetched_at", new Date(now.getTime() - offerLifetimeMs).toISOString()) as unknown as Keyset,
         );
   return {
     supermarkets: (supermarkets.data as Row[]).map((row) => ({ id: row.id as string, name: row.name as string })),
@@ -167,12 +161,6 @@ export async function loadOffers(client: SupabaseClient, today: IsoDay, now: Dat
       }),
     ),
   };
-}
-
-/** Everything the list screen reads (loadList and loadOffers together). */
-export async function loadShopping(client: SupabaseClient, listID: string, today: IsoDay, now: Date): Promise<ShoppingRows> {
-  const [list, offers] = await Promise.all([loadList(client, listID), loadOffers(client, today, now)]);
-  return { ...list, ...offers };
 }
 
 /** The lines of the recipes the menu plans, for what it needs on the list. */
