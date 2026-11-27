@@ -174,7 +174,8 @@ public struct NutritionLabel: Sendable, Equatable {
                     // "per 100 g" and "13 %" name the column or the reference intake, not a value.
                     if ["per", "pro", "je", "pour"].contains(previousWord) || number.unit == "%" { continue }
                     guard let nutrient = named.first else {
-                        if number.unit == "kcal" { lonelyKcal = lonelyKcal ?? number.value }
+                        // Not the "2000 kcal" of the reference intake in a column heading: no product has that per 100 g.
+                        if number.unit == "kcal", Limits.kcalPer100.contains(number.value) { lonelyKcal = lonelyKcal ?? number.value }
                         continue
                     }
                     if nutrient == .energy {
@@ -185,7 +186,9 @@ public struct NutritionLabel: Sendable, Equatable {
                     guard nutrient != .other else { continue }
                     let value = number.unit == "mg" ? number.value / 1000 : number.value
                     guard (0...100).contains(value) else {
-                        leftSomethingOut = true
+                        // Misread, unless the table gave this one already: "zout, conserveermiddel E250" in the
+                        // ingredients under it is no second value.
+                        if grams[nutrient] == nil { leftSomethingOut = true }
                         continue
                     }
                     if grams[nutrient] == nil { grams[nutrient] = value }
