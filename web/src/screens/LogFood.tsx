@@ -30,6 +30,8 @@ export function LogFood({ core, userID, meal, day, onClose }: { core: FitlingCor
   const [query, setQuery] = useState("");
   const [recent, setRecent] = useState<Product[]>([]);
   const [favorites, setFavorites] = useState<Product[]>([]);
+  // Both lists were read: "Nog niets gelogd" is then true when both are empty.
+  const [listsRead, setListsRead] = useState(false);
   const [results, setResults] = useState<{ own: Product[]; online: Product[] }>({ own: [], online: [] });
   const [searching, setSearching] = useState(false);
   const [scanning, setScanning] = useState(false);
@@ -43,11 +45,10 @@ export function LogFood({ core, userID, meal, day, onClose }: { core: FitlingCor
   useDialogFocus(sheet, onClose);
 
   useEffect(() => {
-    void Promise.all([recentProducts(supabase, core), favoriteProducts(supabase)]).then(
-      ([recentList, favoriteList]) => {
-        setRecent(recentList);
-        setFavorites(favoriteList);
-      },
+    // Each list shows as it comes, and one that cannot be read does not hide the other. "Nog niets gelogd" only once
+    // both were read: after a failed read it would not be true.
+    void Promise.all([recentProducts(supabase, core).then(setRecent), favoriteProducts(supabase).then(setFavorites)]).then(
+      () => setListsRead(true),
       (error: unknown) => setFailed(error instanceof Error ? error.message : "error.server"),
     );
   }, [core]);
@@ -170,7 +171,7 @@ export function LogFood({ core, userID, meal, day, onClose }: { core: FitlingCor
                 </ListSection>
                 {productSection("log.favorites", favorites)}
                 {productSection("log.recent", recent)}
-                {favorites.length === 0 && recent.length === 0 && <ListSection footer={t("log.empty")} />}
+                {listsRead && favorites.length === 0 && recent.length === 0 && <ListSection footer={t("log.empty")} />}
               </>
             ) : (
               <>

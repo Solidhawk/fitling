@@ -20,9 +20,9 @@ test("theEmptyLogSheetWaitsForItsLists", async ({ page }) => {
   const user = await createUser({ profile: true, creature: true });
   const product = await sharedProduct("Krentenbol");
   await admin.from("favorite_products").insert({ user_id: user.id, product_id: product.id, updated_at: new Date().toISOString() });
-  let delayed = true;
+  // Recent (food_entries read for its products) comes slowly, and then not at all.
   await page.route("**/rest/v1/food_entries*", async (route) => {
-    if (delayed && route.request().method() === "GET" && route.request().url().includes("product_id")) {
+    if (route.request().method() === "GET" && route.request().url().includes("product_id")) {
       await new Promise((resolve) => setTimeout(resolve, 2_000));
       await route.fulfill({ status: 500, contentType: "application/json", body: "{}" });
       return;
@@ -33,9 +33,10 @@ test("theEmptyLogSheetWaitsForItsLists", async ({ page }) => {
   await page.getByTestId("day.add.breakfast").click({ timeout: 15_000 });
   await expect(page.locator('[data-screen="logFood"]')).toBeVisible();
   await expect(page.getByText(nl("log.empty"))).toHaveCount(0);
-  // Recent could not be read: the favourite shows all the same.
+  // The favourite shows without waiting for recent; recent's failure is told, and "Nog niets gelogd" would not be true.
   await expect(page.getByRole("button", { name: new RegExp(product.name) })).toBeVisible({ timeout: 10_000 });
-  delayed = false;
+  await expect(page.getByRole("alertdialog", { name: nl("error.server") })).toBeVisible();
+  await expect(page.getByText(nl("log.empty"))).toHaveCount(0);
 });
 
 // FoodLogTests and testLogAScannedProduct on iOS.
