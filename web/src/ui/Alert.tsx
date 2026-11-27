@@ -1,4 +1,4 @@
-import { type ReactNode, useRef } from "react";
+import { type ReactNode, useId, useRef } from "react";
 import { t } from "../i18n";
 import { useDialogFocus } from "./dialogFocus";
 
@@ -32,12 +32,26 @@ export function Alert({
   cancelLabel?: string;
 }) {
   const alert = useRef<HTMLDivElement>(null);
+  // The message describes the alert: a screen reader reads it after the title.
+  const messageID = useId();
   useDialogFocus(alert, onClose);
   return (
     <div className="alert-backdrop">
-      <div ref={alert} className="alert" role="alertdialog" aria-modal="true" aria-label={title} tabIndex={-1}>
+      <div
+        ref={alert}
+        className="alert"
+        role="alertdialog"
+        aria-modal="true"
+        aria-label={title}
+        aria-describedby={message ? messageID : undefined}
+        tabIndex={-1}
+      >
         <p className="alert-title">{title}</p>
-        {message && <p className="alert-message">{message}</p>}
+        {message && (
+          <p className="alert-message" id={messageID}>
+            {message}
+          </p>
+        )}
         {field && <div className="alert-field">{field}</div>}
         {actions ? (
           <div className="alert-buttons">

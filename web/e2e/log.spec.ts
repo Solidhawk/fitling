@@ -90,6 +90,23 @@ test("segmentsAreBigEnoughToTap", async ({ page }) => {
   }
 });
 
+// Screen readers in the log sheet (review of web phase 2): the next step takes the focus on its title, as a pushed
+// screen on the iPhone, instead of leaving it on the page behind the sheet; and a portion that cannot be saved says
+// so as an alert, not as a line that appears unannounced.
+test("theLogSheetLeadsAScreenReader", async ({ page }) => {
+  await start(page);
+  const product = await sharedProduct("Lindethee", { kcal_100: null });
+  await search(page, product.name);
+  await page.getByRole("button", { name: new RegExp(product.name) }).click();
+  await expect(page.locator('[data-screen="logFood"] .nav-title')).toBeFocused();
+  await page.route("**/rest/v1/products*", (route) =>
+    route.request().method() === "POST" ? route.fulfill({ status: 500, contentType: "application/json", body: "{}" }) : route.continue(),
+  );
+  await page.getByTestId("portion.kcal").fill("2");
+  await page.getByTestId("portion.save").click();
+  await expect(page.getByRole("alert")).toHaveText(nl("error.server"));
+});
+
 test("productWithoutKcalAsksForIt", async ({ page }) => {
   const user = await start(page);
   const product = await sharedProduct("Kruidenthee", { kcal_100: null });
