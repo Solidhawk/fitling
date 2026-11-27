@@ -130,6 +130,11 @@ export function keep(name: string, value: unknown): void {
   store(`read.${name}`, { value });
 }
 
+/** The answer kept for `name`, without asking the server; undefined when there is none. */
+export function keptAnswer<T>(name: string): T | undefined {
+  return load<{ value?: T }>(`read.${name}`)?.value;
+}
+
 function stored(): Stored[] {
   return load<Stored[]>("writes") ?? [];
 }
@@ -197,6 +202,24 @@ export function flush(client: SupabaseClient): Promise<void> {
   const round = sending.then(() => sendWaiting(client));
   sending = round.catch(() => undefined);
   return round;
+}
+
+/**
+ * While writes wait and the page is in view, a new round every `ms`: a server that could not take them for a moment
+ * (a 503) gets them without the user doing anything. A round still under way is not doubled. Returns the stop.
+ */
+export function retryWaiting(client: SupabaseClient, ms: number): () => void {
+  let running = false;
+  const timer = setInterval(() => {
+    const hidden = typeof document !== "undefined" && document.visibilityState !== "visible";
+    if (running || hidden || noNetwork() || waiting().length === 0) return;
+    running = true;
+    const done = () => {
+      running = false;
+    };
+    flush(client).then(done, done);
+  }, ms);
+  return () => clearInterval(timer);
 }
 
 /** Fired on `window` when a round has something new for Vandaag to tell (a refusal, or writes stuck or no longer). */

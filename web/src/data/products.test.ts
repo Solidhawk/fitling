@@ -84,3 +84,40 @@ test("withoutANetworkTheSearchShowsWhatThisBrowserKnows", async () => {
     vi.unstubAllGlobals();
   }
 });
+
+// A part of the search could not be read: what was found is still shown, and the failure is told next to it, instead
+// of an empty list (UNFORGET S58; LogFoodViewModel keeps its local results too).
+test("aFailedSearchKeepsWhatWasFound", async () => {
+  const core = { searchKey: ({ text }: { text: string }) => ({ key: text.toLowerCase(), pattern: text.toLowerCase() }) } as unknown as FitlingCore;
+  const own = { id: "own", owner_id: "u1", source: "user", name: { nl: "Appeltaart" }, search_name: "appeltaart", quantity_unit: "g" };
+  const known = [productFromRow({ id: "known", owner_id: null, source: "off", name: { nl: "Appel" }, search_name: "appel", quantity_unit: "g" })];
+  /** A server on which the shared products, or the user's own, cannot be read. */
+  const failing = (part: "shared" | "own") =>
+    ({
+      from() {
+        let shared = false;
+        const query = {
+          select: () => query,
+          not: () => query,
+          is(column: string, value: unknown) {
+            if (column === "owner_id" && value === null) shared = true;
+            return query;
+          },
+          filter: () => query,
+          limit: () => query,
+          then(resolve: (answer: { data: unknown; error: unknown }) => void) {
+            const fails = shared === (part === "shared");
+            resolve(fails ? { data: null, error: { message: "unavailable" } } : { data: shared ? [] : [own], error: null });
+          },
+        };
+        return query;
+      },
+    }) as unknown as SupabaseClient;
+  const withoutShared = await searchProducts(failing("shared"), core, "appel", known);
+  expect(withoutShared.own.map((product) => product.id)).toEqual(["own", "known"]);
+  expect(withoutShared.online).toEqual([]);
+  expect(withoutShared.failed).toBe("error.server");
+  const withoutOwn = await searchProducts(failing("own"), core, "appel", known);
+  expect(withoutOwn.own.map((product) => product.id)).toEqual(["known"]);
+  expect(withoutOwn.failed).toBe("error.server");
+});
