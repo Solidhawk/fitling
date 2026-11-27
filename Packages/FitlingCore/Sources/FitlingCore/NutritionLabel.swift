@@ -71,13 +71,14 @@ public struct NutritionLabel: Sendable, Equatable {
     /// middles are less than half the height of the tallest of them apart.
     public static func rows(_ pieces: [Piece]) -> [String] {
         // Vision gives the longer pieces of a tilted photo a tilted box, with the slope of the photo, but a short piece
-        // an upright one: a slope of 0 says nothing. The slope is the middle one of the others, or none at all,
-        // whichever puts the pieces in the fewest and straightest lines: a stamp at an angle on a straight photo does
-        // not tilt the table. Only these two: trying every slope pairs names with the values of the next row.
+        // an upright one: a slope of 0 says nothing. The slope is the middle one of the others, once at least three
+        // pieces agree with it; a single stamp at an angle on a straight photo does not tilt the table. How well the
+        // pieces line up cannot decide it: tilted by one row over the columns, each name pairs with the value of the
+        // row above in fewer lines than the true slope gives.
         let slopes = pieces.map(\.slope).filter { abs($0) > 0.002 }.sorted()
-        let candidates: [Double] = slopes.isEmpty ? [0] : [0, slopes[slopes.count / 2]]
-        let best = candidates.map { lines(pieces, slope: $0) }.min { ($0.count, spread($0)) < ($1.count, spread($1)) } ?? []
-        return best.map { line in line.pieces.sorted { $0.x < $1.x }.map(\.text).joined(separator: " ") }
+        let median = slopes.isEmpty ? 0 : slopes[slopes.count / 2]
+        let slope = slopes.filter { abs($0 - median) <= 0.02 }.count >= 3 ? median : 0
+        return lines(pieces, slope: slope).map { line in line.pieces.sorted { $0.x < $1.x }.map(\.text).joined(separator: " ") }
     }
 
     private struct Line {
@@ -87,14 +88,6 @@ public struct NutritionLabel: Sendable, Equatable {
 
         var middle: Double { middles.reduce(0, +) / Double(middles.count) }
         var height: Double { pieces.map(\.height).max() ?? 0 }
-    }
-
-    /// How far the straightened middles lie from the middles of their lines, squared.
-    private static func spread(_ lines: [Line]) -> Double {
-        lines.reduce(0) { total, line in
-            let middle = line.middle
-            return total + line.middles.reduce(0) { $0 + ($1 - middle) * ($1 - middle) }
-        }
     }
 
     private static func lines(_ pieces: [Piece], slope: Double) -> [Line] {
