@@ -1,4 +1,4 @@
-import { type ComponentProps, useMemo, useRef, useState } from "react";
+import { type ComponentProps, useEffect, useMemo, useRef, useState } from "react";
 import type { FitlingCore, TrainingInput } from "../core/fitlingCore";
 import { supabase } from "../data/supabase";
 import { saveStep, type TrainingRows } from "../data/training";
@@ -174,6 +174,12 @@ function KnownExercise({
 export function ExerciseSheet({ label, ...props }: ExerciseProgressProps & { label: string }) {
   const sheet = useRef<HTMLDivElement>(null);
   useDialogFocus(sheet, props.onBack);
+  // An exercise gone while the sheet is open takes the focused control with it: the sheet takes the focus back, so
+  // Tab stays in it and Escape closes it (review of PR #61).
+  const gone = !props.input.exercises.some((exercise) => exercise.id === props.exerciseID);
+  useEffect(() => {
+    if (gone && !sheet.current?.contains(document.activeElement)) sheet.current?.focus();
+  }, [gone]);
   return (
     <div ref={sheet} className="sheet" role="dialog" aria-modal="true" aria-label={label} tabIndex={-1}>
       <ExerciseProgress {...props} />
