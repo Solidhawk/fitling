@@ -10,6 +10,7 @@ import { useHistoryStack } from "../historyStack";
 import { decimal, fixed, kcal, percent } from "../format";
 import { t } from "../i18n";
 import { orderedWarnings, warningKeys } from "../profileTexts";
+import { useScrollPerDepth } from "../scrollPerDepth";
 import { ActionSheet } from "../ui/ActionSheet";
 import { Alert } from "../ui/Alert";
 import { SecondaryButton } from "../ui/Buttons";
@@ -77,12 +78,10 @@ export function Profile({ userID, auth }: { userID: string; auth: AuthService })
     setProfile(next);
   }
 
-  // In braces: an effect may only hand back its cleanup, and newer Chrome answers scrollTo with a promise.
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [page]);
   // Account on Dagdoel, About and Delete on Account; swiping back goes one screen back.
-  const back = useHistoryStack(page === "profile" ? 0 : page === "account" ? 1 : 2, (depth) => setPage(depth === 0 ? "profile" : "account"));
+  const depth = page === "profile" ? 0 : page === "account" ? 1 : 2;
+  const back = useHistoryStack(depth, (shown) => setPage(shown === 0 ? "profile" : "account"));
+  useScrollPerDepth(depth);
 
   if (page === "account") return <Account auth={auth} onBack={back} onOpen={setPage} />;
   if (page === "about") return <About onBack={back} />;

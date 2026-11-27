@@ -44,6 +44,8 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
+  /* Above the rows that scroll under it, under sheets (10) and what opens over them. */
+  z-index: 5;
   background-color: var(--ground);
   border-top: 1px solid var(--track);
 }
@@ -326,7 +328,8 @@ body {
 .nav-bar {
   position: sticky;
   top: 0;
-  z-index: 1;
+  /* Above the rows that scroll under it: a row that can be swiped lies at z-index 1. */
+  z-index: 3;
   display: grid;
   /* Cancel and Save of a sheet keep their full width; the title in the middle gives way. */
   grid-template-columns: minmax(max-content, 1fr) minmax(0, max-content) minmax(max-content, 1fr);

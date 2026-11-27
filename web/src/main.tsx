@@ -12,6 +12,9 @@ document.documentElement.lang = language();
 if (import.meta.env.PROD && "serviceWorker" in navigator) {
   navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`, { scope: import.meta.env.BASE_URL }).catch(() => undefined);
 }
+// The app puts each screen at its place itself (scrollPerDepth.ts): the browser would also restore the place of an entry
+// it passes on its way back, one that leads nowhere (historyStack.ts) or the welcome screen's (UNFORGET S40).
+if ("scrollRestoration" in history) history.scrollRestoration = "manual";
 // On the home screen the browser keeps what the app stores (photos, what waits to be sent) when space runs low.
 const standalone = matchMedia("(display-mode: standalone)").matches || (navigator as { standalone?: boolean }).standalone === true;
 if (standalone) navigator.storage?.persist?.().catch(() => false);
