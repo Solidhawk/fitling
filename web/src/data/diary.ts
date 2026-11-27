@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { FitlingCore, IsoDay, QuantityUnit } from "../core/fitlingCore";
 import { failure } from "./failure";
 import { keep, kept, keptAnswer, rowsBetween, send } from "./offline";
-import { allRows } from "./pages";
+import { allRows, type Keyset } from "./pages";
 import { type Product, productName, productsByID } from "./products";
 
 export type Meal = "breakfast" | "lunch" | "dinner" | "snack";
@@ -75,15 +75,14 @@ export async function entriesBetween(client: SupabaseClient, first: IsoDay, last
     first,
     last,
     async () =>
-      (await allRows((from, to) =>
-        client
-          .from("food_entries")
-          .select("*")
-          .gte("consumed_on", first)
-          .lte("consumed_on", last)
-          .is("deleted_at", null)
-          .order("id")
-          .range(from, to),
+      (await allRows(
+        () =>
+          client
+            .from("food_entries")
+            .select("*")
+            .gte("consumed_on", first)
+            .lte("consumed_on", last)
+            .is("deleted_at", null) as unknown as Keyset,
       )) as KeptRow[],
   );
   return inOrder(rows);
@@ -91,16 +90,15 @@ export async function entriesBetween(client: SupabaseClient, first: IsoDay, last
 
 /** Days with a finished workout from `first` through `last`. */
 export async function workoutDaysBetween(client: SupabaseClient, first: IsoDay, last: IsoDay): Promise<IsoDay[]> {
-  const rows = await allRows((from, to) =>
-    client
-      .from("workout_sessions")
-      .select("id, performed_on")
-      .gte("performed_on", first)
-      .lte("performed_on", last)
-      .not("ended_at", "is", null)
-      .is("deleted_at", null)
-      .order("id")
-      .range(from, to),
+  const rows = await allRows(
+    () =>
+      client
+        .from("workout_sessions")
+        .select("id, performed_on")
+        .gte("performed_on", first)
+        .lte("performed_on", last)
+        .not("ended_at", "is", null)
+        .is("deleted_at", null) as unknown as Keyset,
   );
   return [...new Set(rows.map((row) => row.performed_on as string))];
 }

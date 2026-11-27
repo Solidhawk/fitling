@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { IsoDay, Localized, LoggedMeal, MenuChange, MenuInput, MenuPreferences, MenuRecipe } from "../core/fitlingCore";
 import { failure } from "./failure";
-import { allRows, type Row } from "./pages";
+import { allRows, type Keyset, type Row } from "./pages";
 
 /** The recipes, week menu and preferences of the user and the shared recipes, as FitlingCore reads them, plus the steps. */
 export type MenuRows = Omit<MenuInput, "userID" | "today" | "languages"> & {
@@ -47,18 +47,15 @@ function recipeFromRow(row: Row, productIDs: string[]): MenuRecipe {
   };
 }
 
-type Page = PromiseLike<{ data: Row[] | null; error: { message: string } | null }>;
-
 /** The part of a supabase-js query that `rows` narrows with. */
-interface Filter {
+interface Filter extends Keyset {
   not(column: string, operator: "is", value: null): Filter;
   gte(column: string, value: string): Filter;
-  order(column: string): { range(from: number, to: number): Page };
 }
 
 /** Every row of `table` that is not removed, page by page, narrowed by `narrow`. */
 function rows(client: SupabaseClient, table: string, columns: string, narrow: (query: Filter) => Filter = (query) => query) {
-  return allRows((from, to) => narrow(client.from(table).select(columns).is("deleted_at", null) as unknown as Filter).order("id").range(from, to));
+  return allRows(() => narrow(client.from(table).select(columns).is("deleted_at", null) as unknown as Filter));
 }
 
 async function write(work: PromiseLike<{ error: { message: string } | null }>) {

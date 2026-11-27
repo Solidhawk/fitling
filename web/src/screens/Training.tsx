@@ -13,7 +13,6 @@ import { adviceText, focusTitle, shortDate } from "../training/texts";
 import { usesPounds } from "../units";
 import { Alert } from "../ui/Alert";
 import { List, ListRow, ListSection } from "../ui/List";
-import { NavBar } from "../ui/NavBar";
 import { Body } from "./Body";
 import { ComposeWorkout, type ComposeChoice } from "./ComposeWorkout";
 import { ExerciseProgress, ExerciseProgressList } from "./ExerciseProgress";
@@ -180,13 +179,6 @@ export function Training({ userID }: { userID: string }) {
     );
   } else if (route?.kind === "exercises") {
     screen = <ExerciseProgressList core={core} input={input} equipment={rows.equipment} onBack={back} onOpen={(id) => push({ kind: "exercise", id })} />;
-  } else if (route?.kind === "exercise" && !rows.exercises.some((exercise) => exercise.id === route.id)) {
-    // Gone while it was open (removed from the catalogue, then read back): only the way back.
-    screen = (
-      <div className="tab-page pushed" data-page="exerciseProgress">
-        <NavBar title="" back={t("training.title")} onBack={back} />
-      </div>
-    );
   } else if (route?.kind === "exercise") {
     screen = <ExerciseProgress key={route.id} core={core} userID={userID} input={input} rows={rows} exerciseID={route.id} onBack={back} onChanged={reload} />;
   } else if (route?.kind === "volume") {
