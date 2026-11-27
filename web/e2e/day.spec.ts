@@ -57,6 +57,26 @@ test("reportsUnknownMacros", async ({ page }) => {
   await expect(page.getByText(nlCount("day.unknown.protein %lld", 1))).toBeVisible({ timeout: 15_000 });
 });
 
+// MacroBlocks: the empty part is the colour at 35% over white, without color-mix(), which Safari before 16.2 does not
+// know: there the whole background fell away, and the ink lettering stood on the dark ground.
+test("aMacroBlockFillsWithoutColorMix", async ({ page }) => {
+  const user = await start(page);
+  // 64 of the 128 g of protein: half.
+  await foodEntry(user.id, { consumed_on: localDay(), protein_g: 64 });
+  await page.reload();
+  const block = page.locator('[data-macro="targets.protein"]');
+  await expect(block).toBeVisible({ timeout: 15_000 });
+  const look = await block.evaluate((element) => ({
+    inline: element.getAttribute("style") ?? "",
+    pale: getComputedStyle(element, "::before").opacity,
+    top: parseFloat(getComputedStyle(element, "::after").top),
+    height: element.getBoundingClientRect().height,
+  }));
+  expect(look.inline).not.toContain("color-mix");
+  expect(look.pale).toBe("0.35");
+  expect(look.top).toBeCloseTo(look.height / 2, 0);
+});
+
 test("waterAddsUp", async ({ page }) => {
   await start(page);
   await page.getByTestId("water.add").click();
