@@ -68,24 +68,50 @@ public struct NutritionLabel: Sendable, Equatable {
 
     /// The pieces of one line joined from left to right, the lines from top to bottom. A table gives the name and the
     /// values of a row as separate pieces; they are on one line when, straightened by the slope of the photo, their
-    /// middles are less than half a line apart.
+    /// middles are less than half a line apart. A line is as high as most pieces are: an upright box around a wide
+    /// tilted piece is taller than its text.
     public static func rows(_ pieces: [Piece]) -> [String] {
+        guard !pieces.isEmpty else { return [] }
+        let heights = pieces.map(\.height).sorted()
+        let tolerance = heights[heights.count / 2] / 2
+        // Vision may give an upright box around a tilted line, without a slope. The slope is the one that lines the
+        // pieces up in the fewest lines, and of those the straightest: the camera's own, or one of 0 to 0.5 down or up
+        // per width in steps of 0.005.
         let slopes = pieces.map(\.slope).sorted()
-        let slope = slopes.isEmpty ? 0 : slopes[slopes.count / 2]
-        let straight = pieces.map { (piece: $0, y: $0.y - slope * $0.x) }.sorted { $0.y < $1.y }
-        var lines: [[(piece: Piece, y: Double)]] = []
-        for item in straight {
-            if let line = lines.last {
-                let middle = line.map { $0.y }.reduce(0, +) / Double(line.count)
-                let height = max(item.piece.height, line.map { $0.piece.height }.max() ?? 0)
-                if abs(item.y - middle) < height / 2 {
-                    lines[lines.count - 1].append(item)
-                    continue
-                }
-            }
-            lines.append([item])
+        let candidates = [slopes[slopes.count / 2]] + (-100...100).map { Double($0) / 200 }
+        let best = candidates.map { lines(pieces, slope: $0, tolerance: tolerance) }
+            .min { ($0.count, spread($0)) < ($1.count, spread($1)) } ?? []
+        return best.map { line in line.pieces.sorted { $0.x < $1.x }.map(\.text).joined(separator: " ") }
+    }
+
+    private struct Line {
+        var pieces: [Piece]
+        /// The middles of its pieces, straightened.
+        var middles: [Double]
+
+        var middle: Double { middles.reduce(0, +) / Double(middles.count) }
+    }
+
+    /// How far the straightened middles lie from the middles of their lines, squared.
+    private static func spread(_ lines: [Line]) -> Double {
+        lines.reduce(0) { total, line in
+            let middle = line.middle
+            return total + line.middles.reduce(0) { $0 + ($1 - middle) * ($1 - middle) }
         }
-        return lines.map { line in line.map { $0.piece }.sorted { $0.x < $1.x }.map { $0.text }.joined(separator: " ") }
+    }
+
+    private static func lines(_ pieces: [Piece], slope: Double, tolerance: Double) -> [Line] {
+        let straight = pieces.map { (piece: $0, y: $0.y - slope * $0.x) }.sorted { $0.y < $1.y }
+        var lines: [Line] = []
+        for item in straight {
+            if let line = lines.last, abs(item.y - line.middle) < tolerance {
+                lines[lines.count - 1].pieces.append(item.piece)
+                lines[lines.count - 1].middles.append(item.y)
+            } else {
+                lines.append(Line(pieces: [item.piece], middles: [item.y]))
+            }
+        }
+        return lines
     }
 
     // MARK: Reading
