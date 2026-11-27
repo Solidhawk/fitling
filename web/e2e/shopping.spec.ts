@@ -6,6 +6,15 @@ import { admin, nl } from "./users";
 
 // ShoppingTests and the shopping UI tests on iOS: the list, the menu, offers and sharing (web phase 6).
 
+// The offers are the list's extra: when the server cannot give the supermarkets, the list still shows, without a message
+// in the way (bug-echo of Vandaag, S40).
+test("theListShowsWhenTheOffersCannotBeRead", async ({ page }) => {
+  await page.route("**/rest/v1/supermarkets*", (route) => route.fulfill({ status: 500, contentType: "application/json", body: "{}" }));
+  await openShopping(page);
+  await expect(page.getByText(nl("shopping.empty"))).toBeVisible();
+  await expect(page.getByRole("alertdialog")).toHaveCount(0);
+});
+
 // Adding did not reach the server: what was typed stays in the field, to try again (UNFORGET S48).
 test("whatWasTypedStaysWhenAddingFails", async ({ page }) => {
   await openShopping(page);

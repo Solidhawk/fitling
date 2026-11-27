@@ -38,6 +38,19 @@ async function stored(userID: string) {
   return data;
 }
 
+// The server refuses to store the days folded into the partner: the tab shows the partner as it was stored, without a
+// message in the way, and the next visit tries again (bug-echo of Vandaag, S40).
+test("aFoldTheServerRefusesShowsThePartnerAsStored", async ({ page }) => {
+  const user = await start(page, { created_on: daysBefore(3) });
+  await goodDay(user.id, daysBefore(2));
+  await page.route("**/rest/v1/creatures*", (route) =>
+    route.request().method() === "PATCH" ? route.fulfill({ status: 500, contentType: "application/json", body: "{}" }) : route.continue(),
+  );
+  await openPartner(page, user.email);
+  await expect(page.getByTestId("partner.hero")).toContainText("Uiltje");
+  await expect(page.getByRole("alertdialog")).toHaveCount(0);
+});
+
 test("todayShowsWhatIsEarnedSoFar", async ({ page }, info) => {
   const user = await start(page);
   await goodDay(user.id, localDay());
