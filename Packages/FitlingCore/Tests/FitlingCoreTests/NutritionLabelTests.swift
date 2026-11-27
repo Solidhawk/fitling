@@ -138,21 +138,16 @@ import Testing
         #expect(rows == ["Energie 1569 kJ / 373 kcal", "Vetten 7,0 g"])
     }
 
-    /// Vision may give an upright box around a tilted line: no slope to go by. The tilt is then found from how the
-    /// pieces line up.
-    @Test(arguments: [0.12, -0.12, 0.0])
-    func aTiltedPhotoWithUprightBoxesStillGivesItsRows(tilt: Double) {
-        // Rows 0.1 apart, the values 0.5 to the right of their names: tilted, a value is 0.06 lower or higher than its
-        // name, nearer to the name of the next row.
-        let rows = [("Energie", "1569 kJ / 373 kcal"), ("Vetten", "7,0 g"), ("Koolhydraten", "62 g"), ("Eiwitten", "9,2 g")]
-        let pieces = rows.enumerated().flatMap { index, row -> [NutritionLabel.Piece] in
-            let y = 0.2 + 0.1 * Double(index)
-            return [
-                NutritionLabel.Piece(text: row.0, x: 0.15, y: y + tilt * 0.15, height: 0.035),
-                NutritionLabel.Piece(text: row.1, x: 0.65, y: y + tilt * 0.65, height: 0.04),
-            ]
-        }
-        #expect(NutritionLabel.rows(pieces) == rows.map { "\($0.0) \($0.1)" })
+    /// A sticker printed at an angle on a straight package: its slope does not tilt the table.
+    @Test func aStampAtAnAngleDoesNotTiltAStraightTable() {
+        let rows = NutritionLabel.rows([
+            .init(text: "NIEUW", x: 0.8, y: 0.1, height: 0.05, slope: 0.35),
+            .init(text: "Energie", x: 0.05, y: 0.20, height: 0.03),
+            .init(text: "1569 kJ / 373 kcal", x: 0.55, y: 0.20, height: 0.03),
+            .init(text: "Vetten", x: 0.05, y: 0.30, height: 0.03),
+            .init(text: "7,0 g", x: 0.55, y: 0.30, height: 0.03),
+        ])
+        #expect(rows == ["NIEUW", "Energie 1569 kJ / 373 kcal", "Vetten 7,0 g"])
     }
 
     /// What Vision gave on the simulator for the table of FoodLogTests turned 5 degrees (CI run 45922631819): a tilted box

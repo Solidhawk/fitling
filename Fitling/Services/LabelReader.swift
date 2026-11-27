@@ -30,16 +30,10 @@ enum LabelReader {
         }
         let pieces = (request.results ?? []).compactMap { observation -> NutritionLabel.Piece? in
             guard let candidate = observation.topCandidates(1).first else { return nil }
-            let text = candidate.string
-            // The box of a line of text is upright even when the line is tilted; the boxes of its first and last letter
-            // follow the line, so they give its slope and its own height.
-            if let first = text.indices.first, let last = text.indices.last, first != last,
-               let head = try? candidate.boundingBox(for: first..<text.index(after: first)),
-               let tail = try? candidate.boundingBox(for: last..<text.endIndex) {
-                return piece(text, topLeft: head.topLeft, topRight: tail.topRight, bottomLeft: head.bottomLeft, bottomRight: tail.bottomRight)
-            }
+            // A longer piece of a tilted photo gets a tilted box with the slope of the photo, a short one an upright
+            // box: slope 0, which NutritionLabel.rows reads as unknown. The boxes of its words are no better.
             return piece(
-                text, topLeft: observation.topLeft, topRight: observation.topRight,
+                candidate.string, topLeft: observation.topLeft, topRight: observation.topRight,
                 bottomLeft: observation.bottomLeft, bottomRight: observation.bottomRight
             )
         }
