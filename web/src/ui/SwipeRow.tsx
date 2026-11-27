@@ -1,4 +1,4 @@
-import { type MouseEvent, type PointerEvent, type ReactNode, useRef, useState } from "react";
+import { type MouseEvent, type PointerEvent, type ReactNode, useId, useRef, useState } from "react";
 
 /** A button that a swipe uncovers, as a .swipeActions Button with its tint on iOS. */
 export interface SwipeAction {
@@ -36,6 +36,9 @@ export function SwipeRow({
   bare?: boolean;
 }) {
   const [offset, setOffset] = useState(0);
+  // The row describes its buttons: a screen reader hears "Verwijderen" with the entry it removes, not the same word for
+  // every row.
+  const contentID = useId();
   const start = useRef<{ x: number; y: number; offset: number; horizontal?: boolean } | null>(null);
   const leadingGroup = useRef<HTMLDivElement>(null);
   const trailingGroup = useRef<HTMLDivElement>(null);
@@ -106,6 +109,7 @@ export function SwipeRow({
         type="button"
         className={`swipe-action swipe-${action.tone}`}
         data-testid={action.testID}
+        aria-describedby={contentID}
         onFocus={() => setOffset(side === "leading" ? widths().left : -widths().right)}
         onBlur={() => setOffset(0)}
         onClick={() => {
@@ -121,6 +125,7 @@ export function SwipeRow({
   return (
     <div className="swipe-row">
       <div
+        id={contentID}
         className={bare ? "swipe-content" : "list-row swipe-content"}
         style={{ transform: offset ? `translateX(${offset}px)` : undefined }}
         onPointerDown={down}
@@ -158,6 +163,7 @@ export function SwipeRow({
             <button
               type="button"
               className="swipe-action swipe-delete"
+              aria-describedby={contentID}
               onFocus={() => setOffset(-widths().right)}
               onBlur={() => setOffset(0)}
               onClick={onDelete}
