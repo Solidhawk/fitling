@@ -220,14 +220,19 @@ export async function isFavorite(client: SupabaseClient, productID: string): Pro
   return ids.includes(productID);
 }
 
+/** Whether the product was a favourite when this browser last knew, without asking the server; undefined if it never knew. */
+export function keptFavorite(productID: string): boolean | undefined {
+  return keptAnswer<string[]>("favoriteIDs")?.includes(productID);
+}
+
 /** On: one row; off: every row for the product gets deleted_at (FoodDiary.setFavorite). */
-export async function setFavorite(client: SupabaseClient, userID: string, productID: string, favorite: boolean, now: Date): Promise<void> {
-  const existing = await favoriteRows(client, productID);
+export async function setFavorite(client: SupabaseClient, userID: string, product: Product, favorite: boolean, now: Date): Promise<void> {
+  const existing = await favoriteRows(client, product.id);
   const moment = now.toISOString();
   const { error } = favorite
     ? existing.length > 0
       ? { error: null }
-      : await client.from("favorite_products").insert({ id: crypto.randomUUID(), user_id: userID, product_id: productID, updated_at: moment })
+      : await client.from("favorite_products").insert({ id: crypto.randomUUID(), user_id: userID, product_id: product.id, updated_at: moment })
     : await client
         .from("favorite_products")
         .update({ deleted_at: moment, updated_at: moment })
@@ -236,4 +241,10 @@ export async function setFavorite(client: SupabaseClient, userID: string, produc
           existing.map((row) => row.id as string),
         );
   if (error) throw failure(error);
+  // In what this browser keeps too, so the star and the log sheet show it without a connection (review of PR #63); the
+  // next read from the server replaces both.
+  const ids = keptAnswer<string[]>("favoriteIDs");
+  if (ids) keep("favoriteIDs", [...ids.filter((id) => id !== product.id), ...(favorite ? [product.id] : [])]);
+  const favorites = keptAnswer<Product[]>("favorites");
+  if (favorites) keep("favorites", [...(favorite ? [product] : []), ...favorites.filter((known) => known.id !== product.id)]);
 }
