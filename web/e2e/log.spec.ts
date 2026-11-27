@@ -135,12 +135,21 @@ test("recentShowsEachProductOnce", async ({ page }) => {
   await expect(page.getByRole("button", { name: new RegExp(product.name) })).toHaveCount(1);
 });
 
+// Two letters search the user's own products, not the shared ones. Checked once the search is done (review of web phase
+// 2: before, the test passed in the pause before the app searched at all).
 test("aShortQueryStaysLocal", async ({ page }) => {
   await start(page);
   await sharedProduct("ab");
+  const shared: string[] = [];
+  page.on("request", (request) => {
+    if (/\/rest\/v1\/products\?.*owner_id=is\.null/.test(request.url())) shared.push(request.url());
+  });
+  const own = page.waitForResponse((response) => /\/rest\/v1\/products\?.*owner_id=not\.is\.null/.test(response.url()));
   await search(page, "ab");
+  await own;
   await expect(page.getByText(nl("log.results.none"))).toBeVisible();
   await expect(page.getByRole("heading", { name: nl("log.results.online") })).toHaveCount(0);
+  expect(shared).toEqual([]);
 });
 
 test("addAnOwnProductAndLogIt", async ({ page }, info) => {

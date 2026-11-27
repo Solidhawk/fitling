@@ -217,9 +217,23 @@ test("the partner as the engine sees it today", async () => {
     today: "2026-11-24",
   });
   expect(snapshot.historyDays).toBe(8);
-  expect(["happy", "content", "sluggish", "tired", "hungry", "asleep"]).toContain(snapshot.mood);
   expect(snapshot.energy).toBeGreaterThanOrEqual(0);
   expect(snapshot.energy).toBeLessThanOrEqual(1);
+  // The mood follows the days as on the iPhone (CreatureEngine.snapshot), not just any mood (review of web phase 2):
+  // nothing logged yesterday is hungry, three empty days in a row asleep.
+  const moodAfter = (days: string[]) =>
+    core.partnerSnapshot({
+      creature: { species: "owl", colorIndex: 0, tone: "sweet", createdOn: "2026-11-14", bodyShape: 0.3, xp: 0, offTargetDays: 0 },
+      entries: days.map((day) => ({ day, kcal: 2000, proteinG: 120 })),
+      workoutDays: [],
+      periods: [],
+      fallback: target,
+      today: "2026-11-24",
+    });
+  const hungry = moodAfter(["2026-11-21", "2026-11-22"]);
+  expect(hungry.mood).toBe("hungry");
+  expect(hungry.energy).toBeLessThanOrEqual(0.4);
+  expect(moodAfter(["2026-11-20"])).toMatchObject({ mood: "asleep", energy: 0 });
 });
 
 test("the partner folded, dressed and today's XP (web phase 3)", async () => {
