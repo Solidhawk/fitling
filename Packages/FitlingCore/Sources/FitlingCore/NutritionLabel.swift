@@ -148,17 +148,28 @@ public struct NutritionLabel: Sendable, Equatable {
         /// "373 kcal" on a row of its own: used when the energy row gave none.
         var lonelyKcal: Double?
         var leftSomethingOut = false
+        /// The ingredients came after the table: "suiker, zout, conserveermiddel E250" names no values.
+        var isFinished = false
+
+        /// The heading of the ingredients, folded, in the languages of the labels.
+        private static let ingredients: Set<String> = ["ingredienten", "ingredients", "zutaten"]
 
         mutating func line(_ tokens: [Token]) {
+            guard !isFinished else { return }
             // The names since the last value: "verzadigde vetzuren" is one name, saturated fat.
             var named: [Nutrient] = []
             var energyNumbers: [Number] = []
             var energyUnits: [String] = []
             var previousWord = ""
-            for token in tokens {
+            reading: for token in tokens {
                 switch token {
                 case let .word(word):
                     previousWord = word
+                    // Ingredients above the table come before any value and are passed by.
+                    if Self.ingredients.contains(word), !grams.isEmpty || kcal != nil || kilojoules != nil {
+                        isFinished = true
+                        break reading
+                    }
                     guard let nutrient = Nutrient.named(by: word) else { continue }
                     if named.first == .energy, !energyNumbers.isEmpty, nutrient != .energy {
                         finishEnergy(energyNumbers, energyUnits)

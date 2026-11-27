@@ -115,6 +115,9 @@ import Testing
         ])
         #expect(label.salt == 0.48 && label.fat == 7)
         #expect(!label.needsCheck)
+        // Ingredients before the table, on the same line, are passed by: the values after them still count.
+        let oneLine = NutritionLabel.read(["Ingrediënten: havermout. Voedingswaarde per 100 g: Energie 373 kcal, Vetten 7 g"])
+        #expect(oneLine.kcal == 373 && oneLine.fat == 7)
     }
 
     /// The reference intake in a column heading is no kcal of the product: "2000 kcal" pushed out the 371 of a row of its
