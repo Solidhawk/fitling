@@ -6,24 +6,40 @@ import { fileURLToPath } from "node:url";
 
 const languages = ["nl", "en", "de"];
 
-/** Texts per language: a string, or `{ one, other }` for a plural. Fails on any missing translation. */
+/** A format code of the catalog: printf's conversions and Apple's %@, numbered or not. */
+const formatCode = /%(?:\d+\$)?(?:\.\d+)?(?:llu|lld|ld|lu|lf|[@diufegscxXop%])/g;
+/** The ones i18n.ts fills in; any other would show on screen as it is. */
+const filledIn = /^%(?:\d+\$)?(?:lld|@)$/;
+
+/**
+ * Texts per language: a string, or `{ one, other }` for a plural. Fails on any missing translation, and on a format
+ * code that i18n.ts does not fill in.
+ */
 function strings(catalog) {
   const result = Object.fromEntries(languages.map((language) => [language, {}]));
   const missing = [];
+  const unknown = [];
+  const check = (key, language, text) => {
+    for (const [code] of text.matchAll(formatCode)) if (!filledIn.test(code)) unknown.push(`${key} (${language}: ${code})`);
+  };
   for (const [key, entry] of Object.entries(catalog.strings)) {
     for (const language of languages) {
       const localization = entry.localizations?.[language];
       const plural = localization?.variations?.plural;
       if (plural?.one?.stringUnit && plural?.other?.stringUnit) {
         result[language][key] = { one: plural.one.stringUnit.value, other: plural.other.stringUnit.value };
+        check(key, language, plural.one.stringUnit.value);
+        check(key, language, plural.other.stringUnit.value);
       } else if (localization?.stringUnit) {
         result[language][key] = localization.stringUnit.value;
+        check(key, language, localization.stringUnit.value);
       } else {
         missing.push(`${key} (${language})`);
       }
     }
   }
   if (missing.length > 0) throw new Error(`Missing translations: ${missing.join(", ")}`);
+  if (unknown.length > 0) throw new Error(`Format codes the app does not fill in: ${unknown.join(", ")}`);
   return result;
 }
 

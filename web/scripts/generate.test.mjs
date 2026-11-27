@@ -106,3 +106,10 @@ test("copiesEveryLayerOnTheRealResources", async () => {
   expect((await readdir(join(out, "public/recipes"))).length).toBe(24);
 
 }, 60_000);
+
+// The app fills in %@ and %lld, numbered or not (i18n.ts); any other code would show on screen as it is, so the
+// texts are not made (UNFORGET S36).
+test("failsOnAFormatCodeTheAppDoesNotFillIn", async () => {
+  const dirs = await fixture({ ...both, "day.count %d": { localizations: { nl: unit("%d dagen"), en: unit("%d days"), de: unit("%d Tage") } } });
+  await expect(generate(dirs)).rejects.toThrow("day.count %d");
+});

@@ -547,15 +547,24 @@ interface Exports {
   fitling_call(pointer: number, length: number): bigint;
 }
 
+/**
+ * The place and the length of an answer, packed by fitling_call in one i64 with the place in the upper half. A place
+ * from 2 GB on sets the sign bit, so the i64 is read unsigned.
+ */
+export function unpack(packed: bigint): { pointer: number; length: number } {
+  const unsigned = BigInt.asUintN(64, packed);
+  return { pointer: Number(unsigned >> 32n), length: Number(unsigned & 0xffffffffn) };
+}
+
 /** One request to a running copy, and its answer as text. */
 function exchange(exports: Exports, fn: string, input: unknown): string {
   const request = new TextEncoder().encode(JSON.stringify({ fn, input }));
-  const pointer = exports.fitling_alloc(request.length);
+  // An i32 from WebAssembly comes in signed: a place from 2 GB on is read unsigned.
+  const pointer = exports.fitling_alloc(request.length) >>> 0;
   new Uint8Array(exports.memory.buffer, pointer, request.length).set(request);
   const packed = exports.fitling_call(pointer, request.length);
   exports.fitling_free(pointer, request.length);
-  const answerPointer = Number(packed >> 32n);
-  const answerLength = Number(packed & 0xffffffffn);
+  const { pointer: answerPointer, length: answerLength } = unpack(packed);
   // Read before freeing: the memory may grow, so take the buffer anew.
   const answer = new TextDecoder().decode(new Uint8Array(exports.memory.buffer, answerPointer, answerLength).slice());
   exports.fitling_free(answerPointer, answerLength);
