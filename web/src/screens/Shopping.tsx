@@ -95,6 +95,9 @@ export function Shopping({ core, userID, menu, onBack }: { core: FitlingCore; us
     try {
       setOffers(await loadOffers(supabase, today(), new Date()));
     } catch (error) {
+      // The offers are the list's extra: the list shows without them, with the message, so an empty choice of shops
+      // or a favourite that did not come back is not taken for the truth. The next visit reads them again.
+      setOffers((shown) => shown ?? { supermarkets: [], favoriteSupermarketIDs: [], offers: [] });
       setFailed(error instanceof Error ? error.message : "error.server");
     }
   }, []);

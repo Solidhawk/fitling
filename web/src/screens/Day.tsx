@@ -24,6 +24,8 @@ interface Shown {
   targets: Targets;
   partner?: Partner;
   snapshot?: PartnerSnapshot;
+  /** The partner could not be read or brought up to date this time: the card keeps the one it showed. */
+  partnerFailed?: boolean;
 }
 
 /** Folds finished days into the partner and returns it, once for Vandaag and the partner tab together (Home). */
@@ -31,23 +33,26 @@ export type Advance = (core: FitlingCore) => Promise<Partner | undefined>;
 
 async function load(core: FitlingCore, userID: string, day: string, advance: Advance): Promise<Shown> {
   const now = today();
-  const [entries, water, profile, periods, partner, week] = await Promise.all([
+  // The partner is the card's alone: when folding the days into it or reading its week fails, the day shows without it,
+  // and the next reload tries again.
+  const partnerPart = Promise.all([advance(core), partnerWeek(supabase, now)]).catch(() => undefined);
+  const [entries, water, profile, periods, partnerAndWeek] = await Promise.all([
     entriesOn(supabase, day),
     waterOn(supabase, day),
     loadProfile(supabase, userID),
     loadTargetPeriods(supabase),
-    advance(core),
-    partnerWeek(supabase, now),
+    partnerPart,
   ]);
+  const [partner, week] = partnerAndWeek ?? [];
   // The target that applied on that day; earlier days keep theirs.
   const targets = core.targetsOnDay({ day, fallback: profile.targets, periods });
   const totals = core.dayTotals({ entries });
   // The partner as it is today, also when an earlier day is shown, as the iPhone shows it; its reminders are planned
   // from the same days, as HomeView does when the app opens or comes back.
-  const days = partner ? { creature: partner.state, ...week, periods, fallback: profile.targets, today: now } : undefined;
+  const days = partner && week ? { creature: partner.state, ...week, periods, fallback: profile.targets, today: now } : undefined;
   const snapshot = partner && days ? core.partnerSnapshot(days) : undefined;
   if (partner && days) void planReminders(supabase, core, { settings: loadReminderSettings(), name: partner.name, days }).catch(() => undefined);
-  return { entries, water, totals, targets, partner, snapshot };
+  return { entries, water, totals, targets, partner, snapshot, partnerFailed: partnerAndWeek === undefined };
 }
 
 /** The title: "Vandaag", or the weekday with its date. */
@@ -86,7 +91,10 @@ export function Day({ userID, advance }: { userID: string; advance: Advance }) {
     const mine = ++request.current;
     try {
       const next = await load(core, userID, day, advance);
-      if (mine === request.current) setShown(next);
+      // The partner is today's on every day shown: a card that showed it keeps it through a failed read.
+      if (mine === request.current) {
+        setShown((before) => (next.partnerFailed && before?.partner ? { ...next, partner: before.partner, snapshot: before.snapshot } : next));
+      }
       // What waited in this browser and was sent later: a write the server turned down is told once, and one that
       // keeps waiting although the server answers gets a line.
       if (takeRefused() > 0) setFailed("offline.refused");

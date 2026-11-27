@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { FitlingCore, PartnerDays, PartnerEvent, PartnerSnapshot, ReminderSettings } from "../core/fitlingCore";
 import { useCore } from "../core/useCore";
-import { partnerWeek, savePartner, type Partner as StoredPartner } from "../data/creature";
+import { loadPartner, partnerWeek, savePartner, type Partner as StoredPartner } from "../data/creature";
 import { noNetwork } from "../data/offline";
 import { loadProfile, loadTargetPeriods } from "../data/profileStore";
 import { loadReminderSettings, notificationsRefused, planReminders, pushSupport, saveReminderSettings, turnOn } from "../data/push";
@@ -38,7 +38,8 @@ const earnings = [
 async function load(core: FitlingCore, userID: string, advance: Advance): Promise<Shown | undefined> {
   const now = today();
   const [partner, profile, periods, week] = await Promise.all([
-    advance(core),
+    // A fold the server refuses leaves the partner as it was stored; the next visit folds again (Day.load).
+    advance(core).catch(() => loadPartner(supabase, userID)),
     loadProfile(supabase, userID),
     loadTargetPeriods(supabase),
     partnerWeek(supabase, now),

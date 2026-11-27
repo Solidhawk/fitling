@@ -78,6 +78,20 @@ test("aMacroBlockFillsWithoutColorMix", async ({ page }) => {
   expect(look.colour).toBe("rgb(255, 123, 107)");
 });
 
+// The partner is the card's alone: when folding the days into it fails on the server, the day still shows, without the
+// partner, and no message stands in the way (review of web phase 2).
+test("aPartnerThatCannotBeFoldedDoesNotHoldUpTheDay", async ({ page }) => {
+  const user = await createUser({ profile: true, creature: true });
+  await foodEntry(user.id, { consumed_on: localDay(), name: "Roggebrood" });
+  await page.route("**/rest/v1/workout_sessions*", (route) => route.fulfill({ status: 500, contentType: "application/json", body: "{}" }));
+  await signIn(page, user.email);
+  await expect(page.getByTestId("day.progress")).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText("Roggebrood")).toBeVisible();
+  await expect(page.getByRole("alertdialog")).toHaveCount(0);
+  // The card without the partner: plain white, as for someone without one.
+  await expect(page.getByTestId("day.progress")).not.toHaveClass(/day-card-partner/);
+});
+
 test("waterAddsUp", async ({ page }) => {
   await start(page);
   await page.getByTestId("water.add").click();
