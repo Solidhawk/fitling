@@ -359,3 +359,19 @@ test("savingKeepsThePlaceOnVandaag", async ({ page }) => {
   await page.waitForTimeout(500);
   expect(Math.abs((await page.evaluate(() => window.scrollY)) - place)).toBeLessThanOrEqual(2);
 });
+
+// Back and then the browser's Forward inside the sheet: the portion it pointed to is gone, so the sheet stays on the
+// list, and Cancel still closes it (review of PR #62).
+test("forwardInTheSheetLeavesCancelWorking", async ({ page }) => {
+  await start(page);
+  const product = await sharedProduct("Peer");
+  await search(page, product.name);
+  await page.getByRole("button", { name: new RegExp(product.name) }).click();
+  await expect(page.getByTestId("portion.quantity")).toBeVisible();
+  await page.goBack();
+  await expect(page.getByTestId("log.search")).toBeVisible();
+  await page.goForward();
+  await expect(page.getByTestId("log.search")).toBeVisible();
+  await page.getByRole("button", { name: nl("common.cancel") }).click();
+  await expect(page.locator('[data-screen="logFood"]')).toHaveCount(0);
+});
