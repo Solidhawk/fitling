@@ -126,6 +126,32 @@ test("discardingRemovesTheWorkout", async ({ page }) => {
   expect(data?.every((set) => set.deleted_at !== null)).toBe(true);
 });
 
+// A discard the server turns down keeps the workout open with its error: closing anyway took the alert away with the
+// sheet it lived in (UNFORGET S42). Trying again throws it away.
+test("aFailedDiscardKeepsTheWorkoutWithItsError", async ({ page }) => {
+  const user = await openTraining(page);
+  const programme = await startFirstDay(page);
+  let failures = 1;
+  await page.route("**/rest/v1/workout_sessions*", (route) =>
+    route.request().method() === "PATCH" && failures-- > 0
+      ? route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ message: "unavailable" }) })
+      : route.continue(),
+  );
+  const discard = async () => {
+    await page.getByTestId("workout.options").click();
+    await page.getByRole("menuitem", { name: nl("training.workout.discard") }).click();
+    await page.getByRole("button", { name: nl("training.workout.discard") }).click();
+  };
+  await discard();
+  await expect(page.getByRole("alertdialog", { name: nl("error.server") })).toBeVisible();
+  await page.getByRole("alertdialog").getByRole("button").click();
+  await expect(page.getByRole("dialog", { name: programme.days[0].name })).toBeVisible();
+  await discard();
+  await expect(page.getByRole("dialog", { name: programme.days[0].name })).toBeHidden({ timeout: 15_000 });
+  const { data } = await admin.from("workout_sessions").select("deleted_at").eq("user_id", user.id);
+  expect(data?.map((session) => session.deleted_at !== null)).toEqual([true]);
+});
+
 // Review Focus: a workout open on two devices shows the sets logged on the other one, with their exercise.
 test("setsFromAnotherDeviceAreShown", async ({ page }) => {
   const curl = await exercise("Dumbbell curl");
