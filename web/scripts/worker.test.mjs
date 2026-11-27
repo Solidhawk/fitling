@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { expect, test } from "vitest";
+import { afterEach, expect, test, vi } from "vitest";
 import { workerSource } from "./serviceWorker.mjs";
 
 // web/sw.js itself, run with a stand-in for the browser around it: its caches, the network, notifications and the
@@ -12,8 +12,15 @@ function key(request) {
   return typeof request === "string" ? new URL(request, scope).href : request.url;
 }
 
-/** One build's worker in a browser that already has the caches in `earlier` (name → urls). */
-function worker({ files = ["./", "assets/index-new.js"], earlier = {} } = {}) {
+afterEach(() => {
+  vi.useRealTimers();
+});
+
+/**
+ * One build's worker in a browser that already has the caches in `earlier` (name → urls), with the media of version
+ * `media`; `answer` stands in for the network (by default it answers at once).
+ */
+function worker({ files = ["./", "assets/index-new.js"], earlier = {}, media = "m1", answer } = {}) {
   const listeners = {};
   const stores = new Map(Object.entries(earlier).map(([name, urls]) => [name, new Map(urls.map((url) => [key(url), `${name} ${url}`]))]));
   const shown = [];
@@ -66,9 +73,9 @@ function worker({ files = ["./", "assets/index-new.js"], earlier = {} } = {}) {
   }
   const network = async (request, init) => {
     fetched.push({ url: key(request), cache: init?.cache ?? request.cache });
-    return `network ${key(request)}`;
+    return answer ? answer(key(request)) : `network ${key(request)}`;
   };
-  const source = workerSource(template, files);
+  const source = workerSource(template, files, { contents: [], media });
   new Function("self", "caches", "fetch", "Request", "Response", source)(self, caches, network, ScopedRequest, Response);
 
   /** Fires an event and waits for what the worker hands to waitUntil or respondWith. */
@@ -154,4 +161,56 @@ test("tappingTheReminderOpensTheApp", async () => {
   expect(focused).toEqual([true]);
   expect(sw.opened).toEqual([scope]);
   expect(closed).toEqual([true, true]);
+});
+
+// The partners, exercise sheets and recipe photos (up to 37 MB) are kept across builds while they stay the same: a new
+// build of the app alone does not fetch them all again (UNFORGET S50).
+test("theMediaStayWhenOnlyTheAppChanges", async () => {
+  const sw = worker({ earlier: { "fitling-media-m1": ["partners/owl.png"], "fitling-media-m0": ["partners/owl.png"] } });
+  await sw.fire("install");
+  await sw.fire("activate");
+  expect(sw.stores.has("fitling-media-m1")).toBe(true);
+  expect(sw.stores.has("fitling-media-m0")).toBe(false);
+  const owl = { method: "GET", url: `${scope}partners/owl.png`, mode: "no-cors" };
+  expect(await sw.fire("fetch", { request: owl })).toBe("fitling-media-m1 partners/owl.png");
+});
+
+// A network that does not answer (wifi without internet): after four seconds the app opens from the device, as it
+// does without a connection, instead of a white screen that waits (UNFORGET S50).
+test("aNetworkThatDoesNotAnswerOpensTheKeptPage", async () => {
+  vi.useFakeTimers();
+  const sw = worker({ answer: () => new Promise(() => {}) });
+  await sw.fire("install");
+  const page = { method: "GET", url: scope, mode: "navigate" };
+  const answered = sw.fire("fetch", { request: page });
+  let settled = false;
+  void answered.then(() => {
+    settled = true;
+  });
+  // Not before the four seconds: until then the server may still answer.
+  await vi.advanceTimersByTimeAsync(3_999);
+  expect(settled).toBe(false);
+  await vi.advanceTimersByTimeAsync(1);
+  // The page kept at install (the stand-in labels what it fetched then "network").
+  expect(await answered).toBe(`network ${scope}`);
+});
+
+// Without a kept page there is nothing better than the network: a slow answer is still waited for.
+test("aSlowNetworkIsWaitedForWithoutAKeptPage", async () => {
+  vi.useFakeTimers();
+  const sw = worker({ answer: (url) => new Promise((resolve) => setTimeout(() => resolve(`slow ${url}`), 6_000)) });
+  const page = { method: "GET", url: scope, mode: "navigate" };
+  const answered = sw.fire("fetch", { request: page });
+  await vi.advanceTimersByTimeAsync(6_000);
+  expect(await answered).toBe(`slow ${scope}`);
+});
+
+// The media are kept across builds: the first copy comes past the browser's own cache, so a picture changed in a deploy
+// is not kept from just before it (review of PR #57).
+test("mediaComeFreshFromTheServerTheFirstTime", async () => {
+  const sw = worker();
+  await sw.fire("install");
+  const owl = { method: "GET", url: `${scope}partners/owl.png`, mode: "no-cors" };
+  expect(await sw.fire("fetch", { request: owl })).toBe(`network ${scope}partners/owl.png`);
+  expect(sw.fetched.at(-1)).toEqual({ url: `${scope}partners/owl.png`, cache: "no-cache" });
 });
