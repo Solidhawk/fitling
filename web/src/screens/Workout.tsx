@@ -198,12 +198,7 @@ export function Workout({
               </ListRow>
               <div className="list-row advice-row">{adviceFor(entry)}</div>
               {done.map((set, index) => (
-                <SwipeRow
-                  key={set.id}
-                  name={t("training.set.summary %@ %lld", weight(set.weightKg, pounds), set.reps)}
-                  deleteLabel={t("day.delete")}
-                  onDelete={() => void act(() => removeSet(supabase, set.id, new Date()))}
-                >
+                <SwipeRow key={set.id} deleteLabel={t("day.delete")} onDelete={() => void act(() => removeSet(supabase, set.id, new Date()))}>
                   <span className="set-row" data-testid="workout.set">
                     <span className="set-number">{index + 1}</span>
                     <span className="set-summary">{t("training.set.summary %@ %lld", weight(set.weightKg, pounds), set.reps)}</span>

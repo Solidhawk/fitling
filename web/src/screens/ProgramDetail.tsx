@@ -159,7 +159,7 @@ export function ProgramDetail({
                 </ListRow>
               );
               return day.canChange ? (
-                <SwipeRow key={item.id} name={item.exerciseName} deleteLabel={t("day.delete")} onDelete={() => void act(() => removeItem(supabase, item.id, new Date()))}>
+                <SwipeRow key={item.id} deleteLabel={t("day.delete")} onDelete={() => void act(() => removeItem(supabase, item.id, new Date()))}>
                   {row}
                 </SwipeRow>
               ) : (

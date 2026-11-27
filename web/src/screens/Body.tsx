@@ -121,12 +121,7 @@ export function Body({ core, userID, onBack }: { core: FitlingCore; userID: stri
         {measurements.length > 0 && (
           <ListSection header={t("body.history")}>
             {[...measurements].reverse().map((measurement) => (
-              <SwipeRow
-                key={measurement.id}
-                name={`${date.format(new Date(`${measurement.measuredOn}T12:00:00`))}, ${number.format(shown(measurement))} ${symbol}`}
-                deleteLabel={t("day.delete")}
-                onDelete={() => void act(() => deleteMeasurement(supabase, measurement.id, new Date()))}
-              >
+              <SwipeRow key={measurement.id} deleteLabel={t("day.delete")} onDelete={() => void act(() => deleteMeasurement(supabase, measurement.id, new Date()))}>
                 <span className="labeled-row" data-testid="body.measurement">
                   <span>{date.format(new Date(`${measurement.measuredOn}T12:00:00`))}</span>
                   <span className="value">{`${number.format(shown(measurement))} ${symbol}`}</span>

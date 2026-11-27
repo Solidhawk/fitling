@@ -143,7 +143,7 @@ export function RecipeList({
               </button>
             );
             return recipe.own ? (
-              <SwipeRow key={recipe.id} bare name={recipe.title} deleteLabel={t("menu.recipe.delete")} onDelete={() => onDelete(recipe.id)}>
+              <SwipeRow key={recipe.id} bare deleteLabel={t("menu.recipe.delete")} onDelete={() => onDelete(recipe.id)}>
                 {row}
               </SwipeRow>
             ) : (
@@ -392,7 +392,7 @@ export function OwnRecipeForm({
       </ListSection>
       <ListSection header={t("menu.recipe.ingredients.title")}>
         {lines.map((entry, index) => (
-          <SwipeRow key={index} name={entry.name} deleteLabel={t("menu.recipe.delete")} onDelete={() => setLines(lines.filter((_, other) => other !== index))}>
+          <SwipeRow key={index} deleteLabel={t("menu.recipe.delete")} onDelete={() => setLines(lines.filter((_, other) => other !== index))}>
             <span>{`${amountText(entry.quantity, entry.unit)} ${entry.name}`}</span>
           </SwipeRow>
         ))}
