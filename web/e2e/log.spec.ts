@@ -11,7 +11,10 @@ async function start(page: Page) {
 }
 
 async function search(page: Page, text: string) {
-  await page.getByTestId("log.search").fill(text);
+  const field = page.getByTestId("log.search");
+  await field.fill(text);
+  // A field that did not take the text fails here, not 30 s later at a result that never comes (UNFORGET S56).
+  await expect(field).toHaveValue(text);
 }
 
 // The log sheet says "Nog niets gelogd" once it knows, not while recent and favourites are still being read; and a list
@@ -132,10 +135,86 @@ test("favoriteShowsUpAtTheTop", async ({ page }) => {
   await page.getByRole("button", { name: nl("portion.favorite.add") }).click();
   await expect(page.getByRole("button", { name: nl("portion.favorite.remove") })).toBeVisible();
   await page.getByTestId("portion.save").click();
+  // Each step waits for the screen it leads to, so a failure says which one did not come (UNFORGET S56).
+  await expect(page.locator('[data-screen="logFood"]')).toHaveCount(0);
   await page.getByTestId("day.add.lunch").click();
+  await expect(page.locator('[data-screen="logFood"]')).toBeVisible();
   await expect(page.getByRole("heading", { name: nl("log.favorites") })).toBeVisible();
   await expect(page.getByRole("button", { name: new RegExp(product.name) }).first()).toBeVisible();
 });
+
+// The star waits for what the server knows: a first read that comes back after a tap does not turn the star off again
+// (UNFORGET S56; on the iPhone the favourite is read on the device, at once).
+test("aSlowFavoriteReadDoesNotUndoTheStar", async ({ page }) => {
+  await start(page);
+  const product = await sharedProduct("Kwark");
+  await search(page, product.name);
+  const row = page.getByRole("button", { name: new RegExp(product.name) });
+  await expect(row).toBeVisible();
+  const { answered } = await holdFavoriteReads(page);
+  await row.click();
+  // Not known yet in this browser: the star waits.
+  await expect(page.getByRole("button", { name: nl("portion.favorite.add") })).toBeDisabled();
+  await page.getByRole("button", { name: nl("portion.favorite.add") }).click();
+  await expect(page.getByRole("button", { name: nl("portion.favorite.remove") })).toBeVisible();
+  await answered;
+  await settle(page);
+  await expect(page.getByRole("button", { name: nl("portion.favorite.remove") })).toBeVisible();
+});
+
+// What this browser knows already shows at once, as on the iPhone where the favourite is on the device; an answer from
+// before a tap does not undo it (review of PR #63).
+test("theStarShowsWhatThisBrowserKnowsAtOnce", async ({ page }) => {
+  await start(page);
+  const product = await sharedProduct("Skyr");
+  await search(page, product.name);
+  const row = page.getByRole("button", { name: new RegExp(product.name) });
+  const add = page.getByRole("button", { name: nl("portion.favorite.add") });
+  await row.click();
+  await expect(add).toBeEnabled();
+  await page.goBack();
+  await expect(row).toBeVisible();
+  const { answered } = await holdFavoriteReads(page);
+  await row.click();
+  await expect(add).toBeEnabled({ timeout: 1_000 });
+  await add.click();
+  await expect(page.getByRole("button", { name: nl("portion.favorite.remove") })).toBeVisible();
+  await answered;
+  await settle(page);
+  await expect(page.getByRole("button", { name: nl("portion.favorite.remove") })).toBeVisible();
+});
+
+// A read of the favourites that fails leaves the star off and to be set, not dimmed for good.
+test("aFailedFavoriteReadLeavesTheStarToSet", async ({ page }) => {
+  await start(page);
+  const product = await sharedProduct("Kefir");
+  await search(page, product.name);
+  await page.route(allFavorites, (route) =>
+    route.request().method() === "GET" ? route.fulfill({ status: 500, contentType: "application/json", body: "{}" }) : route.continue(),
+  );
+  await page.getByRole("button", { name: new RegExp(product.name) }).click();
+  await page.getByRole("button", { name: nl("portion.favorite.add") }).click();
+  await expect(page.getByRole("button", { name: nl("portion.favorite.remove") })).toBeVisible();
+});
+
+// All favourites, as the portion reads them; not the one product, as the star reads it before writing.
+const allFavorites = /\/rest\/v1\/favorite_products\?(?!.*product_id=eq)/;
+
+/** Reads of all favourites get the server's answer from before what follows, 2 s late; `answered` once one came. */
+async function holdFavoriteReads(page: Page): Promise<{ answered: Promise<unknown> }> {
+  await page.route(allFavorites, async (route) => {
+    if (route.request().method() !== "GET") return route.continue();
+    const response = await route.fetch();
+    await new Promise((resolve) => setTimeout(resolve, 2_000));
+    await route.fulfill({ response });
+  });
+  return { answered: page.waitForResponse((response) => response.request().method() === "GET" && allFavorites.test(response.url())) };
+}
+
+/** Time for the page to handle an answer that just came back. */
+async function settle(page: Page) {
+  await page.evaluate(() => new Promise((resolve) => setTimeout(resolve, 300)));
+}
 
 test("recentShowsEachProductOnce", async ({ page }) => {
   await start(page);

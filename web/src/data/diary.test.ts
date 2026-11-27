@@ -100,10 +100,10 @@ describe.skipIf(!url || !key || !serviceKey)("the food diary on the server", () 
   test("favoritesCanBeSetAndCleared", async () => {
     const { id, client } = await user();
     const product = await shared(`Yoghurt ${crypto.randomUUID()}`);
-    await setFavorite(client, id, product.id, true, new Date());
-    await setFavorite(client, id, product.id, true, new Date());
+    await setFavorite(client, id, product, true, new Date());
+    await setFavorite(client, id, product, true, new Date());
     expect((await favoriteProducts(client)).map((favorite) => favorite.id)).toEqual([product.id]);
-    await setFavorite(client, id, product.id, false, new Date());
+    await setFavorite(client, id, product, false, new Date());
     expect(await isFavorite(client, product.id)).toBe(false);
   });
 

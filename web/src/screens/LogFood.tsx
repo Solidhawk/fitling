@@ -149,7 +149,17 @@ export function LogFood({ core, userID, meal, day, onClose }: { core: FitlingCor
   return (
     <div ref={sheet} className="sheet" role="dialog" aria-modal="true" aria-label={title} tabIndex={-1} data-screen="logFood">
       {step.kind === "portion" && (
-        <Portion core={core} userID={userID} product={step.product} meal={meal} day={day} back={title} onBack={back} onSaved={close} />
+        <Portion
+          key={step.product.id}
+          core={core}
+          userID={userID}
+          product={step.product}
+          meal={meal}
+          day={day}
+          back={title}
+          onBack={back}
+          onSaved={close}
+        />
       )}
       {step.kind === "addProduct" && (
         <AddProduct

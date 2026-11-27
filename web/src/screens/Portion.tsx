@@ -1,7 +1,7 @@
 import { Star } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { FitlingCore, QuantityUnit } from "../core/fitlingCore";
-import { isFavorite, logProduct, type Meal, setFavorite } from "../data/diary";
+import { isFavorite, keptFavorite, logProduct, type Meal, setFavorite } from "../data/diary";
 import { ownCopy, type Product, productName, setOwnKcal } from "../data/products";
 import { supabase } from "../data/supabase";
 import { decimal, grams, kcal, parseNumber } from "../format";
@@ -42,7 +42,11 @@ export function Portion({
   const [unit, setUnit] = useState<QuantityUnit>(start.defaultUnit);
   const [quantityText, setQuantityText] = useState(decimal(start.defaultQuantity, 1));
   const [kcalText, setKcalText] = useState("");
-  const [favorite, setFavoriteState] = useState(false);
+  // What this browser knew last shows at once, as on the iPhone where the favourite is on the device; the server's
+  // answer replaces it, unless the user tapped the star first (UNFORGET S56). When this browser never knew, the star waits
+  // for that answer; a read that fails leaves it off, to be set.
+  const [favorite, setFavoriteState] = useState(() => keptFavorite(product.id));
+  const tapped = useRef(false);
   /** The user's own copy once made, so a retry after a failure does not make another. */
   const [copy, setCopy] = useState<Product>();
   const [saving, setSaving] = useState(false);
@@ -50,7 +54,14 @@ export function Portion({
   const name = productName(core, product);
 
   useEffect(() => {
-    void isFavorite(supabase, product.id).then(setFavoriteState, () => undefined);
+    let current = true;
+    void isFavorite(supabase, product.id).then(
+      (known) => current && !tapped.current && setFavoriteState(known),
+      () => current && !tapped.current && setFavoriteState((shown) => shown ?? false),
+    );
+    return () => {
+      current = false;
+    };
   }, [product.id]);
 
   const quantity = parseNumber(quantityText);
@@ -62,8 +73,10 @@ export function Portion({
   const problemText = portion.problem && t(portion.problem === "tooLittle" ? "portion.tooLittle" : "portion.tooMuch");
 
   async function toggleFavorite() {
+    if (favorite === undefined) return;
     try {
-      await setFavorite(supabase, userID, product.id, !favorite, new Date());
+      await setFavorite(supabase, userID, product, !favorite, new Date());
+      tapped.current = true;
       setFavoriteState(!favorite);
     } catch (error) {
       setFailed(error instanceof Error ? error.message : "error.server");
@@ -111,7 +124,7 @@ export function Portion({
         back={back}
         onBack={onBack}
         trailing={
-          <button type="button" className="nav-back nav-action icon-button" aria-label={t(favorite ? "portion.favorite.remove" : "portion.favorite.add")} aria-pressed={favorite} onClick={() => void toggleFavorite()}>
+          <button type="button" className="nav-back nav-action icon-button" aria-label={t(favorite ? "portion.favorite.remove" : "portion.favorite.add")} aria-pressed={favorite === true} disabled={favorite === undefined} onClick={() => void toggleFavorite()}>
             <Star aria-hidden="true" size={22} strokeWidth={2.2} fill={favorite ? "currentColor" : "none"} />
           </button>
         }
