@@ -166,3 +166,19 @@ test("aProgrammeRemovedOnAnotherDeviceCloses", async ({ page }) => {
   await expect(page.getByTestId("training.compose")).toBeVisible({ timeout: 15_000 });
   await expect(page.getByRole("heading", { name: "Armen" })).toHaveCount(0);
 });
+
+// Screens left open on another tab lead nowhere: one Back from a programme goes to the training list and on past the
+// menu's screens, which are no longer on screen (UNFORGET S40).
+test("backPassesTheScreensOfAnotherTab", async ({ page }) => {
+  const programme = await firstProgramme();
+  await openTraining(page);
+  await page.getByRole("tab", { name: nl("menu.title") }).click();
+  await page.getByTestId("menu.recipes").click();
+  await expect(page.getByTestId("menu.recipe.new")).toBeVisible({ timeout: 15_000 });
+  await page.getByRole("tab", { name: nl("training.title") }).click();
+  await page.getByTestId(`training.program.${programme.id}`).click();
+  await expect(page.getByRole("heading", { name: programme.name })).toBeVisible();
+  await page.goBack();
+  await expect(page.getByTestId("training.compose")).toBeVisible();
+  await expect.poll(() => page.evaluate(() => history.state)).toBeNull();
+});

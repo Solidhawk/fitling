@@ -320,3 +320,23 @@ test("anEmptyAmountCannotBeSaved", async ({ page }) => {
   await expect(page.getByTestId("portion.save")).toBeDisabled();
   await expect(page.getByTestId("portion.energy")).toHaveCount(0);
 });
+
+// Back on the list of the log sheet closes the sheet, as swiping a sheet down on the iPhone; the app stays (UNFORGET S40).
+test("backOnTheListClosesTheSheet", async ({ page }) => {
+  await start(page);
+  await page.goBack();
+  await expect(page.locator('[data-screen="logFood"]')).toHaveCount(0);
+  await expect(page.getByTestId("day.progress")).toBeVisible();
+});
+
+// Saving closes the sheet and takes its screens out of the history too: the next Back is not spent on a sheet that is
+// gone (UNFORGET S40).
+test("savingLeavesNothingOfTheSheetInTheHistory", async ({ page }) => {
+  await start(page);
+  const product = await sharedProduct("Appelmoes");
+  await search(page, product.name);
+  await page.getByRole("button", { name: new RegExp(product.name) }).click();
+  await page.getByTestId("portion.save").click();
+  await expect(page.locator('[data-screen="logFood"]')).toHaveCount(0);
+  await expect.poll(() => page.evaluate(() => history.state)).toBeNull();
+});
