@@ -31,6 +31,14 @@ function showInAddress(tab: Tab) {
 export function Home({ userID, auth }: { userID: string; auth: AuthService }) {
   const [tab, setTab] = useState<Tab>(() => tabInAddress() ?? "today");
   // Back to an entry made on another tab brings that tab's address along; the address keeps naming the open one.
+  // The tab belongs to this session: signing out, or another user signing in, starts again on Vandaag (review of
+  // PR #60).
+  useEffect(
+    () => () => {
+      if (tabInAddress()) history.replaceState(history.state, "", location.pathname + location.search);
+    },
+    [],
+  );
   useEffect(() => {
     const onPop = () => showInAddress(tab);
     addEventListener("popstate", onPop);

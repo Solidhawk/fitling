@@ -6,8 +6,11 @@ import { fileURLToPath } from "node:url";
 
 const languages = ["nl", "en", "de"];
 
-/** A format code of the catalog: printf's conversions and Apple's %@, numbered or not. */
-const formatCode = /%(?:\d+\$)?(?:\.\d+)?(?:llu|lld|ld|lu|lf|[@diufegscxXop%])/g;
+/**
+ * A format code of the catalog: printf's conversions and Apple's %@, numbered or not, with flags, width, precision and
+ * length. No space flag: "50% eiwit" is a percent sign, not "% e".
+ */
+const formatCode = /%(?:\d+\$)?[-+0#]*\d*(?:\.\d+)?(?:hh|h|ll|l|q|z|t|j)?[@diouxXeEfgGcsp%]/g;
 /** The ones i18n.ts fills in; any other would show on screen as it is. */
 const filledIn = /^%(?:\d+\$)?(?:lld|@)$/;
 

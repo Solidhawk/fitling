@@ -19,6 +19,13 @@ export const tabs: { id: Tab; title: string; icon: LucideIcon }[] = [
  */
 export function TabBar({ selected, onSelect }: { selected: Tab; onSelect: (tab: Tab) => void }) {
   function keyDown(event: KeyboardEvent<HTMLDivElement>) {
+    // With a modifier the arrow belongs to the browser or the system (Alt+Left is Back). A key held down moves one tab,
+    // not through every tab, each of which would open on the way.
+    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+    if (event.repeat) {
+      event.preventDefault();
+      return;
+    }
     const index = tabs.findIndex(({ id }) => `tab-${id}` === (event.target as HTMLElement).id);
     if (index < 0) return;
     const next = { ArrowRight: index + 1, ArrowLeft: index - 1, Home: 0, End: tabs.length - 1 }[event.key];
