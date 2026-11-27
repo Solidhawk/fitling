@@ -53,10 +53,16 @@ final class PortionViewModel {
 
     /// What this portion adds to the day, or nil while something is missing.
     var preview: Nutrients? {
-        let per100 = NutrientsPer100(
-            kcal: product.kcal100 ?? kcalOnPackage, proteinG: product.protein100, carbsG: product.carbs100, fatG: product.fat100
-        )
-        return Portion.preview(per100: per100, quantity: quantity, unit: unit, servingSize: product.servingSize)
+        Portion.preview(per100: per100, quantity: quantity, unit: unit, servingSize: product.servingSize)
+    }
+
+    /// Why the amount cannot be logged, shown under it.
+    var problem: Portion.Problem? {
+        Portion.problem(per100: per100, quantity: quantity, unit: unit, servingSize: product.servingSize)
+    }
+
+    private var per100: NutrientsPer100 {
+        NutrientsPer100(kcal: product.kcal100 ?? kcalOnPackage, proteinG: product.protein100, carbsG: product.carbs100, fatG: product.fat100)
     }
 
     var hasUnknownMacros: Bool {

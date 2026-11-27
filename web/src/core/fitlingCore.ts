@@ -66,6 +66,8 @@ export interface PortionAnswer {
   preview?: Required<Pick<Nutrients, "kcal">> & Nutrients;
   needsKcal: boolean;
   canSave: boolean;
+  /** Why the typed amount cannot be logged (Portion.problem); none while the field is empty. */
+  problem?: "tooLittle" | "tooMuch";
 }
 
 export interface OwnProductFields {

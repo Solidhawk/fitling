@@ -93,6 +93,8 @@ struct PortionAnswer: Encodable {
     let preview: NutrientsOutput?
     let needsKcal: Bool
     let canSave: Bool
+    /// Why the typed amount cannot be logged; none while the field is empty (Portion.problem).
+    let problem: Portion.Problem?
 }
 
 func portion(_ request: PortionRequest) -> PortionAnswer {
@@ -107,7 +109,10 @@ func portion(_ request: PortionRequest) -> PortionAnswer {
     return PortionAnswer(
         units: portion.units, defaultUnit: portion.defaultUnit, defaultQuantity: portion.defaultQuantity,
         preview: preview.map(NutrientsOutput.init), needsKcal: needsKcal,
-        canSave: Portion.canSave(preview: preview, needsKcal: needsKcal, kcalOnPackage: request.kcalOnPackage)
+        canSave: Portion.canSave(preview: preview, needsKcal: needsKcal, kcalOnPackage: request.kcalOnPackage),
+        problem: Portion.problem(
+            per100: per100, quantity: request.quantity, unit: request.unit ?? portion.defaultUnit, servingSize: request.servingSize
+        )
     )
 }
 

@@ -42,8 +42,15 @@ struct PortionView: View {
                     .monospacedDigit()
                     .accessibilityIdentifier("portion.quantity")
             } footer: {
-                if viewModel.unit == .serving, let label = servingDescription {
-                    Text(label).footerStyle()
+                VStack(alignment: .leading, spacing: 4) {
+                    // Save is off for such an amount; this says why.
+                    if let problem = viewModel.problem {
+                        Text(problemKey(problem)).footerStyle()
+                            .accessibilityIdentifier("portion.problem")
+                    }
+                    if viewModel.unit == .serving, let label = servingDescription {
+                        Text(label).footerStyle()
+                    }
                 }
             }
             .listRowBackground(Color.card)
@@ -106,6 +113,13 @@ struct PortionView: View {
 
     private var favoriteKey: LocalizedStringKey {
         isFavorite ? "portion.favorite.remove" : "portion.favorite.add"
+    }
+
+    private func problemKey(_ problem: Portion.Problem) -> LocalizedStringKey {
+        switch problem {
+        case .tooLittle: "portion.tooLittle"
+        case .tooMuch: "portion.tooMuch"
+        }
     }
 
     private var servingDescription: String? {

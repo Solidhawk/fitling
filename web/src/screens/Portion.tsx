@@ -127,7 +127,17 @@ export function Portion({
             </span>
           </ListRow>
         </ListSection>
-        <ListSection footer={servingFooter}>
+        <ListSection
+          footer={
+            portion.problem || servingFooter ? (
+              <span className="row-stack">
+                {/* Save is off for such an amount; this says why (PortionView). */}
+                {portion.problem && <span data-testid="portion.problem">{t(portion.problem === "tooLittle" ? "portion.tooLittle" : "portion.tooMuch")}</span>}
+                {servingFooter && <span>{servingFooter}</span>}
+              </span>
+            ) : undefined
+          }
+        >
           {start.units.length > 1 && (
             <ListRow>
               <Segmented label={t("portion.unit")} value={unit} options={start.units.map((option) => [option, t(unitKeys[option])])} onChange={setUnit} />
