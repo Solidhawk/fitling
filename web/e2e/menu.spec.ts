@@ -336,6 +336,49 @@ test("theMenuShowsWithoutTheProfile", async ({ page }) => {
     .toBe(true);
 });
 
+// A profile read once and then not readable: the generator plans for the one read before (UNFORGET S58).
+test("theGeneratorUsesTheProfileReadBefore", async ({ page }) => {
+  await openMenu(page);
+  await page.route("**/rest/v1/profiles*", (route) =>
+    route.request().method() === "GET"
+      ? route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ message: "unavailable" }) })
+      : route.continue(),
+  );
+  await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
+  await page.getByTestId("menu.generate.first").click();
+  await expect(page.getByTestId("menu.generator.make")).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole("alertdialog")).toHaveCount(0);
+});
+
+// The menu read at the opening comes back after a newer read that failed: it is shown, with the message of the failed
+// one, instead of a spinner that waits for a read that never comes (review of UNFORGET S58).
+test("aNewerReadThatFailsLeavesTheOlderOneShown", async ({ page }) => {
+  const user = await createUser({ profile: true, creature: true });
+  const planned = await todaysMenu(user.id);
+  await signIn(page, user.email);
+  await expect(page.getByTestId("day.progress")).toBeVisible({ timeout: 15_000 });
+  let release = () => {};
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let reads = 0;
+  await page.route("**/rest/v1/meal_plan_entries*", async (route) => {
+    if (route.request().method() !== "GET") return route.continue();
+    reads += 1;
+    if (reads === 1) {
+      await held;
+      return route.continue();
+    }
+    return route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ message: "unavailable" }) });
+  });
+  await page.getByRole("tab", { name: nl("menu.title") }).click();
+  await expect.poll(() => reads).toBe(1);
+  await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
+  await expect(page.getByRole("alertdialog", { name: nl("error.server") })).toBeVisible({ timeout: 15_000 });
+  release();
+  await expect(page.getByTestId(`menu.entry.${planned[0].id}`)).toBeVisible({ timeout: 15_000 });
+});
+
 // A screen reader on a phone has no long press: the row's menu is also a button after the row, out of sight until it
 // has the focus, and Weghalen is in that menu (UNFORGET S46; on iOS VoiceOver reaches the context menu).
 test("theRowMenuIsReachableWithoutALongPress", async ({ page }) => {
