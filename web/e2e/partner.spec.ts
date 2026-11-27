@@ -49,6 +49,8 @@ test("aFoldTheServerRefusesShowsThePartnerAsStored", async ({ page }) => {
   await openPartner(page, user.email);
   await expect(page.getByTestId("partner.hero")).toContainText("Uiltje");
   await expect(page.getByRole("alertdialog")).toHaveCount(0);
+  // Nothing was folded: the partner is shown as stored, and the next visit folds the same days again.
+  expect((await stored(user.id)).xp).toBe(0);
 });
 
 test("todayShowsWhatIsEarnedSoFar", async ({ page }, info) => {

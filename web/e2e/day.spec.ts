@@ -88,6 +88,8 @@ test("aPartnerThatCannotBeFoldedDoesNotHoldUpTheDay", async ({ page }) => {
   await expect(page.getByTestId("day.progress")).toBeVisible({ timeout: 15_000 });
   await expect(page.getByText("Roggebrood")).toBeVisible();
   await expect(page.getByRole("alertdialog")).toHaveCount(0);
+  // The card without the partner: plain white, as for someone without one.
+  await expect(page.getByTestId("day.progress")).not.toHaveClass(/day-card-partner/);
 });
 
 test("waterAddsUp", async ({ page }) => {
