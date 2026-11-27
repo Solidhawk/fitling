@@ -476,7 +476,7 @@ Elke fase een eigen PR, op elkaar gestapeld: welkom en onboarding (#26), Vandaag
 
 ### Web, fase 7 – Beginscherm en afronden — gebouwd
 
-- **Beginscherm:** icoon (voorlopig, UNFORGET S37) en manifest; een service worker houdt de app en de rekenregels van dezelfde bouw op het toestel.
+- **Beginscherm:** icoon (sinds 2026-11-27 het eigen app-icoon, zie 7.7) en manifest; een service worker houdt de app en de rekenregels van dezelfde bouw op het toestel.
 - **Zonder verbinding:** openen, loggen, water en verwijderen werken; wat wacht, gaat later precies zo naar de server (`web/src/data/offline.ts`).
 - **Herinneringen:** `ReminderPlanner` in FitlingCore; Web Push via `supabase/web-push.sql` en de Edge Function `send-reminders`. Aanzetten op het echte project: `docs/web-push.md` (UNFORGET S49).
 
@@ -490,5 +490,5 @@ Elke fase een eigen PR, op elkaar gestapeld: welkom en onboarding (#26), Vandaag
 | 7.4 | **Gebouwd:** `private.purge_deletion_markers()` met pg_cron om 03:30 UTC, getest in `supabase/tests/purge_test.sql`. Opruimen van verwijdermarkeringen ouder dan 90 dagen (geplande job). De 90 dagen tellen vanaf `synced_at` (klok van de server), niet vanaf `deleted_at` (klok van een toestel): een toestel leegt zijn tabel pas na 90 dagen zonder pull, en een markering die eerder verdwijnt bereikt dat toestel nooit. Laat de job 's nachts draaien: een pull van meer dan één blok kan een rij missen als er tijdens het lezen rijen echt verdwijnen (ARCHITECTURE §3.4). |
 | 7.5 | `schema.sql` wordt de eerste migratie; productieproject in de EU (UNFORGET S4) |
 | 7.6 | Privacyverklaring gelinkt; scherm "Over" met bronvermelding (Open Food Facts, NEVO). **Gebouwd:** scherm "Over Fitling" (Account) met Open Food Facts, USDA, Everkinetic en Wikimedia Commons. NEVO volgt als de import er is (S15); de privacyverklaring wacht op een tekst en een adres van de gebruiker (S21) |
-| 7.7 | TestFlight, app-icoon, eigen SMTP (UNFORGET S1 en S2) |
+| 7.7 | TestFlight en eigen SMTP (UNFORGET S1 en S2). **App-icoon gedaan (2026-11-27):** een witte partner voor de vier lintkleuren (optie 10 "Collectie", gekozen door de gebruiker), in licht, donker en getint, voor iOS en het web; `design/icoon/maak_icoon.py` tekent het, `scripts/app-icon.test.mjs` en `AppIconTests` controleren het (UNFORGET S37) |
 | 7.8 | Laatste ronde vormgeving met `impeccable`. **Gedaan (2026-11-20):** critique 29/40 (`.impeccable/critique/2026-11-20T13-16-10Z__fitling-features.md`). Alle vijf punten opgelost: partnerkeuze in drie kolommen met het figuur over de hele tegel; workout met gelabelde velden voor gewicht en herhalingen, gestapeld bij grote tekst, de uitleg voor de eerste keer één keer per training, en "Set opslaan" boven het toetsenbord; level en XP en "Gegeten" breken niet meer af; partnertinten gedempt in donkere modus |

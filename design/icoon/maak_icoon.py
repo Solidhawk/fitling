@@ -28,7 +28,8 @@ def colour(value: str) -> Colour:
 
 
 def mix(base: Colour, other: Colour, share: float) -> Colour:
-    return tuple(round(a * (1 - share) + b * share) for a, b in zip(base, other))
+    red, green, blue = (round(a * (1 - share) + b * share) for a, b in zip(base, other))
+    return (red, green, blue)
 
 
 # De lintkleuren van DESIGN.md, van links naar rechts: sprout, ember, pip, pebble.

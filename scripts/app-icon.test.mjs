@@ -38,6 +38,20 @@ test('theAppIconHasALightADarkAndATintedVersion', async () => {
   }
 });
 
+test('theWebIconsHaveNoAlpha', async () => {
+  // The same drawing as the app icon; iOS puts a transparent home-screen icon on black.
+  const icons = [
+    ['apple-touch-icon.png', 180],
+    ['icon-192.png', 192],
+    ['icon-512.png', 512],
+    ['icon-maskable-512.png', 512],
+    ['favicon-32.png', 32],
+  ];
+  for (const [name, size] of icons) {
+    assert.deepEqual(await png(new URL(`web/public/icons/${name}`, root)), { width: size, height: size, colourType: 2 });
+  }
+});
+
 test('theAppNamesItsIcon', async () => {
   const project = await readFile(new URL('project.yml', root), 'utf8');
   assert.match(project, /^\s+ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon$/m);
