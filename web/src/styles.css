@@ -724,13 +724,36 @@ p {
 }
 
 .macro-block {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   gap: var(--space-xs);
   min-height: 7rem;
   padding: var(--space-m);
   border-radius: var(--radius-ribbon);
+  background: white;
   color: var(--on-ribbon);
+}
+
+/* The colour at 35% over white is the pale part, as color-mix(in srgb, colour 35%, white) on iOS, but without it:
+   Safari before 16.2 drops a background with color-mix() entirely. Over it, from the bottom, the part eaten. */
+.macro-block::before,
+.macro-block::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--block);
+}
+
+.macro-block::before {
+  opacity: 0.35;
+}
+
+.macro-block::after {
+  top: calc(100% - var(--filled));
 }
 
 .macro-title {

@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import type { DayTotals, Targets } from "../core/fitlingCore";
 import { decimal, grams, percent } from "../format";
 import { t } from "../i18n";
@@ -23,11 +24,12 @@ export function MacroBlocks(props: Props) {
   return (
     <div className="macro-blocks">
       {blocks.map((block) => {
-        // The empty part is a pale tint of the colour on white, in dark mode too: the ink lettering needs a light ground.
+        // The empty part is a pale tint of the colour on white, in dark mode too: the ink lettering needs a light ground
+        // (styles.css draws it, .macro-block).
         const filled = block.eaten === undefined ? 100 : Math.min(Math.max(block.eaten / Math.max(block.target, 1), 0), 1) * 100;
-        const background = `linear-gradient(to top, ${block.fill} ${filled}%, color-mix(in srgb, ${block.fill} 35%, white) ${filled}%)`;
+        const look = { "--block": block.fill, "--filled": `${filled}%` } as CSSProperties;
         return (
-          <div className="macro-block" key={block.key} style={{ background }}>
+          <div className="macro-block" key={block.key} data-macro={block.key} style={look}>
             {/* Shrinks before it is cut short, as minimumScaleFactor(0.75) in MacroBlocks.swift: "Koolhydraten" on a phone. */}
             <FittedText className="macro-title" text={t(block.key)} minimumScale={0.75} />
             {block.eaten === undefined ? (
