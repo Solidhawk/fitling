@@ -7,7 +7,9 @@ on:
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # Een nieuwe push op een branch stopt de vorige run; op main wacht hij, zodat het publiceren van de site nooit halverwege
+  # wordt afgebroken (S36).
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   core:
@@ -128,6 +130,9 @@ jobs:
             exit 1
           fi
           npm run build
+          # Het ruwe bestand staat in public/ voor de tests; de app laadt alleen fitling-core.wasm.gz (S36).
+          rm -f dist/fitling-core.wasm
+          test ! -e dist/fitling-core.wasm
       - uses: actions/upload-pages-artifact@v3
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         with:

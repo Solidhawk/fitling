@@ -1,12 +1,16 @@
 // The service worker of Fitling on the web (phase 7): the app and its rules stay on the device, so the app opens
-// without a connection, as on the iPhone. The build fills in the files and the build id (scripts/serviceWorker.mjs).
-// Supabase and every other host are never touched: what the server says always comes from the server.
+// without a connection, as on the iPhone. The build fills in the files, the build id and the version of the media
+// (scripts/serviceWorker.mjs). Supabase and every other host are never touched: what the server says always comes
+// from the server.
 const build = "__BUILD__";
 const shell = [/*__SHELL__*/];
 const shellCache = `fitling-shell-${build}`;
-const mediaCache = `fitling-media-${build}`;
+// Their own version, from their content: a new build of the app alone keeps them (UNFORGET S50).
+const mediaCache = `fitling-media-${"__MEDIA__"}`;
 /** Partners, exercise sheets and recipe photos: kept once shown (37 MB in all, so never all at once). */
 const media = /\/(partners|exercises|recipes)\//;
+/** How long the page waits for the server before it opens from the device (wifi without internet). */
+const navigationTimeout = 4_000;
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -19,8 +23,8 @@ self.addEventListener("install", (event) => {
 });
 
 // A new build takes over at once. The shell of the build before stays one round longer, for a page that is still open
-// on it and has yet to load a part (the scanner); older shells and the media of earlier builds go. Every file of a
-// build has its build in its name or address, so old rules never meet new code.
+// on it and has yet to load a part (the scanner); older shells and media of another version go. Every file of a build
+// has its build in its name or address, so old rules never meet new code.
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     (async () => {
@@ -49,19 +53,39 @@ async function fromCache(request, cacheName, keep) {
   return response;
 }
 
+/**
+ * The page from the server when there is one, checked past the browser's cache so a new build shows at once; without
+ * a connection the one kept, and also when the server does not answer within `navigationTimeout` while one is kept.
+ * Without a kept page the server is waited for, however long it takes.
+ */
+async function page(request) {
+  const kept = () => caches.match(self.registration.scope, { ...found, cacheName: shellCache });
+  const network = fetch(request, { cache: "no-cache" });
+  // Answered from the device first, the network's answer may still fail later: nobody waits for it then.
+  network.catch(() => undefined);
+  const late = Symbol("late");
+  let timer;
+  const waited = new Promise((resolve) => {
+    timer = setTimeout(() => resolve(late), navigationTimeout);
+  });
+  try {
+    const first = await Promise.race([network, waited]);
+    if (first !== late) return first;
+    return (await kept()) ?? (await network);
+  } catch {
+    return (await kept()) ?? Response.error();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 self.addEventListener("fetch", (event) => {
   const request = event.request;
   if (request.method !== "GET") return;
   const url = new URL(request.url);
   if (url.origin !== self.location.origin || !url.href.startsWith(self.registration.scope)) return;
   if (request.mode === "navigate") {
-    // The page from the server when there is one, checked past the browser's cache so a new build shows at once;
-    // without a connection the one kept.
-    event.respondWith(
-      fetch(request, { cache: "no-cache" }).catch(
-        async () => (await caches.match(self.registration.scope, { ...found, cacheName: shellCache })) ?? Response.error(),
-      ),
-    );
+    event.respondWith(page(request));
     return;
   }
   event.respondWith(fromCache(request, media.test(url.pathname) ? mediaCache : shellCache, media.test(url.pathname)));
