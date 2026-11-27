@@ -63,7 +63,7 @@ Regels die het motiverend houden:
 
 ## Evidence on Hand
 
-Geen: nog geen logo, foto's, gebruikersonderzoek of testimonials. Niets daarvan mag verzonnen worden.
+Het app-icoon: een witte partner voor de vier lintkleuren (optie 10 "Collectie", gekozen 2026-11-27), getekend door `design/icoon/maak_icoon.py`. Verder nog geen foto's, gebruikersonderzoek of testimonials. Niets daarvan mag verzonnen worden.
 
 ## Product Principles
 
