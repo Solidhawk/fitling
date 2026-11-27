@@ -11,7 +11,10 @@ async function start(page: Page) {
 }
 
 async function search(page: Page, text: string) {
-  await page.getByTestId("log.search").fill(text);
+  const field = page.getByTestId("log.search");
+  await field.fill(text);
+  // A field that did not take the text fails here, not 30 s later at a result that never comes (UNFORGET S56).
+  await expect(field).toHaveValue(text);
 }
 
 // The log sheet says "Nog niets gelogd" once it knows, not while recent and favourites are still being read; and a list
@@ -132,9 +135,36 @@ test("favoriteShowsUpAtTheTop", async ({ page }) => {
   await page.getByRole("button", { name: nl("portion.favorite.add") }).click();
   await expect(page.getByRole("button", { name: nl("portion.favorite.remove") })).toBeVisible();
   await page.getByTestId("portion.save").click();
+  // Each step waits for the screen it leads to, so a failure says which one did not come (UNFORGET S56).
+  await expect(page.locator('[data-screen="logFood"]')).toHaveCount(0);
   await page.getByTestId("day.add.lunch").click();
+  await expect(page.locator('[data-screen="logFood"]')).toBeVisible();
   await expect(page.getByRole("heading", { name: nl("log.favorites") })).toBeVisible();
   await expect(page.getByRole("button", { name: new RegExp(product.name) }).first()).toBeVisible();
+});
+
+// The star waits for what the server knows: a first read that comes back after a tap does not turn the star off again
+// (UNFORGET S56; on the iPhone the favourite is read on the device, at once).
+test("aSlowFavoriteReadDoesNotUndoTheStar", async ({ page }) => {
+  await start(page);
+  const product = await sharedProduct("Kwark");
+  await search(page, product.name);
+  const row = page.getByRole("button", { name: new RegExp(product.name) });
+  await expect(row).toBeVisible();
+  // All favourites, as the portion reads them; not the one product, as the star reads it before writing.
+  const allFavorites = /\/rest\/v1\/favorite_products\?(?!.*product_id=eq)/;
+  await page.route(allFavorites, async (route) => {
+    if (route.request().method() === "GET") await new Promise((resolve) => setTimeout(resolve, 2_000));
+    await route.continue();
+  });
+  const read = page.waitForResponse((response) => response.request().method() === "GET" && allFavorites.test(response.url()));
+  await row.click();
+  await page.getByRole("button", { name: nl("portion.favorite.add") }).click();
+  await expect(page.getByRole("button", { name: nl("portion.favorite.remove") })).toBeVisible();
+  await read;
+  // The page has handled the answer that came back.
+  await page.evaluate(() => new Promise((resolve) => setTimeout(resolve, 300)));
+  await expect(page.getByRole("button", { name: nl("portion.favorite.remove") })).toBeVisible();
 });
 
 test("recentShowsEachProductOnce", async ({ page }) => {
