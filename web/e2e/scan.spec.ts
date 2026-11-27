@@ -48,11 +48,22 @@ test("scanOfAnUnknownProductOffersToAddIt", async ({ page }) => {
   await expect(page.getByTestId("product.add.barcode")).toHaveValue("4006381333931");
 });
 
+// A misread (a wrong check digit) is not looked up and asks nothing, and the scanner keeps reading: the next code is
+// looked up (review of web phase 2: before, the test passed before the app had done anything).
 test("misreadIsIgnored", async ({ page }) => {
   await startScanning(page);
+  const looked: string[] = [];
+  await page.route(lookupProduct, (route) => {
+    looked.push(route.request().postData() ?? "");
+    return route.fulfill({ status: 404, contentType: "application/json", body: '{"error":"not_found"}' });
+  });
   await type(page, "4006381333932");
   await expect(page.getByRole("alertdialog")).toHaveCount(0);
   await expect(page.locator('[data-screen="scan"]')).toBeVisible();
+  await type(page, "4006381333931");
+  await expect(page.getByRole("alertdialog", { name: nl("scan.unknown.title") })).toBeVisible();
+  expect(looked).toHaveLength(1);
+  expect(looked[0]).toContain("4006381333931");
 });
 
 test("scanWhileOfflineKeepsTheBarcode", async ({ page }) => {
