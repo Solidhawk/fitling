@@ -179,7 +179,7 @@ import Testing
     /// (reviews of Fable 5.2). At 0.067 the values sink a whole row: pairing each name with the value of the row above
     /// lines the pieces up in fewer lines than the true slope, and must not win. As Vision gives them, the longer pieces
     /// carry the slope, the short ones none. With a stamp on the straight photo, only the stamp is tilted.
-    @Test(arguments: [(0.0, nil), (0.05, nil), (0.067, nil), (-0.067, nil), (0.13, nil), (0.0, 0.067), (0.0, -0.067), (0.0, -0.05)])
+    @Test(arguments: [(0.0, nil), (0.05, nil), (0.067, nil), (-0.067, nil), (0.13, nil), (0.0, 0.067), (0.0, -0.067), (0.0, -0.05)] as [(Double, Double?)])
     func aHeadingAboveTheValuesDoesNotShiftTheRows(tilt: Double, stamp: Double?) {
         let names = ["Energie", "Vetten", "waarvan verzadigd", "Koolhydraten", "waarvan suikers", "Eiwitten", "Zout"]
         let values = ["1569 kJ / 373 kcal", "7,0 g", "1,2 g", "62 g", "3,1 g", "9,2 g", "0,48 g"]
