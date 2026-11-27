@@ -219,6 +219,10 @@ export async function logMeal(client: SupabaseClient, userID: string, entryID: s
   if (marked.error) throw failure(marked.error);
   if ((marked.data ?? []).length > 0) return id;
   await write(client.from("food_entries").update({ deleted_at: stamp, updated_at: stamp }).eq("id", id));
+  // Not marked: logged already, or a change from a device whose clock runs ahead made the server take this one as
+  // older (apply_sync_rules). The second is told, so the tap does not do nothing (UNFORGET S46).
+  const entry = await client.from("meal_plan_entries").select("logged_entry_id").eq("id", entryID).maybeSingle();
+  if (!entry.error && entry.data && entry.data.logged_entry_id === null) throw new Error("error.server");
   return undefined;
 }
 

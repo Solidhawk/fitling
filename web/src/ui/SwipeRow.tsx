@@ -16,7 +16,9 @@ const longPress = 500;
  * A list row with buttons a swipe uncovers: Delete when swiped to the left (.onDelete on iOS), or the row's own
  * actions at either edge (.swipeActions). The buttons come after the row for the keyboard and screen readers, and
  * slide into view when they have the focus. `onMenu` opens the row's menu on a long press or a right click, as
- * .contextMenu. `bare` leaves the row's padding to the child, a button that fills the row.
+ * .contextMenu; with `menuLabel` also from a button after the row, out of sight until it has the focus, for a screen
+ * reader on a phone, which has no long press. `bare` leaves the row's padding to the child, a button that fills the
+ * row.
  */
 export function SwipeRow({
   children,
@@ -25,6 +27,7 @@ export function SwipeRow({
   leading = [],
   trailing = [],
   onMenu,
+  menuLabel,
   bare = false,
 }: {
   children: ReactNode;
@@ -33,6 +36,7 @@ export function SwipeRow({
   leading?: SwipeAction[];
   trailing?: SwipeAction[];
   onMenu?: () => void;
+  menuLabel?: string;
   bare?: boolean;
 }) {
   const [offset, setOffset] = useState(0);
@@ -172,6 +176,11 @@ export function SwipeRow({
             </button>
           )}
         </div>
+      )}
+      {onMenu && menuLabel && (
+        <button type="button" className="swipe-menu" aria-describedby={contentID} onClick={onMenu}>
+          {menuLabel}
+        </button>
       )}
     </div>
   );

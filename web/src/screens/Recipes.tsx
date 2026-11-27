@@ -196,7 +196,15 @@ export function RecipeDetail({ rows, recipe, back, onBack }: { rows: MenuRows; r
       <NavBar title={recipe.title} back={back} onBack={onBack} />
       <List>
         {photoShown && (
-          <ListSection footer={credit ? t("menu.photo.credit %@ %@", credit.author, credit.licence) : undefined}>
+          <ListSection
+            footer={
+              credit ? (
+                <a className="source-link" href={credit.page} target="_blank" rel="noreferrer">
+                  {t("menu.photo.credit %@ %@", credit.author, credit.licence)}
+                </a>
+              ) : undefined
+            }
+          >
             <img className="recipe-photo" src={photoURL(recipe.id)} alt="" onError={() => setPhotoShown(false)} />
           </ListSection>
         )}

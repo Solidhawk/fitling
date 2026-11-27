@@ -1629,6 +1629,40 @@ input.picker[type="date"] {
   outline-offset: -4px;
 }
 
+.swipe-menu {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+  padding: 0;
+}
+
+.swipe-menu:focus {
+  z-index: 2;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: auto;
+  height: auto;
+  clip: auto;
+  min-width: 96px;
+  padding: 0 var(--space-m);
+  background-color: var(--ink);
+  color: var(--card);
+  font: inherit;
+  font-size: min(0.9375rem, 15px);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.swipe-menu:focus-visible {
+  outline: 2px solid var(--card);
+  outline-offset: -4px;
+}
+
 .swipe-ink:focus-visible {
   outline-color: var(--card);
 }

@@ -284,8 +284,8 @@ async function weekMenu(userID: string): Promise<string[][]> {
   return days;
 }
 
-// Back from a recipe the menu is where it was left, as a NavigationStack keeps it; a new screen opens at the top
-// (UNFORGET S46).
+// Back from a recipe the menu is where it was left, as a NavigationStack keeps it (the browser brings the place back
+// with the history entry); a new screen opens at the top (UNFORGET S46).
 test("backFromARecipeTheMenuIsWhereItWasLeft", async ({ page }) => {
   let week: string[][] = [];
   await openMenu(page, async (userID) => {
@@ -305,7 +305,7 @@ test("backFromARecipeTheMenuIsWhereItWasLeft", async ({ page }) => {
 });
 
 // A profile that cannot be read leaves the menu in view: only making a menu needs it, and that says it did not work
-// (UNFORGET S58).
+// and stays usable; once the profile is there again, it works (UNFORGET S58, S46).
 test("theMenuShowsWithoutTheProfile", async ({ page }) => {
   const user = await createUser({ profile: true, creature: true });
   const planned = await todaysMenu(user.id);
@@ -321,6 +321,19 @@ test("theMenuShowsWithoutTheProfile", async ({ page }) => {
   await expect(page.getByRole("alertdialog")).toHaveCount(0);
   await page.getByTestId("menu.generate").click();
   await expect(page.getByRole("alertdialog", { name: nl("error.server") })).toBeVisible();
+  await page.getByRole("alertdialog").getByRole("button").click();
+  await page.getByTestId(`menu.day.renew.${localDay()}`).click();
+  await expect(page.getByRole("alertdialog", { name: nl("error.server") })).toBeVisible();
+  await page.getByRole("alertdialog").getByRole("button").click();
+  // The profile is back: the generator opens, and the day gets new meals.
+  await page.unroute("**/rest/v1/profiles*");
+  await page.getByTestId("menu.generate").click();
+  await expect(page.getByTestId("menu.generator.make")).toBeVisible({ timeout: 15_000 });
+  await page.getByRole("button", { name: nl("common.cancel") }).click();
+  await page.getByTestId(`menu.day.renew.${localDay()}`).click();
+  await expect
+    .poll(async () => (await admin.from("meal_plan_entries").select("deleted_at").in("id", planned.map((meal) => meal.id))).data?.every((row) => row.deleted_at !== null))
+    .toBe(true);
 });
 
 // A screen reader on a phone has no long press: the row's menu is also a button after the row, out of sight until it
