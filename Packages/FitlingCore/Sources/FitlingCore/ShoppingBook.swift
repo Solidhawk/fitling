@@ -235,14 +235,14 @@ public struct ShoppingBook: Sendable {
         )
     }
 
-    /// An item as typed or as the menu needs it: trimmed, at most 120 characters, an amount only with a quantity above
-    /// zero. Nil for an empty name.
+    /// An item as typed or as the menu needs it: trimmed, at most 120 characters as the database counts them, an amount
+    /// only with a quantity the database keeps (`numeric(8,2)` above 0, as an ingredient). Nil for an empty name.
     public static func newItem(_ text: String, quantity: Double? = nil, unit: String? = nil, aisle: String = "other", productID: UUID? = nil) -> NewShoppingItem? {
         // Spaces and line breaks, as trimmingCharacters(in: .whitespacesAndNewlines) on iOS.
         guard let first = text.firstIndex(where: { !$0.isWhitespace }), let last = text.lastIndex(where: { !$0.isWhitespace }) else { return nil }
         let name = text[first...last]
-        let amount = quantity.flatMap { $0 > 0 ? $0 : nil }
-        return NewShoppingItem(name: String(name.prefix(120)), quantity: amount, unit: amount == nil ? nil : unit, aisle: aisle, productID: productID)
+        let amount = quantity.flatMap(MenuBook.storedIngredientQuantity)
+        return NewShoppingItem(name: String(name).limited(toScalars: 120), quantity: amount, unit: amount == nil ? nil : unit, aisle: aisle, productID: productID)
     }
 }
 

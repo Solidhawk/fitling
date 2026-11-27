@@ -95,10 +95,11 @@ struct MenuStore {
         let steps = own.steps.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
         if !steps.isEmpty { recipe.steps = [language: steps] }
         context.insert(recipe)
-        for (position, line) in own.ingredients.enumerated() where line.quantity > 0 && !line.name.isEmpty {
+        for (position, line) in own.ingredients.enumerated() {
+            guard let quantity = MenuBook.storedIngredientQuantity(line.quantity), !line.name.isEmpty else { continue }
             context.insert(RecipeIngredient(
                 id: UUID(), recipeID: recipe.id, ownerID: userID, name: LocalizedText([language: line.name]),
-                quantity: line.quantity, unit: line.unit, aisle: "other", position: position, updatedAt: now()
+                quantity: quantity, unit: line.unit, aisle: "other", position: position, updatedAt: now()
             ))
         }
         try? context.save()

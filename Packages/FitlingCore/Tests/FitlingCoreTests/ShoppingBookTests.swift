@@ -101,7 +101,13 @@ import Testing
         #expect(ShoppingBook.newItem("  Melk ") == NewShoppingItem(name: "Melk", quantity: nil, unit: nil, aisle: "other", productID: nil))
         #expect(ShoppingBook.newItem("   ") == nil)
         #expect(ShoppingBook.newItem(String(repeating: "a", count: 130))?.name.count == 120)
+        // Postgres counts code points: a flag takes two of the 120.
+        #expect(ShoppingBook.newItem(String(repeating: "🇳🇱", count: 61))?.name == String(repeating: "🇳🇱", count: 60))
         #expect(ShoppingBook.newItem("Melk", quantity: 1000, unit: "ml", aisle: "dairy")?.unit == "ml")
         #expect(ShoppingBook.newItem("Melk", quantity: 0, unit: "ml")?.unit == nil)
+        // `shopping_items.quantity` is numeric(8,2): a week of a huge recipe of the user's own keeps its name, not the
+        // amount the database would refuse (review of Fable 5.2).
+        #expect(ShoppingBook.newItem("Meel", quantity: 1_200_000, unit: "g") == NewShoppingItem(name: "Meel", quantity: nil, unit: nil, aisle: "other", productID: nil))
+        #expect(ShoppingBook.newItem("Meel", quantity: 0.004, unit: "g")?.quantity == nil)
     }
 }

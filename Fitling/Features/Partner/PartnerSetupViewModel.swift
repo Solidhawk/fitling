@@ -54,16 +54,9 @@ final class PartnerSetupViewModel {
         }
     }
 
-    /// While typing: cut off at the limit, keep spaces, so "Mr Pip" can be typed.
+    /// While typing: cut off at the limit as the database counts it, keep spaces, so "Mr Pip" can be typed.
     static func limited(_ name: String) -> String {
-        var result = ""
-        var scalars = 0
-        for character in name {
-            scalars += character.unicodeScalars.count
-            guard scalars <= nameLimit else { break }
-            result.append(character)
-        }
-        return result
+        name.limited(toScalars: nameLimit)
     }
 
     /// Stores the partner. When a partner already exists for this user (another device made one

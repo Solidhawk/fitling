@@ -22,6 +22,19 @@ extension String {
         return String(self[first...last])
     }
 
+    /// At most `limit` Unicode scalars, cut between whole characters. Postgres counts code points in `char_length`, so
+    /// a flag takes two of the limit; Swift's `count` would let a name of flags through that the database refuses.
+    public func limited(toScalars limit: Int) -> String {
+        var result = ""
+        var scalars = 0
+        for character in self {
+            scalars += character.unicodeScalars.count
+            guard scalars <= limit else { break }
+            result.append(character)
+        }
+        return result
+    }
+
     /// Without spaces and tabs at the start and end; newlines and the spaces between words stay. The same
     /// as Foundation's `trimmingCharacters(in: .whitespaces)`.
     func trimmingSpaces() -> String {

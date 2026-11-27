@@ -32,6 +32,8 @@ import Testing
 
     @Test func anEntryKeepsAtMost200CharactersAndOneDecimal() {
         #expect(FoodLog.storedName(String(repeating: "a", count: 250)).count == 200)
+        // Postgres counts code points: a flag takes two of the 200, and a character is never cut in half.
+        #expect(FoodLog.storedName(String(repeating: "🇳🇱", count: 150)) == String(repeating: "🇳🇱", count: 100))
         #expect(FoodLog.storedQuantity(123.45) == 123.5)
     }
 
@@ -96,6 +98,19 @@ import Testing
         #expect(fields.fat100 == nil)
         #expect(fields.servingSize == 120)
         #expect(fields.searchName == "oma's appeltaart bakkerij jansen")
+    }
+
+    /// `products.serving_size` keeps two decimals, above 0 and below 100 000: checked as it is stored.
+    @Test func aServingSizeIsCheckedAsTheDatabaseStoresIt() {
+        var tiny = draft()
+        tiny.servingSize = 0.004
+        #expect(tiny.validated() == nil)
+        var large = draft()
+        large.servingSize = 99_999.996
+        #expect(large.validated() == nil)
+        var largest = draft()
+        largest.servingSize = 99_999.99
+        #expect(largest.validated()?.servingSize == 99_999.99)
     }
 
     @Test func ownProductUsesTheDatabaseLimits() {
