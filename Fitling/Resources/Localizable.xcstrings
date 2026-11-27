@@ -14012,6 +14012,226 @@
           }
         }
       }
+    },
+    "product.label.photo": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Etiket fotograferen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Take a photo of the label"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Etikett fotografieren"
+          }
+        }
+      }
+    },
+    "product.label.pick": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foto van het etiket kiezen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a photo of the label"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foto des Etiketts wählen"
+          }
+        }
+      }
+    },
+    "product.label.footer": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fitling leest de voedingswaarde per 100 g van de foto, hier op je iPhone. Controleer de waarden voor je opslaat."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fitling reads the nutrition values per 100 g from the photo, here on your iPhone. Check the values before you save."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fitling liest die Nährwerte pro 100 g vom Foto, hier auf deinem iPhone. Prüfe die Werte, bevor du speicherst."
+          }
+        }
+      }
+    },
+    "product.label.read": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gelezen van het etiket. Controleer de waarden voor je opslaat."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Read from the label. Check the values before you save."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vom Etikett gelesen. Prüfe die Werte, bevor du speicherst."
+          }
+        }
+      }
+    },
+    "product.label.check": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Niet alles kon goed worden gelezen. Vergelijk de waarden met het etiket."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not everything could be read clearly. Compare the values with the label."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nicht alles war gut lesbar. Vergleiche die Werte mit dem Etikett."
+          }
+        }
+      }
+    },
+    "product.label.none": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Op deze foto heeft Fitling geen voedingswaardetabel gevonden. Probeer een scherpere foto van alleen de tabel."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fitling found no nutrition table in this photo. Try a sharper photo of just the table."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auf diesem Foto hat Fitling keine Nährwerttabelle gefunden. Versuch es mit einem schärferen Foto nur von der Tabelle."
+          }
+        }
+      }
+    },
+    "product.label.footer.ml": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fitling leest de voedingswaarde per 100 ml van de foto, hier op je iPhone. Controleer de waarden voor je opslaat."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fitling reads the nutrition values per 100 ml from the photo, here on your iPhone. Check the values before you save."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fitling liest die Nährwerte pro 100 ml vom Foto, hier auf deinem iPhone. Prüfe die Werte, bevor du speicherst."
+          }
+        }
+      }
+    },
+    "product.label.unreadable": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deze foto kon niet worden geopend. Kies een andere of maak een nieuwe."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This photo could not be opened. Choose another one or take a new one."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dieses Foto ließ sich nicht öffnen. Wähle ein anderes oder mach ein neues."
+          }
+        }
+      }
+    },
+    "product.label.reading": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Etiket lezen…"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reading the label…"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Etikett wird gelesen…"
+          }
+        }
+      }
+    },
+    "product.label.camera.settings": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Camera toestaan in Instellingen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow the camera in Settings"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kamera in den Einstellungen erlauben"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
