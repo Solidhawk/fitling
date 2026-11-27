@@ -400,9 +400,7 @@ struct FoodFixture {
             let letters = observation.characterBoxes ?? []
             report.append("box \(corners(observation)) | first letter \(corners(letters.first)) | last letter \(corners(letters.last))")
         }
-        Issue.record(Comment(rawValue: "
-" + report.joined(separator: "
-")))
+        Issue.record(Comment(rawValue: "VISIONDUMP " + report.joined(separator: " ## ")))
     }
 
     @Test func savesAPrivateProductThatSyncs() throws {
