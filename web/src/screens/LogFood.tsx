@@ -74,7 +74,11 @@ export function LogFood({ core, userID, meal, day, onClose }: { core: FitlingCor
       setSearching(true);
       searchProducts(supabase, core, query, [...favorites, ...recent])
         .then(
-          (found) => current && setResults(found),
+          (found) => {
+            if (!current) return;
+            setResults(found);
+            if (found.failed) setFailed(found.failed);
+          },
           (error: unknown) => current && setFailed(error instanceof Error ? error.message : "error.server"),
         )
         .finally(() => current && setSearching(false));

@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { FitlingCore, IsoDay, QuantityUnit } from "../core/fitlingCore";
 import { failure } from "./failure";
-import { kept, rowsBetween, send } from "./offline";
+import { keep, kept, keptAnswer, rowsBetween, send } from "./offline";
 import { allRows } from "./pages";
 import { type Product, productName, productsByID } from "./products";
 
@@ -173,6 +173,13 @@ export async function logProduct(
     updated_at: entry.now.toISOString(),
   };
   await send(client, { table: "food_entries", kind: "insert", row });
+  // First under Recent at once, also without a connection, as on the iPhone where Recent comes from the diary on the
+  // device; the next read from the server replaces the list.
+  const recents = keptAnswer<Product[]>("recents");
+  if (recents) {
+    const { limit } = core.recentProducts({ logged: [] });
+    keep("recents", [product, ...recents.filter((known) => known.id !== product.id)].slice(0, limit));
+  }
   return entryFromRow(row);
 }
 
