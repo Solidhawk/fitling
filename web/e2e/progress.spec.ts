@@ -170,3 +170,86 @@ test("animationStandsStillWithReduceMotion", async ({ page }) => {
   await page.getByTestId(`progress.exercise.${bench.id}`).click();
   await expect(page.getByTestId("exercise.animation.still")).toBeVisible();
 });
+
+// An exercise that is gone once read back (removed from the catalogue, or an own one removed elsewhere) leaves its
+// screen with only the way back, instead of the error screen of the whole app (UNFORGET S42).
+test("anExerciseGoneWhileOpenLeavesTheWayBack", async ({ page }) => {
+  const id = crypto.randomUUID();
+  await openTraining(page, async (userID) => {
+    const stored = await admin.from("exercises").insert({
+      id,
+      owner_id: userID,
+      name: { nl: "Eigen oefening" },
+      kind: "isolation",
+      load_type: "external",
+      equipment: "dumbbell",
+      primary_muscles: ["biceps"],
+      default_step_kg: 1,
+      updated_at: new Date().toISOString(),
+    });
+    if (stored.error) throw stored.error;
+    await finishedWorkout(userID, id, 2, [[12, 10]]);
+  });
+  await tapRow(page, nl("training.progress.exercises"));
+  await page.getByTestId(`progress.exercise.${id}`).click();
+  await expect(page.getByRole("heading", { name: "Eigen oefening" })).toBeVisible();
+  const stamp = new Date().toISOString();
+  const removed = await admin.from("exercises").update({ deleted_at: stamp, updated_at: stamp }).eq("id", id);
+  if (removed.error) throw removed.error;
+  await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
+  await expect(page.getByRole("heading", { name: "Eigen oefening" })).toHaveCount(0);
+  await expect(page.locator('[data-screen="failed"]')).toHaveCount(0);
+  await page.locator('[data-page="exerciseProgress"] .nav-back').click();
+  await expect(page.getByRole("heading", { name: nl("training.progress.exercises") })).toBeVisible();
+});
+
+// Switching the kind while the first one is still being read shows the kind picked last: the older answer that comes
+// in later is dropped, instead of weights under "Taille" (UNFORGET S42).
+test("theKindPickedLastIsShown", async ({ page }) => {
+  await openTraining(page, async (userID) => {
+    const stamp = new Date().toISOString();
+    const stored = await admin.from("body_measurements").insert([
+      { user_id: userID, measured_on: daysBefore(1), kind: "weight", value: 80, updated_at: stamp },
+      { user_id: userID, measured_on: daysBefore(1), kind: "waist", value: 90, updated_at: stamp },
+    ]);
+    if (stored.error) throw stored.error;
+  });
+  let release = () => {};
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let first = true;
+  await page.route("**/rest/v1/body_measurements*", async (route) => {
+    if (route.request().method() === "GET" && first) {
+      first = false;
+      await held;
+    }
+    return route.continue();
+  });
+  await page.getByRole("button", { name: nl("body.title") }).click();
+  await page.getByLabel(nl("body.kind")).selectOption("waist");
+  await expect(page.getByTestId("body.measurement")).toContainText(/90\s?cm/);
+  release();
+  // Room for the held answer to arrive before looking again.
+  await page.waitForTimeout(1500);
+  await expect(page.getByTestId("body.measurement")).toHaveCount(1);
+  await expect(page.getByTestId("body.measurement")).toContainText(/90\s?cm/);
+});
+
+// A photo lives only in this browser: adding one asks it to keep the storage when space runs low, also in a tab and
+// not only on the home screen (UNFORGET S42).
+test("addingAPhotoAsksToKeepTheStorage", async ({ page }) => {
+  await page.addInitScript(() => {
+    const counted = window as unknown as { persistAsked: number };
+    counted.persistAsked = 0;
+    StorageManager.prototype.persist = () => {
+      counted.persistAsked += 1;
+      return Promise.resolve(true);
+    };
+  });
+  await openTraining(page);
+  await page.getByRole("button", { name: nl("photos.title") }).click();
+  await page.getByTestId("photos.picker").setInputFiles({ name: "voortgang.png", mimeType: "image/png", buffer: png() });
+  await expect(page.getByTestId("photos.tile")).toHaveCount(1);
+  await expect.poll(() => page.evaluate(() => (window as unknown as { persistAsked: number }).persistAsked)).toBeGreaterThan(0);
+});

@@ -1,5 +1,5 @@
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test } from "./fixtures";
+import { expect, type Page, test } from "./fixtures";
 import { exercise, finishedWorkout, firstProgramme, openTraining } from "./training";
 import { admin, nl, nlCount } from "./users";
 
@@ -118,4 +118,51 @@ test("theCoachNamesWhatCanGoHeavier", async ({ page }) => {
   const note = page.getByTestId(`training.coach.heavier.${bench.id}`);
   await expect(note).toContainText(bench.name);
   await expect(note).toContainText(/62,5\s?kg/);
+});
+
+/** A programme of the user's own, made on this screen and open. */
+async function ownProgramme(page: Page, name: string) {
+  await page.getByTestId("training.program.new").click();
+  await page.getByTestId("training.program.name").fill(name);
+  await page.getByRole("button", { name: nl("common.save") }).click();
+  await expect(page.getByRole("heading", { name })).toBeVisible({ timeout: 15_000 });
+}
+
+// A delete the server turns down keeps the programme open with its error: going back anyway took the alert away with
+// the screen it lived in (UNFORGET S42). Trying again removes it.
+test("aFailedDeleteKeepsTheProgrammeWithItsError", async ({ page }) => {
+  const user = await openTraining(page);
+  await ownProgramme(page, "Benen");
+  let failures = 1;
+  await page.route("**/rest/v1/programs*", (route) =>
+    route.request().method() === "PATCH" && failures-- > 0
+      ? route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ message: "unavailable" }) })
+      : route.continue(),
+  );
+  const remove = async () => {
+    await page.getByTestId("program.options").click();
+    await page.getByRole("menuitem", { name: nl("training.program.delete") }).click();
+    await page.getByRole("button", { name: nl("training.program.delete") }).click();
+  };
+  await remove();
+  await expect(page.getByRole("alertdialog", { name: nl("error.server") })).toBeVisible();
+  await page.getByRole("alertdialog").getByRole("button").click();
+  await expect(page.getByRole("heading", { name: "Benen" })).toBeVisible();
+  await remove();
+  await expect(page.getByTestId("training.compose")).toBeVisible({ timeout: 15_000 });
+  const { data } = await admin.from("programs").select("deleted_at").eq("owner_id", user.id);
+  expect(data?.map((program) => program.deleted_at !== null)).toEqual([true]);
+});
+
+// Removed on another device while it is open here: once read back, the screen goes back to the list instead of
+// offering a programme that no longer exists (UNFORGET S42).
+test("aProgrammeRemovedOnAnotherDeviceCloses", async ({ page }) => {
+  const user = await openTraining(page);
+  await ownProgramme(page, "Armen");
+  const stamp = new Date().toISOString();
+  const removed = await admin.from("programs").update({ deleted_at: stamp, updated_at: stamp }).eq("owner_id", user.id);
+  if (removed.error) throw removed.error;
+  await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
+  await expect(page.getByTestId("training.compose")).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole("heading", { name: "Armen" })).toHaveCount(0);
 });

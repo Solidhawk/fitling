@@ -107,16 +107,19 @@ export function Workout({
     });
   }
 
-  /** Log is free again once the write is done; reading everything back follows without holding it. */
-  async function act(work: () => Promise<unknown>) {
+  /** Log is free again once the write is done; reading everything back follows without holding it. True when it worked. */
+  async function act(work: () => Promise<unknown>): Promise<boolean> {
     setBusy(true);
+    let done = true;
     try {
       await work();
     } catch (error) {
+      done = false;
       setFailed(error instanceof Error ? error.message : "error.server");
     }
     setBusy(false);
     await onChanged();
+    return done;
   }
 
   /** Stores the draft as a set; a working set starts the rest timer, and RPE is asked again for the next one. */
@@ -147,7 +150,8 @@ export function Workout({
   function discard() {
     setConfirmingDiscard(false);
     const cleanup = core.discardCleanup({ training: input, sessionID });
-    void act(() => discardWorkout(supabase, sessionID, cleanup, new Date())).then(onClose);
+    // Closed only once it is thrown away: a refusal stays on screen with the workout, to try again.
+    void act(() => discardWorkout(supabase, sessionID, cleanup, new Date())).then((done) => done && onClose());
   }
 
   // The long first-time advice once, at the first exercise it applies to; later ones point back to it.

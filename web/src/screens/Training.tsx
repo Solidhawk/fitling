@@ -13,6 +13,7 @@ import { adviceText, focusTitle, shortDate } from "../training/texts";
 import { usesPounds } from "../units";
 import { Alert } from "../ui/Alert";
 import { List, ListRow, ListSection } from "../ui/List";
+import { NavBar } from "../ui/NavBar";
 import { Body } from "./Body";
 import { ComposeWorkout, type ComposeChoice } from "./ComposeWorkout";
 import { ExerciseProgress, ExerciseProgressList } from "./ExerciseProgress";
@@ -45,12 +46,16 @@ export function Training({ userID }: { userID: string }) {
   const [creating, setCreating] = useState(false);
   const back = useHistoryStack(path.length, (depth) => setPath((shown) => shown.slice(0, depth)));
   const push = (route: Route) => setPath((shown) => [...shown, route]);
+  // Only the newest read is shown: an older answer that comes in later never overwrites it.
+  const reads = useRef(0);
 
   const reload = useCallback(async () => {
+    const mine = ++reads.current;
     try {
-      setRows(await loadTraining(supabase));
+      const next = await loadTraining(supabase);
+      if (mine === reads.current) setRows(next);
     } catch (error) {
-      setFailed(error instanceof Error ? error.message : "error.server");
+      if (mine === reads.current) setFailed(error instanceof Error ? error.message : "error.server");
     }
   }, []);
 
@@ -125,6 +130,19 @@ export function Training({ userID }: { userID: string }) {
   }
 
   const route = path.at(-1);
+  const removedProgram = route?.kind === "program" && rows?.programs.some((program) => program.id === route.id && program.deleted) ? route.id : undefined;
+  // A programme removed, here or on another device, is left once that is read back: one step back per opening, as
+  // the step lands only after the browser has gone back.
+  const leaving = useRef<string>(undefined);
+  useEffect(() => {
+    if (removedProgram === undefined) {
+      leaving.current = undefined;
+    } else if (leaving.current !== removedProgram) {
+      leaving.current = removedProgram;
+      back();
+    }
+  }, [removedProgram, back]);
+
   let screen;
   if (!core || !input || !overview || !rows) {
     screen = (
@@ -135,8 +153,8 @@ export function Training({ userID }: { userID: string }) {
         </div>
       </div>
     );
-  } else if (route?.kind === "program" && !rows.programs.some((program) => program.id === route.id)) {
-    // A programme just made on another screen, until it is read back.
+  } else if (route?.kind === "program" && !rows.programs.some((program) => program.id === route.id && !program.deleted)) {
+    // A programme just made on another screen, until it is read back; one removed, until the step back lands.
     screen = (
       <div className="tab-page pushed" data-page="program">
         <div className="loading tab-loading" aria-busy="true">
@@ -162,6 +180,13 @@ export function Training({ userID }: { userID: string }) {
     );
   } else if (route?.kind === "exercises") {
     screen = <ExerciseProgressList core={core} input={input} equipment={rows.equipment} onBack={back} onOpen={(id) => push({ kind: "exercise", id })} />;
+  } else if (route?.kind === "exercise" && !rows.exercises.some((exercise) => exercise.id === route.id)) {
+    // Gone while it was open (removed from the catalogue, then read back): only the way back.
+    screen = (
+      <div className="tab-page pushed" data-page="exerciseProgress">
+        <NavBar title="" back={t("training.title")} onBack={back} />
+      </div>
+    );
   } else if (route?.kind === "exercise") {
     screen = <ExerciseProgress key={route.id} core={core} userID={userID} input={input} rows={rows} exerciseID={route.id} onBack={back} onChanged={reload} />;
   } else if (route?.kind === "volume") {

@@ -4,7 +4,7 @@ import { supabase } from "../data/supabase";
 import { saveStep, type TrainingRows } from "../data/training";
 import { t } from "../i18n";
 import { adviceText, weight } from "../training/texts";
-import { usesPounds } from "../units";
+import { kilogramsPerPound, usesPounds } from "../units";
 import { Alert } from "../ui/Alert";
 import { useDialogFocus } from "../ui/dialogFocus";
 import { ExerciseAnimation, useAnimation } from "../ui/ExerciseAnimation";
@@ -80,7 +80,7 @@ export function ExerciseProgress({
   const animation = useAnimation(exerciseID);
   const [step, setStep] = useState(progress.stepKg);
   const [failed, setFailed] = useState<string>();
-  const toUnit = (kg: number) => (pounds ? kg / 0.45359237 : kg);
+  const toUnit = (kg: number) => (pounds ? kg / kilogramsPerPound : kg);
   // Steps are stored one after the other (as Partner.change): quick taps leave one setting, with the last step.
   const saving = useRef<Promise<void>>(Promise.resolve());
 
