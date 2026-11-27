@@ -238,13 +238,15 @@ test("anExerciseGoneWhileItsSheetIsOpenLeavesTheWayBack", async ({ page }) => {
   if (stored.error) throw stored.error;
   await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
   await page.getByTestId(`workout.exercise.${id}`).click();
-  await expect(page.getByRole("heading", { name: "Eigen oefening" })).toBeVisible();
+  // The sheet over the workout, with the exercise's name as its title (small and large).
+  const sheet = page.locator(".sheet .sheet");
+  await expect(sheet.getByRole("heading", { name: "Eigen oefening" }).first()).toBeVisible();
   const stamp = new Date().toISOString();
   const removed = await admin.from("exercises").update({ deleted_at: stamp, updated_at: stamp }).eq("id", id);
   if (removed.error) throw removed.error;
   await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
-  await expect(page.getByRole("heading", { name: "Eigen oefening" })).toHaveCount(0);
+  await expect(sheet.getByRole("heading", { name: "Eigen oefening" })).toHaveCount(0);
   await expect(page.locator('[data-screen="failed"]')).toHaveCount(0);
-  await page.locator('.sheet .sheet [data-page="exerciseProgress"] .nav-back').click();
+  await sheet.locator('[data-page="exerciseProgress"] .nav-back').click();
   await expect(page.getByRole("dialog", { name: programme.days[0].name })).toBeVisible();
 });
