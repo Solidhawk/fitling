@@ -72,12 +72,13 @@ public struct Portion: Sendable, Equatable {
         case tooMuch
     }
 
-    /// Nil while the amount is empty or can be logged, and when something else is missing, such as the kcal of the
-    /// package (its own field says so).
+    /// Nil while the amount is empty or can be logged, and when the kcal is the problem: missing, or typed from the
+    /// package beyond what 100 g can hold (its own field is the one to fix, not the amount).
     public static func problem(per100: NutrientsPer100, quantity: Double?, unit: QuantityUnit, servingSize: Double?) -> Problem? {
         guard let quantity else { return nil }
         guard FoodLog.storedQuantity(quantity) > 0 else { return .tooLittle }
-        guard preview(per100: per100, quantity: quantity, unit: unit, servingSize: servingSize) == nil,
+        guard let kcal = per100.kcal, Limits.kcalPer100.contains(kcal),
+              preview(per100: per100, quantity: quantity, unit: unit, servingSize: servingSize) == nil,
               FoodMath.nutrients(per100: per100, quantity: quantity, unit: unit, servingSize: servingSize) != nil
         else { return nil }
         return .tooMuch
