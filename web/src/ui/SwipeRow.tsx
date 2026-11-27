@@ -1,4 +1,4 @@
-import { type MouseEvent, type PointerEvent, type ReactNode, useId, useRef, useState } from "react";
+import { type MouseEvent, type PointerEvent, type ReactNode, useRef, useState } from "react";
 
 /** A button that a swipe uncovers, as a .swipeActions Button with its tint on iOS. */
 export interface SwipeAction {
@@ -16,10 +16,13 @@ const longPress = 500;
  * A list row with buttons a swipe uncovers: Delete when swiped to the left (.onDelete on iOS), or the row's own
  * actions at either edge (.swipeActions). The buttons come after the row for the keyboard and screen readers, and
  * slide into view when they have the focus. `onMenu` opens the row's menu on a long press or a right click, as
- * .contextMenu. `bare` leaves the row's padding to the child, a button that fills the row.
+ * .contextMenu. `bare` leaves the row's padding to the child, a button that fills the row. `name` says what the row
+ * is in its buttons' own names: a screen reader hears "Verwijderen, Appel", not the same word for every row (also
+ * with VoiceOver's hints off, which a description would need).
  */
 export function SwipeRow({
   children,
+  name,
   deleteLabel,
   onDelete,
   leading = [],
@@ -28,6 +31,7 @@ export function SwipeRow({
   bare = false,
 }: {
   children: ReactNode;
+  name?: string;
   deleteLabel?: string;
   onDelete?: () => void;
   leading?: SwipeAction[];
@@ -36,9 +40,7 @@ export function SwipeRow({
   bare?: boolean;
 }) {
   const [offset, setOffset] = useState(0);
-  // The row describes its buttons: a screen reader hears "Verwijderen" with the entry it removes, not the same word for
-  // every row.
-  const contentID = useId();
+  const named = name ? <span className="visually-hidden">{`, ${name}`}</span> : null;
   const start = useRef<{ x: number; y: number; offset: number; horizontal?: boolean } | null>(null);
   const leadingGroup = useRef<HTMLDivElement>(null);
   const trailingGroup = useRef<HTMLDivElement>(null);
@@ -109,7 +111,6 @@ export function SwipeRow({
         type="button"
         className={`swipe-action swipe-${action.tone}`}
         data-testid={action.testID}
-        aria-describedby={contentID}
         onFocus={() => setOffset(side === "leading" ? widths().left : -widths().right)}
         onBlur={() => setOffset(0)}
         onClick={() => {
@@ -119,13 +120,13 @@ export function SwipeRow({
       >
         {action.icon}
         <span>{action.label}</span>
+        {named}
       </button>
     ));
 
   return (
     <div className="swipe-row">
       <div
-        id={contentID}
         className={bare ? "swipe-content" : "list-row swipe-content"}
         style={{ transform: offset ? `translateX(${offset}px)` : undefined }}
         onPointerDown={down}
@@ -163,12 +164,12 @@ export function SwipeRow({
             <button
               type="button"
               className="swipe-action swipe-delete"
-              aria-describedby={contentID}
               onFocus={() => setOffset(-widths().right)}
               onBlur={() => setOffset(0)}
               onClick={onDelete}
             >
               {deleteLabel}
+              {named}
             </button>
           )}
         </div>

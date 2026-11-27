@@ -272,7 +272,7 @@ export function Shopping({ core, userID, menu, onBack }: { core: FitlingCore; us
         ) : (
           <ListSection>
             {overview.items.map((item) => (
-              <SwipeRow key={item.id} bare deleteLabel={t("day.delete")} onDelete={() => void act(() => removeItem(supabase, userID, item.id, new Date()))}>
+              <SwipeRow key={item.id} bare name={item.name} deleteLabel={t("day.delete")} onDelete={() => void act(() => removeItem(supabase, userID, item.id, new Date()))}>
                 <ItemRow item={item} onToggle={() => toggle(item)} />
               </SwipeRow>
             ))}

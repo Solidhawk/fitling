@@ -221,6 +221,7 @@ export function Day({ userID, advance }: { userID: string; advance: Advance }) {
                 {entries.map((entry) => (
                   <SwipeRow
                     key={entry.id}
+                    name={entry.name}
                     deleteLabel={t("day.delete")}
                     onDelete={() => void change(() => deleteEntry(supabase, entry.id, new Date()))}
                   >

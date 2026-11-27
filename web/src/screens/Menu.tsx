@@ -358,6 +358,7 @@ function EntryRow({
   return (
     <SwipeRow
       bare
+      name={entry.title}
       leading={open ? [{ label: t("menu.log"), icon: <Check {...icon} />, tone: "sprout", onSelect: onLog, testID: `menu.log.${entry.id}` }] : []}
       trailing={
         open

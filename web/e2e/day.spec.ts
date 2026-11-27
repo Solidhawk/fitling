@@ -139,9 +139,9 @@ test("swipingAnEntryLeftShowsDelete", async ({ page }) => {
   await page.mouse.down();
   await page.mouse.move(box.x + box.width - 140, box.y + box.height / 2, { steps: 8 });
   await page.mouse.up();
-  // A screen reader hears which entry the button deletes, not only "Verwijderen" for each of them.
-  await expect(page.getByRole("button", { name: nl("day.delete") })).toHaveAccessibleDescription(/Appel/);
-  await page.getByRole("button", { name: nl("day.delete") }).click();
+  // A screen reader hears which entry the button deletes, not only "Verwijderen" for each of them; in the button's own
+  // name, so also with VoiceOver's hints off.
+  await page.getByRole("button", { name: `${nl("day.delete")}, Appel`, exact: true }).click();
   await expect(page.getByText("Appel")).toHaveCount(0);
 });
 
