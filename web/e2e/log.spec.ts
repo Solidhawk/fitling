@@ -340,3 +340,22 @@ test("savingLeavesNothingOfTheSheetInTheHistory", async ({ page }) => {
   await expect(page.locator('[data-screen="logFood"]')).toHaveCount(0);
   await expect.poll(() => page.evaluate(() => history.state)).toBeNull();
 });
+
+// Saving a log leaves Vandaag where it was: walking back through the history of the sheet does not move the page.
+test("savingKeepsThePlaceOnVandaag", async ({ page }) => {
+  const user = await createUser({ profile: true, creature: true });
+  await signIn(page, user.email);
+  const lunch = page.getByTestId("day.add.lunch");
+  await expect(lunch).toBeVisible({ timeout: 15_000 });
+  await lunch.evaluate((element) => element.scrollIntoView({ block: "center" }));
+  const place = await page.evaluate(() => window.scrollY);
+  await lunch.click();
+  const product = await sharedProduct("Mandarijn");
+  await search(page, product.name);
+  await page.getByRole("button", { name: new RegExp(product.name) }).click();
+  await page.getByTestId("portion.save").click();
+  await expect(page.locator('[data-screen="logFood"]')).toHaveCount(0);
+  // Room for the walk back to land.
+  await page.waitForTimeout(500);
+  expect(Math.abs((await page.evaluate(() => window.scrollY)) - place)).toBeLessThanOrEqual(2);
+});
