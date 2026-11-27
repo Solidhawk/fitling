@@ -730,7 +730,16 @@ p {
   min-height: 7rem;
   padding: var(--space-m);
   border-radius: var(--radius-ribbon);
+  /* The colour, with white at 65% over the part not eaten: the pale tint of color-mix(in srgb, colour 35%, white) on
+     iOS, but without color-mix(), which Safari before 16.2 drops together with the whole background. One background,
+     so the rounded corners stay clean. */
+  background:
+    linear-gradient(to top, rgb(255 255 255 / 0) var(--filled), rgb(255 255 255 / 0.65) var(--filled)),
+    var(--block);
   color: var(--on-ribbon);
+  /* High contrast mode draws no backgrounds; the edge of the block stays. */
+  outline: 1px solid transparent;
+  outline-offset: -1px;
 }
 
 .macro-title {
