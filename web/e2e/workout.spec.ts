@@ -247,6 +247,9 @@ test("anExerciseGoneWhileItsSheetIsOpenLeavesTheWayBack", async ({ page }) => {
   await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
   await expect(sheet.getByRole("heading", { name: "Eigen oefening" })).toHaveCount(0);
   await expect(page.locator('[data-screen="failed"]')).toHaveCount(0);
-  await sheet.locator('[data-page="exerciseProgress"] .nav-back').click();
+  await expect(sheet.locator('[data-page="exerciseProgress"] .nav-back')).toBeVisible();
+  // The keyboard keeps working in it: Escape closes the sheet and only the sheet (review of PR #61).
+  await page.keyboard.press("Escape");
+  await expect(sheet).toHaveCount(0);
   await expect(page.getByRole("dialog", { name: programme.days[0].name })).toBeVisible();
 });
