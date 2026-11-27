@@ -42,7 +42,9 @@ export function Portion({
   const [unit, setUnit] = useState<QuantityUnit>(start.defaultUnit);
   const [quantityText, setQuantityText] = useState(decimal(start.defaultQuantity, 1));
   const [kcalText, setKcalText] = useState("");
-  const [favorite, setFavoriteState] = useState(false);
+  // Unknown until the server (or what was kept of it) answers: the star waits for that, so an answer that comes back
+  // after a tap cannot turn it back (UNFORGET S56). A read that fails leaves it off, to be set.
+  const [favorite, setFavoriteState] = useState<boolean>();
   /** The user's own copy once made, so a retry after a failure does not make another. */
   const [copy, setCopy] = useState<Product>();
   const [saving, setSaving] = useState(false);
@@ -50,7 +52,14 @@ export function Portion({
   const name = productName(core, product);
 
   useEffect(() => {
-    void isFavorite(supabase, product.id).then(setFavoriteState, () => undefined);
+    let current = true;
+    void isFavorite(supabase, product.id).then(
+      (known) => current && setFavoriteState(known),
+      () => current && setFavoriteState(false),
+    );
+    return () => {
+      current = false;
+    };
   }, [product.id]);
 
   const quantity = parseNumber(quantityText);
@@ -62,6 +71,7 @@ export function Portion({
   const problemText = portion.problem && t(portion.problem === "tooLittle" ? "portion.tooLittle" : "portion.tooMuch");
 
   async function toggleFavorite() {
+    if (favorite === undefined) return;
     try {
       await setFavorite(supabase, userID, product.id, !favorite, new Date());
       setFavoriteState(!favorite);
@@ -111,7 +121,7 @@ export function Portion({
         back={back}
         onBack={onBack}
         trailing={
-          <button type="button" className="nav-back nav-action icon-button" aria-label={t(favorite ? "portion.favorite.remove" : "portion.favorite.add")} aria-pressed={favorite} onClick={() => void toggleFavorite()}>
+          <button type="button" className="nav-back nav-action icon-button" aria-label={t(favorite ? "portion.favorite.remove" : "portion.favorite.add")} aria-pressed={favorite === true} disabled={favorite === undefined} onClick={() => void toggleFavorite()}>
             <Star aria-hidden="true" size={22} strokeWidth={2.2} fill={favorite ? "currentColor" : "none"} />
           </button>
         }
