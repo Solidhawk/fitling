@@ -48,7 +48,8 @@ async function fromCache(request, cacheName, keep) {
   // This build first; a page still on the build before finds its own files in that one.
   const kept = (await cache.match(request, found)) ?? (await caches.match(request, found));
   if (kept) return kept;
-  const response = await fetch(request);
+  // Media are kept across builds: their first copy comes past the browser's own cache, not from just before a deploy.
+  const response = await fetch(request, keep ? { cache: "no-cache" } : undefined);
   if (keep && response.ok) await cache.put(request, response.clone());
   return response;
 }
