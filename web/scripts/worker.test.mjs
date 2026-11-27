@@ -183,7 +183,15 @@ test("aNetworkThatDoesNotAnswerOpensTheKeptPage", async () => {
   await sw.fire("install");
   const page = { method: "GET", url: scope, mode: "navigate" };
   const answered = sw.fire("fetch", { request: page });
-  await vi.advanceTimersByTimeAsync(4_000);
+  let settled = false;
+  void answered.then(() => {
+    settled = true;
+  });
+  // Not before the four seconds: until then the server may still answer.
+  await vi.advanceTimersByTimeAsync(3_999);
+  expect(settled).toBe(false);
+  await vi.advanceTimersByTimeAsync(1);
+  // The page kept at install (the stand-in labels what it fetched then "network").
   expect(await answered).toBe(`network ${scope}`);
 });
 
@@ -195,4 +203,14 @@ test("aSlowNetworkIsWaitedForWithoutAKeptPage", async () => {
   const answered = sw.fire("fetch", { request: page });
   await vi.advanceTimersByTimeAsync(6_000);
   expect(await answered).toBe(`slow ${scope}`);
+});
+
+// The media are kept across builds: the first copy comes past the browser's own cache, so a picture changed in a deploy
+// is not kept from just before it (review of PR #57).
+test("mediaComeFreshFromTheServerTheFirstTime", async () => {
+  const sw = worker();
+  await sw.fire("install");
+  const owl = { method: "GET", url: `${scope}partners/owl.png`, mode: "no-cors" };
+  expect(await sw.fire("fetch", { request: owl })).toBe(`network ${scope}partners/owl.png`);
+  expect(sw.fetched.at(-1)).toEqual({ url: `${scope}partners/owl.png`, cache: "no-cache" });
 });
