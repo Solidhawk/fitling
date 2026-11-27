@@ -57,8 +57,9 @@ test("reportsUnknownMacros", async ({ page }) => {
   await expect(page.getByText(nlCount("day.unknown.protein %lld", 1))).toBeVisible({ timeout: 15_000 });
 });
 
-// MacroBlocks: the empty part is the colour at 35% over white, without color-mix(), which Safari before 16.2 does not
-// know: there the whole background fell away, and the ink lettering stood on the dark ground.
+// MacroBlocks: the empty part is the colour with white at 65% over it (35% colour, as color-mix on iOS), without
+// color-mix(), which Safari before 16.2 does not know: there the whole background fell away, and the ink lettering stood
+// on the dark ground.
 test("aMacroBlockFillsWithoutColorMix", async ({ page }) => {
   const user = await start(page);
   // 64 of the 128 g of protein: half.
@@ -66,15 +67,15 @@ test("aMacroBlockFillsWithoutColorMix", async ({ page }) => {
   await page.reload();
   const block = page.locator('[data-macro="targets.protein"]');
   await expect(block).toBeVisible({ timeout: 15_000 });
-  const look = await block.evaluate((element) => ({
-    inline: element.getAttribute("style") ?? "",
-    pale: getComputedStyle(element, "::before").opacity,
-    top: parseFloat(getComputedStyle(element, "::after").top),
-    height: element.getBoundingClientRect().height,
-  }));
+  const look = await block.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return { inline: element.getAttribute("style") ?? "", image: style.backgroundImage, colour: style.backgroundColor };
+  });
   expect(look.inline).not.toContain("color-mix");
-  expect(look.pale).toBe("0.35");
-  expect(look.top).toBeCloseTo(look.height / 2, 0);
+  expect(look.image).toContain("rgba(255, 255, 255, 0) 50%");
+  expect(look.image).toContain("rgba(255, 255, 255, 0.65) 50%");
+  // --protein.
+  expect(look.colour).toBe("rgb(255, 123, 107)");
 });
 
 test("waterAddsUp", async ({ page }) => {

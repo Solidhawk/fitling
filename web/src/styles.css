@@ -724,36 +724,22 @@ p {
 }
 
 .macro-block {
-  position: relative;
-  isolation: isolate;
-  overflow: hidden;
   display: flex;
   flex-direction: column;
   gap: var(--space-xs);
   min-height: 7rem;
   padding: var(--space-m);
   border-radius: var(--radius-ribbon);
-  background: white;
+  /* The colour, with white at 65% over the part not eaten: the pale tint of color-mix(in srgb, colour 35%, white) on
+     iOS, but without color-mix(), which Safari before 16.2 drops together with the whole background. One background,
+     so the rounded corners stay clean. */
+  background:
+    linear-gradient(to top, rgb(255 255 255 / 0) var(--filled), rgb(255 255 255 / 0.65) var(--filled)),
+    var(--block);
   color: var(--on-ribbon);
-}
-
-/* The colour at 35% over white is the pale part, as color-mix(in srgb, colour 35%, white) on iOS, but without it:
-   Safari before 16.2 drops a background with color-mix() entirely. Over it, from the bottom, the part eaten. */
-.macro-block::before,
-.macro-block::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background: var(--block);
-}
-
-.macro-block::before {
-  opacity: 0.35;
-}
-
-.macro-block::after {
-  top: calc(100% - var(--filled));
+  /* High contrast mode draws no backgrounds; the edge of the block stays. */
+  outline: 1px solid transparent;
+  outline-offset: -1px;
 }
 
 .macro-title {
