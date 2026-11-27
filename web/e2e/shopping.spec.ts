@@ -1,8 +1,8 @@
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test } from "./fixtures";
+import { expect, type Page, test } from "./fixtures";
 import { todaysMenu } from "./menu";
 import { openShopping, sharedList, shopWithOffers } from "./shopping";
-import { admin, nl } from "./users";
+import { admin, createUser, nl, signIn } from "./users";
 
 // ShoppingTests and the shopping UI tests on iOS: the list, the menu, offers and sharing (web phase 6).
 
@@ -18,6 +18,56 @@ test("theListShowsWhenTheOffersCannotBeRead", async ({ page }) => {
   await page.getByTestId("shopping.add.field").fill("Melk");
   await page.keyboard.press("Enter");
   await expect(page.getByTestId("shopping.item.Melk")).toBeVisible({ timeout: 15_000 });
+});
+
+/** Signed in, on the menu tab, before the shopping list is opened. */
+async function beforeShopping(page: Page) {
+  const user = await createUser({ profile: true, creature: true });
+  await signIn(page, user.email);
+  await expect(page.getByTestId("day.progress")).toBeVisible({ timeout: 15_000 });
+  await page.getByRole("tab", { name: nl("menu.title") }).click();
+  await expect(page.getByTestId("menu.shopping")).toBeVisible({ timeout: 15_000 });
+}
+
+/** The server answers 500 to the first `count` reads of `table`; answers how many reads it had. */
+async function failReads(page: Page, table: string, count: number) {
+  const reads = { count: 0 };
+  await page.route(`**/rest/v1/${table}*`, (route) => {
+    if (route.request().method() !== "GET") return route.continue();
+    reads.count += 1;
+    return reads.count <= count
+      ? route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ message: "unavailable" }) })
+      : route.continue();
+  });
+  return reads;
+}
+
+// The list and the shops could not be read: the message offers to try again, which reads both again (UNFORGET S48,
+// review of PR #58).
+test("theMessageOffersToReadTheListAgain", async ({ page }) => {
+  await beforeShopping(page);
+  await failReads(page, "shopping_items", 1);
+  const shops = await failReads(page, "supermarkets", 1);
+  await page.getByTestId("menu.shopping").click();
+  await expect(page.getByRole("alertdialog", { name: nl("error.server") })).toBeVisible({ timeout: 15_000 });
+  await page.getByRole("alertdialog").getByRole("button", { name: nl("common.connection.retry") }).click();
+  await expect(page.getByTestId("shopping.add.field")).toBeVisible({ timeout: 15_000 });
+  expect(shops.count).toBeGreaterThanOrEqual(2);
+});
+
+// A failure that lasts: closing the message only closes it, so it does not come straight back in front of the way back
+// (review of PR #58).
+test("closingTheMessageLeavesTheWayBack", async ({ page }) => {
+  await beforeShopping(page);
+  await failReads(page, "shopping_items", 100);
+  await page.getByTestId("menu.shopping").click();
+  await expect(page.getByRole("alertdialog", { name: nl("error.server") })).toBeVisible({ timeout: 15_000 });
+  await page.getByRole("alertdialog").getByRole("button", { name: nl("common.ok") }).click();
+  // Room for a message that would come back.
+  await page.waitForTimeout(1000);
+  await expect(page.getByRole("alertdialog")).toHaveCount(0);
+  await page.locator('[data-page="shopping"] .nav-back').click();
+  await expect(page.getByTestId("menu.shopping")).toBeVisible();
 });
 
 // Adding did not reach the server: what was typed stays in the field, to try again (UNFORGET S48).

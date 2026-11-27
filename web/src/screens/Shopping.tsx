@@ -227,7 +227,25 @@ export function Shopping({ core, userID, menu, onBack }: { core: FitlingCore; us
         <div className="loading tab-loading" aria-busy="true">
           <span className="spinner" role="progressbar" aria-label={t("common.loading")} />
         </div>
-        {failed && <Alert title={t(failed)} onClose={() => setFailed(undefined)} />}
+        {failed && (
+          // Without the list there is nothing to show: the message offers to read it and the shops again (UNFORGET
+          // S48). OK only closes it, so a failure that lasts leaves the way back free.
+          <Alert
+            title={t(failed)}
+            cancelLabel={t("common.ok")}
+            onClose={() => setFailed(undefined)}
+            actions={[
+              {
+                label: t("common.connection.retry"),
+                onSelect: () => {
+                  setFailed(undefined);
+                  void reloadList(true);
+                  void reloadOffers();
+                },
+              },
+            ]}
+          />
+        )}
       </div>
     );
   }
