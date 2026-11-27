@@ -138,6 +138,23 @@ import Testing
         #expect(rows == ["Energie 1569 kJ / 373 kcal", "Vetten 7,0 g"])
     }
 
+    /// Vision may give an upright box around a tilted line: no slope to go by. The tilt is then found from how the
+    /// pieces line up.
+    @Test(arguments: [0.12, -0.12, 0.0])
+    func aTiltedPhotoWithUprightBoxesStillGivesItsRows(tilt: Double) {
+        // Rows 0.1 apart, the values 0.5 to the right of their names: tilted, a value is 0.06 lower or higher than its
+        // name, nearer to the name of the next row.
+        let rows = [("Energie", "1569 kJ / 373 kcal"), ("Vetten", "7,0 g"), ("Koolhydraten", "62 g"), ("Eiwitten", "9,2 g")]
+        let pieces = rows.enumerated().flatMap { index, row -> [NutritionLabel.Piece] in
+            let y = 0.2 + 0.1 * Double(index)
+            return [
+                NutritionLabel.Piece(text: row.0, x: 0.15, y: y + tilt * 0.15, height: 0.035),
+                NutritionLabel.Piece(text: row.1, x: 0.65, y: y + tilt * 0.65, height: 0.04),
+            ]
+        }
+        #expect(NutritionLabel.rows(pieces) == rows.map { "\($0.0) \($0.1)" })
+    }
+
     @Test func aLabelWrittenInOneLineIsRead() {
         let label = NutritionLabel.read([
             "Nährwerte pro 100 g: Energie 1554 kJ / 371 kcal, Fett 12 g, davon gesättigte Fettsäuren 1,2 g, "
