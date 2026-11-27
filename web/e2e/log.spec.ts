@@ -14,6 +14,30 @@ async function search(page: Page, text: string) {
   await page.getByTestId("log.search").fill(text);
 }
 
+// The log sheet says "Nog niets gelogd" once it knows, not while recent and favourites are still being read; and a list
+// that cannot be read does not hide the other (review of web phase 2, S58).
+test("theEmptyLogSheetWaitsForItsLists", async ({ page }) => {
+  const user = await createUser({ profile: true, creature: true });
+  const product = await sharedProduct("Krentenbol");
+  await admin.from("favorite_products").insert({ user_id: user.id, product_id: product.id, updated_at: new Date().toISOString() });
+  let delayed = true;
+  await page.route("**/rest/v1/food_entries*", async (route) => {
+    if (delayed && route.request().method() === "GET" && route.request().url().includes("product_id")) {
+      await new Promise((resolve) => setTimeout(resolve, 2_000));
+      await route.fulfill({ status: 500, contentType: "application/json", body: "{}" });
+      return;
+    }
+    await route.continue();
+  });
+  await signIn(page, user.email);
+  await page.getByTestId("day.add.breakfast").click({ timeout: 15_000 });
+  await expect(page.locator('[data-screen="logFood"]')).toBeVisible();
+  await expect(page.getByText(nl("log.empty"))).toHaveCount(0);
+  // Recent could not be read: the favourite shows all the same.
+  await expect(page.getByRole("button", { name: new RegExp(product.name) })).toBeVisible({ timeout: 10_000 });
+  delayed = false;
+});
+
 // FoodLogTests and testLogAScannedProduct on iOS.
 test("logAProductFromSearch", async ({ page }, info) => {
   const user = await start(page);
