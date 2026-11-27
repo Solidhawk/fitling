@@ -41,9 +41,12 @@ struct ShoppingStore {
         let existing = lists()
         if let preferred, let kept = existing.first(where: { $0.id == preferred }) { return kept }
         if let first = existing.first { return first }
-        let list = ShoppingList(id: UUID(), name: String(name.prefix(60)), createdBy: userID, updatedAt: now())
+        // As the database counts characters: in code points (String.limited).
+        let list = ShoppingList(id: UUID(), name: name.limited(toScalars: 60), createdBy: userID, updatedAt: now())
         context.insert(list)
-        context.insert(ShoppingListMember(listID: list.id, userID: userID, role: "owner", displayName: String(ownerName.prefix(40)), joinedAt: now()))
+        context.insert(ShoppingListMember(
+            listID: list.id, userID: userID, role: "owner", displayName: ownerName.limited(toScalars: 40), joinedAt: now()
+        ))
         try? context.save()
         return list
     }

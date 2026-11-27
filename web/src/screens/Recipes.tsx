@@ -319,9 +319,11 @@ export function OwnRecipeForm({
   }
 
   function addLine() {
-    const quantity = parseNumber(line.quantity);
+    const typed = parseNumber(line.quantity);
+    // As recipe_ingredients keeps it: 0,004 g would be refused there (MenuBook.storedIngredientQuantity).
+    const quantity = typed === undefined ? undefined : core.storedIngredientQuantity({ quantity: typed }).quantity;
     const name = line.name.trim();
-    if (quantity === undefined || quantity <= 0 || name === "") return;
+    if (quantity === undefined || name === "") return;
     setLines([...lines, { id: crypto.randomUUID(), name, quantity, unit: line.unit }]);
     setLine({ ...line, name: "", quantity: "" });
   }

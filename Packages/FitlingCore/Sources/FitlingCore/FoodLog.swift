@@ -25,9 +25,10 @@ public enum FoodLog {
         }
     }
 
-    /// The name an entry keeps: what the product was called when it was logged, at most 200 characters.
+    /// The name an entry keeps: what the product was called when it was logged, at most 200 characters as the database
+    /// counts them.
     public static func storedName(_ name: String) -> String {
-        String(name.prefix(nameLimit))
+        name.limited(toScalars: nameLimit)
     }
 
     /// The amount an entry keeps, to one decimal as the database stores it.
@@ -116,9 +117,10 @@ public struct OwnProductDraft: Sendable, Equatable {
             return nil
         }
         guard [protein, carbs, fat].compactMap({ $0 }).allSatisfy({ (0...100).contains($0) }) else { return nil }
-        if let servingSize, !(servingSize > 0 && servingSize < 100_000) { return nil }
-        let brandText = brand.trimmingWhitespace()
         func hundredths(_ value: Double) -> Double { (value * 100).rounded() / 100 }
+        // `numeric(7,2) check (serving_size > 0)`: checked as it is stored, so 0,004 does not become 0.
+        if let servingSize, !(hundredths(servingSize) > 0 && hundredths(servingSize) <= 99_999.99) { return nil }
+        let brandText = brand.trimmingWhitespace()
         return OwnProductFields(
             name: trimmedName,
             brand: brandText.isEmpty ? nil : brandText,

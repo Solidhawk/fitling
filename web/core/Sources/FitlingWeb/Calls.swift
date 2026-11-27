@@ -51,6 +51,7 @@ public func handle(_ request: Data) -> Data {
         case "menuLoggedMeal": return try encode(menuLoggedMeal(try input(request)))
         case "menuRecipesFor": return try encode(menuRecipesFor(try input(request)))
         case "ownRecipeComplete": return try encode(ownRecipeComplete(try input(request)))
+        case "storedIngredientQuantity": return try encode(storedIngredientQuantity(try input(request)))
         case "localizedText": return try encode(localizedText(try input(request)))
         case "shoppingOverview": return try encode(shoppingOverview(try input(request)))
         case "shoppingRefill": return try encode(shoppingRefill(try input(request)))

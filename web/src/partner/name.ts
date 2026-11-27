@@ -1,3 +1,5 @@
+import { limitedText } from "../text";
+
 /** The check on creatures.name: Postgres counts code points, so a name is limited by its Unicode scalars. */
 export const nameLimit = 24;
 
@@ -6,14 +8,7 @@ export const nameLimit = 24;
  * made of five scalars takes five of the 24.
  */
 export function limitedName(name: string): string {
-  let result = "";
-  let scalars = 0;
-  for (const { segment } of new Intl.Segmenter(undefined, { granularity: "grapheme" }).segment(name)) {
-    scalars += [...segment].length;
-    if (scalars > nameLimit) break;
-    result += segment;
-  }
-  return result;
+  return limitedText(name, nameLimit);
 }
 
 /** What is stored: trimmed, limited, trimmed again. */

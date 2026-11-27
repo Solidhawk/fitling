@@ -82,6 +82,16 @@ import Testing
         #expect(book([recipe], [planned]).loggedMeal(planned.id) == nil)
     }
 
+    @Test func anIngredientKeepsWhatTheDatabaseStores() {
+        #expect(MenuBook.storedIngredientQuantity(250) == 250)
+        #expect(MenuBook.storedIngredientQuantity(0.006) == 0.01)
+        #expect(MenuBook.storedIngredientQuantity(0.004) == nil)
+        #expect(MenuBook.storedIngredientQuantity(999_999.99) == 999_999.99)
+        #expect(MenuBook.storedIngredientQuantity(1_000_000) == nil)
+        #expect(MenuBook.storedIngredientQuantity(-1) == nil)
+        #expect(MenuBook.storedIngredientQuantity(.nan) == nil)
+    }
+
     /// `food_entries.name` holds 200 characters: a longer title of the user's own is cut, so the entry can be kept.
     @Test func aLoggedMealKeepsAtMost200CharactersOfItsTitle() throws {
         let title = String(repeating: "Soep ", count: 60)

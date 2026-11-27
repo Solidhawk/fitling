@@ -219,3 +219,16 @@ func ownRecipeComplete(_ request: OwnRecipeRequest) -> OwnRecipeAnswer {
         carbs: request.carbs, fat: request.fat, mealSlots: request.mealSlots
     ))
 }
+
+struct IngredientQuantityRequest: Decodable {
+    let quantity: Double
+}
+
+struct IngredientQuantityAnswer: Encodable {
+    let quantity: Double?
+}
+
+/// The amount of an ingredient as it is stored, or nil for one the database refuses (MenuBook.storedIngredientQuantity).
+func storedIngredientQuantity(_ request: IngredientQuantityRequest) -> IngredientQuantityAnswer {
+    IngredientQuantityAnswer(quantity: MenuBook.storedIngredientQuantity(request.quantity))
+}

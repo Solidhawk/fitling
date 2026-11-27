@@ -236,7 +236,7 @@ final class ShoppingViewModel {
     func join(code: String, name: String) async -> Bool {
         sharingProblem = nil
         joinProblem = nil
-        let memberName = String(name.trimmingCharacters(in: .whitespacesAndNewlines).prefix(40))
+        let memberName = name.trimmingCharacters(in: .whitespacesAndNewlines).limited(toScalars: 40)
         do {
             let listID = try await services.sharing.join(
                 code: code.trimmingCharacters(in: .whitespacesAndNewlines), name: memberName.isEmpty ? ownerName : memberName
