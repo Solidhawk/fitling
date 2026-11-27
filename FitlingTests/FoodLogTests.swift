@@ -2,6 +2,7 @@ import Foundation
 import SwiftData
 import Testing
 import UIKit
+import Vision
 import FitlingCore
 @testable import Fitling
 
@@ -364,6 +365,44 @@ struct FoodFixture {
     /// Held at a slight angle, as in a shop.
     @Test func visionReadsATiltedPhoto() throws {
         try expectTheTable(try #require(table(turn: 5).jpegData(compressionQuality: 0.9)))
+    }
+
+    /// Diagnosis for S14, taken out again: what Vision gives for a tilted line at each level, as boxes of the line,
+    /// its first word and its first and last letter, and what the text-rectangle request gives for its letters.
+    @Test func visionBoxesOfATiltedLine() throws {
+        let picture = try #require(table(turn: 5).cgImage)
+        func corners(_ box: VNRectangleObservation?) -> String {
+            guard let box else { return "-" }
+            return [box.topLeft, box.topRight, box.bottomLeft, box.bottomRight]
+                .map { String(format: "(%.4f %.4f)", $0.x, $0.y) }.joined(separator: " ")
+        }
+        var report: [String] = []
+        for level in [VNRequestTextRecognitionLevel.accurate, .fast] {
+            let request = VNRecognizeTextRequest()
+            request.recognitionLevel = level
+            request.usesLanguageCorrection = false
+            try VNImageRequestHandler(cgImage: picture, orientation: .up).perform([request])
+            report.append(level == .accurate ? "ACCURATE" : "FAST")
+            for observation in request.results ?? [] {
+                guard let candidate = observation.topCandidates(1).first else { continue }
+                let text = candidate.string
+                let first = text.startIndex..<text.index(after: text.startIndex)
+                let last = text.index(before: text.endIndex)..<text.endIndex
+                let word = text.startIndex..<(text.firstIndex(of: " ") ?? text.endIndex)
+                report.append("\(text) | line \(corners(observation)) | word \(corners(try? candidate.boundingBox(for: word))) | first \(corners(try? candidate.boundingBox(for: first))) | last \(corners(try? candidate.boundingBox(for: last)))")
+            }
+        }
+        let rectangles = VNDetectTextRectanglesRequest()
+        rectangles.reportCharacterBoxes = true
+        try VNImageRequestHandler(cgImage: picture, orientation: .up).perform([rectangles])
+        report.append("RECTANGLES")
+        for observation in rectangles.results ?? [] {
+            let letters = observation.characterBoxes ?? []
+            report.append("box \(corners(observation)) | first letter \(corners(letters.first)) | last letter \(corners(letters.last))")
+        }
+        Issue.record(Comment(rawValue: "
+" + report.joined(separator: "
+")))
     }
 
     @Test func savesAPrivateProductThatSyncs() throws {
