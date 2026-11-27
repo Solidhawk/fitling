@@ -259,6 +259,39 @@ test("the partner folded, dressed and today's XP (web phase 3)", async () => {
   expect(Object.keys(snapshot.todayXP).sort()).toEqual(["logging", "protein", "withinTarget", "workout"]);
 });
 
+// The fold over the bridge gives what CreatureEngineTests expect on the iPhone: the shape, the days off target and each
+// kind of news (UNFORGET S41).
+test("the partner's fold over the bridge as in CreatureEngineTests", async () => {
+  const core = await loadCore(wasm);
+  const creature = { species: "bumblebee", colorIndex: 0, tone: "sweet", createdOn: "2026-11-01", bodyShape: 0.3, xp: 0, offTargetDays: 0 };
+  const target = { kcal: 2000, proteinG: 120, carbsG: 250, fatG: 70 };
+  type Eaten = { day: string; kcal: number; proteinG: number };
+  const days = (first: number, last: number, kcal: number): Eaten[] =>
+    Array.from({ length: last - first + 1 }, (_, index) => ({ day: `2026-11-${String(first + index).padStart(2, "0")}`, kcal, proteinG: 0 }));
+  const fold = (state: typeof creature, entries: Eaten[], today: string, workoutDays: string[] = []) =>
+    core.partnerAdvance({ creature: state, entries, workoutDays, periods: [], fallback: target, today });
+
+  // growsRounderGraduallyWhileEatingTooMuch: days 1 and 2 have too little history, days 3 to 10 each add one step.
+  const round = fold(creature, days(1, 10, 3000), "2026-11-11");
+  expect(round.creature.bodyShape).toBeCloseTo(0.7, 6);
+  expect(round.creature.offTargetDays).toBe(8);
+  // awardsRecoveryBonusAfterAWeekOfTooMuchBackToFit: 10 days of logging only, 15 days on target, one bonus.
+  const back = fold(creature, [...days(1, 10, 3000), ...days(11, 25, 2000)], "2026-11-26");
+  expect(back.events.filter((event) => event.kind === "recoveryBonus")).toEqual([{ kind: "recoveryBonus", xp: 150 }]);
+  expect(back.creature.xp).toBe(10 * 10 + 15 * 50 + 150);
+  expect(back.creature.offTargetDays).toBe(0);
+  // reportsLevelUpsAndWhatTheyUnlock
+  const good = [{ day: "2026-11-01", kcal: 2000, proteinG: 130 }];
+  expect(fold({ ...creature, xp: 90 }, good, "2026-11-02", ["2026-11-01"]).events).toEqual([
+    { kind: "leveledUp", level: 2 },
+    { kind: "unlockedItem", item: "scarf" },
+  ]);
+  expect(fold({ ...creature, xp: 990 }, good, "2026-11-02", ["2026-11-01"]).events).toEqual([
+    { kind: "leveledUp", level: 5 },
+    { kind: "unlockedColor", index: 3 },
+  ]);
+});
+
 test("training from the same TrainingRecords as the iPhone (web phase 4)", async () => {
   const core = await loadCore(wasm);
   const squat = {
