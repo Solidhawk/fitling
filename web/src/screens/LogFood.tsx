@@ -41,8 +41,17 @@ export function LogFood({ core, userID, meal, day, onClose }: { core: FitlingCor
   const lookingUp = useRef(false);
   const step = stack[stack.length - 1];
   const push = (next: Step) => setStack((current) => [...current, next]);
-  const back = useHistoryStack(stack.length - 1, (depth) => setStack((current) => current.slice(0, depth + 1)));
-  useDialogFocus(sheet, onClose);
+  // The list counts as a screen too: Back on it closes the sheet, as swiping a sheet down on the iPhone (UNFORGET S40).
+  const back = useHistoryStack(stack.length, (depth) => (depth === 0 ? onClose() : setStack((current) => current.slice(0, depth))));
+  // Cancel, Escape and saving close the sheet through the history as well, so its screens leave nothing behind there;
+  // once, or a second press would go back past the page under the sheet.
+  const closing = useRef(false);
+  const close = () => {
+    if (closing.current) return;
+    closing.current = true;
+    history.go(-stack.length);
+  };
+  useDialogFocus(sheet, close);
   // The next step replaces the row that was tapped: the focus goes to its title, as a pushed screen on the iPhone and
   // each step of the onboarding, not to the page behind the sheet.
   const firstStep = useRef(true);
@@ -132,7 +141,7 @@ export function LogFood({ core, userID, meal, day, onClose }: { core: FitlingCor
   return (
     <div ref={sheet} className="sheet" role="dialog" aria-modal="true" aria-label={title} tabIndex={-1} data-screen="logFood">
       {step.kind === "portion" && (
-        <Portion core={core} userID={userID} product={step.product} meal={meal} day={day} back={title} onBack={back} onSaved={onClose} />
+        <Portion core={core} userID={userID} product={step.product} meal={meal} day={day} back={title} onBack={back} onSaved={close} />
       )}
       {step.kind === "addProduct" && (
         <AddProduct
@@ -149,7 +158,7 @@ export function LogFood({ core, userID, meal, day, onClose }: { core: FitlingCor
           <NavBar
             title={title}
             leading={
-              <button type="button" className="nav-back nav-action" onClick={onClose}>
+              <button type="button" className="nav-back nav-action" onClick={close}>
                 {t("common.cancel")}
               </button>
             }
