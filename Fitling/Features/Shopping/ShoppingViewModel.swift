@@ -50,7 +50,8 @@ final class ShoppingViewModel {
         self.sync = sync
         self.defaults = defaults
         self.listName = listName
-        self.ownerName = ownerName
+        // The name the others see; `shopping_list_members.display_name` holds 40 characters.
+        self.ownerName = ownerName.limited(toScalars: 40)
         self.now = now
     }
 
