@@ -3,7 +3,7 @@ import { AuthService, type AuthState } from "./data/auth";
 import { useCoreFailure } from "./core/useCore";
 import { deleteAccount } from "./data/account";
 import { keepPhotosFor } from "./data/photoOwner";
-import { flush, noNetwork, setOfflineUser } from "./data/offline";
+import { flush, noNetwork, retryWaiting, setOfflineUser } from "./data/offline";
 import { lookUp } from "./data/profile";
 import { stopPushHere } from "./data/push";
 import { sessionKey, storedUser, supabase } from "./data/supabase";
@@ -56,8 +56,8 @@ export function App() {
   }, [authState.kind]);
 
   // Progress photos and what is kept for without a connection live in this browser alone and belong to the user who
-  // made them (RootViewModel.eraseLocalData). What waits is sent at sign-in, when the connection comes back and when
-  // the app comes to the front.
+  // made them (RootViewModel.eraseLocalData). What waits is sent at sign-in, when the connection comes back, when the
+  // app comes to the front, and every half minute while it is open.
   useEffect(() => {
     setOfflineUser(userID);
     if (!userID) return;
@@ -67,9 +67,11 @@ export function App() {
     send();
     window.addEventListener("online", send);
     document.addEventListener("visibilitychange", visible);
+    const stopRetrying = retryWaiting(supabase, 30_000);
     return () => {
       window.removeEventListener("online", send);
       document.removeEventListener("visibilitychange", visible);
+      stopRetrying();
     };
   }, [userID]);
   const currentUser = useRef(userID);

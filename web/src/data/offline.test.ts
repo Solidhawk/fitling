@@ -257,7 +257,7 @@ test("aProductLoggedWithoutAConnectionIsFirstUnderRecent", async () => {
   const product = (id: string, name: string) =>
     productFromRow({ id, owner_id: null, source: "off", name: { nl: name }, search_name: name.toLowerCase(), quantity_unit: "g", kcal_100: 52 });
   keep("recents", [product("b", "Brood"), product("c", "Kaas")]);
-  vi.stubGlobal("navigator", { onLine: false });
+  vi.stubGlobal("navigator", { onLine: false, languages: ["nl-NL"] });
   const entry = { userID: "user-1", quantity: 150, unit: "g" as const, meal: "snack" as const, day, now: new Date() };
   await logProduct(down(), core, { ...entry, product: product("a", "Appel") });
   expect((await recentProducts(down(), core)).map((found) => found.id)).toEqual(["a", "b"]);

@@ -92,12 +92,13 @@ export async function searchProducts(
   core: FitlingCore,
   query: string,
   known: Product[],
-): Promise<{ own: Product[]; online: Product[] }> {
+): Promise<{ own: Product[]; online: Product[]; failed?: string }> {
   // The pattern finds the term with `imatch`, each character taken literally (FoodLog.searchPattern).
   const { key: term, pattern } = core.searchKey({ text: query });
   if (term === "") return { own: [], online: [] };
+  const knownMatches = known.filter((product) => product.searchName.includes(term));
   // Without a network: what this browser knows, as the iPhone searches its own copy.
-  if (noNetwork()) return { own: known.filter((product) => product.searchName.includes(term)).slice(0, searchLimit), online: [] };
+  if (noNetwork()) return { own: knownMatches.slice(0, searchLimit), online: [] };
   const mine = await client
     .from("products")
     .select("*")
@@ -105,9 +106,11 @@ export async function searchProducts(
     .is("deleted_at", null)
     .filter("search_name", "imatch", pattern)
     .limit(searchLimit);
-  if (mine.error) throw failure(mine.error);
+  // A read that fails keeps what was found so far, with the reason to tell (UNFORGET S58): the iPhone keeps its
+  // own results too when the online search fails.
+  if (mine.error) return { own: knownMatches.slice(0, searchLimit), online: [], failed: failure(mine.error).message };
   const own: Product[] = [];
-  for (const product of [...(mine.data as Row[]).map(productFromRow), ...known.filter((product) => product.searchName.includes(term))]) {
+  for (const product of [...(mine.data as Row[]).map(productFromRow), ...knownMatches]) {
     if (own.length < searchLimit && !own.some((shown) => shown.id === product.id)) own.push(product);
   }
   if (term.length < onlineSearchMinimum) return { own, online: [] };
@@ -118,7 +121,7 @@ export async function searchProducts(
     .is("deleted_at", null)
     .filter("search_name", "imatch", pattern)
     .limit(searchLimit);
-  if (shared.error) throw failure(shared.error);
+  if (shared.error) return { own, online: [], failed: failure(shared.error).message };
   const shown = new Set(own.map((product) => product.id));
   return { own, online: (shared.data as Row[]).map(productFromRow).filter((product) => !shown.has(product.id)) };
 }
