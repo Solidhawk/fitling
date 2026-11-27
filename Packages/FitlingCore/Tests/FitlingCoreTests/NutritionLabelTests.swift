@@ -175,19 +175,26 @@ import Testing
         #expect(label.kcal == 373 && label.fat == 7 && label.carbs == 62 && label.protein == 9.2 && label.salt == 0.48)
     }
 
-    /// A straight table with the heading above the values only and a note under the names (review of Fable 5.2): a
-    /// slope that pairs each name with the value of the row above lines the pieces up in as few lines, and must not win.
-    @Test func aHeadingAboveTheValuesDoesNotShiftTheRows() {
+    /// A table with the heading above the values only and a note under the names, rows 0.03 apart and the columns 0.45
+    /// (reviews of Fable 5.2). At 0.067 the values sink a whole row: pairing each name with the value of the row above
+    /// lines the pieces up in fewer lines than the true slope, and must not win. As Vision gives them, the longer pieces
+    /// carry the slope, the short ones none. With a stamp on the straight photo, only the stamp is tilted.
+    @Test(arguments: [(0.0, nil), (0.05, nil), (0.067, nil), (-0.067, nil), (0.13, nil), (0.0, 0.067), (0.0, -0.067), (0.0, -0.05)])
+    func aHeadingAboveTheValuesDoesNotShiftTheRows(tilt: Double, stamp: Double?) {
         let names = ["Energie", "Vetten", "waarvan verzadigd", "Koolhydraten", "waarvan suikers", "Eiwitten", "Zout"]
         let values = ["1569 kJ / 373 kcal", "7,0 g", "1,2 g", "62 g", "3,1 g", "9,2 g", "0,48 g"]
-        var pieces = [NutritionLabel.Piece(text: "per 100 g", x: 0.7, y: 0.30, height: 0.02)]
+        func piece(_ text: String, x: Double, y: Double) -> NutritionLabel.Piece {
+            .init(text: text, x: x, y: y + tilt * x, height: 0.02, slope: text.count >= 8 ? tilt : 0)
+        }
+        var pieces = [piece("per 100 g", x: 0.7, y: 0.30)]
         for (index, row) in zip(names, values).enumerated() {
             let y = 0.33 + 0.03 * Double(index)
-            pieces.append(.init(text: row.0, x: 0.25, y: y, height: 0.02))
-            pieces.append(.init(text: row.1, x: 0.7, y: y, height: 0.02))
+            pieces += [piece(row.0, x: 0.25, y: y), piece(row.1, x: 0.7, y: y)]
         }
-        pieces.append(.init(text: "* Referentie-inname", x: 0.25, y: 0.54, height: 0.02))
-        #expect(NutritionLabel.rows(pieces) == ["per 100 g"] + zip(names, values).map { "\($0) \($1)" } + ["* Referentie-inname"])
+        pieces.append(piece("* Referentie-inname", x: 0.25, y: 0.54))
+        if let stamp { pieces.append(.init(text: "NIEUW", x: 0.85, y: 0.12, height: 0.04, slope: stamp)) }
+        let table = ["per 100 g"] + zip(names, values).map { "\($0) \($1)" } + ["* Referentie-inname"]
+        #expect(NutritionLabel.rows(pieces) == (stamp == nil ? table : ["NIEUW"] + table))
     }
 
     @Test func aLabelWrittenInOneLineIsRead() {
