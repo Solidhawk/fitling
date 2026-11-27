@@ -12,15 +12,12 @@ struct SupabaseProductSearch: ProductSearching {
     let client: SupabaseClient
 
     func search(_ term: String, limit: Int) async throws -> [ProductRecord] {
-        // The term goes into a LIKE pattern: its own wildcards are taken literally.
-        let escaped = term.replacingOccurrences(of: "\\", with: "\\\\")
-            .replacingOccurrences(of: "%", with: "\\%")
-            .replacingOccurrences(of: "_", with: "\\_")
         do {
             return try await client.from("products")
                 .select()
                 .is("owner_id", value: nil)
-                .ilike("search_name", pattern: "%\(escaped)%")
+                .is("deleted_at", value: nil)
+                .imatch("search_name", pattern: Self.pattern(term))
                 .limit(limit)
                 .execute()
                 .value
@@ -29,5 +26,16 @@ struct SupabaseProductSearch: ProductSearching {
         } catch {
             throw RemoteStoreError.rejected(String(describing: error))
         }
+    }
+
+    /// The term as a regular expression that finds it anywhere, each character taken literally. A LIKE pattern cannot
+    /// do that: PostgREST reads "*" in it as "%" (products.ts, containsPattern).
+    static func pattern(_ term: String) -> String {
+        var pattern = ""
+        for character in term {
+            if "\\^$.|?*+()[]{}".contains(character) { pattern.append("\\") }
+            pattern.append(character)
+        }
+        return pattern
     }
 }

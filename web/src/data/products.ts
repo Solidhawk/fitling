@@ -79,9 +79,12 @@ export async function productsByID(client: SupabaseClient, ids: string[]): Promi
   return ids.flatMap((id) => byID.get(id) ?? []);
 }
 
-/** A search term inside a LIKE pattern: its own wildcards are taken literally (SupabaseProductSearch). */
-export function likePattern(term: string): string {
-  return `%${term.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_")}%`;
+/**
+ * A search term as a regular expression that finds it anywhere, each character taken literally. A LIKE pattern cannot
+ * do that: PostgREST reads "*" in it as "%". Searched with `imatch` (SupabaseProductSearch.pattern).
+ */
+export function containsPattern(term: string): string {
+  return term.replace(/[\\^$.|?*+()[\]{}]/g, "\\$&");
 }
 
 /** Online results appear from this many characters on, so a single letter does not ask the server for everything. */
@@ -107,7 +110,7 @@ export async function searchProducts(
     .select("*")
     .not("owner_id", "is", null)
     .is("deleted_at", null)
-    .ilike("search_name", likePattern(term))
+    .filter("search_name", "imatch", containsPattern(term))
     .limit(searchLimit);
   if (mine.error) throw failure(mine.error);
   const own: Product[] = [];
@@ -120,7 +123,7 @@ export async function searchProducts(
     .select("*")
     .is("owner_id", null)
     .is("deleted_at", null)
-    .ilike("search_name", likePattern(term))
+    .filter("search_name", "imatch", containsPattern(term))
     .limit(searchLimit);
   if (shared.error) throw failure(shared.error);
   const shown = new Set(own.map((product) => product.id));

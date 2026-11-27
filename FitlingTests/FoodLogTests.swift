@@ -231,6 +231,14 @@ struct FoodFixture {
         await viewModel.runSearch()
         #expect(fixture.search.terms.isEmpty)
     }
+
+    /// The server searches with a regular expression: every character of the term counts as itself, a "*" too
+    /// (diary.test.ts, aSearchTermIsTakenLiterally, runs the same search against PostgREST).
+    @Test func anOnlineSearchTakesTheTermLiterally() {
+        #expect(SupabaseProductSearch.pattern("pindakaas") == "pindakaas")
+        #expect(SupabaseProductSearch.pattern("50% *x*. (a+b)") == #"50% \*x\*\. \(a\+b\)"#)
+        #expect(SupabaseProductSearch.pattern(#"^$|?{2} [c] \_"#) == #"\^\$\|\?\{2\} \[c\] \\_"#)
+    }
 }
 
 // MARK: - 2.8 Zelf een product toevoegen
