@@ -155,6 +155,46 @@ import Testing
         #expect(NutritionLabel.rows(pieces) == rows.map { "\($0.0) \($0.1)" })
     }
 
+    /// What Vision gave on the simulator for the table of FoodLogTests turned 5 degrees (CI run 45922631819): a tilted box
+    /// for the longer pieces, with the slope of the photo, and an upright one, slope 0, for the short ones.
+    @Test func aTiltedPhotoAsVisionReadsItGivesItsRows() {
+        let rows = NutritionLabel.rows([
+            .init(text: "Voedingswaarde", x: 0.2370, y: 0.1420, height: 0.0710, slope: 0.1309),
+            .init(text: "per 100 g", x: 0.5905, y: 0.1938, height: 0.0680, slope: 0.0229),
+            .init(text: "Energie", x: 0.1505, y: 0.2470, height: 0.0700, slope: 0),
+            .init(text: "1569 kJ / 373 kcal", x: 0.6605, y: 0.3155, height: 0.0700, slope: 0.1343),
+            .init(text: "Vetten", x: 0.1355, y: 0.3665, height: 0.0500, slope: 0.1304),
+            .init(text: "7,0 g", x: 0.5330, y: 0.4267, height: 0.0670, slope: 0),
+            .init(text: "Koolhydraten", x: 0.1895, y: 0.4975, height: 0.0790, slope: 0.1388),
+            .init(text: "62 g", x: 0.5235, y: 0.5450, height: 0.0700, slope: 0),
+            .init(text: "Eiwitten", x: 0.1345, y: 0.6115, height: 0.0490, slope: 0.1295),
+            .init(text: "9,2 g", x: 0.5210, y: 0.6680, height: 0.0680, slope: 0),
+            .init(text: "Zout", x: 0.0995, y: 0.7280, height: 0.0560, slope: 0),
+            .init(text: "0,48 g", x: 0.5275, y: 0.7920, height: 0.0720, slope: 0),
+        ])
+        #expect(rows == [
+            "Voedingswaarde per 100 g", "Energie 1569 kJ / 373 kcal", "Vetten 7,0 g", "Koolhydraten 62 g", "Eiwitten 9,2 g",
+            "Zout 0,48 g",
+        ])
+        let label = NutritionLabel.read(rows)
+        #expect(label.kcal == 373 && label.fat == 7 && label.carbs == 62 && label.protein == 9.2 && label.salt == 0.48)
+    }
+
+    /// A straight table with the heading above the values only and a note under the names (review of Fable 5.2): a
+    /// slope that pairs each name with the value of the row above lines the pieces up in as few lines, and must not win.
+    @Test func aHeadingAboveTheValuesDoesNotShiftTheRows() {
+        let names = ["Energie", "Vetten", "waarvan verzadigd", "Koolhydraten", "waarvan suikers", "Eiwitten", "Zout"]
+        let values = ["1569 kJ / 373 kcal", "7,0 g", "1,2 g", "62 g", "3,1 g", "9,2 g", "0,48 g"]
+        var pieces = [NutritionLabel.Piece(text: "per 100 g", x: 0.7, y: 0.30, height: 0.02)]
+        for (index, row) in zip(names, values).enumerated() {
+            let y = 0.33 + 0.03 * Double(index)
+            pieces.append(.init(text: row.0, x: 0.25, y: y, height: 0.02))
+            pieces.append(.init(text: row.1, x: 0.7, y: y, height: 0.02))
+        }
+        pieces.append(.init(text: "* Referentie-inname", x: 0.25, y: 0.54, height: 0.02))
+        #expect(NutritionLabel.rows(pieces) == ["per 100 g"] + zip(names, values).map { "\($0) \($1)" } + ["* Referentie-inname"])
+    }
+
     @Test func aLabelWrittenInOneLineIsRead() {
         let label = NutritionLabel.read([
             "Nährwerte pro 100 g: Energie 1554 kJ / 371 kcal, Fett 12 g, davon gesättigte Fettsäuren 1,2 g, "
