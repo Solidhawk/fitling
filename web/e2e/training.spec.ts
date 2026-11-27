@@ -195,9 +195,12 @@ test("backReturnsToTheScreensOwnPlace", async ({ page }) => {
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
   expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(100);
   await page.goBack();
-  await page.getByTestId(`training.program.${second}`).click();
+  // Opened from the top, without the scroll a click into view makes: the place kept for the first programme is then
+  // the only one there is for this depth.
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.getByTestId(`training.program.${second}`).evaluate((element) => element.closest("button")!.click());
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
-  await page.locator('[data-testid^="program.exercise."]').first().click();
+  await page.locator('[data-testid^="program.exercise."]').first().evaluate((element) => element.closest("button")!.click());
   await expect(page.locator('[data-page="exerciseProgress"]')).toBeVisible();
   await page.goBack();
   await expect(page.locator('[data-page="program"]')).toBeVisible();
