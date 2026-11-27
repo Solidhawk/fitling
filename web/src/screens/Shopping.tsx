@@ -94,8 +94,9 @@ export function Shopping({ core, userID, menu, onBack }: { core: FitlingCore; us
   const reloadOffers = useCallback(async () => {
     try {
       setOffers(await loadOffers(supabase, today(), new Date()));
-    } catch (error) {
-      setFailed(error instanceof Error ? error.message : "error.server");
+    } catch {
+      // The offers are the list's extra: without them the list shows as it is, and the next visit reads them again.
+      setOffers((shown) => shown ?? { supermarkets: [], favoriteSupermarketIDs: [], offers: [] });
     }
   }, []);
 
