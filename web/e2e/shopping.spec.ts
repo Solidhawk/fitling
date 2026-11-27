@@ -2,7 +2,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "./fixtures";
 import { todaysMenu } from "./menu";
 import { openShopping, sharedList, shopWithOffers } from "./shopping";
-import { admin, nl } from "./users";
+import { admin, createUser, nl, signIn } from "./users";
 
 // ShoppingTests and the shopping UI tests on iOS: the list, the menu, offers and sharing (web phase 6).
 
@@ -18,6 +18,25 @@ test("theListShowsWhenTheOffersCannotBeRead", async ({ page }) => {
   await page.getByTestId("shopping.add.field").fill("Melk");
   await page.keyboard.press("Enter");
   await expect(page.getByTestId("shopping.item.Melk")).toBeVisible({ timeout: 15_000 });
+});
+
+// The list could not be read: closing the message reads it again, instead of a spinner that never ends (UNFORGET S48).
+test("closingTheMessageReadsTheListAgain", async ({ page }) => {
+  const user = await createUser({ profile: true, creature: true });
+  await signIn(page, user.email);
+  await expect(page.getByTestId("day.progress")).toBeVisible({ timeout: 15_000 });
+  await page.getByRole("tab", { name: nl("menu.title") }).click();
+  await expect(page.getByTestId("menu.shopping")).toBeVisible({ timeout: 15_000 });
+  let failures = 1;
+  await page.route("**/rest/v1/shopping_items*", (route) =>
+    route.request().method() === "GET" && failures-- > 0
+      ? route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ message: "unavailable" }) })
+      : route.continue(),
+  );
+  await page.getByTestId("menu.shopping").click();
+  await expect(page.getByRole("alertdialog", { name: nl("error.server") })).toBeVisible({ timeout: 15_000 });
+  await page.getByRole("alertdialog").getByRole("button").click();
+  await expect(page.getByTestId("shopping.add.field")).toBeVisible({ timeout: 15_000 });
 });
 
 // Adding did not reach the server: what was typed stays in the field, to try again (UNFORGET S48).
