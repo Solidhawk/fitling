@@ -28,6 +28,9 @@ body {
 
 .page {
   padding: max(1rem, env(safe-area-inset-top)) 1rem calc(5.5rem + env(safe-area-inset-bottom));
+  /* Turned sideways, an iPhone's notch is at a side. */
+  padding-right: max(1rem, env(safe-area-inset-right));
+  padding-left: max(1rem, env(safe-area-inset-left));
 }
 
 /* The large title: 34 pt heavy, as NavigationBarStyle.largeTitleFont. */
@@ -46,6 +49,8 @@ body {
   bottom: 0;
   background-color: var(--ground);
   border-top: 1px solid var(--track);
+  padding-right: env(safe-area-inset-right);
+  padding-left: env(safe-area-inset-left);
 }
 
 .tab-bar {
@@ -550,6 +555,8 @@ p {
   z-index: 10;
   overflow-y: auto;
   background-color: var(--ground);
+  padding-right: env(safe-area-inset-right);
+  padding-left: env(safe-area-inset-left);
 }
 
 /* Inline pickers: one row per choice, a checkmark on the chosen one (pickerStyle(.inline)). */
@@ -1060,8 +1067,8 @@ p {
 /* A pushed screen starts at the top edge with its own bar, so the page column drops its margins for it. */
 .page:has(.tab-page.pushed) {
   padding-top: 0;
-  padding-right: 0;
-  padding-left: 0;
+  padding-right: env(safe-area-inset-right);
+  padding-left: env(safe-area-inset-left);
 }
 
 .tab-page.pushed .large-title {
