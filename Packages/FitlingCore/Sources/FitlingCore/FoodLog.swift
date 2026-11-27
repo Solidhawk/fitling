@@ -17,6 +17,19 @@ public enum FoodLog {
         text.folded.trimmingWhitespace()
     }
 
+    /// A search key as a regular expression that finds it anywhere, each character taken literally. The server is
+    /// searched with `imatch`: in a LIKE pattern PostgREST reads "*" as "%", and that cannot be escaped. Escaped per
+    /// scalar, as Postgres reads it: the "*" of a keycap is one character with its mark, but a "*" to the regex.
+    public static func searchPattern(_ key: String) -> String {
+        let special = "\\^$.|?*+()[]{}".unicodeScalars
+        var pattern = String.UnicodeScalarView()
+        for scalar in key.unicodeScalars {
+            if special.contains(scalar) { pattern.append("\\") }
+            pattern.append(scalar)
+        }
+        return String(pattern)
+    }
+
     /// The products of the newest entries first, each once. The caller keeps the first `recentLimit` it still has.
     public static func recentProductIDs(_ logged: [(productID: UUID, updatedAt: Date)]) -> [UUID] {
         var seen = Set<UUID>()
