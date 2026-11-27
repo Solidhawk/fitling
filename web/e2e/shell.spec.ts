@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "./fixtures";
-import { createUser, signIn } from "./users";
+import { createUser, nl, password, signIn } from "./users";
 
 const tabs = ["Vandaag", "Training", "Menu", "Partner", "Dagdoel"];
 
@@ -54,6 +54,9 @@ test("arrowKeysMoveBetweenTheTabs", async ({ page }) => {
   await expect(tab("Vandaag")).toHaveAttribute("aria-selected", "true");
   await expect(tab("Vandaag")).toHaveAttribute("tabindex", "0");
   await expect(tab("Training")).toHaveAttribute("tabindex", "-1");
+  // With a modifier the arrow is the browser's or the system's (Alt+Left is Back), not a tab key (review of PR #60).
+  await page.keyboard.press("Control+ArrowRight");
+  await expect(tab("Vandaag")).toHaveAttribute("aria-selected", "true");
 });
 
 // A reload opens the tab that was open, as the address says; switching tabs adds nothing to the history, so Back
@@ -65,6 +68,22 @@ test("aReloadKeepsTheTab", async ({ page }) => {
   expect(await page.evaluate(() => history.length)).toBe(entries);
   await page.reload();
   await expect(page.getByRole("tab", { name: "Partner" })).toHaveAttribute("aria-selected", "true", { timeout: 15_000 });
+});
+
+// A session ends with its tab: signing in again in this browser tab opens on Vandaag, not on the tab the session before
+// was on (review of PR #60).
+test("aNewSessionOpensOnVandaag", async ({ page }) => {
+  await page.getByRole("tab", { name: "Dagdoel" }).click();
+  await page.getByRole("button", { name: nl("account.title") }).click();
+  await page.getByRole("button", { name: nl("account.signOut") }).click();
+  await expect(page.locator('[data-screen="welcome"]')).toBeAttached();
+  const user = await createUser({ profile: true, creature: true });
+  await page.getByTestId("welcome.email").click();
+  await page.locator('input[type="email"]').fill(user.email);
+  await page.locator('input[type="password"]').fill(password);
+  await page.getByTestId("auth.submit").click();
+  await expect(page.getByRole("tab", { name: "Vandaag" })).toHaveAttribute("aria-selected", "true", { timeout: 15_000 });
+  expect(await page.evaluate(() => location.hash)).not.toBe("#target");
 });
 
 // Turned sideways, an iPhone's notch is at a side: the page, the tab bar and sheets keep clear of it. A desktop browser
