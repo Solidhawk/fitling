@@ -151,24 +151,70 @@ test("aSlowFavoriteReadDoesNotUndoTheStar", async ({ page }) => {
   await search(page, product.name);
   const row = page.getByRole("button", { name: new RegExp(product.name) });
   await expect(row).toBeVisible();
-  // All favourites, as the portion reads them; not the one product, as the star reads it before writing.
-  const allFavorites = /\/rest\/v1\/favorite_products\?(?!.*product_id=eq)/;
-  // The server answers at once, from before the tap; the answer arrives 2 s later.
+  const { answered } = await holdFavoriteReads(page);
+  await row.click();
+  // Not known yet in this browser: the star waits.
+  await expect(page.getByRole("button", { name: nl("portion.favorite.add") })).toBeDisabled();
+  await page.getByRole("button", { name: nl("portion.favorite.add") }).click();
+  await expect(page.getByRole("button", { name: nl("portion.favorite.remove") })).toBeVisible();
+  await answered;
+  await settle(page);
+  await expect(page.getByRole("button", { name: nl("portion.favorite.remove") })).toBeVisible();
+});
+
+// What this browser knows already shows at once, as on the iPhone where the favourite is on the device; an answer from
+// before a tap does not undo it (review of PR #63).
+test("theStarShowsWhatThisBrowserKnowsAtOnce", async ({ page }) => {
+  await start(page);
+  const product = await sharedProduct("Skyr");
+  await search(page, product.name);
+  const row = page.getByRole("button", { name: new RegExp(product.name) });
+  const add = page.getByRole("button", { name: nl("portion.favorite.add") });
+  await row.click();
+  await expect(add).toBeEnabled();
+  await page.goBack();
+  await expect(row).toBeVisible();
+  const { answered } = await holdFavoriteReads(page);
+  await row.click();
+  await expect(add).toBeEnabled({ timeout: 1_000 });
+  await add.click();
+  await expect(page.getByRole("button", { name: nl("portion.favorite.remove") })).toBeVisible();
+  await answered;
+  await settle(page);
+  await expect(page.getByRole("button", { name: nl("portion.favorite.remove") })).toBeVisible();
+});
+
+// A read of the favourites that fails leaves the star off and to be set, not dimmed for good.
+test("aFailedFavoriteReadLeavesTheStarToSet", async ({ page }) => {
+  await start(page);
+  const product = await sharedProduct("Kefir");
+  await search(page, product.name);
+  await page.route(allFavorites, (route) =>
+    route.request().method() === "GET" ? route.fulfill({ status: 500, contentType: "application/json", body: "{}" }) : route.continue(),
+  );
+  await page.getByRole("button", { name: new RegExp(product.name) }).click();
+  await page.getByRole("button", { name: nl("portion.favorite.add") }).click();
+  await expect(page.getByRole("button", { name: nl("portion.favorite.remove") })).toBeVisible();
+});
+
+// All favourites, as the portion reads them; not the one product, as the star reads it before writing.
+const allFavorites = /\/rest\/v1\/favorite_products\?(?!.*product_id=eq)/;
+
+/** Reads of all favourites get the server's answer from before what follows, 2 s late; `answered` once one came. */
+async function holdFavoriteReads(page: Page): Promise<{ answered: Promise<unknown> }> {
   await page.route(allFavorites, async (route) => {
     if (route.request().method() !== "GET") return route.continue();
     const response = await route.fetch();
     await new Promise((resolve) => setTimeout(resolve, 2_000));
     await route.fulfill({ response });
   });
-  const read = page.waitForResponse((response) => response.request().method() === "GET" && allFavorites.test(response.url()));
-  await row.click();
-  await page.getByRole("button", { name: nl("portion.favorite.add") }).click();
-  await expect(page.getByRole("button", { name: nl("portion.favorite.remove") })).toBeVisible();
-  await read;
-  // The page has handled the answer that came back.
+  return { answered: page.waitForResponse((response) => response.request().method() === "GET" && allFavorites.test(response.url())) };
+}
+
+/** Time for the page to handle an answer that just came back. */
+async function settle(page: Page) {
   await page.evaluate(() => new Promise((resolve) => setTimeout(resolve, 300)));
-  await expect(page.getByRole("button", { name: nl("portion.favorite.remove") })).toBeVisible();
-});
+}
 
 test("recentShowsEachProductOnce", async ({ page }) => {
   await start(page);
