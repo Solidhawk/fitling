@@ -106,6 +106,24 @@ import Testing
         #expect(wrong.needsCheck)
     }
 
+    /// The ingredients under the table name nutrients too: "zout, conserveermiddel E250" is no second salt of 250 g, and
+    /// no reason to ask for a check once the table gave the salt (review of Fable 5.2).
+    @Test func ingredientsUnderTheTableDoNotAskForACheck() {
+        let label = NutritionLabel.read([
+            "Voedingswaarde per 100 g", "Energie 1569 kJ / 373 kcal", "Vetten 7,0 g", "Koolhydraten 62 g", "Eiwitten 9,2 g", "Zout 0,48 g",
+            "Ingrediënten: havermout, suiker, zout, conserveermiddel E250, plantaardig vet, emulgator E471",
+        ])
+        #expect(label.salt == 0.48 && label.fat == 7)
+        #expect(!label.needsCheck)
+    }
+
+    /// The reference intake in a column heading is no kcal of the product: "2000 kcal" pushed out the 371 of a row of its
+    /// own (review of Fable 5.2).
+    @Test func theReferenceIntakeIsNoKcalOfTheProduct() {
+        let label = NutritionLabel.read(["Voedingswaarde per 100 g %RI (8400 kJ / 2000 kcal)", "Energie 1554 kJ", "371 kcal", "Vetten 12 g"])
+        #expect(label.kcal == 371)
+    }
+
     @Test func rowsComeFromPiecesSideBySide() {
         // Vision gives the name and the values of a row as separate pieces, a little apart in height.
         let rows = NutritionLabel.rows([
