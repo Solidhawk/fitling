@@ -320,3 +320,58 @@ test("anEmptyAmountCannotBeSaved", async ({ page }) => {
   await expect(page.getByTestId("portion.save")).toBeDisabled();
   await expect(page.getByTestId("portion.energy")).toHaveCount(0);
 });
+
+// Back on the list of the log sheet closes the sheet, as swiping a sheet down on the iPhone; the app stays (UNFORGET S40).
+test("backOnTheListClosesTheSheet", async ({ page }) => {
+  await start(page);
+  await page.goBack();
+  await expect(page.locator('[data-screen="logFood"]')).toHaveCount(0);
+  await expect(page.getByTestId("day.progress")).toBeVisible();
+});
+
+// Saving closes the sheet and takes its screens out of the history too: the next Back is not spent on a sheet that is
+// gone (UNFORGET S40).
+test("savingLeavesNothingOfTheSheetInTheHistory", async ({ page }) => {
+  await start(page);
+  const product = await sharedProduct("Appelmoes");
+  await search(page, product.name);
+  await page.getByRole("button", { name: new RegExp(product.name) }).click();
+  await page.getByTestId("portion.save").click();
+  await expect(page.locator('[data-screen="logFood"]')).toHaveCount(0);
+  await expect.poll(() => page.evaluate(() => history.state)).toBeNull();
+});
+
+// Saving a log leaves Vandaag where it was: walking back through the history of the sheet does not move the page.
+test("savingKeepsThePlaceOnVandaag", async ({ page }) => {
+  const user = await createUser({ profile: true, creature: true });
+  await signIn(page, user.email);
+  const lunch = page.getByTestId("day.add.lunch");
+  await expect(lunch).toBeVisible({ timeout: 15_000 });
+  await lunch.evaluate((element) => element.scrollIntoView({ block: "center" }));
+  const place = await page.evaluate(() => window.scrollY);
+  await lunch.click();
+  const product = await sharedProduct("Mandarijn");
+  await search(page, product.name);
+  await page.getByRole("button", { name: new RegExp(product.name) }).click();
+  await page.getByTestId("portion.save").click();
+  await expect(page.locator('[data-screen="logFood"]')).toHaveCount(0);
+  // Room for the walk back to land.
+  await page.waitForTimeout(500);
+  expect(Math.abs((await page.evaluate(() => window.scrollY)) - place)).toBeLessThanOrEqual(2);
+});
+
+// Back and then the browser's Forward inside the sheet: the portion it pointed to is gone, so the sheet stays on the
+// list, and Cancel still closes it (review of PR #62).
+test("forwardInTheSheetLeavesCancelWorking", async ({ page }) => {
+  await start(page);
+  const product = await sharedProduct("Peer");
+  await search(page, product.name);
+  await page.getByRole("button", { name: new RegExp(product.name) }).click();
+  await expect(page.getByTestId("portion.quantity")).toBeVisible();
+  await page.goBack();
+  await expect(page.getByTestId("log.search")).toBeVisible();
+  await page.goForward();
+  await expect(page.getByTestId("log.search")).toBeVisible();
+  await page.getByRole("button", { name: nl("common.cancel") }).click();
+  await expect(page.locator('[data-screen="logFood"]')).toHaveCount(0);
+});

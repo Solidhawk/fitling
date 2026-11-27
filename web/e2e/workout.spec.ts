@@ -181,6 +181,38 @@ test("setsFromAnotherDeviceAreShown", async ({ page }) => {
   await expect(page.getByTestId("workout.set")).toHaveCount(1);
 });
 
+// Logged sets scroll under the bar of the workout: the bar stays on top, so its buttons take the tap, not a set.
+test("theWorkoutBarStaysAboveTheSetsUnderIt", async ({ page }) => {
+  const user = await openTraining(page);
+  await startFirstDay(page);
+  const exerciseID = (await page.locator('[data-testid^="workout.log."]').first().getAttribute("data-testid"))!.replace("workout.log.", "");
+  const session = await admin.from("workout_sessions").select("id").eq("user_id", user.id).is("ended_at", null).single();
+  const stored = await admin.from("workout_sets").insert(
+    Array.from({ length: 14 }, (_, position) => ({
+      id: crypto.randomUUID(),
+      user_id: user.id,
+      session_id: session.data!.id,
+      exercise_id: exerciseID,
+      position,
+      weight_kg: 40,
+      reps: 8,
+      is_warmup: false,
+      updated_at: new Date().toISOString(),
+    })),
+  );
+  if (stored.error) throw stored.error;
+  await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
+  await expect(page.getByTestId("workout.set")).toHaveCount(14, { timeout: 15_000 });
+  const onTop = await page.getByTestId("workout.set").nth(8).evaluate((element) => {
+    const sheet = element.closest(".sheet")!;
+    const bar = sheet.querySelector(".nav-bar")!.getBoundingClientRect();
+    sheet.scrollBy(0, element.getBoundingClientRect().top - bar.top - 5);
+    const y = bar.top + Math.min(10, bar.height / 2);
+    return document.elementFromPoint(bar.left + bar.width / 2, y)?.closest(".nav-bar") !== null;
+  });
+  expect(onTop).toBe(true);
+});
+
 // The same with the workout open and the app coming back to the front, as on a phone: no reload needed (UNFORGET S42).
 test("setsFromAnotherDeviceShowWhenTheAppComesBack", async ({ page }) => {
   const curl = await exercise("Dumbbell curl");

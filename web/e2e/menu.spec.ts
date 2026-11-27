@@ -430,3 +430,21 @@ test("thePhotoCreditLinksToItsSource", async ({ page }) => {
   const credit = page.getByRole("link", { name: /Wikimedia Commons/ });
   await expect(credit).toHaveAttribute("href", /^https:\/\/commons\.wikimedia\.org\//);
 });
+
+// A row that can be swiped scrolls under the tab bar: the bar stays on top, so a tap on it reaches the tab and not the
+// row (a row of Vandaag took the tap in WebKit).
+test("theTabBarStaysAboveTheRowsUnderIt", async ({ page }) => {
+  let week: string[][] = [];
+  await openMenu(page, async (userID) => {
+    week = await weekMenu(userID);
+  });
+  const entry = page.getByTestId(`menu.entry.${week[3][1]}`);
+  await expect(entry).toBeVisible({ timeout: 15_000 });
+  const onTop = await entry.evaluate((element) => {
+    const bar = document.querySelector(".tab-bar-frame")!.getBoundingClientRect();
+    window.scrollBy(0, element.getBoundingClientRect().top - bar.top - 10);
+    const y = element.getBoundingClientRect().top + 5;
+    return document.elementFromPoint(bar.left + bar.width / 2, y)?.closest(".tab-bar-frame") !== null;
+  });
+  expect(onTop).toBe(true);
+});

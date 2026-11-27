@@ -166,3 +166,58 @@ test("aProgrammeRemovedOnAnotherDeviceCloses", async ({ page }) => {
   await expect(page.getByTestId("training.compose")).toBeVisible({ timeout: 15_000 });
   await expect(page.getByRole("heading", { name: "Armen" })).toHaveCount(0);
 });
+
+// Screens left open on another tab lead nowhere: one Back from a programme goes to the training list and on past the
+// menu's screens, which are no longer on screen (UNFORGET S40).
+test("backPassesTheScreensOfAnotherTab", async ({ page }) => {
+  const programme = await firstProgramme();
+  await openTraining(page);
+  await page.getByRole("tab", { name: nl("menu.title") }).click();
+  await page.getByTestId("menu.recipes").click();
+  await expect(page.getByTestId("menu.recipe.new")).toBeVisible({ timeout: 15_000 });
+  await page.getByRole("tab", { name: nl("training.title") }).click();
+  await page.getByTestId(`training.program.${programme.id}`).click();
+  await expect(page.getByRole("heading", { name: programme.name })).toBeVisible();
+  await page.goBack();
+  await expect(page.getByTestId("training.compose")).toBeVisible();
+  await expect.poll(() => page.evaluate(() => history.state)).toBeNull();
+});
+
+// A screen opens at the top, also when another screen at the same depth was scrolled before it: back from a deeper
+// screen it returns to its own place, not to the other one's (review of PR #62).
+test("backReturnsToTheScreensOwnPlace", async ({ page }) => {
+  const programs = await admin.from("programs").select("id").is("owner_id", null).is("deleted_at", null).order("id").limit(2);
+  if (programs.error) throw programs.error;
+  const [first, second] = programs.data!.map((program) => program.id as string);
+  await openTraining(page);
+  await page.getByTestId(`training.program.${first}`).click();
+  await expect(page.locator('[data-page="program"]')).toBeVisible();
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(100);
+  await page.goBack();
+  // Opened from the top, without the scroll a click into view makes: the place kept for the first programme is then
+  // the only one there is for this depth.
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.getByTestId(`training.program.${second}`).evaluate((element) => element.closest("button")!.click());
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+  await page.locator('[data-testid^="program.exercise."]').first().evaluate((element) => element.closest("button")!.click());
+  await expect(page.locator('[data-page="exerciseProgress"]')).toBeVisible();
+  await page.goBack();
+  await expect(page.locator('[data-page="program"]')).toBeVisible();
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+});
+
+// The menu of a programme opens over everything: a tap on a tab while it is open closes the menu, it does not switch
+// tabs (review of PR #62).
+test("theProgrammeMenuCoversTheTabBar", async ({ page }) => {
+  await openTraining(page);
+  await ownProgramme(page, "Benen en billen");
+  await page.getByTestId("program.options").click();
+  await expect(page.getByRole("menuitem", { name: nl("training.program.rename") })).toBeVisible();
+  const tab = await page.getByRole("tab", { name: nl("menu.title") }).boundingBox();
+  const covered = await page.evaluate(
+    ({ x, y }) => document.elementFromPoint(x, y)?.closest(".tab-bar-frame") === null,
+    { x: tab!.x + tab!.width / 2, y: tab!.y + tab!.height / 2 },
+  );
+  expect(covered).toBe(true);
+});

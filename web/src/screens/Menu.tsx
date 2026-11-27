@@ -19,6 +19,7 @@ import { today } from "../day";
 import { useHistoryStack } from "../historyStack";
 import { t } from "../i18n";
 import { dayHeading, entryDetail, issueText, type MenuOptions, rememberedMenuOptions, rememberMenuOptions } from "../menu/texts";
+import { useScrollPerDepth } from "../scrollPerDepth";
 import { ActionSheet } from "../ui/ActionSheet";
 import { Alert } from "../ui/Alert";
 import { PrimaryButton } from "../ui/Buttons";
@@ -118,11 +119,10 @@ export function Menu({ userID }: { userID: string }) {
     return () => document.removeEventListener("visibilitychange", again);
   }, [reload]);
 
-  // In braces: an effect may only hand back its cleanup, and newer Chrome answers scrollTo with a promise.
   useEffect(() => {
     depth.current = path.length;
-    window.scrollTo(0, 0);
   }, [path.length]);
+  useScrollPerDepth(path.length);
 
   const input = useMemo<MenuInput | undefined>(
     () => loaded && { userID, today: today(), languages: [...navigator.languages], ...withoutSteps(loaded.rows) },

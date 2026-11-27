@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { AuthService } from "../data/auth";
 import { useHistoryStack } from "../historyStack";
+import { useScrollPerDepth } from "../scrollPerDepth";
 import { t } from "../i18n";
 import { species } from "../partner/species";
 import { SecondaryButton } from "../ui/Buttons";
@@ -19,6 +20,7 @@ export function Welcome({ auth }: { auth: AuthService }) {
   const page = stack[stack.length - 1];
   const push = (next: Page) => setStack([...stack, next]);
   const pop = useHistoryStack(stack.length - 1, (depth) => setStack(stack.slice(0, depth + 1)));
+  useScrollPerDepth(stack.length - 1);
 
   if (page.kind === "email") {
     return (
