@@ -14,10 +14,13 @@ struct TextRequest: Decodable {
 
 struct SearchKeyAnswer: Encodable {
     let key: String
+    /// The key as a regular expression for `imatch` on `search_name`.
+    let pattern: String
 }
 
 func searchKey(_ request: TextRequest) -> SearchKeyAnswer {
-    SearchKeyAnswer(key: FoodLog.searchKey(request.text))
+    let key = FoodLog.searchKey(request.text)
+    return SearchKeyAnswer(key: key, pattern: FoodLog.searchPattern(key))
 }
 
 struct BarcodeAnswer: Encodable {

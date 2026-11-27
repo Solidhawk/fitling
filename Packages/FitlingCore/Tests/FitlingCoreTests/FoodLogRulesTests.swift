@@ -20,8 +20,20 @@ import Testing
         #expect(FoodLog.recentProductIDs(logged) == [a, b])
     }
 
+    /// The server searches with a regular expression: every character of the term counts as itself, a "*" too
+    /// (diary.test.ts, aSearchTermIsTakenLiterally, runs the same search against PostgREST).
+    @Test func aSearchPatternTakesEveryCharacterLiterally() {
+        #expect(FoodLog.searchPattern("pindakaas") == "pindakaas")
+        #expect(FoodLog.searchPattern("50% *x*. (a+b)") == #"50% \*x\*\. \(a\+b\)"#)
+        #expect(FoodLog.searchPattern(#"^$|?{2} [c] \_"#) == #"\^\$\|\?\{2\} \[c\] \\_"#)
+        // A keycap is one character of "*" and an enclosing mark (review of Fable 5.2): its "*" is escaped all the same.
+        #expect(FoodLog.searchPattern(FoodLog.searchKey("*️⃣ ab")) == "\\*\u{20E3} ab")
+    }
+
     @Test func anEntryKeepsAtMost200CharactersAndOneDecimal() {
         #expect(FoodLog.storedName(String(repeating: "a", count: 250)).count == 200)
+        // Postgres counts code points: a flag takes two of the 200, and a character is never cut in half.
+        #expect(FoodLog.storedName(String(repeating: "🇳🇱", count: 150)) == String(repeating: "🇳🇱", count: 100))
         #expect(FoodLog.storedQuantity(123.45) == 123.5)
     }
 
@@ -42,6 +54,24 @@ import Testing
         #expect(Portion.preview(per100: per100, quantity: 10_001, unit: .gram, servingSize: nil) == nil)
         #expect(Portion.preview(per100: per100, quantity: nil, unit: .gram, servingSize: nil) == nil)
         #expect(Portion.preview(per100: per100, quantity: 40, unit: .gram, servingSize: nil) == Nutrients(kcal: 100, proteinG: 4, carbsG: nil, fatG: 2))
+    }
+
+    /// What the database refuses would stay unsent on the iPhone for good (S40): an amount that rounds to 0, and an
+    /// entry beyond what `food_entries` accepts, such as a kilo of oil typed as ten.
+    @Test func aPortionTheDatabaseWouldRefuseCannotBeLogged() {
+        let oil = NutrientsPer100(kcal: 900, proteinG: 0, carbsG: 0, fatG: 100)
+        #expect(Portion.preview(per100: oil, quantity: 0.04, unit: .gram, servingSize: nil) == nil)
+        #expect(Portion.preview(per100: oil, quantity: 0.05, unit: .gram, servingSize: nil) != nil)
+        // Chocolate: 3 700 g is 20 350 kcal, more than the 20 000 of one entry; 3 600 g is 19 800 kcal.
+        let chocolate = NutrientsPer100(kcal: 550, proteinG: 7, carbsG: 60, fatG: 30)
+        #expect(Portion.preview(per100: chocolate, quantity: 3700, unit: .gram, servingSize: nil) == nil)
+        #expect(Portion.preview(per100: chocolate, quantity: 3600, unit: .gram, servingSize: nil) != nil)
+        // Oil: 2 500 g is 2 500 g of fat, more than the 2 000 g of one entry.
+        #expect(Portion.preview(per100: oil, quantity: 2500, unit: .gram, servingSize: nil) == nil)
+        // 25 servings of 100 g of pure protein: 2 500 g, more than the 2 000 g of one entry.
+        let powder = NutrientsPer100(kcal: 400, proteinG: 100, carbsG: 0, fatG: 0)
+        #expect(Portion.preview(per100: powder, quantity: 25, unit: .serving, servingSize: 100) == nil)
+        #expect(Portion.preview(per100: powder, quantity: 20, unit: .serving, servingSize: 100) != nil)
     }
 
     @Test func withoutKcalThePackageValueDecides() {
@@ -68,6 +98,19 @@ import Testing
         #expect(fields.fat100 == nil)
         #expect(fields.servingSize == 120)
         #expect(fields.searchName == "oma's appeltaart bakkerij jansen")
+    }
+
+    /// `products.serving_size` keeps two decimals, above 0 and below 100 000: checked as it is stored.
+    @Test func aServingSizeIsCheckedAsTheDatabaseStoresIt() {
+        var tiny = draft()
+        tiny.servingSize = 0.004
+        #expect(tiny.validated() == nil)
+        var large = draft()
+        large.servingSize = 99_999.996
+        #expect(large.validated() == nil)
+        var largest = draft()
+        largest.servingSize = 99_999.99
+        #expect(largest.validated()?.servingSize == 99_999.99)
     }
 
     @Test func ownProductUsesTheDatabaseLimits() {

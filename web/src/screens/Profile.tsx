@@ -1,5 +1,5 @@
 import { ArrowUpToLine, CornerDownRight, TriangleAlert } from "lucide-react";
-import { type CSSProperties, useCallback, useEffect, useState } from "react";
+import { type CSSProperties, useCallback, useEffect, useRef, useState } from "react";
 import type { DailyPlan, FitlingCore, Targets } from "../core/fitlingCore";
 import { useCore } from "../core/useCore";
 import type { AuthService } from "../data/auth";
@@ -30,19 +30,52 @@ export function Profile({ userID, auth }: { userID: string; auth: AuthService })
   const [profile, setProfile] = useState<StoredProfile>();
   const [loadFailed, setLoadFailed] = useState(false);
   const [page, setPage] = useState<Page>("profile");
+  // Only the newest read counts, and a save counts as newer than every read under way: a slow read that started
+  // before it never puts the old profile back.
+  const reads = useRef(0);
 
   const load = useCallback(async () => {
     setLoadFailed(false);
+    const mine = ++reads.current;
     try {
-      setProfile(await loadProfile(supabase, userID));
+      const loaded = await loadProfile(supabase, userID);
+      if (mine === reads.current) setProfile(loaded);
     } catch {
-      setLoadFailed(true);
+      if (mine === reads.current) setLoadFailed(true);
     }
   }, [userID]);
 
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Back in the tab or the window: another device may have changed the target, or a new day begun (UNFORGET S53). What
+  // is shown stays when this read fails; only the first read shows its failure.
+  useEffect(() => {
+    const again = () => {
+      if (document.visibilityState !== "visible") return;
+      const mine = ++reads.current;
+      void loadProfile(supabase, userID).then(
+        (loaded) => {
+          if (mine !== reads.current) return;
+          setProfile(loaded);
+          setLoadFailed(false);
+        },
+        () => undefined,
+      );
+    };
+    document.addEventListener("visibilitychange", again);
+    window.addEventListener("focus", again);
+    return () => {
+      document.removeEventListener("visibilitychange", again);
+      window.removeEventListener("focus", again);
+    };
+  }, [userID]);
+
+  function changed(next: StoredProfile) {
+    reads.current += 1;
+    setProfile(next);
+  }
 
   // In braces: an effect may only hand back its cleanup, and newer Chrome answers scrollTo with a promise.
   useEffect(() => {
@@ -74,7 +107,7 @@ export function Profile({ userID, auth }: { userID: string; auth: AuthService })
       </div>
     );
   }
-  return <ProfileView core={core} profile={profile} onChange={setProfile} onAccount={() => setPage("account")} />;
+  return <ProfileView core={core} profile={profile} onChange={changed} onAccount={() => setPage("account")} />;
 }
 
 function ProfileView({

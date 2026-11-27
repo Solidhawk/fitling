@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { IsoDay, Localized, NewShoppingItem, OfferRow, RecipeIngredientRow, ShoppingInput, ShoppingItemRow } from "../core/fitlingCore";
 import { failure } from "./failure";
 import { allRows, type Row } from "./pages";
+import { limitedText } from "../text";
 
 export interface ShoppingList {
   id: string;
@@ -62,7 +63,7 @@ export async function ensureList(
     if (first.created_by === userID) await addOwner(client, userID, first.id as string, ownerName);
     return { id: first.id as string, name: first.name as string };
   }
-  const list = { id: crypto.randomUUID(), name: name.slice(0, 60) };
+  const list = { id: crypto.randomUUID(), name: limitedText(name, 60) };
   await write(client.from("shopping_lists").insert({ ...list, created_by: userID, updated_at: now.toISOString() }));
   await addOwner(client, userID, list.id, ownerName);
   return list;
@@ -76,7 +77,7 @@ export async function ensureList(
 async function addOwner(client: SupabaseClient, userID: string, listID: string, ownerName: string) {
   const { error } = await client
     .from("shopping_list_members")
-    .insert({ list_id: listID, user_id: userID, role: "owner", display_name: ownerName.slice(0, 40) });
+    .insert({ list_id: listID, user_id: userID, role: "owner", display_name: limitedText(ownerName, 40) });
   if (error && error.code !== "23505") throw failure(error);
 }
 
@@ -289,7 +290,7 @@ export async function createInvite(client: SupabaseClient, listID: string): Prom
 
 /** Joins the list of the code under `name`, as the other members will see it; answers the list's id. */
 export async function joinList(client: SupabaseClient, code: string, name: string): Promise<string> {
-  const { data, error } = await client.rpc("join_shopping_list", { invite_code: code.trim(), member_name: name.trim().slice(0, 40) });
+  const { data, error } = await client.rpc("join_shopping_list", { invite_code: code.trim(), member_name: limitedText(name.trim(), 40) });
   if (error) throw sharingFailure(error);
   return data as string;
 }

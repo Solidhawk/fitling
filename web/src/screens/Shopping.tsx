@@ -23,6 +23,7 @@ import { today } from "../day";
 import { t } from "../i18n";
 import { amountText } from "../menu/texts";
 import { confirmedOffers, confirmOffers, euros, rememberedList, rememberList, shopList, validUntil } from "../shopping/texts";
+import { limitedText } from "../text";
 import { ActionSheet } from "../ui/ActionSheet";
 import { Alert } from "../ui/Alert";
 import { FormSheet } from "../ui/FormSheet";
@@ -190,7 +191,9 @@ export function Shopping({ core, userID, menu, onBack }: { core: FitlingCore; us
   async function join(code: string, name: string): Promise<boolean> {
     setJoinProblem(undefined);
     try {
-      const joined = await joinList(supabase, code, name.trim() === "" ? t("shopping.member.default") : name);
+      // Limited first, as on the iPhone: a name that is cut away entirely takes the default.
+      const typed = limitedText(name.trim(), 40);
+      const joined = await joinList(supabase, code, typed === "" ? t("shopping.member.default") : typed);
       rememberList(userID, joined);
       await reloadList(true);
       return true;

@@ -79,11 +79,6 @@ export async function productsByID(client: SupabaseClient, ids: string[]): Promi
   return ids.flatMap((id) => byID.get(id) ?? []);
 }
 
-/** A search term inside a LIKE pattern: its own wildcards are taken literally (SupabaseProductSearch). */
-export function likePattern(term: string): string {
-  return `%${term.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_")}%`;
-}
-
 /** Online results appear from this many characters on, so a single letter does not ask the server for everything. */
 export const onlineSearchMinimum = 3;
 export const searchLimit = 30;
@@ -98,7 +93,8 @@ export async function searchProducts(
   query: string,
   known: Product[],
 ): Promise<{ own: Product[]; online: Product[] }> {
-  const term = core.searchKey({ text: query }).key;
+  // The pattern finds the term with `imatch`, each character taken literally (FoodLog.searchPattern).
+  const { key: term, pattern } = core.searchKey({ text: query });
   if (term === "") return { own: [], online: [] };
   // Without a network: what this browser knows, as the iPhone searches its own copy.
   if (noNetwork()) return { own: known.filter((product) => product.searchName.includes(term)).slice(0, searchLimit), online: [] };
@@ -107,7 +103,7 @@ export async function searchProducts(
     .select("*")
     .not("owner_id", "is", null)
     .is("deleted_at", null)
-    .ilike("search_name", likePattern(term))
+    .filter("search_name", "imatch", pattern)
     .limit(searchLimit);
   if (mine.error) throw failure(mine.error);
   const own: Product[] = [];
@@ -120,7 +116,7 @@ export async function searchProducts(
     .select("*")
     .is("owner_id", null)
     .is("deleted_at", null)
-    .ilike("search_name", likePattern(term))
+    .filter("search_name", "imatch", pattern)
     .limit(searchLimit);
   if (shared.error) throw failure(shared.error);
   const shown = new Set(own.map((product) => product.id));

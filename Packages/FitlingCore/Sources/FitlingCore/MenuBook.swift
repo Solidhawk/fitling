@@ -231,7 +231,7 @@ public struct MenuBook: Sendable {
               let slot = MealSlot(rawValue: entry.meal) else { return nil }
         let tenth = { (value: Double) in (value * entry.servings * 10).rounded() / 10 }
         return LoggedMeal(
-            recipeID: recipe.id, name: recipe.title.text(preferring: languages), day: entry.plannedOn, slot: slot, servings: entry.servings,
+            recipeID: recipe.id, name: FoodLog.storedName(recipe.title.text(preferring: languages)), day: entry.plannedOn, slot: slot, servings: entry.servings,
             kcal: tenth(recipe.kcalPerServing), proteinG: tenth(recipe.proteinGPerServing), carbsG: tenth(recipe.carbsGPerServing),
             fatG: tenth(recipe.fatGPerServing)
         )
@@ -245,5 +245,12 @@ public struct MenuBook: Sendable {
         guard let kcal, let protein, let carbs, let fat else { return false }
         return !title.trimmingWhitespace().isEmpty && !mealSlots.isEmpty && (1...20).contains(servings) && (0...600).contains(cookMinutes)
             && (0...5000).contains(kcal) && (0...500).contains(protein) && (0...1000).contains(carbs) && (0...500).contains(fat)
+    }
+
+    /// The amount of an ingredient as `recipe_ingredients` keeps it, to the hundredth (`numeric(8,2)`, above 0); nil
+    /// for an amount it would refuse, so 0,004 g is not added and then left unsent.
+    public static func storedIngredientQuantity(_ quantity: Double) -> Double? {
+        let stored = (quantity * 100).rounded() / 100
+        return stored > 0 && stored <= 999_999.99 ? stored : nil
     }
 }

@@ -172,7 +172,8 @@ test("the rules Dagdoel shows and the ranges of typed targets", async () => {
 
 test("the rules for Vandaag and logging (web phase 2)", async () => {
   const core = await loadCore(wasm);
-  expect(core.searchKey({ text: "  Crème Brûlée " })).toEqual({ key: "creme brulee" });
+  expect(core.searchKey({ text: "  Crème Brûlée " })).toEqual({ key: "creme brulee", pattern: "creme brulee" });
+  expect(core.searchKey({ text: "50% *x*" }).pattern).toBe("50% \\*x\\*");
   expect(core.barcode({ text: "036000291452" })).toEqual({ gtin: "0036000291452" });
   expect(core.barcode({ text: "8712100849085" })).toEqual({});
   const a = "8c1f0a52-5d0e-4c2b-9a51-6f2f7f5d2a10";
@@ -337,6 +338,8 @@ test("the week menu from the same MenuBook as the iPhone (web phase 5)", async (
   expect(change.added).toHaveLength(9);
   expect(new Set(change.added.map((meal) => meal.day))).toEqual(new Set(["2026-11-18", "2026-11-19", "2026-11-20"]));
   expect(core.ownRecipeComplete({ title: "Soep", servings: 2, cookMinutes: 30, kcal: 300, protein: 12, carbs: 30, fat: 10, mealSlots: ["lunch"] }).complete).toBe(true);
+  expect(core.storedIngredientQuantity({ quantity: 250.004 })).toEqual({ quantity: 250 });
+  expect(core.storedIngredientQuantity({ quantity: 0.004 })).toEqual({});
 });
 
 test("the shopping list from the same ShoppingBook as the iPhone (web phase 6)", async () => {

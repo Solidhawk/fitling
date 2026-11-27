@@ -82,6 +82,27 @@ import Testing
         #expect(book([recipe], [planned]).loggedMeal(planned.id) == nil)
     }
 
+    @Test func anIngredientKeepsWhatTheDatabaseStores() {
+        #expect(MenuBook.storedIngredientQuantity(250) == 250)
+        #expect(MenuBook.storedIngredientQuantity(0.006) == 0.01)
+        #expect(MenuBook.storedIngredientQuantity(0.004) == nil)
+        #expect(MenuBook.storedIngredientQuantity(999_999.99) == 999_999.99)
+        #expect(MenuBook.storedIngredientQuantity(1_000_000) == nil)
+        #expect(MenuBook.storedIngredientQuantity(-1) == nil)
+        #expect(MenuBook.storedIngredientQuantity(.nan) == nil)
+    }
+
+    /// `food_entries.name` holds 200 characters: a longer title of the user's own is cut, so the entry can be kept.
+    @Test func aLoggedMealKeepsAtMost200CharactersOfItsTitle() throws {
+        let title = String(repeating: "Soep ", count: 60)
+        let recipe = MenuRecipe(
+            id: UUID(), ownerID: user, title: LocalizedText(["nl": title]), servings: 1, cookMinutes: 10, kcalPerServing: 300,
+            proteinGPerServing: 10, carbsGPerServing: 30, fatGPerServing: 10, mealSlots: ["lunch"]
+        )
+        let planned = entry(0, "lunch", recipe)
+        #expect(try #require(book([recipe], [planned]).loggedMeal(planned.id)).name == String(title.prefix(200)))
+    }
+
     /// A recipe removed on another device after it was planned: the meal keeps its name and values and can be logged,
     /// but the recipe is no longer offered or planned (MenuStore.recipe finds removed recipes too).
     @Test func aMealWhoseRecipeWasRemovedKeepsItAndCanBeLogged() throws {

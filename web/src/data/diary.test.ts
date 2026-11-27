@@ -125,8 +125,14 @@ describe.skipIf(!url || !key || !serviceKey)("the food diary on the server", () 
 
   test("aSearchTermIsTakenLiterally", async () => {
     const { client } = await user();
-    await shared(`Melk ${crypto.randomUUID()}`);
-    expect((await searchProducts(client, core, "%%%", [])).online).toEqual([]);
+    const word = crypto.randomUUID().slice(0, 8);
+    const odd = await shared(`Mix ${word} (a+b) [50%] *x*. ^$|?{2} \\_`);
+    // In a LIKE pattern PostgREST reads "*" as "%": three of them would find every product.
+    for (const wildcard of ["%%%", "***", "...", ".*."]) {
+      expect((await searchProducts(client, core, wildcard, [])).online).toEqual([]);
+    }
+    const found = await searchProducts(client, core, `${word} (a+b) [50%] *x*. ^$|?{2} \\_`, []);
+    expect(found.online.map((product) => product.id)).toEqual([odd.id]);
   });
 
   test("waterFromTwoDevicesAddsUp", async () => {

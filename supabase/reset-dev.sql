@@ -52,6 +52,7 @@ drop function if exists
   public.save_push_subscription(text, text, text),
   public.replace_push_reminders(uuid, jsonb),
   public.claim_push_reminders(integer),
+  public.submit_shared_product(uuid, jsonb, jsonb),
   private.apply_sync_rules(),
   private.is_list_member(uuid),
   private.is_list_owner(uuid),

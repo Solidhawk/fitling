@@ -20,4 +20,9 @@ public enum Limits {
     public static let foodQuantity: ClosedRange<Double> = 0.1...10000
     /// `products.kcal_100`.
     public static let kcalPer100: ClosedRange<Double> = 0...900
+    /// What one row of `food_entries` may hold.
+    public static let entryKcal: Double = 20000
+    public static let entryProteinG: Double = 2000
+    public static let entryCarbsG: Double = 5000
+    public static let entryFatG: Double = 2000
 }
