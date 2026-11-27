@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Activity, BodyFields, DailyPlanInput, Goal } from "../core/fitlingCore";
 import { useCore } from "../core/useCore";
 import { useHistoryStack } from "../historyStack";
+import { useScrollPerDepth } from "../scrollPerDepth";
 import { isIsoDay, thirtyYearsBefore, today } from "../day";
 import { finishOnboarding } from "../data/saveProfile";
 import { supabase } from "../data/supabase";
@@ -51,6 +52,8 @@ export function Onboarding({ userID, onFinished, onDeleteAccount }: { userID: st
 
   // Each step is pushed on the one before: swiping back or the browser's back button goes one step back.
   const back = useHistoryStack(steps.indexOf(step), (depth) => setStep(steps[depth]));
+  // Each step opens at the top, and Back returns to where the step before was left.
+  useScrollPerDepth(steps.indexOf(step));
 
   // A new step is read out from its title, as VoiceOver does when a screen is pushed.
   const firstStep = useRef(true);
@@ -102,7 +105,6 @@ export function Onboarding({ userID, onFinished, onDeleteAccount }: { userID: st
     if (!canContinue[step]) return;
     if (step !== "result") {
       setStep(steps[index + 1]);
-      window.scrollTo(0, 0);
       return;
     }
     if (!profile || !plan) return;

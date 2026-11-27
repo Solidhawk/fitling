@@ -119,7 +119,6 @@ export function Menu({ userID }: { userID: string }) {
     return () => document.removeEventListener("visibilitychange", again);
   }, [reload]);
 
-  // In braces: an effect may only hand back its cleanup, and newer Chrome answers scrollTo with a promise.
   useEffect(() => {
     depth.current = path.length;
   }, [path.length]);

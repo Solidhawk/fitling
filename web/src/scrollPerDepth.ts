@@ -23,6 +23,8 @@ export function useScrollPerDepth(depth: number): void {
   useLayoutEffect(() => {
     const deeper = depth > shown.current;
     shown.current = depth;
-    window.scrollTo(0, deeper ? 0 : (positions.current[depth] ?? 0));
+    // A new screen: what was kept for this depth and deeper belonged to screens left before (review of PR #62).
+    if (deeper) positions.current = [...positions.current.slice(0, depth), 0];
+    window.scrollTo(0, positions.current[depth] ?? 0);
   }, [depth]);
 }

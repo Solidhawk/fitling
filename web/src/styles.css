@@ -328,8 +328,9 @@ body {
 .nav-bar {
   position: sticky;
   top: 0;
-  /* Above the rows that scroll under it: a row that can be swiped lies at z-index 1. */
-  z-index: 3;
+  /* Above the rows that scroll under it (a row that can be swiped lies at z-index 1), and above the tab bar (5), so its
+     menu covers that bar too. */
+  z-index: 6;
   display: grid;
   /* Cancel and Save of a sheet keep their full width; the title in the middle gives way. */
   grid-template-columns: minmax(max-content, 1fr) minmax(0, max-content) minmax(max-content, 1fr);

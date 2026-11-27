@@ -50,7 +50,14 @@ export function useHistoryStack(depth: number, popTo: (depth: number) => void): 
     // An entry of another stack (an onboarding that is over) counts as this stack's first screen.
     const onPop = (event: PopStateEvent) => {
       const state = event.state as { fitlingStack?: unknown; depth?: number } | null;
-      const target = state?.fitlingStack === id.current ? (state.depth ?? 0) : 0;
+      const mine = state?.fitlingStack === id.current;
+      // Forward into screens of this stack that were left (what they showed is gone): back to the one on screen, so the
+      // history stays where the screen is and the next Back or Cancel counts from there (review of PR #62).
+      if (mine && (state.depth ?? 0) > recorded.current) {
+        history.back();
+        return;
+      }
+      const target = mine ? (state.depth ?? 0) : 0;
       if (target >= recorded.current) return;
       recorded.current = target;
       shown.current(target);

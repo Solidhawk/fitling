@@ -40,12 +40,20 @@ export function LogFood({ core, userID, meal, day, onClose }: { core: FitlingCor
   const sheet = useRef<HTMLDivElement>(null);
   const lookingUp = useRef(false);
   const step = stack[stack.length - 1];
-  const push = (next: Step) => setStack((current) => [...current, next]);
-  // The list counts as a screen too: Back on it closes the sheet, as swiping a sheet down on the iPhone (UNFORGET S40).
-  const back = useHistoryStack(stack.length, (depth) => (depth === 0 ? onClose() : setStack((current) => current.slice(0, depth))));
   // Cancel, Escape and saving close the sheet through the history as well, so its screens leave nothing behind there;
   // once, or a second press would go back past the page under the sheet.
   const closing = useRef(false);
+  const push = (next: Step) => setStack((current) => [...current, next]);
+  // The list counts as a screen too: Back on it closes the sheet, as swiping a sheet down on the iPhone (UNFORGET S40).
+  const back = useHistoryStack(stack.length, (depth) => {
+    if (depth === 0) {
+      onClose();
+      return;
+    }
+    // Back to a screen of the sheet, not out of it: closing can be asked for again.
+    closing.current = false;
+    setStack((current) => current.slice(0, depth));
+  });
   const close = () => {
     if (closing.current) return;
     closing.current = true;
