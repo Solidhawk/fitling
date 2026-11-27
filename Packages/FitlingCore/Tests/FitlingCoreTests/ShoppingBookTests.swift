@@ -101,6 +101,8 @@ import Testing
         #expect(ShoppingBook.newItem("  Melk ") == NewShoppingItem(name: "Melk", quantity: nil, unit: nil, aisle: "other", productID: nil))
         #expect(ShoppingBook.newItem("   ") == nil)
         #expect(ShoppingBook.newItem(String(repeating: "a", count: 130))?.name.count == 120)
+        // Postgres counts code points: a flag takes two of the 120.
+        #expect(ShoppingBook.newItem(String(repeating: "🇳🇱", count: 61))?.name == String(repeating: "🇳🇱", count: 60))
         #expect(ShoppingBook.newItem("Melk", quantity: 1000, unit: "ml", aisle: "dairy")?.unit == "ml")
         #expect(ShoppingBook.newItem("Melk", quantity: 0, unit: "ml")?.unit == nil)
     }
