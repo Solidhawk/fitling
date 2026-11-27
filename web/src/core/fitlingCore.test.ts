@@ -282,7 +282,9 @@ test("the partner's fold over the bridge as in CreatureEngineTests", async () =>
   expect(back.creature.offTargetDays).toBe(0);
   // reportsLevelUpsAndWhatTheyUnlock
   const good = [{ day: "2026-11-01", kcal: 2000, proteinG: 130 }];
-  expect(fold({ ...creature, xp: 90 }, good, "2026-11-02", ["2026-11-01"]).events).toEqual([
+  const toTwo = fold({ ...creature, xp: 90 }, good, "2026-11-02", ["2026-11-01"]);
+  expect(toTwo.creature.xp).toBe(190);
+  expect(toTwo.events).toEqual([
     { kind: "leveledUp", level: 2 },
     { kind: "unlockedItem", item: "scarf" },
   ]);

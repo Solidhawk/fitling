@@ -28,8 +28,6 @@ interface Shown {
   partnerFailed?: boolean;
 }
 
-/** Folds finished days into the partner and returns it, once for Vandaag and the partner tab together (Home). */
-
 async function load(core: FitlingCore, userID: string, day: string, advance: Advance): Promise<Shown> {
   const now = today();
   // The partner is the card's alone: when folding the days into it or reading its week fails, the day shows without it,

@@ -95,8 +95,12 @@ export function Partner({
 
   const reload = useCallback(async () => {
     if (!core) return;
-    // A change still being stored would otherwise be read back as it was (UNFORGET S41).
-    await saving.current;
+    // A change still being stored would otherwise be read back as it was (UNFORGET S41); also one made while waiting.
+    let waited: Promise<void>;
+    do {
+      waited = saving.current;
+      await waited;
+    } while (waited !== saving.current);
     const mine = ++request.current;
     try {
       const next = await load(core, userID, advance);

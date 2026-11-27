@@ -15,7 +15,7 @@ export interface Partner {
   items: string[];
 }
 
-/** Folds the finished days into the partner, one fold at a time (Home); answers the partner as it is then. */
+/** Folds finished days into the partner and returns it, once for Vandaag and the partner tab together (Home). */
 export type Advance = (core: FitlingCore) => Promise<Partner | undefined>;
 
 /** The partner; without a connection the one this browser last knew. */
