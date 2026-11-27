@@ -107,6 +107,36 @@ test("aReadWhileSavingKeepsTheChange", async ({ page }) => {
   await expect(crown).toBeChecked();
 });
 
+// Two changes in a row while the app comes back to the front: the read waits for both, so the second is not undone by
+// a read made between the two saves (review of PR #59).
+test("aReadWaitsForEveryChangeStillBeingStored", async ({ page }) => {
+  const user = await start(page, { xp: 30_000 });
+  await openPartner(page, user.email);
+  const releases: (() => void)[] = [];
+  const gates = [0, 1].map(() => new Promise<void>((resolve) => releases.push(resolve)));
+  let patches = 0;
+  await page.route("**/rest/v1/creatures*", async (route) => {
+    if (route.request().method() === "PATCH") await gates[Math.min(patches++, 1)];
+    return route.continue();
+  });
+  const crown = page.getByRole("switch", { name: nl("partner.item.crown") });
+  const cap = page.getByRole("switch", { name: nl("partner.item.cap") });
+  await crown.click();
+  await expect(crown).toBeChecked();
+  await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
+  await cap.click();
+  await expect(cap).toBeChecked();
+  releases[0]();
+  // Room for a read between the two saves.
+  await page.waitForTimeout(1500);
+  releases[1]();
+  await expect.poll(async () => (await stored(user.id)).equipped_items).toEqual(["cap"]);
+  // Room for a read after the last change to land.
+  await page.waitForTimeout(1500);
+  await expect(cap).toBeChecked();
+  await expect(crown).not.toBeChecked();
+});
+
 // Review Focus: a crown put on on another device comes off for the cap.
 test("aCrownFromAnotherDeviceComesOffForTheCap", async ({ page }) => {
   const user = await start(page, { xp: 30_000, equipped_items: ["crown"] });
