@@ -172,7 +172,8 @@ test("the rules Dagdoel shows and the ranges of typed targets", async () => {
 
 test("the rules for Vandaag and logging (web phase 2)", async () => {
   const core = await loadCore(wasm);
-  expect(core.searchKey({ text: "  Crème Brûlée " })).toEqual({ key: "creme brulee" });
+  expect(core.searchKey({ text: "  Crème Brûlée " })).toEqual({ key: "creme brulee", pattern: "creme brulee" });
+  expect(core.searchKey({ text: "50% *x*" }).pattern).toBe("50% \\*x\\*");
   expect(core.barcode({ text: "036000291452" })).toEqual({ gtin: "0036000291452" });
   expect(core.barcode({ text: "8712100849085" })).toEqual({});
   const a = "8c1f0a52-5d0e-4c2b-9a51-6f2f7f5d2a10";

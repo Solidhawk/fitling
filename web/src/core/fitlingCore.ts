@@ -461,7 +461,8 @@ export interface FitlingCore {
   creature(input: { level: number }): { startShape: number; colorCount: number; growthStage: number };
   goalFactors(): Record<Goal, number>;
   profileRules(): ProfileRules;
-  searchKey(input: { text: string }): { key: string };
+  /** `pattern`: the key as a regular expression for `imatch`, each character taken literally. */
+  searchKey(input: { text: string }): { key: string; pattern: string };
   barcode(input: { text: string }): { gtin?: string };
   recentProducts(input: { logged: { productID: string; updatedAtMs: number }[] }): { ids: string[]; limit: number };
   portion(input: {

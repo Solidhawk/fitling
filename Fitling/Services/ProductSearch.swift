@@ -17,7 +17,7 @@ struct SupabaseProductSearch: ProductSearching {
                 .select()
                 .is("owner_id", value: nil)
                 .is("deleted_at", value: nil)
-                .imatch("search_name", pattern: Self.pattern(term))
+                .imatch("search_name", pattern: FoodLog.searchPattern(term))
                 .limit(limit)
                 .execute()
                 .value
@@ -26,16 +26,5 @@ struct SupabaseProductSearch: ProductSearching {
         } catch {
             throw RemoteStoreError.rejected(String(describing: error))
         }
-    }
-
-    /// The term as a regular expression that finds it anywhere, each character taken literally. A LIKE pattern cannot
-    /// do that: PostgREST reads "*" in it as "%" (products.ts, containsPattern).
-    static func pattern(_ term: String) -> String {
-        var pattern = ""
-        for character in term {
-            if "\\^$.|?*+()[]{}".contains(character) { pattern.append("\\") }
-            pattern.append(character)
-        }
-        return pattern
     }
 }

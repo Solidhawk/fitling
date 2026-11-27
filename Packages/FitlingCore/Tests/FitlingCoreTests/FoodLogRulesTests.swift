@@ -20,6 +20,16 @@ import Testing
         #expect(FoodLog.recentProductIDs(logged) == [a, b])
     }
 
+    /// The server searches with a regular expression: every character of the term counts as itself, a "*" too
+    /// (diary.test.ts, aSearchTermIsTakenLiterally, runs the same search against PostgREST).
+    @Test func aSearchPatternTakesEveryCharacterLiterally() {
+        #expect(FoodLog.searchPattern("pindakaas") == "pindakaas")
+        #expect(FoodLog.searchPattern("50% *x*. (a+b)") == #"50% \*x\*\. \(a\+b\)"#)
+        #expect(FoodLog.searchPattern(#"^$|?{2} [c] \_"#) == #"\^\$\|\?\{2\} \[c\] \\_"#)
+        // A keycap is one character of "*" and an enclosing mark (review of Fable 5.2): its "*" is escaped all the same.
+        #expect(FoodLog.searchPattern(FoodLog.searchKey("*️⃣ ab")) == "\\*\u{20E3} ab")
+    }
+
     @Test func anEntryKeepsAtMost200CharactersAndOneDecimal() {
         #expect(FoodLog.storedName(String(repeating: "a", count: 250)).count == 200)
         #expect(FoodLog.storedQuantity(123.45) == 123.5)

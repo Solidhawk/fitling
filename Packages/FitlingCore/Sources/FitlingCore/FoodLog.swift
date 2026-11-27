@@ -17,6 +17,17 @@ public enum FoodLog {
         text.folded.trimmingWhitespace()
     }
 
+    /// A search key as a regular expression that finds it anywhere, each character taken literally. The server is
+    /// searched with `imatch`: in a LIKE pattern PostgREST reads "*" as "%", and that cannot be escaped.
+    public static func searchPattern(_ key: String) -> String {
+        var pattern = ""
+        for character in key {
+            if "\\^$.|?*+()[]{}".contains(character) { pattern.append("\\") }
+            pattern.append(character)
+        }
+        return pattern
+    }
+
     /// The products of the newest entries first, each once. The caller keeps the first `recentLimit` it still has.
     public static func recentProductIDs(_ logged: [(productID: UUID, updatedAt: Date)]) -> [UUID] {
         var seen = Set<UUID>()
