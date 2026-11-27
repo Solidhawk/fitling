@@ -153,9 +153,12 @@ test("aSlowFavoriteReadDoesNotUndoTheStar", async ({ page }) => {
   await expect(row).toBeVisible();
   // All favourites, as the portion reads them; not the one product, as the star reads it before writing.
   const allFavorites = /\/rest\/v1\/favorite_products\?(?!.*product_id=eq)/;
+  // The server answers at once, from before the tap; the answer arrives 2 s later.
   await page.route(allFavorites, async (route) => {
-    if (route.request().method() === "GET") await new Promise((resolve) => setTimeout(resolve, 2_000));
-    await route.continue();
+    if (route.request().method() !== "GET") return route.continue();
+    const response = await route.fetch();
+    await new Promise((resolve) => setTimeout(resolve, 2_000));
+    await route.fulfill({ response });
   });
   const read = page.waitForResponse((response) => response.request().method() === "GET" && allFavorites.test(response.url()));
   await row.click();
