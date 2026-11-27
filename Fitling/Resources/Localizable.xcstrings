@@ -7486,6 +7486,50 @@
         }
       }
     },
+    "portion.tooLittle": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Te weinig om op te slaan: minstens 0,1."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Too little to save: at least 0.1."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zu wenig zum Speichern: mindestens 0,1."
+          }
+        }
+      }
+    },
+    "portion.tooMuch": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zoveel past niet in één regel."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That’s more than one entry can hold."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "So viel passt nicht in einen Eintrag."
+          }
+        }
+      }
+    },
     "portion.unit": {
       "localizations": {
         "nl": {

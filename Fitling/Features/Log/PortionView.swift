@@ -42,8 +42,18 @@ struct PortionView: View {
                     .monospacedDigit()
                     .accessibilityIdentifier("portion.quantity")
             } footer: {
-                if viewModel.unit == .serving, let label = servingDescription {
-                    Text(label).footerStyle()
+                let serving = viewModel.unit == .serving ? servingDescription : nil
+                if viewModel.problem != nil || serving != nil {
+                    VStack(alignment: .leading, spacing: 4) {
+                        // Save is off for such an amount; this says why.
+                        if let problem = viewModel.problem {
+                            Text(problemText(problem)).footerStyle()
+                                .accessibilityIdentifier("portion.problem")
+                        }
+                        if let serving {
+                            Text(serving).footerStyle()
+                        }
+                    }
                 }
             }
             .listRowBackground(Color.card)
@@ -87,6 +97,10 @@ struct PortionView: View {
         .accessibilityIdentifier("portion.form")
         .navigationTitle(viewModel.name)
         .navigationBarTitleDisplayMode(.inline)
+        // VoiceOver hears why Save went off while typing, not only when it reaches the footer.
+        .onChange(of: viewModel.problem) { _, problem in
+            if let problem { AccessibilityNotification.Announcement(String(localized: problemText(problem))).post() }
+        }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
@@ -106,6 +120,13 @@ struct PortionView: View {
 
     private var favoriteKey: LocalizedStringKey {
         isFavorite ? "portion.favorite.remove" : "portion.favorite.add"
+    }
+
+    private func problemText(_ problem: Portion.Problem) -> LocalizedStringResource {
+        switch problem {
+        case .tooLittle: "portion.tooLittle"
+        case .tooMuch: "portion.tooMuch"
+        }
     }
 
     private var servingDescription: String? {

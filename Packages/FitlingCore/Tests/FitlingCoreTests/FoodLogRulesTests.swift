@@ -74,6 +74,30 @@ import Testing
         #expect(Portion.preview(per100: powder, quantity: 20, unit: .serving, servingSize: 100) != nil)
     }
 
+    /// Save is off for a portion outside those limits; the line under the amount says why (review of Fable 5.2).
+    @Test func aPortionSaysWhyItCannotBeLogged() {
+        let chocolate = NutrientsPer100(kcal: 550, proteinG: 7, carbsG: 60, fatG: 30)
+        func problem(_ quantity: Double?, _ unit: QuantityUnit = .gram) -> Portion.Problem? {
+            Portion.problem(per100: chocolate, quantity: quantity, unit: unit, servingSize: 400)
+        }
+        #expect(problem(nil) == nil)
+        #expect(problem(100) == nil)
+        #expect(problem(0) == .tooLittle)
+        #expect(problem(0.04) == .tooLittle)
+        #expect(problem(-5) == .tooLittle)
+        #expect(problem(.nan) == .tooLittle)
+        #expect(problem(3700) == .tooMuch)
+        #expect(problem(20_000) == .tooMuch)
+        // Ten servings of 400 g: 22 000 kcal.
+        #expect(problem(10, .serving) == .tooMuch)
+        // Without kcal the field for the package explains it; no second line.
+        let unknown = NutrientsPer100(kcal: nil, proteinG: 7, carbsG: 60, fatG: 30)
+        #expect(Portion.problem(per100: unknown, quantity: 100, unit: .gram, servingSize: nil) == nil)
+        // 9000 kcal typed from the package: the kcal field is wrong, not the 300 g (review of Fable 5.2).
+        let mistyped = NutrientsPer100(kcal: 9000, proteinG: 7, carbsG: 60, fatG: 30)
+        #expect(Portion.problem(per100: mistyped, quantity: 300, unit: .gram, servingSize: nil) == nil)
+    }
+
     @Test func withoutKcalThePackageValueDecides() {
         let preview = Nutrients(kcal: 100, proteinG: nil, carbsG: nil, fatG: nil)
         #expect(!Portion.canSave(preview: nil, needsKcal: false, kcalOnPackage: nil))

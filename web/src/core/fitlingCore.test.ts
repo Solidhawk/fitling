@@ -190,6 +190,11 @@ test("the rules for Vandaag and logging (web phase 2)", async () => {
   const serving = core.portion({ quantityUnit: "g", servingSize: 30, per100: { kcal: 400, proteinG: 10 } });
   expect(serving).toMatchObject({ units: ["serving", "g"], defaultUnit: "serving", defaultQuantity: 1, needsKcal: false, canSave: true });
   expect(serving.preview?.kcal).toBe(120);
+  expect(serving.problem).toBeUndefined();
+  const portionOf = (quantity: number) => core.portion({ quantityUnit: "g", per100: { kcal: 550 }, quantity, unit: "g" });
+  expect(portionOf(0.04)).toMatchObject({ canSave: false, problem: "tooLittle" });
+  expect(portionOf(3700)).toMatchObject({ canSave: false, problem: "tooMuch" });
+  expect(portionOf(100).problem).toBeUndefined();
   expect(core.logEntry({ name: "Volkorenbrood", quantity: 35.04, unit: "g", per100: { kcal: 250, proteinG: 10 } })).toEqual({
     name: "Volkorenbrood",
     quantity: 35,

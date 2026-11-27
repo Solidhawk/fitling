@@ -59,6 +59,7 @@ export function Portion({
   // An empty or unreadable amount is no portion: nothing to show, nothing to save (the field on iOS stays nil).
   const portion = quantity === undefined ? { ...answer, preview: undefined, canSave: false } : answer;
   const hasUnknownMacros = product.protein100 === undefined || product.carbs100 === undefined || product.fat100 === undefined;
+  const problemText = portion.problem && t(portion.problem === "tooLittle" ? "portion.tooLittle" : "portion.tooMuch");
 
   async function toggleFavorite() {
     try {
@@ -127,7 +128,21 @@ export function Portion({
             </span>
           </ListRow>
         </ListSection>
-        <ListSection footer={servingFooter}>
+        <ListSection
+          footer={
+            problemText || servingFooter ? (
+              <span className="row-stack">
+                {/* Save is off for such an amount; this says why (PortionView). Screen readers hear it from the field. */}
+                {problemText && (
+                  <span data-testid="portion.problem" aria-hidden="true">
+                    {problemText}
+                  </span>
+                )}
+                {servingFooter && <span>{servingFooter}</span>}
+              </span>
+            ) : undefined
+          }
+        >
           {start.units.length > 1 && (
             <ListRow>
               <Segmented label={t("portion.unit")} value={unit} options={start.units.map((option) => [option, t(unitKeys[option])])} onChange={setUnit} />
@@ -140,9 +155,15 @@ export function Portion({
               placeholder={t("portion.quantity")}
               aria-label={t("portion.quantity")}
               data-testid="portion.quantity"
+              aria-invalid={problemText !== undefined}
+              aria-describedby="portion-problem"
               value={quantityText}
               onChange={(event) => setQuantityText(event.target.value)}
             />
+            {/* Always there, so a screen reader announces the line when it appears while typing (VoiceOver on iOS too). */}
+            <span id="portion-problem" className="visually-hidden" aria-live="polite">
+              {problemText ?? ""}
+            </span>
           </ListRow>
         </ListSection>
         {portion.needsKcal && (

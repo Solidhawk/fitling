@@ -153,6 +153,22 @@ struct FoodFixture {
         #expect(entry.quantityUnit == "serving")
     }
 
+    /// Save is off for an amount one entry cannot hold; the line under the amount says why.
+    @Test func aPortionOutsideTheLimitsSaysWhy() {
+        let product = fixture.product("Chocolade", kcal: 550, serving: 400)
+        let portion = fixture.portion(product)
+        portion.quantity = 10
+        #expect(portion.problem == .tooMuch)
+        #expect(!portion.canSave)
+        portion.quantity = 1
+        #expect(portion.problem == nil)
+        #expect(portion.canSave)
+        portion.unit = .gram
+        portion.quantity = 0.04
+        #expect(portion.problem == .tooLittle)
+        #expect(portion.save() == nil)
+    }
+
     @Test func productWithoutKcalAsksForIt() throws {
         let shared = fixture.product("Onbekende reep", kcal: nil, protein: 5, carbs: nil, fat: 12)
         let portion = fixture.portion(shared)
