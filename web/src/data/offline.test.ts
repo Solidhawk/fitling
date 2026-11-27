@@ -1,6 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import { flush, forgetOffline, kept, notSaved, rowsBetween, send, setOfflineUser, takeRefused, waiting } from "./offline";
+import type { FitlingCore } from "../core/fitlingCore";
+import { logProduct, recentProducts } from "./diary";
+import { flush, forgetOffline, keep, kept, notSaved, retryWaiting, rowsBetween, send, setOfflineUser, takeRefused, waiting } from "./offline";
+import { productFromRow } from "./products";
 
 // Without a connection (web phase 7): the last answer to each read, the days of the diary and the writes still to be
 // sent, per user, as the iPhone keeps its own database. diary.test.ts sends the same rows to a real server.
@@ -227,4 +230,37 @@ test("aWriteThatKeepsWaitingIsShown", async () => {
   await flush(server([]).client);
   expect(notSaved()).toBe(false);
   expect(waiting()).toEqual([]);
+});
+
+// A server that could not take a write for a moment (a 503) gets it again by itself while the app is open, without
+// waiting for the network or the screen to change (UNFORGET S50).
+test("aWriteTheServerCouldNotTakeIsSentAgainLater", async () => {
+  vi.useFakeTimers();
+  const busy = server([{ error: { message: "Service Unavailable" } }]);
+  await send(busy.client, { table: "food_entries", kind: "insert", row: logged });
+  expect(waiting().map((write) => write.row.id)).toEqual(["b"]);
+  const stop = retryWaiting(busy.client, 30_000);
+  await vi.advanceTimersByTimeAsync(30_000);
+  stop();
+  expect(waiting()).toEqual([]);
+  expect(busy.sent.map((write) => write.row.id)).toEqual(["b", "b"]);
+});
+
+// Logged without a connection, a product is first under Recent at once, as on the iPhone, where Recent comes from the
+// diary on the device; the next read from the server replaces the list (UNFORGET S50).
+test("aProductLoggedWithoutAConnectionIsFirstUnderRecent", async () => {
+  const core = {
+    logEntry: () => ({ name: "Appel", quantity: 150, nutrients: { kcal: 78 } }),
+    localizedText: ({ values }: { values: Record<string, string> }) => ({ text: values.nl }),
+    recentProducts: () => ({ ids: [], limit: 2 }),
+  } as unknown as FitlingCore;
+  const product = (id: string, name: string) =>
+    productFromRow({ id, owner_id: null, source: "off", name: { nl: name }, search_name: name.toLowerCase(), quantity_unit: "g", kcal_100: 52 });
+  keep("recents", [product("b", "Brood"), product("c", "Kaas")]);
+  vi.stubGlobal("navigator", { onLine: false });
+  const entry = { userID: "user-1", quantity: 150, unit: "g" as const, meal: "snack" as const, day, now: new Date() };
+  await logProduct(down(), core, { ...entry, product: product("a", "Appel") });
+  expect((await recentProducts(down(), core)).map((found) => found.id)).toEqual(["a", "b"]);
+  await logProduct(down(), core, { ...entry, product: product("b", "Brood") });
+  expect((await recentProducts(down(), core)).map((found) => found.id)).toEqual(["b", "a"]);
 });

@@ -84,3 +84,33 @@ test("withoutANetworkTheSearchShowsWhatThisBrowserKnows", async () => {
     vi.unstubAllGlobals();
   }
 });
+
+// The shared products could not be read: the user's own ones are still shown, and the failure is told next to them,
+// instead of an empty list (UNFORGET S58; LogFoodViewModel keeps its local results too).
+test("aFailedSharedSearchKeepsTheOwnResults", async () => {
+  const core = { searchKey: ({ text }: { text: string }) => ({ key: text.toLowerCase(), pattern: text.toLowerCase() }) } as unknown as FitlingCore;
+  const own = { id: "own", owner_id: "u1", source: "user", name: { nl: "Appeltaart" }, search_name: "appeltaart", quantity_unit: "g" };
+  const client = {
+    from() {
+      let shared = false;
+      const query = {
+        select: () => query,
+        not: () => query,
+        is(column: string, value: unknown) {
+          if (column === "owner_id" && value === null) shared = true;
+          return query;
+        },
+        filter: () => query,
+        limit: () => query,
+        then(resolve: (answer: { data: unknown; error: unknown }) => void) {
+          resolve(shared ? { data: null, error: { message: "unavailable" } } : { data: [own], error: null });
+        },
+      };
+      return query;
+    },
+  } as unknown as SupabaseClient;
+  const found = await searchProducts(client, core, "appel", []);
+  expect(found.own.map((product) => product.id)).toEqual(["own"]);
+  expect(found.online).toEqual([]);
+  expect(found.onlineFailed).toBe("error.server");
+});
