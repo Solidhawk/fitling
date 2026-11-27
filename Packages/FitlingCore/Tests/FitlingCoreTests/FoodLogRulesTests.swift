@@ -7,6 +7,12 @@ import Testing
     @Test func searchKeyFoldsCaseAndAccents() {
         #expect(FoodLog.searchKey("  Crème Brûlée\n") == "creme brulee")
         #expect(FoodLog.searchKey("   ") == "")
+        // ß has no decomposition: it stays, as on the server (lookup-product and submit-product, NFD without marks).
+        // A German product is found as it is written, "straße", not as "strasse".
+        #expect(FoodLog.searchKey("Straße") == "straße")
+        // Letters without a decomposition stay too, and a stroke is no accent.
+        #expect(FoodLog.searchKey("Ærøskøbing Łódź") == "ærøskøbing łodz")
+        #expect(FoodLog.searchKey("Йогурт") == "иогурт")
     }
 
     @Test func recentShowsEachProductOnceNewestFirst() {
