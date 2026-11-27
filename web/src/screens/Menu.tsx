@@ -34,8 +34,12 @@ type Entry = MenuOverview["days"][number]["entries"][number];
 
 interface Loaded {
   rows: MenuRows;
-  /** What a new menu plans for; only making one needs it, so the menu shows without it. */
-  plan?: { profile: Profile; periods: Awaited<ReturnType<typeof loadTargetPeriods>> };
+}
+
+/** What a new menu plans for: the profile and its target periods. */
+interface Plan {
+  profile: Profile;
+  periods: Awaited<ReturnType<typeof loadTargetPeriods>>;
 }
 
 /** A random UInt64 as text: another seed gives another menu from the same recipes. */
@@ -51,6 +55,8 @@ function seed(): string {
 export function Menu({ userID }: { userID: string }) {
   const core = useCore();
   const [loaded, setLoaded] = useState<Loaded>();
+  // Only making a menu needs the plan, so the menu shows without it (UNFORGET S58); the last one read stays.
+  const [plan, setPlan] = useState<Plan>();
   const [failed, setFailed] = useState<string>();
   const [issues, setIssues] = useState<MenuIssue[]>([]);
   const [path, setPath] = useState<Route[]>([]);
@@ -65,28 +71,43 @@ export function Menu({ userID }: { userID: string }) {
   const busy = useRef(false);
   // Preferences are stored one after the other, so a quick second change never lands before the first.
   const storing = useRef<Promise<void>>(Promise.resolve());
-  // Only the newest read is shown: an older answer that comes in later never overwrites it.
+  // Reads can overlap (the app comes back while one runs): the newest that came back is shown, so an older answer that
+  // comes in later never overwrites it, and a newer one that fails leaves the last one in view.
   const reads = useRef(0);
+  const shownRead = useRef(0);
+  const planRead = useRef(0);
+  // The plan last read, for what is decided after waiting for a read.
+  const latestPlan = useRef<Plan>(undefined);
+  // The depth of the stack in view, for what opens after waiting for a read.
+  const depth = useRef(0);
 
-  /** Reads the menu again; answers the profile's plan when it could be read. */
-  const reload = useCallback(async (): Promise<Loaded["plan"]> => {
+  /** Reads the menu again; answers why it could not, when it could not. */
+  const reload = useCallback(async (): Promise<string | undefined> => {
     const mine = ++reads.current;
     try {
       // Preferences still on their way would otherwise be read back as they were.
       await storing.current;
-      const [rows, plan] = await Promise.all([
+      const [rows, read] = await Promise.all([
         loadMenu(supabase, today()),
-        // A profile that cannot be read leaves the menu in view (UNFORGET S58); the last one read stays.
         Promise.all([loadProfile(supabase, userID), loadTargetPeriods(supabase)]).then(
           ([profile, periods]) => ({ profile, periods }),
           () => undefined,
         ),
       ]);
-      if (mine === reads.current) setLoaded((before) => ({ rows, plan: plan ?? before?.plan }));
-      return plan;
-    } catch (error) {
-      if (mine === reads.current) setFailed(error instanceof Error ? error.message : "error.server");
+      if (read && mine > planRead.current) {
+        planRead.current = mine;
+        latestPlan.current = read;
+        setPlan(read);
+      }
+      if (mine > shownRead.current) {
+        shownRead.current = mine;
+        setLoaded({ rows });
+      }
       return undefined;
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : "error.server";
+      if (mine > shownRead.current) setFailed(reason);
+      return reason;
     }
   }, [userID]);
 
@@ -99,6 +120,7 @@ export function Menu({ userID }: { userID: string }) {
 
   // In braces: an effect may only hand back its cleanup, and newer Chrome answers scrollTo with a promise.
   useEffect(() => {
+    depth.current = path.length;
     window.scrollTo(0, 0);
   }, [path.length]);
 
@@ -122,7 +144,6 @@ export function Menu({ userID }: { userID: string }) {
    * Without a profile read it throws, and the reload after the change tries again.
    */
   function targets(core: FitlingCore, goal?: Goal): Targets {
-    const plan = loaded?.plan;
     if (!plan) throw new Error("error.server");
     if (goal) return core.dailyPlan({ ...plan.profile.body, goal, today: today() }).targets;
     return core.targetsOnDay({ day: today(), fallback: plan.profile.targets, periods: plan.periods });
@@ -144,10 +165,15 @@ export function Menu({ userID }: { userID: string }) {
     });
   }
 
-  /** The generator plans for the profile's targets: without them it reads again first, and says so if they stay away. */
+  /**
+   * The generator plans for the profile's targets: without them it reads again first, and says so if they stay away (a
+   * read that failed has said why already). It opens only while the menu is still the screen in view.
+   */
   async function openGenerator() {
-    if (loaded?.plan || (await reload())) setGenerating(true);
-    else setFailed("error.server");
+    const problem = latestPlan.current ? undefined : await reload();
+    if (depth.current !== 0) return;
+    if (latestPlan.current) setGenerating(true);
+    else if (!problem) setFailed("error.server");
   }
 
   function make(options: MenuOptions) {
@@ -253,7 +279,7 @@ export function Menu({ userID }: { userID: string }) {
   return (
     <>
       {screen}
-      {generating && core && loaded?.plan && (
+      {generating && core && loaded && plan && (
         <MenuGenerator
           initial={rememberedMenuOptions()}
           targets={(goal) => targets(core, goal)}
