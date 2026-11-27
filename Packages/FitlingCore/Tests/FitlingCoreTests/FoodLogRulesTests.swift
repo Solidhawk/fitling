@@ -81,6 +81,9 @@ import Testing
         // Without kcal the field for the package explains it; no second line.
         let unknown = NutrientsPer100(kcal: nil, proteinG: 7, carbsG: 60, fatG: 30)
         #expect(Portion.problem(per100: unknown, quantity: 100, unit: .gram, servingSize: nil) == nil)
+        // 9000 kcal typed from the package: the kcal field is wrong, not the 300 g (review of Fable 5.2).
+        let mistyped = NutrientsPer100(kcal: 9000, proteinG: 7, carbsG: 60, fatG: 30)
+        #expect(Portion.problem(per100: mistyped, quantity: 300, unit: .gram, servingSize: nil) == nil)
     }
 
     @Test func withoutKcalThePackageValueDecides() {
