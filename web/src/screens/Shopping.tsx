@@ -227,7 +227,16 @@ export function Shopping({ core, userID, menu, onBack }: { core: FitlingCore; us
         <div className="loading tab-loading" aria-busy="true">
           <span className="spinner" role="progressbar" aria-label={t("common.loading")} />
         </div>
-        {failed && <Alert title={t(failed)} onClose={() => setFailed(undefined)} />}
+        {failed && (
+          <Alert
+            title={t(failed)}
+            onClose={() => {
+              setFailed(undefined);
+              // Without the list there is nothing to show: closing the message is trying again (UNFORGET S48).
+              if (!list) void reloadList(true);
+            }}
+          />
+        )}
       </div>
     );
   }

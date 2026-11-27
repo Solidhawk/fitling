@@ -169,12 +169,6 @@ export async function loadOffers(client: SupabaseClient, today: IsoDay, now: Dat
   };
 }
 
-/** Everything the list screen reads (loadList and loadOffers together). */
-export async function loadShopping(client: SupabaseClient, listID: string, today: IsoDay, now: Date): Promise<ShoppingRows> {
-  const [list, offers] = await Promise.all([loadList(client, listID), loadOffers(client, today, now)]);
-  return { ...list, ...offers };
-}
-
 /** The lines of the recipes the menu plans, for what it needs on the list. */
 export async function loadRecipeIngredients(client: SupabaseClient, recipeIDs: string[]): Promise<RecipeIngredientRow[]> {
   const ids = [...new Set(recipeIDs)];
