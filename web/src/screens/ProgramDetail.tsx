@@ -235,7 +235,8 @@ export function ProgramDetail({
               destructive: true,
               onSelect: () => {
                 setConfirmingDelete(false);
-                void act(() => deleteProgram(supabase, programID, new Date())).then(onBack);
+                // The training tab goes back once the removal is read back; a refusal stays here with its error.
+                void act(() => deleteProgram(supabase, programID, new Date()));
               },
             },
           ]}

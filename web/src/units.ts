@@ -13,6 +13,9 @@ export function usesMetric(languages: readonly string[] = navigator.languages): 
   return !["US", "LR", "MM", "GB"].includes(region ?? "");
 }
 
+/** One pound in kilograms, by definition. */
+export const kilogramsPerPound = 0.45359237;
+
 /** Pounds for training weights only in the US system (WeightUnit on iOS); the United Kingdom lifts in kilograms. */
 export function usesPounds(languages: readonly string[] = navigator.languages): boolean {
   const tag = languages[0] ?? "nl-NL";

@@ -31,11 +31,15 @@ export function Body({ core, userID, onBack }: { core: FitlingCore; userID: stri
   const typed = parseNumber(value);
   const stored = typed === undefined ? undefined : core.measurementStored({ value: typed, kind, usesMetric: metric }).value;
 
+  // Only the newest read is shown: the answer for a kind switched away from never overwrites the one picked last.
+  const reads = useRef(0);
   const reload = useCallback(async () => {
+    const mine = ++reads.current;
     try {
-      setMeasurements(await loadMeasurements(supabase, kind));
+      const next = await loadMeasurements(supabase, kind);
+      if (mine === reads.current) setMeasurements(next);
     } catch (error) {
-      setFailed(error instanceof Error ? error.message : "error.server");
+      if (mine === reads.current) setFailed(error instanceof Error ? error.message : "error.server");
     }
   }, [kind]);
 

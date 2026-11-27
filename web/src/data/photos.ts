@@ -53,6 +53,9 @@ export async function listPhotos(): Promise<Photo[]> {
 }
 
 export async function addPhoto(image: Blob, takenOn: IsoDay): Promise<Photo> {
+  // A photo lives only in this browser: it is asked to keep the storage when space runs low, also in a tab (on the
+  // home screen main.tsx asks at the start).
+  void navigator.storage?.persist?.().catch(() => false);
   const stored: StoredPhoto = { id: crypto.randomUUID(), takenOn, bytes: await image.arrayBuffer(), type: image.type };
   await run("readwrite", (photos) => photos.put(stored));
   return { id: stored.id, takenOn, image };

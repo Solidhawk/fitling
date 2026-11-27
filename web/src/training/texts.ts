@@ -1,9 +1,10 @@
 import type { Advice, PersonalRecord } from "../core/fitlingCore";
 import { language, t } from "../i18n";
+import { kilogramsPerPound } from "../units";
 
 /** "62,5 kg" or "135 lb" in the user's number format, up to two decimals (WeightUnit.format on iOS). */
 export function weight(kilograms: number, pounds: boolean): string {
-  const value = pounds ? kilograms / 0.45359237 : kilograms;
+  const value = pounds ? kilograms / kilogramsPerPound : kilograms;
   return `${new Intl.NumberFormat(language(), { maximumFractionDigits: 2 }).format(value)} ${pounds ? "lb" : "kg"}`;
 }
 
