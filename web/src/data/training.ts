@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { IsoDay, Localized, TrainingInput } from "../core/fitlingCore";
 import { failure } from "./failure";
-import { allRows, type Row } from "./pages";
+import { allRows, type Keyset, type Row } from "./pages";
 
 /** The training rows of the user and the shared catalogue, as FitlingCore reads them, plus what only the screens show. */
 export type TrainingRows = Omit<TrainingInput, "userID" | "today" | "languages"> & {
@@ -14,11 +14,11 @@ export type TrainingRows = Omit<TrainingInput, "userID" | "today" | "languages">
 const seconds = (value: unknown) => Date.parse(value as string) / 1000;
 const optional = <T>(value: unknown) => (value === null || value === undefined ? undefined : (value as T));
 
+/** Every row of `table`, page by page; `columns` names `id`, which the pages are read on from. */
 function rows(client: SupabaseClient, table: string, columns: string, alive = true) {
-  return allRows((from, to) => {
-    let query = client.from(table).select(columns);
-    if (alive) query = query.is("deleted_at", null);
-    return query.order("id").range(from, to) as unknown as PromiseLike<{ data: Row[] | null; error: { message: string } | null }>;
+  return allRows(() => {
+    const query = client.from(table).select(columns);
+    return (alive ? query.is("deleted_at", null) : query) as unknown as Keyset;
   });
 }
 
@@ -33,7 +33,7 @@ export async function loadTraining(client: SupabaseClient): Promise<TrainingRows
     rows(client, "programs", "id, owner_id, name, days_per_week, deleted_at", false),
     rows(client, "program_days", "id, program_id, owner_id, name, position, updated_at, deleted_at", false),
     rows(client, "program_exercises", "id, program_day_id, owner_id, exercise_id, position, target_sets, rep_min, rep_max, rest_seconds"),
-    rows(client, "exercise_settings", "exercise_id, step_kg, rep_min, rep_max, updated_at"),
+    rows(client, "exercise_settings", "id, exercise_id, step_kg, rep_min, rep_max, updated_at"),
     rows(client, "workout_sessions", "id, program_day_id, performed_on, started_at, ended_at"),
     rows(client, "workout_sets", "id, session_id, exercise_id, position, weight_kg, reps, rpe, is_warmup"),
   ]);

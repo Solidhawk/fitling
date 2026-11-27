@@ -61,29 +61,62 @@ test("writesOneJSONFileAndOneCSVPerTable", () => {
   expect(files.map((file) => file.name).sort()).toEqual(["fitling-export.json", "products.csv", "water_entries.csv"]);
 });
 
-// PostgREST answers at most 1000 rows per request (max_rows); years of food entries are more.
-test("everyRowIsFetchedPastTheServersLimitOf1000", async () => {
-  const entries = Array.from({ length: 2500 }, (_, index) => ({ id: String(index).padStart(5, "0") }));
-  const client = {
+/**
+ * A server that answers at most 1000 rows per request (PostgREST max_rows), by position or from a key on, sorted by
+ * that key. With `removed`, that food entry is removed on another device once the first page is answered.
+ */
+function exportClient(entries: { id: string }[], removed?: string): SupabaseClient {
+  let live = [...entries];
+  let pages = 0;
+  const answer = (data: object[]) => {
+    pages += 1;
+    if (pages === 1 && removed) live = live.filter((row) => row.id !== removed);
+    return Promise.resolve({ data, error: null });
+  };
+  return {
     from(table: string) {
-      const rows = table === "food_entries" ? entries : [];
+      const food = table === "food_entries";
       let order = "";
+      let after: string | undefined;
       const query = {
         select: () => query,
         not: () => query,
+        gt(_column: string, value: string) {
+          after = value;
+          return query;
+        },
         order(column: string) {
           order = column;
           return query;
         },
         range(from: number, to: number) {
           expect(order).not.toBe("");
-          return Promise.resolve({ data: rows.slice(from, Math.min(to + 1, from + 1000)), error: null });
+          return food ? answer(live.slice(from, Math.min(to + 1, from + 1000))) : Promise.resolve({ data: [], error: null });
+        },
+        limit(count: number) {
+          expect(order).not.toBe("");
+          return food
+            ? answer(live.filter((row) => after === undefined || row.id > after).slice(0, Math.min(count, 1000)))
+            : Promise.resolve({ data: [], error: null });
         },
       };
       return query;
     },
   } as unknown as SupabaseClient;
-  const tables = await fetchTables(client);
+}
+
+// PostgREST answers at most 1000 rows per request (max_rows); years of food entries are more.
+test("everyRowIsFetchedPastTheServersLimitOf1000", async () => {
+  const entries = Array.from({ length: 2500 }, (_, index) => ({ id: String(index).padStart(5, "0") }));
+  const tables = await fetchTables(exportClient(entries));
   expect(tables.food_entries).toHaveLength(2500);
   expect(tables.creatures).toEqual([]);
+});
+
+// An entry removed on another device while the export reads: no other row is skipped (S42, review of PR #61).
+test("aRowRemovedWhileExportingSkipsNoOther", async () => {
+  const entries = Array.from({ length: 2500 }, (_, index) => ({ id: String(index).padStart(5, "0") }));
+  const tables = await fetchTables(exportClient(entries, "00010"));
+  expect(tables.food_entries.some((row) => row.id === "01000")).toBe(true);
+  expect(tables.food_entries).toHaveLength(2500);
 });

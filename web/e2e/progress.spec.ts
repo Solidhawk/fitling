@@ -1,6 +1,5 @@
-import { deflateSync } from "node:zlib";
 import { expect, test } from "./fixtures";
-import { daysBefore, exercise, finishedWorkout, openTraining, tapRow } from "./training";
+import { daysBefore, exercise, finishedWorkout, openTraining, png, tapRow } from "./training";
 import { admin, nl } from "./users";
 
 // The progress screens of the training tab, the body log and the progress photos (web phase 4).
@@ -110,32 +109,6 @@ test("aDoubleTapAddsOneMeasurement", async ({ page }) => {
   const { data } = await admin.from("body_measurements").select("value").eq("user_id", user.id);
   expect(data).toEqual([{ value: 80.4 }]);
 });
-
-/** A PNG of 4 by 4 pixels in one colour, built here, as a photo picked from the library. */
-function png(): Buffer {
-  const crc = (bytes: Buffer) => {
-    let value = 0xffffffff;
-    for (const byte of bytes) {
-      value ^= byte;
-      for (let bit = 0; bit < 8; bit++) value = value & 1 ? (value >>> 1) ^ 0xedb88320 : value >>> 1;
-    }
-    return (value ^ 0xffffffff) >>> 0;
-  };
-  const chunk = (type: string, data: Buffer) => {
-    const body = Buffer.concat([Buffer.from(type, "ascii"), data]);
-    const length = Buffer.alloc(4);
-    length.writeUInt32BE(data.length);
-    const check = Buffer.alloc(4);
-    check.writeUInt32BE(crc(body));
-    return Buffer.concat([length, body, check]);
-  };
-  const header = Buffer.alloc(13);
-  header.writeUInt32BE(4, 0);
-  header.writeUInt32BE(4, 4);
-  header.set([8, 2, 0, 0, 0], 8);
-  const rows = Buffer.concat(Array.from({ length: 4 }, () => Buffer.from([0, ...Array.from({ length: 4 }, () => [120, 160, 200]).flat()])));
-  return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk("IHDR", header), chunk("IDAT", deflateSync(rows)), chunk("IEND", Buffer.alloc(0))]);
-}
 
 test("photosStayOnThisDevice", async ({ page }, info) => {
   await openTraining(page);

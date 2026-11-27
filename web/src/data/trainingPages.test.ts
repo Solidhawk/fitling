@@ -17,17 +17,22 @@ test("manyWorkoutsAreReadInPages", async () => {
   const client = {
     from(table: string) {
       let ordered = false;
+      let after: string | undefined;
       const query = {
         select: () => query,
         is: () => query,
-        order() {
-          ordered = true;
+        gt(_column: string, value: string) {
+          after = value;
           return query;
         },
-        range(from: number, to: number) {
+        order(column: string) {
+          ordered = column === "id";
+          return query;
+        },
+        limit(count: number) {
           expect(ordered).toBe(true);
           const all = table === "workout_sets" ? sets : [];
-          return Promise.resolve({ data: all.slice(from, Math.min(to + 1, from + 1000)), error: null });
+          return Promise.resolve({ data: all.filter((row) => after === undefined || row.id > after).slice(0, Math.min(count, 1000)), error: null });
         },
       };
       return query;

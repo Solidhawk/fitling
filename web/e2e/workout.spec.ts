@@ -180,3 +180,79 @@ test("setsFromAnotherDeviceAreShown", async ({ page }) => {
   await expect(page.getByTestId(`workout.exercise.${curl.id}`)).toBeVisible({ timeout: 15_000 });
   await expect(page.getByTestId("workout.set")).toHaveCount(1);
 });
+
+// The same with the workout open and the app coming back to the front, as on a phone: no reload needed (UNFORGET S42).
+test("setsFromAnotherDeviceShowWhenTheAppComesBack", async ({ page }) => {
+  const curl = await exercise("Dumbbell curl");
+  const user = await openTraining(page);
+  await startFirstDay(page);
+  const session = await admin.from("workout_sessions").select("id").eq("user_id", user.id).is("ended_at", null).single();
+  const stored = await admin.from("workout_sets").insert({
+    id: crypto.randomUUID(),
+    user_id: user.id,
+    session_id: session.data!.id,
+    exercise_id: curl.id,
+    position: 0,
+    weight_kg: 12,
+    reps: 10,
+    is_warmup: false,
+    updated_at: new Date().toISOString(),
+  });
+  if (stored.error) throw stored.error;
+  await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
+  await expect(page.getByTestId(`workout.exercise.${curl.id}`)).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByTestId("workout.set")).toHaveCount(1);
+});
+
+// An exercise that is gone once read back, while its sheet is open in a workout: the sheet keeps only the way back,
+// instead of the error screen of the whole app (bug-echo of UNFORGET S42).
+test("anExerciseGoneWhileItsSheetIsOpenLeavesTheWayBack", async ({ page }) => {
+  const id = crypto.randomUUID();
+  const user = await openTraining(page, async (userID) => {
+    const own = await admin.from("exercises").insert({
+      id,
+      owner_id: userID,
+      name: { nl: "Eigen oefening" },
+      kind: "isolation",
+      load_type: "external",
+      equipment: "dumbbell",
+      primary_muscles: ["biceps"],
+      default_step_kg: 1,
+      updated_at: new Date().toISOString(),
+    });
+    if (own.error) throw own.error;
+  });
+  const programme = await startFirstDay(page);
+  const session = await admin.from("workout_sessions").select("id").eq("user_id", user.id).is("ended_at", null).single();
+  const stored = await admin.from("workout_sets").insert({
+    id: crypto.randomUUID(),
+    user_id: user.id,
+    session_id: session.data!.id,
+    exercise_id: id,
+    position: 0,
+    weight_kg: 12,
+    reps: 10,
+    is_warmup: false,
+    updated_at: new Date().toISOString(),
+  });
+  if (stored.error) throw stored.error;
+  await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
+  await page.getByTestId(`workout.exercise.${id}`).click();
+  // The sheet over the workout, with the exercise's name as its title (small and large).
+  const sheet = page.locator(".sheet .sheet");
+  await expect(sheet.getByRole("heading", { name: "Eigen oefening" }).first()).toBeVisible();
+  const stamp = new Date().toISOString();
+  const removed = await admin.from("exercises").update({ deleted_at: stamp, updated_at: stamp }).eq("id", id);
+  if (removed.error) throw removed.error;
+  await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
+  await expect(sheet.getByRole("heading", { name: "Eigen oefening" })).toHaveCount(0);
+  await expect(page.locator('[data-screen="failed"]')).toHaveCount(0);
+  await expect(sheet.locator('[data-page="exerciseProgress"] .nav-back')).toBeVisible();
+  // The keyboard keeps working in it: Tab stays in the sheet, and Escape closes the sheet and only the sheet (review of
+  // PR #61).
+  await page.keyboard.press("Tab");
+  expect(await page.evaluate(() => document.activeElement?.closest(".sheet .sheet") !== null)).toBe(true);
+  await page.keyboard.press("Escape");
+  await expect(sheet).toHaveCount(0);
+  await expect(page.getByRole("dialog", { name: programme.days[0].name })).toBeVisible();
+});
