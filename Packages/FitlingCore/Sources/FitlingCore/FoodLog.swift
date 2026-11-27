@@ -17,6 +17,19 @@ public enum FoodLog {
         text.folded.trimmingWhitespace()
     }
 
+    /// A search key as a regular expression that finds it anywhere, each character taken literally. The server is
+    /// searched with `imatch`: in a LIKE pattern PostgREST reads "*" as "%", and that cannot be escaped. Escaped per
+    /// scalar, as Postgres reads it: the "*" of a keycap is one character with its mark, but a "*" to the regex.
+    public static func searchPattern(_ key: String) -> String {
+        let special = "\\^$.|?*+()[]{}".unicodeScalars
+        var pattern = String.UnicodeScalarView()
+        for scalar in key.unicodeScalars {
+            if special.contains(scalar) { pattern.append("\\") }
+            pattern.append(scalar)
+        }
+        return String(pattern)
+    }
+
     /// The products of the newest entries first, each once. The caller keeps the first `recentLimit` it still has.
     public static func recentProductIDs(_ logged: [(productID: UUID, updatedAt: Date)]) -> [UUID] {
         var seen = Set<UUID>()
@@ -25,9 +38,10 @@ public enum FoodLog {
         }
     }
 
-    /// The name an entry keeps: what the product was called when it was logged, at most 200 characters.
+    /// The name an entry keeps: what the product was called when it was logged, at most 200 characters as the database
+    /// counts them.
     public static func storedName(_ name: String) -> String {
-        String(name.prefix(nameLimit))
+        name.limited(toScalars: nameLimit)
     }
 
     /// The amount an entry keeps, to one decimal as the database stores it.
@@ -136,9 +150,10 @@ public struct OwnProductDraft: Sendable, Equatable {
             return nil
         }
         guard [protein, carbs, fat].compactMap({ $0 }).allSatisfy({ (0...100).contains($0) }) else { return nil }
-        if let servingSize, !(servingSize > 0 && servingSize < 100_000) { return nil }
-        let brandText = brand.trimmingWhitespace()
         func hundredths(_ value: Double) -> Double { (value * 100).rounded() / 100 }
+        // `numeric(7,2) check (serving_size > 0)`: checked as it is stored, so 0,004 does not become 0.
+        if let servingSize, !(hundredths(servingSize) > 0 && hundredths(servingSize) <= 99_999.99) { return nil }
+        let brandText = brand.trimmingWhitespace()
         return OwnProductFields(
             name: trimmedName,
             brand: brandText.isEmpty ? nil : brandText,

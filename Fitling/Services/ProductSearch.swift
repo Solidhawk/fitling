@@ -12,15 +12,12 @@ struct SupabaseProductSearch: ProductSearching {
     let client: SupabaseClient
 
     func search(_ term: String, limit: Int) async throws -> [ProductRecord] {
-        // The term goes into a LIKE pattern: its own wildcards are taken literally.
-        let escaped = term.replacingOccurrences(of: "\\", with: "\\\\")
-            .replacingOccurrences(of: "%", with: "\\%")
-            .replacingOccurrences(of: "_", with: "\\_")
         do {
             return try await client.from("products")
                 .select()
                 .is("owner_id", value: nil)
-                .ilike("search_name", pattern: "%\(escaped)%")
+                .is("deleted_at", value: nil)
+                .imatch("search_name", pattern: FoodLog.searchPattern(term))
                 .limit(limit)
                 .execute()
                 .value

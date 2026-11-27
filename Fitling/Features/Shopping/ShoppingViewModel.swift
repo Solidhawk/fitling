@@ -50,7 +50,8 @@ final class ShoppingViewModel {
         self.sync = sync
         self.defaults = defaults
         self.listName = listName
-        self.ownerName = ownerName
+        // The name the others see; `shopping_list_members.display_name` holds 40 characters.
+        self.ownerName = ownerName.limited(toScalars: 40)
         self.now = now
     }
 
@@ -236,7 +237,7 @@ final class ShoppingViewModel {
     func join(code: String, name: String) async -> Bool {
         sharingProblem = nil
         joinProblem = nil
-        let memberName = String(name.trimmingCharacters(in: .whitespacesAndNewlines).prefix(40))
+        let memberName = name.trimmingCharacters(in: .whitespacesAndNewlines).limited(toScalars: 40)
         do {
             let listID = try await services.sharing.join(
                 code: code.trimmingCharacters(in: .whitespacesAndNewlines), name: memberName.isEmpty ? ownerName : memberName

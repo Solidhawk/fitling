@@ -218,7 +218,8 @@ struct OwnRecipeForm: View {
                         .tint(Color.ink)
                     }
                     Button("menu.own.addIngredient") {
-                        guard let quantity = ingredientQuantity, quantity > 0, !ingredientName.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+                        guard let quantity = ingredientQuantity.flatMap(MenuBook.storedIngredientQuantity),
+                              !ingredientName.trimmingCharacters(in: .whitespaces).isEmpty else { return }
                         recipe.ingredients.append((ingredientName.trimmingCharacters(in: .whitespaces), quantity, ingredientUnit))
                         ingredientName = ""
                         ingredientQuantity = nil

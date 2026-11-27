@@ -20,8 +20,20 @@ import Testing
         #expect(FoodLog.recentProductIDs(logged) == [a, b])
     }
 
+    /// The server searches with a regular expression: every character of the term counts as itself, a "*" too
+    /// (diary.test.ts, aSearchTermIsTakenLiterally, runs the same search against PostgREST).
+    @Test func aSearchPatternTakesEveryCharacterLiterally() {
+        #expect(FoodLog.searchPattern("pindakaas") == "pindakaas")
+        #expect(FoodLog.searchPattern("50% *x*. (a+b)") == #"50% \*x\*\. \(a\+b\)"#)
+        #expect(FoodLog.searchPattern(#"^$|?{2} [c] \_"#) == #"\^\$\|\?\{2\} \[c\] \\_"#)
+        // A keycap is one character of "*" and an enclosing mark (review of Fable 5.2): its "*" is escaped all the same.
+        #expect(FoodLog.searchPattern(FoodLog.searchKey("*️⃣ ab")) == "\\*\u{20E3} ab")
+    }
+
     @Test func anEntryKeepsAtMost200CharactersAndOneDecimal() {
         #expect(FoodLog.storedName(String(repeating: "a", count: 250)).count == 200)
+        // Postgres counts code points: a flag takes two of the 200, and a character is never cut in half.
+        #expect(FoodLog.storedName(String(repeating: "🇳🇱", count: 150)) == String(repeating: "🇳🇱", count: 100))
         #expect(FoodLog.storedQuantity(123.45) == 123.5)
     }
 
@@ -110,6 +122,19 @@ import Testing
         #expect(fields.fat100 == nil)
         #expect(fields.servingSize == 120)
         #expect(fields.searchName == "oma's appeltaart bakkerij jansen")
+    }
+
+    /// `products.serving_size` keeps two decimals, above 0 and below 100 000: checked as it is stored.
+    @Test func aServingSizeIsCheckedAsTheDatabaseStoresIt() {
+        var tiny = draft()
+        tiny.servingSize = 0.004
+        #expect(tiny.validated() == nil)
+        var large = draft()
+        large.servingSize = 99_999.996
+        #expect(large.validated() == nil)
+        var largest = draft()
+        largest.servingSize = 99_999.99
+        #expect(largest.validated()?.servingSize == 99_999.99)
     }
 
     @Test func ownProductUsesTheDatabaseLimits() {
