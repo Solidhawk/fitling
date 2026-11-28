@@ -12,9 +12,12 @@ async function start(page: Page) {
 
 async function search(page: Page, text: string) {
   const field = page.getByTestId("log.search");
-  await field.fill(text);
-  // A field that did not take the text fails here, not 30 s later at a result that never comes (UNFORGET S56).
-  await expect(field).toHaveValue(text);
+  // WebKit under load sometimes drops the text Playwright types: the field stayed empty right after fill (UNFORGET S56,
+  // run 46135566772). No path in the app clears it, so type again until the field has the text.
+  await expect(async () => {
+    await field.fill(text);
+    await expect(field).toHaveValue(text, { timeout: 1_000 });
+  }).toPass({ timeout: 15_000 });
 }
 
 // The log sheet says "Nog niets gelogd" once it knows, not while recent and favourites are still being read; and a list
