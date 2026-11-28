@@ -1,5 +1,5 @@
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test } from "./fixtures";
+import { expect, type Page, test } from "./fixtures";
 import { confirmationLink, createUser, nl, password, signIn } from "./users";
 
 const partners = ["bumblebee", "mole", "frog", "owl", "hedgehog", "snail", "axolotl", "seal", "penguin", "turtle", "rabbit", "raccoon", "ladybird", "octopus", "squirrel", "lamb"];
@@ -34,6 +34,53 @@ test("a wrong password shows the app's message", async ({ page }) => {
   await page.getByLabel(nl("auth.password.field")).fill("niet-het-wachtwoord");
   await page.getByTestId("auth.submit").click();
   await expect(page.getByText(nl("auth.error.invalidCredentials"))).toBeVisible();
+});
+
+// A friend opens the link for the first time: creating an account comes first, signing in is the other button
+// (UNFORGET A10).
+test("the welcome screen offers to create an account first", async ({ page }) => {
+  await page.goto("./");
+  await expect(page.getByTestId("welcome.signUp")).toHaveText(nl("auth.signUp.title"));
+  await expect(page.getByTestId("welcome.email")).toHaveText(nl("auth.signIn.title"));
+  await page.getByTestId("welcome.signUp").click();
+  await expect(page.getByTestId("auth.submit")).toHaveText(nl("auth.signUp.submit"));
+});
+
+/** The answer of Supabase when the address has an account and email confirmation is off, as on fitling-dev. */
+async function signUpFindsAnAccount(page: Page) {
+  await page.route("**/auth/v1/signup*", (route) =>
+    route.fulfill({
+      status: 422,
+      contentType: "application/json",
+      body: JSON.stringify({ code: 422, error_code: "user_already_exists", msg: "User already registered" }),
+    }),
+  );
+}
+
+// Someone who already has an account creates one again: the same password signs them in (UNFORGET A1).
+test("creating an account that exists signs in with the same password", async ({ page }) => {
+  const user = await createUser({ profile: true, creature: true });
+  await signUpFindsAnAccount(page);
+  await page.goto("./");
+  await page.getByTestId("welcome.signUp").click();
+  await page.getByLabel(nl("auth.email.field")).fill(user.email);
+  await page.getByLabel(nl("auth.password.field")).fill(password);
+  await page.getByTestId("auth.submit").click();
+  await expect(page.locator('[data-screen="home"]')).toBeAttached();
+});
+
+// With another password the form says there is an account and turns to signing in, the address kept (A1).
+test("creating an account that exists with another password turns to signing in", async ({ page }) => {
+  const user = await createUser({ profile: true, creature: true });
+  await signUpFindsAnAccount(page);
+  await page.goto("./");
+  await page.getByTestId("welcome.signUp").click();
+  await page.getByLabel(nl("auth.email.field")).fill(user.email);
+  await page.getByLabel(nl("auth.password.field")).fill("niet-het-wachtwoord");
+  await page.getByTestId("auth.submit").click();
+  await expect(page.getByText(nl("auth.error.userExists"))).toBeVisible();
+  await expect(page.getByTestId("auth.submit")).toHaveText(nl("auth.signIn.submit"));
+  await expect(page.getByLabel(nl("auth.email.field"))).toHaveValue(user.email);
 });
 
 test("a user with a profile and a partner lands on the tabs", async ({ page }) => {

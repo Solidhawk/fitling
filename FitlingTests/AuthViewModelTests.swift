@@ -28,6 +28,29 @@ import Testing
         #expect(viewModel.isWorking == false)
     }
 
+    /// Someone who already has an account creates one again: the same password signs them in (UNFORGET A1).
+    @Test func anExistingAccountSignsInWithTheSamePassword() async {
+        let auth = FakeAuthProvider()
+        auth.nextError["signUp"] = .userExists
+        let viewModel = makeViewModel(.signUp, auth: auth)
+        await viewModel.submit()
+        #expect(auth.calls["signIn"] == 1)
+        #expect(viewModel.messageKey == nil)
+        #expect(viewModel.mode == .signUp)
+    }
+
+    /// With another password the form says there is an account and turns to signing in, the address kept (A1).
+    @Test func anExistingAccountWithAnotherPasswordTurnsToSignIn() async {
+        let auth = FakeAuthProvider()
+        auth.nextError["signUp"] = .userExists
+        auth.nextError["signIn"] = .invalidCredentials
+        let viewModel = makeViewModel(.signUp, auth: auth)
+        await viewModel.submit()
+        #expect(viewModel.mode == .signIn)
+        #expect(viewModel.messageKey == "auth.error.userExists")
+        #expect(viewModel.email == " a@example.test ")
+    }
+
     @Test func unconfirmedEmailShowsNoErrorBecauseVerificationTakesOver() async {
         let auth = FakeAuthProvider()
         auth.nextError["signIn"] = .emailNotConfirmed
