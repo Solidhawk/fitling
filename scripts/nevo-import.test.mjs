@@ -17,6 +17,7 @@ test('readsEveryFoodByColumnName', () => {
 
 test('aProductHasTheValuesOfNevoUnchanged', () => {
   const [apple] = parseNevo(fixture);
+  // NEVO writes 24 names with a space at the end; the name itself stays as it is.
   assert.deepEqual(productRow(apple), {
     id: nevoID('9001'),
     source: 'nevo',
@@ -71,6 +72,18 @@ test('theSqlUpsertsAndRetiresWhatIsNoLongerInNevo', () => {
   // The name goes into a quoted jsonb literal, so a quote in it is doubled.
   assert.ok(sql.includes(`"Testdrank O''Neill"`), 'the quote in the name is not escaped');
   assert.match(sql, /^commit;$/m);
+});
+
+test('aCodeTwiceIsRefused', () => {
+  const [apple] = parseNevo(fixture).map(productRow);
+  // Postgres would stop the whole insert: "cannot affect row a second time".
+  assert.throws(() => toSql([apple, apple]), /9001/);
+});
+
+test('aFoodThatDidNotChangeIsNotRewritten', () => {
+  const sql = toSql(parseNevo(fixture).map(productRow));
+  // Otherwise every import moves updated_at and synced_at of all 2328 rows.
+  assert.match(sql, /where products\.deleted_at is not null or \(products\.name, .*\) is distinct from \(excluded\.name, .*\);/);
 });
 
 test('aboutNamesNevoAsItsTermsAsk', () => {

@@ -50,9 +50,12 @@ function number(value) {
   return parsed;
 }
 
-/** Kleine letters zonder accenten, zoals FoodLog.searchKey; zo vindt zoeken de namen. */
+/**
+ * Kleine letters zonder accenten, zoals FoodLog.searchKey: decompositie (NFD) zonder de tekens erop. Voor Latijnse
+ * letters is dat wat String.folded doet; letters zonder decompositie, zoals ø en æ, blijven in beide staan.
+ */
 function fold(text) {
-  return text.normalize('NFD').replace(/\p{Mn}/gu, '').toLowerCase().replace(/\s+/g, ' ').trim();
+  return text.normalize('NFD').replace(/\p{Mn}/gu, '').toLowerCase().trim();
 }
 
 /** Een product uit NEVO als rij voor public.products. */
@@ -62,8 +65,9 @@ export function productRow(food) {
     throw new Error(`${version}: dit script hoort bij ${VERSION}. Pas VERSION, REFERENCE en account.about.nevo aan.`);
   }
   const code = food['NEVO-code'];
-  const nl = food['Voedingsmiddelnaam/Dutch food name'];
-  const en = food['Engelse naam/Food name'];
+  // Een paar namen eindigen op een spatie; de naam zelf blijft zoals NEVO hem schrijft.
+  const nl = food['Voedingsmiddelnaam/Dutch food name'].trim();
+  const en = food['Engelse naam/Food name'].trim();
   const unit = UNITS[food['Hoeveelheid/Quantity']];
   if (!code || !nl || !en || !unit) throw new Error(`NEVO-code ${code}: naam, Engelse naam of hoeveelheid ontbreekt`);
   const sodium = number(food['NA (mg)']);
@@ -72,7 +76,7 @@ export function productRow(food) {
     source: 'nevo',
     source_id: code,
     name: { nl, en },
-    search_name: fold([nl, en, food['Synoniem']].filter(Boolean).join(' ')),
+    search_name: [nl, en, food['Synoniem']].map(fold).filter(Boolean).join(' '),
     quantity_unit: unit,
     kcal_100: number(food['ENERCC (kcal)']),
     protein_100: number(food['PROT (g)']),
@@ -99,22 +103,34 @@ const COLUMNS = [
 export function toSql(products) {
   // Een lege tabel zou alle NEVO-producten weghalen.
   if (products.length === 0) throw new Error('geen producten');
+  // Twee keer dezelfde code laat Postgres de hele insert weigeren ("cannot affect row a second time").
+  const seen = new Set();
+  for (const product of products) {
+    if (seen.has(product.source_id)) throw new Error(`NEVO-code ${product.source_id} staat twee keer in de tabel`);
+    seen.add(product.source_id);
+  }
   const rows = products.map((product) => {
     const fields = COLUMNS.map((column) =>
       column === 'name' ? `${literal(JSON.stringify(product.name))}::jsonb` : column === 'is_verified' ? 'true' : value(product[column]),
     );
     return `  (${fields.join(', ')}, now(), now())`;
   });
-  const updates = COLUMNS.filter((column) => !['id', 'source', 'source_id'].includes(column))
+  const changing = COLUMNS.filter((column) => !['id', 'source', 'source_id'].includes(column));
+  const updates = changing
     .map((column) => `${column} = excluded.${column}`)
     .concat(['fetched_at = excluded.fetched_at', 'updated_at = excluded.updated_at', 'deleted_at = null']);
+  // Alleen wat veranderd is of terugkomt: anders schuiven updated_at en synced_at van elke rij bij elke import.
+  const changed =
+    `products.deleted_at is not null or (${changing.map((column) => `products.${column}`).join(', ')})` +
+    ` is distinct from (${changing.map((column) => `excluded.${column}`).join(', ')})`;
   const codes = products.map((product) => literal(product.source_id)).join(', ');
   return [
     `-- Gemaakt door scripts/nevo-import.mjs uit ${REFERENCE}. Niet in git (voorwaarden van NEVO).`,
     'begin;',
     `insert into public.products (${COLUMNS.join(', ')}, fetched_at, updated_at) values`,
     `${rows.join(',\n')}`,
-    `on conflict (id) do update set ${updates.join(', ')};`,
+    `on conflict (id) do update set ${updates.join(', ')}`,
+    `  where ${changed};`,
     "update public.products set deleted_at = now(), updated_at = now()",
     `  where source = 'nevo' and owner_id is null and deleted_at is null and source_id <> all (array[${codes}]);`,
     'commit;',
