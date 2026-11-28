@@ -248,6 +248,17 @@ struct FoodFixture {
         await viewModel.runSearch()
         #expect(fixture.search.terms.isEmpty)
     }
+
+    /// NEVO turns names around ("Melk halfvolle"): every word counts, in any order, and the best match comes first,
+    /// in the order of FoodLog.bestMatches and the server.
+    @Test func theDeviceFindsEveryWordInAnyOrderBestFirst() {
+        let potatoes = fixture.product("Aardappelen rauw")
+        let apple = fixture.product("Appel z schil gem")
+        let sauce = fixture.product("Appelmoes blik/glas")
+        let milk = fixture.product("Melk halfvolle")
+        #expect(fixture.diary.searchLocally("appel").map(\.id) == [apple.id, sauce.id, potatoes.id])
+        #expect(fixture.diary.searchLocally("halfvolle melk").map(\.id) == [milk.id])
+    }
 }
 
 // MARK: - 2.8 Zelf een product toevoegen
