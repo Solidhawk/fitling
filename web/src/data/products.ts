@@ -25,6 +25,8 @@ export interface Product {
   salt100?: number;
   imageURL?: string;
   fetchedAt?: string;
+  /** Checked by us or from NEVO: ranks before an unchecked match in a search. */
+  isVerified?: boolean;
 }
 
 type Row = Record<string, unknown>;
@@ -59,6 +61,7 @@ export function productFromRow(row: Row): Product {
     salt100: number(row.salt_100),
     imageURL: optional(row.image_url),
     fetchedAt: optional(row.fetched_at),
+    isVerified: row.is_verified === true,
   };
 }
 
@@ -83,6 +86,14 @@ export async function productsByID(client: SupabaseClient, ids: string[]): Promi
 export const onlineSearchMinimum = 3;
 export const searchLimit = 30;
 
+/** The products that hold every word of `key`, each once, best first (FoodLog.bestMatches, as on the iPhone). */
+function bestMatches(core: FitlingCore, key: string, products: Product[]): Product[] {
+  const byID = new Map<string, Product>();
+  for (const product of products) if (!byID.has(product.id)) byID.set(product.id, product);
+  const candidates = [...byID.values()].map((product) => ({ id: product.id, searchName: product.searchName, isVerified: product.isVerified ?? false }));
+  return core.searchMatches({ key, products: candidates }).ids.flatMap((id) => byID.get(id) ?? []);
+}
+
 /**
  * Searching by name, as LogFoodViewModel.runSearch: first the user's own products and those they logged or marked
  * before (on an iPhone: "on this device"), then shared products from three characters on, without doubles.
@@ -93,34 +104,22 @@ export async function searchProducts(
   query: string,
   known: Product[],
 ): Promise<{ own: Product[]; online: Product[]; failed?: string }> {
-  // The pattern finds the term with `imatch`, each character taken literally (FoodLog.searchPattern).
-  const { key: term, pattern } = core.searchKey({ text: query });
+  const { key: term } = core.searchKey({ text: query });
   if (term === "") return { own: [], online: [] };
-  const knownMatches = known.filter((product) => product.searchName.includes(term));
+  const knownMatches = bestMatches(core, term, known);
   // Without a network: what this browser knows, as the iPhone searches its own copy.
   if (noNetwork()) return { own: knownMatches.slice(0, searchLimit), online: [] };
-  const mine = await client
-    .from("products")
-    .select("*")
-    .not("owner_id", "is", null)
-    .is("deleted_at", null)
-    .filter("search_name", "imatch", pattern)
-    .limit(searchLimit);
+  // Every word anywhere in the name, each taken literally with `imatch` (FoodLog.searchPattern); bestMatches ranks.
+  let mineQuery = client.from("products").select("*").not("owner_id", "is", null).is("deleted_at", null);
+  for (const word of term.split(/\s+/)) mineQuery = mineQuery.filter("search_name", "imatch", core.searchKey({ text: word }).pattern);
+  const mine = await mineQuery.limit(searchLimit);
   // A read that fails keeps what was found so far, with the reason to tell (UNFORGET S58): the iPhone keeps its
   // own results too when the online search fails.
   if (mine.error) return { own: knownMatches.slice(0, searchLimit), online: [], failed: failure(mine.error).message };
-  const own: Product[] = [];
-  for (const product of [...(mine.data as Row[]).map(productFromRow), ...knownMatches]) {
-    if (own.length < searchLimit && !own.some((shown) => shown.id === product.id)) own.push(product);
-  }
+  const own = bestMatches(core, term, [...(mine.data as Row[]).map(productFromRow), ...knownMatches]).slice(0, searchLimit);
   if (term.length < onlineSearchMinimum) return { own, online: [] };
-  const shared = await client
-    .from("products")
-    .select("*")
-    .is("owner_id", null)
-    .is("deleted_at", null)
-    .filter("search_name", "imatch", pattern)
-    .limit(searchLimit);
+  // The server ranks the shared products the same way (supabase/search-products.sql).
+  const shared = await client.rpc("search_products", { search_key: term, max_results: searchLimit });
   if (shared.error) return { own, online: [], failed: failure(shared.error).message };
   const shown = new Set(own.map((product) => product.id));
   return { own, online: (shared.data as Row[]).map(productFromRow).filter((product) => !shown.has(product.id)) };

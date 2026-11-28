@@ -23,6 +23,27 @@ func searchKey(_ request: TextRequest) -> SearchKeyAnswer {
     return SearchKeyAnswer(key: key, pattern: FoodLog.searchPattern(key))
 }
 
+struct SearchMatchesRequest: Decodable {
+    struct Candidate: Decodable {
+        let id: String
+        let searchName: String
+        let isVerified: Bool
+    }
+
+    let key: String
+    let products: [Candidate]
+}
+
+struct SearchMatchesAnswer: Encodable {
+    /// The products that hold every word, best first.
+    let ids: [String]
+}
+
+func searchMatches(_ request: SearchMatchesRequest) -> SearchMatchesAnswer {
+    let matches = FoodLog.bestMatches(request.products, key: request.key, searchName: \.searchName, isVerified: \.isVerified)
+    return SearchMatchesAnswer(ids: matches.map(\.id))
+}
+
 struct BarcodeAnswer: Encodable {
     /// The key a product is stored under, or nil for a misread.
     let gtin: String?

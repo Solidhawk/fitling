@@ -62,10 +62,23 @@ test("manyProductsAreAskedForInBatches", async () => {
   expect(Math.max(...asked)).toBeLessThanOrEqual(50);
 });
 
+/**
+ * The rules this file needs from FitlingCore: lower case for a key, and every word in the name in the order given. The
+ * real ranking (FoodLog.bestMatches) is tested in FitlingCore and in fitlingCore.test.ts.
+ */
+function fakeCore(): FitlingCore {
+  return {
+    searchKey: ({ text }: { text: string }) => ({ key: text.toLowerCase(), pattern: text.toLowerCase() }),
+    searchMatches: ({ key, products }: { key: string; products: { id: string; searchName: string }[] }) => ({
+      ids: products.filter((product) => key.split(" ").every((word) => product.searchName.includes(word))).map((product) => product.id),
+    }),
+  } as unknown as FitlingCore;
+}
+
 // Flight mode: searching shows the products this browser knows (favourites and recent ones), as the iPhone searches
 // its own copy; nothing online, and no wait on supabase-js (web phase 7).
 test("withoutANetworkTheSearchShowsWhatThisBrowserKnows", async () => {
-  const core = { searchKey: ({ text }: { text: string }) => ({ key: text.toLowerCase() }) } as unknown as FitlingCore;
+  const core = fakeCore();
   const known = [
     productFromRow({ id: "a", owner_id: null, source: "off", name: { nl: "Appel" }, search_name: "appel", quantity_unit: "g" }),
     productFromRow({ id: "b", owner_id: null, source: "off", name: { nl: "Brood" }, search_name: "brood", quantity_unit: "g" }),
@@ -88,12 +101,20 @@ test("withoutANetworkTheSearchShowsWhatThisBrowserKnows", async () => {
 // A part of the search could not be read: what was found is still shown, and the failure is told next to it, instead
 // of an empty list (UNFORGET S58; LogFoodViewModel keeps its local results too).
 test("aFailedSearchKeepsWhatWasFound", async () => {
-  const core = { searchKey: ({ text }: { text: string }) => ({ key: text.toLowerCase(), pattern: text.toLowerCase() }) } as unknown as FitlingCore;
+  const core = fakeCore();
   const own = { id: "own", owner_id: "u1", source: "user", name: { nl: "Appeltaart" }, search_name: "appeltaart", quantity_unit: "g" };
   const known = [productFromRow({ id: "known", owner_id: null, source: "off", name: { nl: "Appel" }, search_name: "appel", quantity_unit: "g" })];
   /** A server on which the shared products, or the user's own, cannot be read. */
   const failing = (part: "shared" | "own") =>
     ({
+      // The shared products come from the function search_products (supabase/search-products.sql).
+      rpc() {
+        return {
+          then(resolve: (answer: { data: unknown; error: unknown }) => void) {
+            resolve(part === "shared" ? { data: null, error: { message: "unavailable" } } : { data: [], error: null });
+          },
+        };
+      },
       from() {
         let shared = false;
         const query = {
