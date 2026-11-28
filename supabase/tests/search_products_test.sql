@@ -1,7 +1,7 @@
 -- Searching the shared products (supabase/search-products.sql): every word in any order, the best match first, in the
 -- same order as FoodLog.bestMatches. The made-up words keep other tests' products out of the results.
 begin;
-select plan(6);
+select plan(8);
 
 insert into public.products (id, source, source_id, name, search_name, is_verified, updated_at, deleted_at) values
   ('7a1b0000-0000-4000-8000-000000000001', 'nevo', 'search-test-1', '{"nl": "Kazorbelen rauw"}', 'kazorbelen rauw', true, now(), null),
@@ -27,6 +27,9 @@ select is_empty($$ select * from public.search_products('   ') $$, 'an empty key
 select is((select count(*)::int from public.search_products('zorbel', 2)), 2, 'at most max_results');
 -- A word is taken literally: % and _ are no wildcards.
 select is_empty($$ select * from public.search_products('zorb%') $$, 'a % is just a character');
+select is_empty($$ select * from public.search_products('zorb_l') $$, 'a _ is just a character');
+-- Words are split on the plain space, as FoodLog.searchWords splits them; a no-break space is part of a word.
+select is_empty($$ select * from public.search_products(E'zorbel extra') $$, 'a no-break space joins two words');
 
 select * from finish();
 rollback;

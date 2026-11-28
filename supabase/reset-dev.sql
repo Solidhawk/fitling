@@ -3,8 +3,9 @@
 -- Alleen voor het ontwikkelproject, zolang er geen productiedatabase is (docs/ARCHITECTURE.md,
 -- beslissing D-07). Alle app-data verdwijnt. De accounts in auth.users blijven bestaan.
 --
--- Gebruik: dit bestand, dan supabase/schema.sql. CI draait die twee na elkaar op een volledig
--- schema en controleert dat er daarna niets van het schema is overgebleven.
+-- Gebruik: dit bestand, dan supabase/schema.sql, en daarna de losse bestanden web-push.sql,
+-- submit-product.sql en search-products.sql (zonder die laatste vindt zoeken niets). CI draait ze
+-- na elkaar op een volledig schema en controleert dat er na dit bestand niets is overgebleven.
 --
 -- Ruimt ook de eerdere fase 1 op: die had alleen public.profiles en private.apply_sync_rules,
 -- met dezelfde namen als hieronder.

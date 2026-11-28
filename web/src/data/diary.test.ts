@@ -117,6 +117,26 @@ describe.skipIf(!url || !key || !serviceKey)("the food diary on the server", () 
     expect(found.online.map((product) => product.id)).toEqual([online.id]);
   });
 
+  // One imatch per word on the user's own products, as the server function does for shared ones (review of Fable 5.2).
+  test("ownProductsAreFoundByEveryWordInAnyOrder", async () => {
+    const { id, client } = await user();
+    const word = `eigen${crypto.randomUUID().slice(0, 8)}`;
+    const own = {
+      id: crypto.randomUUID(),
+      owner_id: id,
+      source: "user",
+      name: { nl: `Melk ${word} halfvolle` },
+      search_name: `melk ${word} halfvolle`,
+      quantity_unit: "g",
+      kcal_100: 47,
+      updated_at: new Date().toISOString(),
+    };
+    const { error } = await client.from("products").insert(own);
+    expect(error).toBeNull();
+    const found = await searchProducts(client, core, `halfvolle melk ${word}`, []);
+    expect(found.own.map((product) => product.id)).toEqual([own.id]);
+  });
+
   test("aShortQueryStaysLocal", async () => {
     const { client } = await user();
     await shared("ab gedeeld kort");

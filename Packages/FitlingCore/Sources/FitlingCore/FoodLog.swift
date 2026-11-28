@@ -30,10 +30,11 @@ public enum FoodLog {
         return String(pattern)
     }
 
-    /// The words of a search key, each once, in the order they were typed.
+    /// The words of a search key, each once, in the order they were typed. Split on the plain space only, as the server
+    /// does (supabase/search-products.sql): Postgres's `\s` and Swift's white space differ on a no-break space.
     public static func searchWords(_ key: String) -> [String] {
         var seen = Set<String>()
-        return key.split(whereSeparator: \.isWhitespace).map(String.init).filter { seen.insert($0).inserted }
+        return key.split(separator: " ").map(String.init).filter { seen.insert($0).inserted }
     }
 
     /// The items whose search name holds every word of the key, in any order, best first. NEVO turns names around

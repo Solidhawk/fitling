@@ -111,7 +111,7 @@ export async function searchProducts(
   if (noNetwork()) return { own: knownMatches.slice(0, searchLimit), online: [] };
   // Every word anywhere in the name, each taken literally with `imatch` (FoodLog.searchPattern); bestMatches ranks.
   let mineQuery = client.from("products").select("*").not("owner_id", "is", null).is("deleted_at", null);
-  for (const word of term.split(/\s+/)) mineQuery = mineQuery.filter("search_name", "imatch", core.searchKey({ text: word }).pattern);
+  for (const word of term.split(" ").filter(Boolean)) mineQuery = mineQuery.filter("search_name", "imatch", core.searchKey({ text: word }).pattern);
   const mine = await mineQuery.limit(searchLimit);
   // A read that fails keeps what was found so far, with the reason to tell (UNFORGET S58): the iPhone keeps its
   // own results too when the online search fails.

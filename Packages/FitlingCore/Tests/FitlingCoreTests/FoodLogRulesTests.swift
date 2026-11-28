@@ -161,6 +161,8 @@ import Testing
     @Test func aSearchKeyIsEachWordOnce() {
         #expect(FoodLog.searchWords("halfvolle  melk melk") == ["halfvolle", "melk"])
         #expect(FoodLog.searchWords("   ") == [])
+        // The plain space only, as the server splits (review of Fable 5.2): a no-break space stays inside the word.
+        #expect(FoodLog.searchWords("melk\u{00A0}halfvolle") == ["melk\u{00A0}halfvolle"])
     }
 
     /// NEVO turns names around ("Melk halfvolle"): every word counts, in any order.
