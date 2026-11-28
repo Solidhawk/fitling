@@ -298,6 +298,56 @@ test("addAnOwnProductAndLogIt", async ({ page }, info) => {
   expect(data).toEqual({ kcal_100: 280.4, search_name: "oma's appeltaart", owner_id: user.id });
 });
 
+const submitProduct = "**/functions/v1/submit-product";
+
+/** The own-product form filled in with a barcode, the share switch on. */
+async function ownProductToShare(page: Page) {
+  await page.getByTestId("log.ownProduct").click();
+  await page.getByTestId("product.add.name").fill("Oma's appeltaart");
+  await page.getByTestId("product.add.kcal").fill("280,44");
+  // Without a barcode there is nothing to share it under.
+  await expect(page.getByTestId("product.add.share")).toHaveCount(0);
+  await page.getByTestId("product.add.barcode").fill("8712100849084");
+  await page.getByTestId("product.add.share").check();
+}
+
+// Shared with everyone for its barcode (UNFORGET S14): the fields go to submit-product, then the own copy is saved.
+test("anOwnProductCanBeSharedForItsBarcode", async ({ page }) => {
+  const user = await start(page);
+  const sent: unknown[] = [];
+  await page.route(submitProduct, async (route) => {
+    sent.push(route.request().postDataJSON());
+    await route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify({ productID: crypto.randomUUID(), created: true }) });
+  });
+  await ownProductToShare(page);
+  await page.getByTestId("product.add.save").click();
+  await expect(page.getByTestId("portion.quantity")).toBeVisible();
+  expect(sent).toEqual([expect.objectContaining({ gtin: "8712100849084", name: "Oma's appeltaart", kcal: 280.4, quantityUnit: "g" })]);
+  const { data } = await admin.from("products").select("owner_id").eq("owner_id", user.id);
+  expect(data).toEqual([{ owner_id: user.id }]);
+});
+
+// A share that fails saves nothing half: the form stays, says why, and the user can try again or switch sharing off.
+test("aShareThatFailsKeepsTheFormAndSaysSo", async ({ page }) => {
+  const user = await start(page);
+  await page.route(submitProduct, (route) => route.fulfill({ status: 500, contentType: "application/json", body: '{"error":"server_error"}' }));
+  await ownProductToShare(page);
+  await page.getByTestId("product.add.save").click();
+  await expect(page.getByText(nl("product.share.failed"))).toBeVisible();
+  await expect(page.locator('[data-page="addProduct"]')).toBeVisible();
+  const { data } = await admin.from("products").select("id").eq("owner_id", user.id);
+  expect(data).toEqual([]);
+});
+
+// A shared row from a user was never checked by us: the portion asks to compare it with the package (ARCHITECTURE §5).
+test("aProductSharedByAnotherUserAsksToCheckItsValues", async ({ page }) => {
+  const product = await sharedProduct("Appeltaart", { source: "user" });
+  await start(page);
+  await search(page, product.name);
+  await page.getByRole("button", { name: new RegExp(product.name) }).click();
+  await expect(page.getByText(nl("portion.shared.check"))).toBeVisible();
+});
+
 // Phase 7: without a connection the portion is logged all the same and waits in this browser, as on the iPhone; it
 // arrives once the app can send it.
 test("loggingWithoutAConnectionWaitsForIt", async ({ page }) => {

@@ -13,6 +13,7 @@ struct FoodFixture {
     let now = Date(timeIntervalSince1970: 1_795_000_000)
     let source = FakeProductSource()
     let search = FakeProductSearch()
+    let sharing = FakeProductSharing()
     var context: ModelContext { container.mainContext }
     var today: Day { Day(now, timeZone: .gmt) }
 
@@ -269,7 +270,7 @@ struct FoodFixture {
     init() throws { fixture = try FoodFixture() }
 
     func filledIn(gtin: String? = "8712100849084") -> AddProductViewModel {
-        let viewModel = AddProductViewModel(diary: fixture.diary, gtin: gtin)
+        let viewModel = AddProductViewModel(diary: fixture.diary, gtin: gtin, sharing: fixture.sharing)
         viewModel.name = " Oma's appeltaart "
         viewModel.brand = "Bakkerij Jansen"
         viewModel.kcal = 280.44
@@ -281,7 +282,7 @@ struct FoodFixture {
 
     /// A photo of the nutrition table fills what the user did not type yet, and says what to do next (TASKS 2.8).
     @Test func aLabelFillsTheEmptyFieldsAndAsksToCheck() {
-        let viewModel = AddProductViewModel(diary: fixture.diary, gtin: nil)
+        let viewModel = AddProductViewModel(diary: fixture.diary, gtin: nil, sharing: fixture.sharing)
         viewModel.protein = 10
         viewModel.useLabel(NutritionLabel.read(["Voedingswaarde per 100 g", "Energie 1569 kJ / 373 kcal", "Vetten 7,0 g", "Koolhydraten 62 g", "Eiwitten 9,2 g"]))
         #expect(viewModel.kcal == 373)
@@ -298,7 +299,7 @@ struct FoodFixture {
 
     /// A blurry first photo, a sharp second one: the second replaces what the first put there, not what the user typed.
     @Test func aSecondPhotoReplacesWhatTheFirstPutThere() {
-        let viewModel = AddProductViewModel(diary: fixture.diary, gtin: nil)
+        let viewModel = AddProductViewModel(diary: fixture.diary, gtin: nil, sharing: fixture.sharing)
         viewModel.useLabel(NutritionLabel.read(["Voedingswaarde per 100 ml", "Energie 300 kcal", "Vetten 7 g", "Koolhydraten 6 g"]))
         #expect(viewModel.isMillilitre)
         viewModel.fat = 8
@@ -311,7 +312,7 @@ struct FoodFixture {
     }
 
     @Test func aPhotoThatCannotBeOpenedSaysSo() async {
-        let viewModel = AddProductViewModel(diary: fixture.diary, gtin: nil)
+        let viewModel = AddProductViewModel(diary: fixture.diary, gtin: nil, sharing: fixture.sharing)
         await viewModel.readLabel { nil }
         #expect(viewModel.labelNote == .unreadable)
         await viewModel.readLabel { Data("no photo".utf8) }
@@ -393,8 +394,8 @@ struct FoodFixture {
         try expectTheTable(try #require(table(turn: 5).jpegData(compressionQuality: 0.9)))
     }
 
-    @Test func savesAPrivateProductThatSyncs() throws {
-        let product = try #require(filledIn().save())
+    @Test func savesAPrivateProductThatSyncs() async throws {
+        let product = try #require(await filledIn().save())
         #expect(product.ownerID == fixture.userID)
         #expect(product.source == "user")
         #expect(product.gtin == "8712100849084")
@@ -406,13 +407,13 @@ struct FoodFixture {
         #expect(product.name.values.values.first == "Oma's appeltaart")
     }
 
-    @Test func aBarcodeIsOptionalButMustBeValid() {
+    @Test func aBarcodeIsOptionalButMustBeValid() async {
         let viewModel = filledIn(gtin: nil)
         #expect(viewModel.canSave)
         viewModel.gtin = "8712100849085"
         #expect(!viewModel.canSave)
         viewModel.gtin = "036000291452"
-        #expect(viewModel.save()?.gtin == "0036000291452")
+        #expect(await viewModel.save()?.gtin == "0036000291452")
     }
 
     @Test func valuesOutsideTheDatabaseLimitsBlock() {
@@ -425,6 +426,52 @@ struct FoodFixture {
         viewModel.protein = 3
         viewModel.name = "  "
         #expect(!viewModel.canSave)
+    }
+
+    /// Shared with everyone for its barcode (TASKS 2.8, UNFORGET S14): the fields go to submit-product first, and only
+    /// then is the private copy saved, so a share that fails leaves nothing half done.
+    @Test func sharingSendsTheProductAndKeepsAPrivateCopy() async throws {
+        let viewModel = filledIn()
+        #expect(viewModel.canShare)
+        viewModel.shares = true
+        let product = try #require(await viewModel.save())
+        #expect(product.ownerID == fixture.userID)
+        let sent = try #require(fixture.sharing.shared.first)
+        #expect(fixture.sharing.shared.count == 1)
+        #expect(sent.fields.gtin == "8712100849084")
+        #expect(sent.fields.name == "Oma's appeltaart")
+        #expect(sent.fields.kcal100 == 280.4)
+        #expect(["nl", "en", "de"].contains(sent.language))
+    }
+
+    @Test func aShareThatFailsSavesNothingAndSaysWhy() async {
+        fixture.sharing.failure = .network
+        let viewModel = filledIn()
+        viewModel.shares = true
+        #expect(await viewModel.save() == nil)
+        #expect(viewModel.shareFailure == .network)
+        #expect(fixture.diary.searchLocally("appeltaart").isEmpty)
+    }
+
+    @Test func withoutABarcodeThereIsNothingToShare() async {
+        let viewModel = filledIn(gtin: nil)
+        #expect(!viewModel.canShare)
+        viewModel.shares = true
+        #expect(await viewModel.save() != nil)
+        #expect(fixture.sharing.shared.isEmpty)
+    }
+
+    /// A shared row from a user was never checked by us: the portion asks to compare it with the package
+    /// (ARCHITECTURE §5, step 3).
+    @Test func aProductSharedByAnotherUserAsksToCheckItsValues() {
+        let shared = fixture.product("Oma's appeltaart")
+        shared.source = "user"
+        #expect(fixture.portion(shared).asksToCheckValues)
+        #expect(!fixture.portion(fixture.product("Volkorenbrood")).asksToCheckValues)
+        let own = fixture.product("Eigen kwark")
+        own.source = "user"
+        own.ownerID = fixture.userID
+        #expect(!fixture.portion(own).asksToCheckValues)
     }
 }
 
