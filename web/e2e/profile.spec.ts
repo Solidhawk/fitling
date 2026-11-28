@@ -147,8 +147,9 @@ test("deletingTheAccountLeadsToWelcome", async ({ page }, info) => {
   await shot(page, "4-verwijderen", info.project.name);
   await page.getByRole("button", { name: nl("account.delete.confirm") }).click();
   await expect(page.getByRole("alertdialog", { name: nl("account.delete") })).toBeVisible();
-  // A screen reader hears what the alert says, not only its title (review of web phase 2).
-  await expect(page.getByRole("alertdialog", { name: nl("account.delete") })).toHaveAccessibleDescription(nl("account.delete.body"));
+  // A screen reader hears what the alert says, not only its title (review of web phase 2); "in this browser", not
+  // "on this iPhone" (UNFORGET S38).
+  await expect(page.getByRole("alertdialog", { name: nl("account.delete") })).toHaveAccessibleDescription(nl("account.delete.body.web"));
   await page.getByRole("alertdialog").getByRole("button", { name: nl("account.delete.confirm") }).click();
   await expect(page.locator('[data-screen="welcome"]')).toBeAttached();
   const { data } = await admin.auth.admin.getUserById(user.id);
