@@ -12,6 +12,8 @@ struct AboutView: View {
         List {
             Section {
                 source("account.about.off", name: "Open Food Facts", url: "https://world.openfoodfacts.org")
+                // The terms of NEVO ask for the source and version as written in account.about.nevo (UNFORGET S15).
+                source("account.about.nevo", name: "NEVO-online", url: "https://nevo-online.rivm.nl")
                 source("account.about.usda", name: "USDA FoodData Central", url: "https://fdc.nal.usda.gov")
                 source("account.about.prijsprofeet", name: "PrijsProfeet", url: "https://www.prijsprofeet.nl")
                 source("account.about.everkinetic", name: "Everkinetic", url: "https://github.com/everkinetic/data")

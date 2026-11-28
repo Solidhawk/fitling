@@ -12022,6 +12022,28 @@
         }
       }
     },
+    "account.about.nevo": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voedingswaarden van onverpakte producten gebaseerd op gegevens van NEVO-online versie 2025/9.0, RIVM, Bilthoven."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nutrition of unpackaged foods based on data from NEVO-online versie 2025/9.0, RIVM, Bilthoven."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nährwerte unverpackter Lebensmittel basierend auf Daten von NEVO-online versie 2025/9.0, RIVM, Bilthoven."
+          }
+        }
+      }
+    },
     "account.about.everkinetic": {
       "localizations": {
         "nl": {
