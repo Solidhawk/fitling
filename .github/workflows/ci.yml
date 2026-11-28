@@ -176,6 +176,14 @@ jobs:
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -q -f supabase/submit-product.sql
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -q -f supabase/seed/sport.sql
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -q -f supabase/seed/recipes.sql
+          # De NEVO-import met verzonnen producten (scripts/fixtures/nevo-test.csv), want de echte tabel staat niet in
+          # git: twee keer, dan zonder het laatste product (supabase/tests/nevo_import_test.sql).
+          node scripts/nevo-import.mjs scripts/fixtures/nevo-test.csv /tmp/nevo.sql
+          head -n 3 scripts/fixtures/nevo-test.csv > /tmp/nevo-kleiner.csv
+          node scripts/nevo-import.mjs /tmp/nevo-kleiner.csv /tmp/nevo-kleiner.sql
+          for file in /tmp/nevo.sql /tmp/nevo.sql /tmp/nevo-kleiner.sql; do
+            psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -q -f "$file"
+          done
           supabase test db
       # Het ontwikkelproject wordt bij een schemawijziging leeggemaakt en opnieuw opgezet (TASKS 0.2).
       # Na reset-dev.sql mag er niets van het schema over zijn, anders mist dat bestand een tabel.
@@ -202,6 +210,9 @@ jobs:
           psql "$db" -v ON_ERROR_STOP=1 -q -f supabase/submit-product.sql
           psql "$db" -v ON_ERROR_STOP=1 -q -f supabase/seed/sport.sql
           psql "$db" -v ON_ERROR_STOP=1 -q -f supabase/seed/recipes.sql
+          for file in /tmp/nevo.sql /tmp/nevo.sql /tmp/nevo-kleiner.sql; do
+            psql "$db" -v ON_ERROR_STOP=1 -q -f "$file"
+          done
           supabase test db
       # De nachtelijke ophaalronde: twee keer draaien moet dezelfde 25 jobs geven (20 ketens, Albert Heijn in
       # 4 delen, Jumbo en PLUS in 2), elk op een eigen tijd.

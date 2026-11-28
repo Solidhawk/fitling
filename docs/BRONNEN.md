@@ -6,6 +6,7 @@ Alles hieronder mag in de app worden gebruikt onder de genoemde licentie. De app
 
 - **USDA FoodData Central, SR Legacy (april 2018)**, publiek domein. https://fdc.nal.usda.gov — de energie en macro's van de gedeelde recepten zijn hieruit berekend (`supabase/seed/usda-sr-legacy.json`, `scripts/recipe-seed.mjs`).
 - **Open Food Facts**, ODbL, voor gescande producten (Edge Function `lookup-product`).
+- **NEVO-online versie 2025/9.0, RIVM, Bilthoven** (https://nevo-online.rivm.nl), voor onverpakte producten. Alleen ongewijzigd en met deze bronvermelding, en gebruikers betalen er nooit voor (voorwaarden van de download, akkoord 2026-11-28). De tabel staat niet in git (`docs/nevo.md`, `scripts/nevo-import.mjs`). In de app: "Over Fitling".
 
 ## Aanbiedingen
 

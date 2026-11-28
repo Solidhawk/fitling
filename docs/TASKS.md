@@ -256,10 +256,11 @@ Gebouwd: een eigen, privé product met de hand invoeren (naam, merk, kcal en mac
 - **Bestanden:** `supabase/functions/submit-product/*`; een privé Storage-bucket `product-photos` met policies (alleen eigen map `<user-id>/…`); `delete-account` verwijdert ook de bestanden van de gebruiker.
 - **Tests:** Deno: `rejectsValuesOutsideLimits`, `createsTheSharedRowOnce`, `keepsTheSubmission`; pgTAP of Deno: een gebruiker kan alleen de eigen map lezen en schrijven; `deleteAccountRemovesThePhotos`.
 
-### 2.9 NEVO importeren — wacht op de gebruiker (UNFORGET S15)
+### 2.9 NEVO importeren — gebouwd (UNFORGET S15)
 
-- **Vooraf (gebruiker):** RISKS R-03 beantwoord.
+- **Vooraf (gebruiker):** RISKS R-03 beantwoord (2026-11-28).
 - **Doel:** een script dat de NEVO-tabel inleest en als gedeelde rijen (`source = 'nevo'`, `is_verified = true`) schrijft.
+- **Gebouwd:** `scripts/nevo-import.mjs` maakt uit de tabel één transactie die de 2328 producten zet en wat niet meer in NEVO staat weghaalt; vaste id's per NEVO-code. "Over Fitling" noemt de bron zoals de voorwaarden vragen. Hoe en waarom: `docs/nevo.md`.
 
 ### 2.10 Afbeeldingen — gebouwd
 
@@ -489,6 +490,6 @@ Elke fase een eigen PR, op elkaar gestapeld: welkom en onboarding (#26), Vandaag
 | 7.3 | Data-export (JSON en CSV) van alle eigen data. **Gebouwd:** `DataExport` (Account → Gegevens exporteren), met `DataExportTests`. Alle tabellen die syncen, zonder verwijderde en gedeelde rijen; voortgangsfoto's staan alleen op het toestel en zitten er niet in |
 | 7.4 | **Gebouwd:** `private.purge_deletion_markers()` met pg_cron om 03:30 UTC, getest in `supabase/tests/purge_test.sql`. Opruimen van verwijdermarkeringen ouder dan 90 dagen (geplande job). De 90 dagen tellen vanaf `synced_at` (klok van de server), niet vanaf `deleted_at` (klok van een toestel): een toestel leegt zijn tabel pas na 90 dagen zonder pull, en een markering die eerder verdwijnt bereikt dat toestel nooit. Laat de job 's nachts draaien: een pull van meer dan één blok kan een rij missen als er tijdens het lezen rijen echt verdwijnen (ARCHITECTURE §3.4). |
 | 7.5 | `schema.sql` wordt de eerste migratie; productieproject in de EU (UNFORGET S4) |
-| 7.6 | Privacyverklaring gelinkt; scherm "Over" met bronvermelding (Open Food Facts, NEVO). **Gebouwd:** scherm "Over Fitling" (Account) met Open Food Facts, USDA, Everkinetic en Wikimedia Commons. NEVO volgt als de import er is (S15); de privacyverklaring wacht op een tekst en een adres van de gebruiker (S21) |
+| 7.6 | Privacyverklaring gelinkt; scherm "Over" met bronvermelding (Open Food Facts, NEVO). **Gebouwd:** scherm "Over Fitling" (Account) met Open Food Facts, USDA, Everkinetic en Wikimedia Commons. NEVO staat erin sinds de import (S15, 2026-11-28); de privacyverklaring wacht op een tekst en een adres van de gebruiker (S21) |
 | 7.7 | TestFlight en eigen SMTP (UNFORGET S1 en S2). **App-icoon gedaan (2026-11-27):** een witte partner voor de vier lintkleuren (optie 10 "Collectie", gekozen door de gebruiker), in licht, donker en getint, voor iOS en het web; `design/icoon/maak_icoon.py` tekent het, `scripts/app-icon.test.mjs` en `AppIconTests` controleren het (UNFORGET S37) |
 | 7.8 | Laatste ronde vormgeving met `impeccable`. **Gedaan (2026-11-20):** critique 29/40 (`.impeccable/critique/2026-11-20T13-16-10Z__fitling-features.md`). Alle vijf punten opgelost: partnerkeuze in drie kolommen met het figuur over de hele tegel; workout met gelabelde velden voor gewicht en herhalingen, gestapeld bij grote tekst, de uitleg voor de eerste keer één keer per training, en "Set opslaan" boven het toetsenbord; level en XP en "Gegeten" breken niet meer af; partnertinten gedempt in donkere modus |

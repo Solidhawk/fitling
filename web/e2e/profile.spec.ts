@@ -178,6 +178,16 @@ test("swipingBackLeavesAccountForDagdoel", async ({ page }) => {
   await expect(page.getByTestId("profile.target")).toBeVisible();
 });
 
+// The terms of NEVO ask for its source and version wherever its data is used (UNFORGET S15).
+test("aboutNamesNevo", async ({ page }) => {
+  await start(page);
+  await page.getByRole("button", { name: nl("account.title") }).click();
+  await page.getByRole("button", { name: nl("account.about") }).click();
+  await expect(page.locator('[data-page="about"]')).toContainText("NEVO-online versie 2025/9.0, RIVM, Bilthoven");
+  const link = page.getByRole("link", { name: nl("account.about.website %@").replace("%@", "NEVO-online") });
+  await expect(link).toHaveAttribute("href", "https://nevo-online.rivm.nl");
+});
+
 test.describe("in the United States", () => {
   test.use({ locale: "en-US" });
 

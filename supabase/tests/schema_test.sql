@@ -81,7 +81,7 @@ select is(
   'ook bij een update zet de server synced_at'
 );
 
-select is((select count(*) from public.products), 1::bigint, 'A ziet het gedeelde product');
+select is((select count(*) from public.products where source <> 'nevo'), 1::bigint, 'A ziet het gedeelde product');
 
 select throws_ok($$
   insert into public.products (source, name, updated_at) values ('off', '{"nl": "Nep"}', now())
@@ -143,7 +143,7 @@ set local request.jwt.claims = '{"sub": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb", 
 select is_empty('select id from public.shopping_lists', 'B ziet de lijst van A niet');
 select is_empty('select id from public.shopping_items', 'B ziet de items van A niet');
 select is_empty('select id from public.food_entries', 'B ziet de voedingslogs van A niet');
-select is((select count(*) from public.products), 1::bigint, 'B ziet het eigen product van A niet');
+select is((select count(*) from public.products where source <> 'nevo'), 1::bigint, 'B ziet het eigen product van A niet');
 
 select throws_ok($$
   insert into public.shopping_items (list_id, name, updated_by, updated_at)
@@ -221,7 +221,7 @@ select lives_ok($$
   delete from auth.users where id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
 $$, 'een account kan verwijderd worden');
 select is((select count(*) from public.food_entries), 0::bigint, 'de voedingslogs van het account zijn weg');
-select is((select count(*) from public.products), 1::bigint, 'het eigen product is weg, het gedeelde product blijft');
+select is((select count(*) from public.products where source <> 'nevo'), 1::bigint, 'het eigen product is weg, het gedeelde product blijft');
 
 -- ---------------------------------------------------------------------------------------------
 -- Niet ingelogd

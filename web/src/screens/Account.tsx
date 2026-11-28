@@ -172,6 +172,8 @@ export function DeleteAccount({ auth, onBack }: { auth: AuthService; onBack: () 
 /** `name` is the source's own name, the same in every language. */
 const sources: [key: string, name: string, url: string][] = [
   ["account.about.off", "Open Food Facts", "https://world.openfoodfacts.org"],
+  // The terms of NEVO ask for the source and version as written in account.about.nevo (UNFORGET S15).
+  ["account.about.nevo", "NEVO-online", "https://nevo-online.rivm.nl"],
   ["account.about.usda", "USDA FoodData Central", "https://fdc.nal.usda.gov"],
   ["account.about.prijsprofeet", "PrijsProfeet", "https://www.prijsprofeet.nl"],
   ["account.about.everkinetic", "Everkinetic", "https://github.com/everkinetic/data"],

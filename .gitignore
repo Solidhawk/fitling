@@ -24,3 +24,6 @@ Fitling/Info.plist
 
 # Door XcodeGen gegenereerd
 Fitling/Resources/Fitling.entitlements
+
+# NEVO (docs/nevo.md): de SQL uit de tabel blijft lokaal, want de repository is openbaar
+supabase/seed/nevo.sql
