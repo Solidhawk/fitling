@@ -60,6 +60,36 @@ test("logAProductFromSearch", async ({ page }, info) => {
   expect(data).toEqual({ name: product.name, kcal: 250, product_id: product.id });
 });
 
+/** A shared product from NEVO with exactly this name; `word` keeps it apart from other tests' products. */
+async function nevoProduct(name: string, word: string) {
+  await sharedProduct(name, {
+    name: { nl: name },
+    search_name: name.toLowerCase(),
+    source: "nevo",
+    source_id: `${word}-${crypto.randomUUID().slice(0, 8)}`,
+    is_verified: true,
+  });
+}
+
+// NEVO turns names around ("Melk halfvolle"): every word is found, in any order (supabase/search-products.sql).
+test("aSearchFindsEveryWordInAnyOrder", async ({ page }) => {
+  const word = `kwibus${crypto.randomUUID().slice(0, 6)}`;
+  await nevoProduct(`Melk ${word} halfvolle`, word);
+  await start(page);
+  await search(page, `halfvolle melk ${word}`);
+  await expect(page.getByRole("button", { name: new RegExp(`Melk ${word} halfvolle`) })).toBeVisible({ timeout: 10_000 });
+});
+
+// The word itself first, then a name that starts with it, then a word inside another: "appel" before "aardappelen".
+test("theBestMatchComesFirst", async ({ page }) => {
+  const word = `zorbel${crypto.randomUUID().slice(0, 6)}`;
+  for (const name of [`Ka${word}en rauw`, `${word}moes blik`, `${word} z schil gem`]) await nevoProduct(name, word);
+  await start(page);
+  await search(page, word);
+  const results = page.locator('[data-screen="logFood"] button').filter({ hasText: word });
+  await expect(results).toHaveText([/z schil gem/, /moes blik/, /en rauw/], { timeout: 10_000 });
+});
+
 test("servingsUseTheServingSize", async ({ page }) => {
   const user = await start(page);
   const product = await sharedProduct("Muesli", { serving_size: 45 });
