@@ -109,15 +109,17 @@ struct FoodDiary {
         try? context.save()
     }
 
-    /// Products on this device whose name or brand contains the text, ignoring case and accents.
+    /// Products on this device whose name or brand holds every word of the text, in any order, ignoring case and
+    /// accents; the best match first, as the server ranks them (FoodLog.bestMatches).
     func searchLocally(_ text: String) -> [Product] {
         let term = Self.searchKey(text)
-        guard !term.isEmpty else { return [] }
-        var descriptor = FetchDescriptor<Product>(
-            predicate: #Predicate<Product> { $0.deletedAt == nil && $0.searchName.contains(term) }
+        // The longest word narrows the fetch most; FoodLog.bestMatches checks the others and ranks.
+        guard let longest = FoodLog.searchWords(term).max(by: { $0.count < $1.count }) else { return [] }
+        let descriptor = FetchDescriptor<Product>(
+            predicate: #Predicate<Product> { $0.deletedAt == nil && $0.searchName.contains(longest) }
         )
-        descriptor.fetchLimit = 30
-        return (try? context.fetch(descriptor)) ?? []
+        let candidates = (try? context.fetch(descriptor)) ?? []
+        return Array(FoodLog.bestMatches(candidates, key: term, searchName: \.searchName, isVerified: \.isVerified).prefix(30))
     }
 
     /// For a product the source gave no kcal for: the user's own copy with the kcal they read

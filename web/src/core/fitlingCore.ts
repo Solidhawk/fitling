@@ -465,6 +465,8 @@ export interface FitlingCore {
   profileRules(): ProfileRules;
   /** `pattern`: the key as a regular expression for `imatch`, each character taken literally. */
   searchKey(input: { text: string }): { key: string; pattern: string };
+  /** The products that hold every word of `key`, in any order, best first (FoodLog.bestMatches). */
+  searchMatches(input: { key: string; products: { id: string; searchName: string; isVerified: boolean }[] }): { ids: string[] };
   barcode(input: { text: string }): { gtin?: string };
   recentProducts(input: { logged: { productID: string; updatedAtMs: number }[] }): { ids: string[]; limit: number };
   portion(input: {
@@ -639,6 +641,7 @@ export async function loadCore(wasm: ArrayBuffer): Promise<FitlingCore> {
     goalFactors: () => call("goalFactors", {}) as Record<Goal, number>,
     profileRules: () => call("profileRules", {}) as ProfileRules,
     searchKey: (input) => call("searchKey", input) as ReturnType<FitlingCore["searchKey"]>,
+    searchMatches: (input) => call("searchMatches", input) as ReturnType<FitlingCore["searchMatches"]>,
     barcode: (input) => call("barcode", input) as ReturnType<FitlingCore["barcode"]>,
     recentProducts: (input) => call("recentProducts", input) as ReturnType<FitlingCore["recentProducts"]>,
     portion: (input) => call("portion", input) as PortionAnswer,

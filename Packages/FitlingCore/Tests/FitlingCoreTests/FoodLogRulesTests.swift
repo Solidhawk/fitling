@@ -157,4 +157,39 @@ import Testing
         noName.name = "  "
         #expect(noName.validated() == nil)
     }
+
+    @Test func aSearchKeyIsEachWordOnce() {
+        #expect(FoodLog.searchWords("halfvolle  melk melk") == ["halfvolle", "melk"])
+        #expect(FoodLog.searchWords("   ") == [])
+        // The plain space only, as the server splits (review of Fable 5.2): a no-break space stays inside the word.
+        #expect(FoodLog.searchWords("melk\u{00A0}halfvolle") == ["melk\u{00A0}halfvolle"])
+    }
+
+    /// NEVO turns names around ("Melk halfvolle"): every word counts, in any order.
+    @Test func aSearchFindsEveryWordInAnyOrder() {
+        let names = ["melk halfvolle milk semi-skimmed", "yoghurt halfvol", "melkchocolade puur"]
+        #expect(FoodLog.bestMatches(names, key: "halfvolle melk", searchName: { $0 }, isVerified: { _ in true })
+            == ["melk halfvolle milk semi-skimmed"])
+        #expect(FoodLog.bestMatches(names, key: "  ", searchName: { $0 }, isVerified: { _ in true }).isEmpty)
+    }
+
+    /// The same order as public.search_products (supabase/search-products.sql): the word itself first, then a name that
+    /// starts with it, then one where a word starts with it, then NEVO and other checked products, then the shortest.
+    @Test func theBestMatchComesFirst() {
+        struct Item { let name: String; let verified: Bool }
+        let items = [
+            Item(name: "aardappelen rauw potatoes raw", verified: true),
+            Item(name: "taart appel- v zandtaartdeeg", verified: true),
+            Item(name: "appelmoes blik/glas apple sauce", verified: true),
+            Item(name: "appel elstar", verified: false),
+            Item(name: "appel z schil gem apple without skin average", verified: true),
+        ]
+        #expect(FoodLog.bestMatches(items, key: "appel", searchName: \.name, isVerified: \.verified).map(\.name) == [
+            "appel z schil gem apple without skin average",
+            "appel elstar",
+            "appelmoes blik/glas apple sauce",
+            "taart appel- v zandtaartdeeg",
+            "aardappelen rauw potatoes raw",
+        ])
+    }
 }

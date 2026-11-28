@@ -30,6 +30,43 @@ public enum FoodLog {
         return String(pattern)
     }
 
+    /// The words of a search key, each once, in the order they were typed. Split on the plain space only, as the server
+    /// does (supabase/search-products.sql): Postgres's `\s` and Swift's white space differ on a no-break space.
+    public static func searchWords(_ key: String) -> [String] {
+        var seen = Set<String>()
+        return key.split(separator: " ").map(String.init).filter { seen.insert($0).inserted }
+    }
+
+    /// The items whose search name holds every word of the key, in any order, best first. NEVO turns names around
+    /// ("Melk halfvolle") and has many matches, so the order counts. It is the order of public.search_products
+    /// (supabase/search-products.sql), so the device and the server rank alike: the first word as the name's first
+    /// word, then a name that starts with it, then names where more words start a word, then checked products (NEVO),
+    /// then the shortest name. Names are compared per Unicode scalar, as Postgres compares them.
+    public static func bestMatches<Item>(
+        _ items: [Item], key: String, searchName: (Item) -> String, isVerified: (Item) -> Bool
+    ) -> [Item] {
+        let words = searchWords(key)
+        guard let first = words.first else { return [] }
+        let scored = items.enumerated().compactMap { index, item -> (rank: (Int, Int, Int, Int, Int, Int), item: Item)? in
+            let name = searchName(item)
+            let scalars = name.unicodeScalars
+            guard words.allSatisfy({ scalars.firstRange(of: $0.unicodeScalars) != nil }) else { return nil }
+            let spaced = (" " + name).unicodeScalars
+            let wordStarts = words.filter { spaced.firstRange(of: (" " + $0).unicodeScalars) != nil }.count
+            let firstWord = name.split(separator: " ", maxSplits: 1, omittingEmptySubsequences: false).first.map(String.init)
+            let rank = (
+                firstWord == first ? 0 : 1,
+                scalars.starts(with: first.unicodeScalars) ? 0 : 1,
+                words.count - wordStarts,
+                isVerified(item) ? 0 : 1,
+                scalars.count,
+                index
+            )
+            return (rank, item)
+        }
+        return scored.sorted { $0.rank < $1.rank }.map(\.item)
+    }
+
     /// The products of the newest entries first, each once. The caller keeps the first `recentLimit` it still has.
     public static func recentProductIDs(_ logged: [(productID: UUID, updatedAt: Date)]) -> [UUID] {
         var seen = Set<UUID>()

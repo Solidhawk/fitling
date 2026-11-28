@@ -84,6 +84,7 @@ jobs:
           psql "$db" -v ON_ERROR_STOP=1 -q -f supabase/schema.sql
           psql "$db" -v ON_ERROR_STOP=1 -q -f supabase/web-push.sql
           psql "$db" -v ON_ERROR_STOP=1 -q -f supabase/submit-product.sql
+          psql "$db" -v ON_ERROR_STOP=1 -q -f supabase/search-products.sql
           psql "$db" -v ON_ERROR_STOP=1 -q -f supabase/seed/sport.sql
           psql "$db" -v ON_ERROR_STOP=1 -q -f supabase/seed/recipes.sql
           eval "$(supabase status -o env)"
@@ -174,6 +175,7 @@ jobs:
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -q -f supabase/schema.sql
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -q -f supabase/web-push.sql
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -q -f supabase/submit-product.sql
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -q -f supabase/search-products.sql
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -q -f supabase/seed/sport.sql
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -q -f supabase/seed/recipes.sql
           # De NEVO-import met verzonnen producten (scripts/fixtures/nevo-test.csv), want de echte tabel staat niet in
@@ -206,8 +208,10 @@ jobs:
           # Twee keer: op een project dat al draait, kan het opnieuw (docs/web-push.md).
           psql "$db" -v ON_ERROR_STOP=1 -q -f supabase/web-push.sql
           psql "$db" -v ON_ERROR_STOP=1 -q -f supabase/submit-product.sql
+          psql "$db" -v ON_ERROR_STOP=1 -q -f supabase/search-products.sql
           psql "$db" -v ON_ERROR_STOP=1 -q -f supabase/web-push.sql
           psql "$db" -v ON_ERROR_STOP=1 -q -f supabase/submit-product.sql
+          psql "$db" -v ON_ERROR_STOP=1 -q -f supabase/search-products.sql
           psql "$db" -v ON_ERROR_STOP=1 -q -f supabase/seed/sport.sql
           psql "$db" -v ON_ERROR_STOP=1 -q -f supabase/seed/recipes.sql
           for file in /tmp/nevo.sql /tmp/nevo.sql /tmp/nevo-kleiner.sql; do

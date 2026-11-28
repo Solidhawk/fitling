@@ -22,6 +22,7 @@ public func handle(_ request: Data) -> Data {
         case "goalFactors": return try encode(goalFactors())
         case "profileRules": return try encode(profileRules())
         case "searchKey": return try encode(searchKey(try input(request)))
+        case "searchMatches": return try encode(searchMatches(try input(request)))
         case "barcode": return try encode(barcode(try input(request)))
         case "recentProducts": return try encode(recentProducts(try input(request)))
         case "portion": return try encode(portion(try input(request)))

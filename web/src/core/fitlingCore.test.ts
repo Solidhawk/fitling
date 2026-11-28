@@ -170,6 +170,20 @@ test("the rules Dagdoel shows and the ranges of typed targets", async () => {
   expect(rules.targetLimits).toEqual({ kcal: [1, 20000], proteinG: [0, 1000], carbsG: [0, 5000], fatG: [0, 2000] });
 });
 
+// NEVO turns names around ("Melk halfvolle") and has many matches: every word counts, best first (FoodLog.bestMatches).
+test("a search finds every word in any order, best first", async () => {
+  const core = await loadCore(wasm);
+  const products = [
+    { id: "a", searchName: "aardappelen rauw", isVerified: true },
+    { id: "b", searchName: "appelmoes blik", isVerified: true },
+    { id: "c", searchName: "appel z schil gem", isVerified: true },
+    { id: "d", searchName: "melk halfvolle", isVerified: true },
+  ];
+  expect(core.searchMatches({ key: "appel", products })).toEqual({ ids: ["c", "b", "a"] });
+  expect(core.searchMatches({ key: "halfvolle melk", products })).toEqual({ ids: ["d"] });
+  expect(core.searchMatches({ key: "", products })).toEqual({ ids: [] });
+});
+
 test("the rules for Vandaag and logging (web phase 2)", async () => {
   const core = await loadCore(wasm);
   expect(core.searchKey({ text: "  Crème Brûlée " })).toEqual({ key: "creme brulee", pattern: "creme brulee" });
